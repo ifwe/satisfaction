@@ -1,0 +1,3 @@
+GET     /                           controllers.Application.index
+
+GET     /sample-project             controllers.Samples.getSampleProject()
