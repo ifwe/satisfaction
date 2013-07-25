@@ -1,4 +1,9 @@
 GET     /                           controllers.Application.index
 
-GET     /showProject            controllers.Samples.showProject(jarName: String, className: String)
+GET     /showProject                controllers.Samples.showProject(jarName: String, className: String)
 
+
+GET     /projects                   controllers.Projects.getProjects()
+GET     /project/:name              controllers.Projects.getProject(name: String)
+POST    /project                    controllers.Projects.addProject(path: String, name: String)
+DELETE  /project/:name              controllers.Projects.removeProject(name: String)
