@@ -11,6 +11,11 @@ object ApplicationBuild extends Build {
       file("modules/common")
   ).settings(CommonSettings: _*).settings(version := appVersion)
 
+  val samples = Project(
+      "samples",
+      file("modules/samples")
+  ).settings(CommonSettings: _*).settings(version := appVersion).dependsOn(common)
+
   val executor = Project(
       "executor",
       file("modules/executor")
@@ -51,7 +56,7 @@ object ApplicationBuild extends Build {
   def Dependencies = libraryDependencies ++= Seq(
       jdbc,
       anorm,
-      "com.klout" %% "scoozie" % "0.3.7" intransitive()
+      "com.klout" %% "scoozie" % "0.3.7"
   )
 
   def Resolvers = resolvers ++= Seq(

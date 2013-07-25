@@ -101,3 +101,5 @@ case class Project(
     name: String,
     goalPeriodGenerator: GoalContextGenerator,
     goals: Set[Goal])
+
+abstract class ProjectProvider(val project: Project)

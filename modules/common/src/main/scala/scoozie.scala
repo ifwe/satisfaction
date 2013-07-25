@@ -9,5 +9,5 @@ import com.klout.scoozie.{ dsl => ScoozieDsl }
 object `package` {
 
     def ScoozieJob(
-        workflow: ScoozieDsl.Workflow): Satisfier = ???
+        workflow: ScoozieDsl.Workflow): Satisfier = null
 }

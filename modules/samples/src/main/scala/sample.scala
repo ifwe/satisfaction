@@ -1,7 +1,7 @@
 package com.klout.satisfaction
-package common
-package sample
+package samples
 
+import common._
 import dsl._
 import scoozie._
 
@@ -11,10 +11,10 @@ object `package` {
 
     object scoozies {
         import com.klout.scoozie.{ dsl => ScoozieDsl }
-        val ScoreCalculationWf: ScoozieDsl.Workflow = ???
-        val FeatureGenerationWf: ScoozieDsl.Workflow = ???
-        val WaitForKsUidWf: ScoozieDsl.Workflow = ???
-        val MomentGenerationWf: ScoozieDsl.Workflow = ???
+        val ScoreCalculationWf: ScoozieDsl.Workflow = null
+        val FeatureGenerationWf: ScoozieDsl.Workflow = null
+        val WaitForKsUidWf: ScoozieDsl.Workflow = null
+        val MomentGenerationWf: ScoozieDsl.Workflow = null
     }
 
     import scoozies._
@@ -73,4 +73,13 @@ object `package` {
         goalPeriodGenerator = DailyGoalContextGenerator(hour = 0, minute = 0),
         goals = Set(WaitForKsUid, ScoreCalculation) ++ FeatureGenerations ++ MomentGenerations)
 
+    val SmallPipeline = Project(
+        name = "small",
+        goalPeriodGenerator = DailyGoalContextGenerator(hour = 2, minute = 3),
+        goals = Set(WaitForKsUid))
+
 }
+
+object MaxwellProject extends ProjectProvider(MaxwellPipeline)
+
+object SmallProject extends ProjectProvider(SmallPipeline)

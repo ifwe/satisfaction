@@ -7,6 +7,9 @@ import Results._
 import com.klout.satisfaction.common.dsl._
 import org.joda.time._
 
+import scala.collection.JavaConversions._
+import java.net._
+
 object jsonable {
     import play.api.libs.json._
 
@@ -14,12 +17,17 @@ object jsonable {
 }
 
 object Samples extends Controller {
+
     import jsonable._
 
-    def getSampleProject() = Action {
-        val paths = List(HiveTable("foo"), HdfsPath("bar"))
-        val goalContext = GoalContext("foo", DateTime.now, Map("foo" -> "bar"))
-        json(Map("hi" -> goalContext))
+    def showProject(jarName: String, className: String) = Action {
+        val url = new URL(s"file:///private/tmp/${jarName}")
+        val urls = Array(url)
+        val ucl = new URLClassLoader(urls, classOf[ProjectProvider].getClassLoader)
+        val clazz = ucl.loadClass(className)
+        val provider = clazz.getField("MODULE$").get(clazz).asInstanceOf[ProjectProvider]
+        val project = provider.project
+        json(Map("project" -> project.toString))
     }
 
 }
