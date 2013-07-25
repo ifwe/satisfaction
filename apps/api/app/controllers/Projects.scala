@@ -12,14 +12,11 @@ import akka.util.Timeout
 
 import scala.concurrent.duration._
 
-import com.klout.satisfaction.api._
+import com.klout.satisfaction.api.actors._
 
 object Projects extends Controller {
 
     import jsonable._
-    implicit val timeout = Timeout(5.seconds)
-
-    val system = ActorSystem("projects")
 
     val projectManager = system.actorOf(Props[ProjectManager])
 

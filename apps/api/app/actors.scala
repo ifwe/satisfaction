@@ -1,16 +1,30 @@
 package com.klout.satisfaction
 package api
+package actors
 
 import common.dsl._
-
-import akka.actor._
 
 import org.apache.hadoop.fs._
 import org.apache.hadoop.conf._
 
+import akka.actor._
+import akka.pattern.{ ask, pipe }
+import akka.util.Timeout
+
+import scala.concurrent.duration._
+
+import play.api.libs.concurrent.Execution.Implicits._
+
+object `package` {
+
+    implicit val timeout = Timeout(5.seconds)
+
+    val system = ActorSystem("projects")
+}
+
 class ProjectManager extends Actor {
 
-    var currentProjects: Map[String, Project] = Map.empty
+    var currentProjects: Map[String, ActorRef] = Map.empty
 
     lazy val fs = {
         val conf = new Configuration()
@@ -22,13 +36,18 @@ class ProjectManager extends Actor {
     def receive = {
         case AddProject(path, name) =>
             val project = loadProjectFromJar(path, name)
-            currentProjects += name -> project
+            currentProjects += name -> context.actorOf(Props(new ProjectOwner(project)))
 
         case RemoveProject(name) =>
             currentProjects -= name
 
         case GetProject(name: String) =>
-            sender ! ProjectResult(currentProjects get name)
+            (currentProjects get name) match {
+                case Some(owner) =>
+                    (owner ? YourProject).mapTo[MyProject] map (result => ProjectResult(Some(result.project))) pipeTo sender
+                case _ =>
+                    sender ! ProjectResult(None)
+            }
 
         case GetProjects =>
             sender ! ProjectList(currentProjects.keys.toSet)
@@ -57,6 +76,18 @@ class ProjectManager extends Actor {
         project
     }
 }
+
+class ProjectOwner(project: Project) extends Actor {
+
+    def receive = {
+        case YourProject =>
+            sender ! MyProject(project)
+    }
+
+}
+
+case object YourProject
+case class MyProject(project: Project)
 
 case class AddProject(jarPath: String, name: String)
 case class RemoveProject(name: String)

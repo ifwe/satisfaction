@@ -16,16 +16,11 @@ object ApplicationBuild extends Build {
       file("modules/samples")
   ).settings(CommonSettings: _*).settings(version := appVersion).dependsOn(common)
 
-  val executor = Project(
-      "executor",
-      file("modules/executor")
-  ).settings(CommonSettings: _*).settings(version := appVersion).dependsOn(common)
-
   val api = play.Project(
       "api",
       appVersion,
       path = file("apps/api")
-  ).settings(CommonSettings: _*).dependsOn(common, executor)
+  ).settings(CommonSettings: _*).dependsOn(common)
 
   def CommonSettings = Dependencies ++ ScalariformSettings ++ Resolvers ++ Seq(
       scalacOptions ++= Seq(
