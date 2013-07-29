@@ -20,11 +20,6 @@ object `package` {
     implicit val timeout = Timeout(5.seconds)
 
     val system = ActorSystem("projects")
-}
-
-class ProjectManager extends Actor {
-
-    var currentProjects: Map[String, ActorRef] = Map.empty
 
     lazy val fs = {
         val conf = new Configuration()
@@ -32,6 +27,11 @@ class ProjectManager extends Actor {
         val fs = FileSystem.get(conf)
         fs
     }
+}
+
+class ProjectManager extends Actor {
+
+    var currentProjects: Map[String, ActorRef] = Map.empty
 
     def receive = {
         case AddProject(path, name) =>
@@ -66,7 +66,8 @@ class ProjectManager extends Actor {
         val url = new URL(s"file://${destPath.toString}")
         val urls = Array(url)
         val ucl = new URLClassLoader(urls, classOf[ProjectProvider].getClassLoader)
-        val clazz = ucl.loadClass(name)
+        val clazzName = if (name endsWith "$") name else (name + "$")
+        val clazz = ucl.loadClass(clazzName)
         fs.delete(destPath, false)
 
         // Get an instance of the project. 
