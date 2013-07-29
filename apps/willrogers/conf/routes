@@ -1,7 +1,3 @@
-GET     /                           controllers.Application.index
-
-GET     /showProject                controllers.Samples.showProject(jarName: String, className: String)
-
 
 GET     /projects                   controllers.Projects.getProjects()
 GET     /project/:name              controllers.Projects.getProject(name: String)

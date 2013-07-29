@@ -1,5 +1,5 @@
 package com.klout.satisfaction
-package api
+package executor
 package actors
 
 import common.dsl._
