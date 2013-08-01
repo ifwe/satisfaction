@@ -1,0 +1,37 @@
+@(projName : String,  goalList : List[String], dependList : List[String]  )
+
+@import helper._
+@import scala.collection.JavaConversions._
+@import com.klout.satisfaction._
+
+
+
+@main( "Project " + projName ) {
+    
+     <h1>Satisfaction !!!</h1>
+    <h1>Project @projName  </h1>
+  <table>  
+   <tr><td><h3>Goals</h3></td>
+    <td>
+    <h3>External Dependencies</h3>
+    </td></tr>
+   <tr>
+   <td>
+    <ul>
+      @goalList.map { goal =>
+     	 <li>@goal </li> 	  
+      }
+    </ul>
+    </td>
+    <td>
+    <ul>
+      @dependList.map { dep =>
+      	 <li>@dep</li>
+      } 
+    </ul>
+    
+    </td> 
+    </tr>
+ </table>    
+    
+}

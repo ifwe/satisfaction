@@ -1,0 +1,16 @@
+
+div#gridPanel 
+{
+  width:900px;
+  overflow:scroll;
+  position:relative;
+}
+
+
+div#gridPanel th
+{  
+  top: expression(document.getElementById("gridPanel").scrollTop-2);
+  left:expression(parentNode.parentNode.parentNode.parentNode.scrollLeft);
+  position: relative;
+  z-index: 20;
+}

@@ -1,0 +1,47 @@
+@(dbName : String , tblName : String, metadataForm: Form[MetaDataHolder] )
+
+@import helper._
+@import org.apache.hadoop.hive.metastore._
+@import org.apache.hadoop.hive.ql.metadata._
+@import scala.collection.JavaConversions._
+
+
+
+
+
+
+
+@main( "MetaData for " + dbName + "@" + tblName  ) {
+    
+    <h1>MetaData for  @dbName :: @tblName </h1>
+    
+    /**
+helper.form( call =  controllers.MetaDataPage.addMetaData(dbName, tblName)  )    {
+	**/
+ <input type="hidden" name="dbName" value="@dbName"
+ <table>
+ <tr>
+ <td>
+<div id="metadata">
+  <h3>MetaData</h3>
+ <table>
+  <thead><td>Property</td><td>Value</dt></thead>
+  @hive.ms.MetaStore.getTableMetaData( dbName, tblName).foreach { case(k,v) =>
+  	<tr><td>@k</td><td>@v</td></tr>
+  	}
+</div> 
+</td>
+ </tr>
+ <tr>
+ <td><p>MetaData Key</p> @helper.inputText(metadataForm("key"), '_label -> "MetaData Key")</td>
+ <td><p>MetaData Value</p>@helper.inputText(metadataForm("value"), '_label -> "MetaData Value")</td>
+ </tr>
+ <tr><td></td><td><td><input type="submit" value="Add MetaData" class="btn primary"/>
+ </table>
+ </form>
+    
+    /**
+    }
+    **/
+    
+}

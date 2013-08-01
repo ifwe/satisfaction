@@ -1,0 +1,21 @@
+@(dbs: List[String])
+
+@import helper._
+
+@main("All Databases") {
+    
+<script>
+   $(function() {
+       $( "#dbtabs" ).tabs();
+     });
+
+</script>
+  <div id="dbtabs">
+    <ul>
+      @dbs.map { db =>
+      	<li><a href="alltables/@db">@db</a></li>
+      }
+	</ul>
+  </div>
+    
+}

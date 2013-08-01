@@ -1,0 +1,23 @@
+@(db: String, tables: List[String])
+
+@import helper._
+
+@main("All Tables for Database " +  db) {
+    
+    <h1>@tables.size Tables in Database @db </h1>
+
+   	<div style="overflow:scroll, height:300px">
+    <table id="thetable" cellspacing="0" style="overflow:scoll, height:200px">
+	<thead>
+	  <tr><td>Table Name</td></tr>
+      </thead> 
+	  <tbody>
+        @tables.map { table =>
+		  <tr><td><a href="" onclick="window.open('showtable/@db/@table'); return false" target="_blank">@table</a></td></tr>
+        }
+    </tbody>
+	</table>
+ </div>
+    
+    
+}

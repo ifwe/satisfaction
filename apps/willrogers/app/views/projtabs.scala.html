@@ -1,0 +1,21 @@
+@(projects: List[String])
+
+@import helper._
+
+@main("All Projects") {
+    
+<script>
+   $(function() {
+       $( "#projtabs" ).tabs();
+     });
+
+</script>
+  <div id="projtabs">
+    <ul>
+      @projects.map { db =>
+      	<li><a href="showproject/@db">@db</a></li>
+      }
+	</ul>
+  </div>
+    
+}

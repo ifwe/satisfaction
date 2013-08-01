@@ -1,0 +1,27 @@
+@()
+
+@import helper._
+
+@main("Satisfaction") {
+    
+<script>
+   $(function() {
+       $( "#toplevel" ).tabs();
+     });
+
+</script>
+
+<div>
+<table><tr>
+<td><h1>Satisfaction !!!</h1></td><td>Current Status</td>
+</tr></table>
+</div>
+  <div id="toplevel">
+    <ul>
+       <li><a href="current">Current Status</a></li>
+       <li><a href="dbtabs">Data View</a></li>
+       <li><a href="projtabs">Project View</a></li>
+	</ul>
+  </div>
+    
+}

@@ -1,3 +1,24 @@
+# Routes
+# This file defines all application routes (Higher priority routes first)
+# ~~~~
+
+# Home page
+GET     /                           controllers.Application.index
+
+
+GET     /alldbs                      controllers.Application.allDBs
+GET     /dbtabs                      controllers.Application.allDBs
+GET     /projtabs                      controllers.Application.allProjects
+GET     /showproject/:projName         controllers.Application.showProject(projName: String)
+GET     /alltables/:db                   controllers.Application.getDBTables(db: String)
+GET     /showtable/:db/:tblName                   controllers.Application.showDBTable(db: String, tblName: String)
+GET     /showpartition/:db/:tblName/:partName                   controllers.Application.showPartition(db: String, tblName: String, partName: String)
+GET     /edithive                   controllers.Application.editHive()
+GET     /metadata/:db/:tblName                   controllers.MetaDataPage.showMetaData(db: String, tblName: String)
+POST     /addmetadata/:db/:tblName                   controllers.MetaDataPage.addMetaData(db: String, tblName: String)
+
+# Map static resources from the /public folder to the /assets URL path
+GET     /assets/*file               controllers.Assets.at(path="/public", file)
 
 GET     /projects                   controllers.Projects.getProjects()
 GET     /project/:name              controllers.Projects.getProject(name: String)

@@ -11,6 +11,7 @@ object `package` {
 
 trait Satisfier {
     def satisfyMe(goalPeriod: GoalContext)
+    def amISatisfied(goalPeriod: GoalContext): Boolean
 }
 
 object Satisfier {
@@ -51,19 +52,18 @@ case class HdfsPath(
     constantParams: Map[String, String] = Map.empty,
     variableParams: Set[String] = Set.empty) extends DataOutput
 
-sealed trait Goal
-
 case class InternalGoal(
     name: String,
     satisfier: Satisfier,
     constantParams: Map[String, String] = Map.empty,
     variableParams: Set[String] = Set.empty,
-    dependsOn: Set[Goal],
-    outputs: Set[DataOutput]) extends Goal
+    dependsOn: Set[InternalGoal],
+    externalDependsOn: Set[ExternalGoal],
+    outputs: Set[DataOutput])
 
 case class ExternalGoal(
     dependsOn: Set[DataOutput],
-    variableParams: Set[String]) extends Goal
+    variableParams: Set[String])
 
 case class GoalContext(
     name: String,
@@ -99,7 +99,12 @@ case class DailyGoalContextGenerator(hour: Int, minute: Int) extends GoalContext
 
 case class Project(
     name: String,
-    goalPeriodGenerator: GoalContextGenerator,
-    goals: Set[Goal])
+    goalContextGenerator: GoalContextGenerator,
+    goals: Set[InternalGoal] ///dependencies: Set[ExternalGoal]
+    ) {
+    lazy val externalGoals = {
+
+    }
+}
 
 abstract class ProjectProvider(val project: Project)

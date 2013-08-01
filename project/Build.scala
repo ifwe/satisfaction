@@ -56,8 +56,29 @@ object ApplicationBuild extends Build {
   def Dependencies = libraryDependencies ++= Seq(
       jdbc,
       anorm,
-      "com.klout" %% "scoozie" % "0.3.7"
+	  ("org.apache.hive" % "hive-common" % "0.10.0").exclude("javax.jdo","jdo2-api"),
+	  ("org.apache.hive" % "hive-exec" % "0.10.0").exclude("javax.jdo","jdo2-api"),
+	  ("org.apache.hive" % "hive-metastore" % "0.10.0").exclude("javax.jdo","jdo2-api"),
+	  ("org.apache.hive" % "hive-cli" % "0.10.0").exclude("javax.jdo","jdo2-api"),
+	  ("org.apache.hive" % "hive-serde" % "0.10.0").exclude("javax.jdo","jdo2-api"),
+	  ("org.apache.hive" % "hive-shims" % "0.10.0").exclude("javax.jdo","jdo2-api"),
+	  ("org.apache.hive" % "hive-hbase-handler" % "0.10.0").exclude("javax.jdo","jdo2-api").exclude("org.apache.maven.wagon","*"),
+	  ("org.apache.hadoop" % "hadoop-common" % "2.0.2-alpha").exclude("commons-daemon","commons-daemon"),
+	  ("org.apache.hadoop" % "hadoop-client" % "2.0.2-alpha").exclude("commons-daemon","commons-daemon"),
+	  ("org.apache.hadoop" % "hadoop-hdfs" % "2.0.2-alpha").exclude("commons-daemon","commons-daemon"),
+	  ("org.apache.hadoop" % "hadoop-mapreduce-client-core" % "2.0.2-alpha").exclude("commons-daemon","commons-daemon"),
+	  ("org.apache.hadoop" % "hadoop-core" % "1.2.0"),
+	  ("javax.jdo" % "jdo-api" % "3.0.1"),
+	  ("mysql" % "mysql-connector-java" % "5.1.18" ),
+    ("com.github.nscala-time" %% "nscala-time" % "0.4.2"),
+	("com.inadco.ecoadapters" % "ecoadapters" % "0.4.3-klout"),
+	("com.klout.pipeline" % "platform-protos" % "0.91.6").exclude("com.googlecode.protobuf-java-format","protobuf-java-format"),
+	("com.googlecode.protobuf-java-format" % "protobuf-java-format" % "1.2"),
+
+      ("com.klout" %% "scoozie" % "0.3.7").exclude("org.apache.hive","*")
   )
+
+  
 
   def Resolvers = resolvers ++= Seq(
       "snapshots" at "http://oss.sonatype.org/content/repositories/snapshots",

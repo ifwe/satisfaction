@@ -23,7 +23,8 @@ object `package` {
 
     lazy val fs = {
         val conf = new Configuration()
-        conf.set("fs.default.name", "jobs-aa-hnn:8020")
+        ///conf.set("fs.default.name", "jobs-aa-hnn:8020")
+        conf.set("fs.default.name", "jobs-dev-hnn:8020")
         val fs = FileSystem.get(conf)
         fs
     }
