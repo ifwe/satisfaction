@@ -7,9 +7,6 @@ package com.klout.satisfaction
  *   XXX TODO handle special date/time logic
  *   XXX TODO handle variable types
  */
-class Witness {
-  
-
-    val variableValues = Map[String, String]()
-
-}
+case class Witness(
+    variableValues: Map[String, String],
+    projectParams: Map[String, String])

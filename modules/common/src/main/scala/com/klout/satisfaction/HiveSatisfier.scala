@@ -1,14 +1,14 @@
-package com.klout.satisfaction
+// package com.klout.satisfaction
 
-import hive.ms._
+// import hive.ms._
 
-class HiveSatisfier( ms : MetaStore)  extends Satisfier with DataProducing {
+// class HiveSatisfier(ms: MetaStore) extends Satisfier with DataProducing {
 
-    override def satisfyGoal(goal: Goal, goalPeriod: Witness) {
-        if (!goal.isInstanceOf[HiveGoal])
-            throw new IllegalArgumentException("Only HiveGoals are supported")
-    }
+//     override def satisfy(goal: Goal, witness: Witness) {
+//         if (!goal.isInstanceOf[HiveGoal])
+//             throw new IllegalArgumentException("Only HiveGoals are supported")
+//     }
 
-}
+// }
 
-object HiveSatisfier extends HiveSatisfier( MetaStore)
+// object HiveSatisfier extends HiveSatisfier(MetaStore)

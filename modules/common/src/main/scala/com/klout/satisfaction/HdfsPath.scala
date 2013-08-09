@@ -8,15 +8,16 @@ import org.apache.hadoop.fs.FileStatus
 
 class HdfsPath(path: Path) extends DataInstance {
 
-    val status: FileStatus = Hdfs.fs.getFileStatus(path)
+    lazy val status: FileStatus = Hdfs.fs.getFileStatus(path)
 
-    def getSize: Long = {
+    def size: Long = {
         Hdfs.getSpaceUsed(path)
     }
 
     def created: DateTime = {
         new DateTime(status.getModificationTime)
     }
+
     def lastAccessed: DateTime = {
         new DateTime(status.getModificationTime)
     }

@@ -4,10 +4,10 @@ package com.klout.satisfaction
  *  DataOutput represents an abstract location,
  *    which can produce multiple DataInstances
  */
-abstract class DataOutput {
+trait DataOutput extends Evidence {
 
-    def getVariables : Set[String]
-    def instanceExists(witness: Witness): Boolean
-    def getDataInstance(witness: Witness): DataInstance
+    def variables: Set[String]
+    def exists(witness: Witness): Boolean
+    def getDataInstance(witness: Witness): Option[DataInstance]
 
 }

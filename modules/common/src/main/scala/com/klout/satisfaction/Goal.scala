@@ -1,15 +1,8 @@
-package com.klout.satisfaction 
-
-  
-
+package com.klout.satisfaction
 
 case class Goal(
     name: String,
-    satisfier: Satisfier,
+    satisfier: Option[Satisfier],
     variables: Set[String] = Set.empty,
-    dependencies: PartialFunction[Witness,Set[Tuple2[Goal,Witness]]],
-    outputs: Set[DataOutput]) {
-
-}
-
-
+    dependencies: Witness => Set[(Goal, Witness)],
+    evidence: Set[Evidence])

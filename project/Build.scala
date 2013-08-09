@@ -7,7 +7,7 @@ object ApplicationBuild extends Build {
   val appVersion = "0.1"
 
   val common = Project(
-      "common",
+      "satisfaction-common",
       file("modules/common")
   ).settings(CommonSettings: _*).settings(version := appVersion)
 

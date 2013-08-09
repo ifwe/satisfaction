@@ -3,18 +3,21 @@ package com.klout.satisfaction
 import hive.ms._
 import org.apache.hadoop.hive.ql.metadata._
 
-class HiveTable(
+case class HiveTable(
     dbName: String,
     tblName: String) extends DataOutput {
-    private val ms = hive.ms.MetaStore;
 
-    def instanceExists(witness: Witness): Boolean = {
+    private val ms = hive.ms.MetaStore
+
+    def variables = Set.empty
+
+    def exists(witness: Witness): Boolean = {
         getPartition(witness) != null
     }
 
-    def getDataInstance(witness: Witness): DataInstance = {
+    def getDataInstance(witness: Witness): Option[DataInstance] = {
         val partition = getPartition(witness)
-        new HiveTablePartition(partition)
+        Some(new HiveTablePartition(partition))
     }
 
     def getPartition(witness: Witness): Partition = {

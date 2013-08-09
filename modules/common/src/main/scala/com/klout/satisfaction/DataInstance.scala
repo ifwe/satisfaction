@@ -2,10 +2,8 @@ package com.klout.satisfaction
 
 import org.joda.time._
 
-abstract class DataInstance {
-
-    def getSize: Long
+trait DataInstance {
+    def size: Long
     def created: DateTime
     def lastAccessed: DateTime
-
 }

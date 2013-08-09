@@ -7,14 +7,12 @@ import org.joda.time._
 class HiveTablePartition(
     part: Partition) extends DataInstance {
 
-    def getSize: Long = {
+    def size: Long = {
         MetaStore.getPartitionSize(part)
     }
 
-    def created: DateTime = {
-        /// XXX
-        null
-    }
+    def created: DateTime = ???
+
     def lastAccessed: DateTime = {
         new DateTime(part.getLastAccessTime() * 1000)
     }

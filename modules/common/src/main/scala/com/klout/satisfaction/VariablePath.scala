@@ -5,11 +5,13 @@ import org.apache.hadoop.fs.Path
 
 class VariablePath(pathTemplate: String) extends DataOutput {
 
-    def instanceExists(witness: Witness): Boolean = {
+    def variables = Set.empty
+
+    def exists(witness: Witness): Boolean = {
         Hdfs.exists(getPathForWitness(witness))
     }
-    def getDataInstance(witness: Witness): DataInstance = {
-        new HdfsPath(getPathForWitness(witness))
+    def getDataInstance(witness: Witness): Option[DataInstance] = {
+        Some(new HdfsPath(getPathForWitness(witness)))
     }
 
     def getPathForWitness(witness: Witness): Path = {
