@@ -19,10 +19,12 @@ object MetaDataPage extends Controller {
     )
 
     def addMetaData(db: String, tblName: String) = Action { implicit request =>
+        println(" Adding Meta Data ")
         metadataForm.bindFromRequest.fold(
             formWithErrors => Status(500),
             metadataHolder => {
 
+                println(" Adding Meta Data in holder  " + metadataHolder)
                 MetaStore.setTableMetaData(db, tblName, metadataHolder.key, metadataHolder.value)
                 Ok(views.html.metadata(db, tblName, metadataForm))
             }

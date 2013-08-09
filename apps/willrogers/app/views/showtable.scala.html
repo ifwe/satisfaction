@@ -47,16 +47,16 @@
  <table style="overflow-y:scroll; height:300px">
   <thead><td>Property</td><td>Value</dt></thead>
   <tbody>
-  @hive.ms.MetaStore.getTableMetaData( dbName, tblName).foreach { case(k,v) =>
+  @hive.ms.MetaStore.getTableMetaData( dbName, tblName).map { case(k,v) =>
   	<tr><td>@k</td><td>@v</td></tr>
   	}
   	</tbody>
   </table>
   </div>
 </div> 
- <button id="addMetaDataButton" onClick="window.open('/metadata/@dbName/@tblName">Add MetaData</button>
- <button id="addSLAButton" onClick="window.open('/addsla/@dbName/@tblName">Add SLA</button>
- <button id="addGoalButton" onClick="window.open('/linkgoal/@dbName/@tblName">Link Goal</button>
+ <button id="addMetaDataButton" onClick="window.open('/metadata/@dbName/@tblName')">Add MetaData</button>
+ <button id="addSLAButton" onClick="window.open('/addsla/@dbName/@tblName')">Add SLA</button>
+ <button id="addGoalButton" onClick="window.open('/linkgoal/@dbName/@tblName')">Link Goal</button>
 </td>
 <td><div id="partitions" style="width: 300px">
   <h3>Partitions</h3>
@@ -65,7 +65,7 @@
   <tbody>
    @partNames.map { partName =>
    	    <tr><td><@partName</td>
-   	    <tr><td><a href="" onclick="window.open('/showpartition/@dbName/@tblName/@partName.replace('/','@')')"; return false" target="_blank">@partName</a></td></tr>
+   	    <tr><td><a href="" onclick="window.open('/showpartition/@dbName/@tblName/@partName.replace('/','@')')">@partName</a></td></tr>
    	     </tr>
    	}
    	</tbody>

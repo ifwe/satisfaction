@@ -253,6 +253,7 @@ class MetaStore(hvConfig: HiveConf) {
             map.put(key, md)
             _hive.setCurrentDatabase(db)
             _hive.alterTable(tblName, tbl)
+            println(" Set Table MetaData " + key + " :: " + md)
         })
     }
 
@@ -287,6 +288,7 @@ class MetaStore(hvConfig: HiveConf) {
     def getTableMetaData(db: String, tblName: String): Map[String, String] = {
         this.synchronized({
             val tbl = _hive.getTable(db, tblName)
+            println("Table Metat Data is " + tbl.getParameters)
             tbl.getParameters.toMap
         })
     }
@@ -332,5 +334,27 @@ class MetaStore(hvConfig: HiveConf) {
 object MetaStore extends MetaStore(Config.config) {
 
     ///val YYYYMMDD : DateTimeFormatter = DateTimeFormat.forPattern("YYYYMMdd")
+    def main(argv: Array[String]): Unit = {
+
+        val toMs: MetaStore = MetaStore
+
+        /// insights
+        ///fromMs.prunePartitionsByRetention("bi_insights", "agg_moment", now,  92)
+        ///fromMs.prunePartitionsByRetention("bi_insights", "actor_action", now,  92)
+        ///fromMs.prunePartitionsByRetention("bi_insights", "ksuid_mapping", now,  30)
+
+        ///fromMs.cleanPartitionsForDb("bi_insights")
+
+        //replicateTable( fromMs.hive, toMs.hive, tbl )
+        val md = toMs.getTableMetaData("bi_maxwell", "agg_moment")
+        md.foreach {
+            case (k, v) =>
+                println(" Key = " + k + " ; Value = " + v)
+        }
+        md.keys.map { k =>
+            println(" Key = " + k)
+        }
+
+    }
 
 }

@@ -6,19 +6,13 @@
 @import scala.collection.JavaConversions._
 
 
-
-
-
-
-
-@main( "MetaData for " + dbName + "@" + tblName  ) {
+@main( "MetaData for " + dbName + " " + tblName  ) {
     
     <h1>MetaData for  @dbName :: @tblName </h1>
     
-    /**
-helper.form( call =  controllers.MetaDataPage.addMetaData(dbName, tblName)  )    {
-	**/
+    <form method="POST" action="/addmetadata/@dbName/@tblName">
  <input type="hidden" name="dbName" value="@dbName"
+ <input type="hidden" name="tblName" value="@tblName"
  <table>
  <tr>
  <td>
@@ -26,7 +20,7 @@ helper.form( call =  controllers.MetaDataPage.addMetaData(dbName, tblName)  )   
   <h3>MetaData</h3>
  <table>
   <thead><td>Property</td><td>Value</dt></thead>
-  @hive.ms.MetaStore.getTableMetaData( dbName, tblName).foreach { case(k,v) =>
+  @hive.ms.MetaStore.getTableMetaData( dbName, tblName).map { case(k,v) =>
   	<tr><td>@k</td><td>@v</td></tr>
   	}
 </div> 
@@ -40,8 +34,6 @@ helper.form( call =  controllers.MetaDataPage.addMetaData(dbName, tblName)  )   
  </table>
  </form>
     
-    /**
-    }
-    **/
     
+    </form>
 }
