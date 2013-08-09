@@ -1,6 +1,7 @@
 package com.klout.satisfaction
 
 class HiveGoal(name: String,
+               val hive_file : String,
                variables: Set[String],
                dependencies: PartialFunction[Witness,Set[Tuple2[Goal,Witness]]],
                output: Set[DataOutput])
@@ -11,7 +12,7 @@ class HiveGoal(name: String,
     }
 
     def getHiveFile: String = {
-        null
+        hive_file
     }
 
 }

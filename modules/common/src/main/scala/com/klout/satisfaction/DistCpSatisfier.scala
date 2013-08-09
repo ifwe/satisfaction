@@ -1,7 +1,8 @@
 package com.klout.satisfaction
 
 
-object DistCpSatisfier extends Satisfier {
+object DistCpSatisfier extends Satisfier with DataProducing {
   
+  def 
   
 }
