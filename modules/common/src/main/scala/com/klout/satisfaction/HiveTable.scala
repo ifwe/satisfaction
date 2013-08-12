@@ -26,7 +26,7 @@ case class HiveTable(
         //// Place logic in MetaStore ???
         var partSpec = List[String]()
         for (i <- 0 until partCols.size - 1) {
-            partSpec ++ witness.variableValues.get(partCols.get(i).getName())
+            partSpec ++ witness.params.get(partCols.get(i).getName())
         }
         print(" PartSpec = " + partSpec)
 

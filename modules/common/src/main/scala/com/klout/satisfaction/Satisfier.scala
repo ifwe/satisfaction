@@ -1,5 +1,7 @@
 package com.klout.satisfaction
 
 trait Satisfier {
-    def satisfy(witness: Witness)
+
+    def satisfy(params: ParamMap)
+
 }

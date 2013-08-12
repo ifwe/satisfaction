@@ -16,7 +16,7 @@ class VariablePath(pathTemplate: String) extends DataOutput {
 
     def getPathForWitness(witness: Witness): Path = {
         var substPath: String = pathTemplate
-        witness.variableValues.foreach{
+        witness.params.foreach{
             case (k, v) =>
                 substPath = substPath.replaceAll("${" + k + "}", v)
         }

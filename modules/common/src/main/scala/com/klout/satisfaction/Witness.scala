@@ -7,6 +7,7 @@ package com.klout.satisfaction
  *   XXX TODO handle special date/time logic
  *   XXX TODO handle variable types
  */
-case class Witness(
-    variableValues: Map[String, String],
-    projectParams: Map[String, String])
+case class Witness(variables: ParamMap) {
+
+    lazy val params: Map[String, String] = ???
+}
