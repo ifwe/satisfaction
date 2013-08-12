@@ -55,6 +55,7 @@ object Paramable {
 
     implicit val StringParamable = Paramable[String](_.toString)
     implicit val IntParamable = Paramable[Int](_.toString)
+    implicit val BooleanParamable = Paramable[Boolean](_.toString)
 
     import org.joda.time._
     implicit val LocalDateParamable = Paramable[LocalDate](_ toString "yyyyMMdd")
@@ -64,24 +65,22 @@ class ParamOverrides(private[satisfaction] val map: Map[Param[_], Map[Any, Set[P
 
 object ParamOverrides {
 
-    def forParam[T: Paramable](param: Param[T]) = new {
+    def apply[T: Paramable](param: Param[T]) = new {
         def set(t: (T, Set[ParamPair[_]])*): ParamOverrides = {
             val newValue: Map[Any, Set[ParamPair[_]]] = t.toMap
             val newMap: Map[Param[_], Map[Any, Set[ParamPair[_]]]] = Map(param -> newValue)
             new ParamOverrides(newMap)
         }
     }
+
 }
 
-object Foo {
-    object Date extends Param[String]("dt")
-    object Network extends Param[String]("network_abbr")
-    object Foo extends Param[String]("foo")
-    object Bar extends Param[String]("bar")
-    object Baz extends Param[String]("baz")
+object example {
+    object NetworkAbbr extends Param[String]("network_abbr")
+    object DoDistcp extends Param[Boolean]("doDistcp")
 
-    ParamOverrides forParam Date set (
-        "today" -> Set(Foo -> "foo1", Bar -> "bar2"),
-        "yesterday" -> Set(Foo -> "foo2", Bar -> "barasdf")
+    val overrides = ParamOverrides(NetworkAbbr) set (
+        "li" -> Set(DoDistcp -> true),
+        "tw" -> Set(DoDistcp -> false)
     )
 }
