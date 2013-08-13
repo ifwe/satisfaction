@@ -75,7 +75,8 @@ object ApplicationBuild extends Build {
 	("com.klout.pipeline" % "platform-protos" % "0.91.6").exclude("com.googlecode.protobuf-java-format","protobuf-java-format"),
 	("com.googlecode.protobuf-java-format" % "protobuf-java-format" % "1.2"),
 
-      ("com.klout" %% "scoozie" % "0.3.7").exclude("org.apache.hive","*")
+      ("com.klout" %% "scoozie" % "0.3.7").exclude("org.apache.hive","*"),
+	  ("org.specs2" %% "specs2" % "1.14" % "test")
   )
 
   
