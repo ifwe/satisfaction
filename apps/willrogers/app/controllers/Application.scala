@@ -37,15 +37,9 @@ object Application extends Controller {
 
     def showProject(projName: String) = Action {
         val project = SyncApi.getProject(projName)
-        val internalGoalList: Set[InternalGoal] = project.project.get.goals.filter(g =>
-            g.isInstanceOf[InternalGoal]
-        ).asInstanceOf[Set[InternalGoal]]
-
-        val goalNameList = internalGoalList.map(_.name).toList
-        val externalDepList = getExternalDependencies(internalGoalList)
-        val dataOutputNames = externalDepList.map(displayDataOutput(_))
-        Ok(views.html.showproject(projName, goalNameList, dataOutputNames))
-
+        val internalGoals = project.project.get.internalGoals.toList
+        val externalGoals = project.project.get.externalGoals.toList
+        Ok(views.html.showproject(projName, internalGoals map (_.name), externalGoals map (_.name)))
     }
 
     def displayDataOutput(data: DataOutput): String = {

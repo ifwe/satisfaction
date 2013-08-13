@@ -34,7 +34,8 @@ object ApplicationBuild extends Build {
           "-deprecation",
           "-language:existentials",
           "-language:postfixOps",
-          "-language:implicitConversions"
+          "-language:implicitConversions",
+          "-language:reflectiveCalls"
       ),
 
       scalaVersion := "2.10.2"

@@ -3,7 +3,7 @@ package com.klout.satisfaction
 import hive.ms.Hdfs
 import org.apache.hadoop.fs.Path
 
-class VariablePath(pathTemplate: String) extends DataOutput {
+case class VariablePath(pathTemplate: String) extends DataOutput {
 
     def variables = Set.empty
 

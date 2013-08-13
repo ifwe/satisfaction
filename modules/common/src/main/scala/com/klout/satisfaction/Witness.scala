@@ -10,4 +10,6 @@ package com.klout.satisfaction
 case class Witness(variables: ParamMap) {
 
     lazy val params: Map[String, String] = ???
+
+    def update[T](paramPair: ParamPair[T]): Witness = this copy (variables update paramPair)
 }

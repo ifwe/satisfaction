@@ -6,7 +6,7 @@ import hive.ms.Hdfs
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.fs.FileStatus
 
-class HdfsPath(path: Path) extends DataInstance {
+case class HdfsPath(path: Path) extends DataInstance {
 
     lazy val status: FileStatus = Hdfs.fs.getFileStatus(path)
 

@@ -1,9 +1,12 @@
 package com.klout.satisfaction
 
-import scala.language.reflectiveCalls
+// import scala.reflect.ClassTag
 
-abstract class Param[T: Paramable](val name: String, val description: Option[String] = None) {
+abstract class Param[T: Paramable: Manifest](val name: String, val description: Option[String] = None) {
     def ->(t: T): ParamPair[T] = ParamPair(this, t)
+
+    override lazy val toString =
+        s"name=[$name], class=[${manifest[T].runtimeClass}], description=[${description getOrElse ""}]"
 }
 
 case class ParamPair[T: Paramable](param: Param[T], value: T) {
@@ -36,6 +39,8 @@ class ParamMap(pairs: Set[ParamPair[_]]) {
         new ParamMap(pairs + (param -> value))
     }
 
+    def update[T](pair: ParamPair[T]): ParamMap = update(pair.param, pair.value)
+
 }
 
 object ParamMap {
@@ -66,10 +71,10 @@ class ParamOverrides(private[satisfaction] val map: Map[Param[_], Map[Any, Set[P
 object ParamOverrides {
 
     def apply[T: Paramable](param: Param[T]) = new {
-        def set(t: (T, Set[ParamPair[_]])*): ParamOverrides = {
+        def set(t: (T, Set[ParamPair[_]])*): Option[ParamOverrides] = {
             val newValue: Map[Any, Set[ParamPair[_]]] = t.toMap
             val newMap: Map[Param[_], Map[Any, Set[ParamPair[_]]]] = Map(param -> newValue)
-            new ParamOverrides(newMap)
+            Some(new ParamOverrides(newMap))
         }
     }
 
