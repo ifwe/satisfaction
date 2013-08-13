@@ -6,4 +6,7 @@ case class Goal(
     variables: Set[Param[_]] = Set.empty,
     overrides: Option[ParamOverrides],
     dependencies: Set[(Witness => Witness, Goal)],
-    evidence: Set[Evidence])
+    evidence: Set[Evidence]) {
+
+    lazy val uniqueId = java.util.UUID.randomUUID().toString
+}

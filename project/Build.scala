@@ -72,14 +72,12 @@ object ApplicationBuild extends Build {
 	  ("javax.jdo" % "jdo-api" % "3.0.1"),
 	  ("mysql" % "mysql-connector-java" % "5.1.18" ),
     ("com.github.nscala-time" %% "nscala-time" % "0.4.2"),
-	("com.inadco.ecoadapters" % "ecoadapters" % "0.4.3-klout"),
-	("com.klout.pipeline" % "platform-protos" % "0.91.6").exclude("com.googlecode.protobuf-java-format","protobuf-java-format"),
-	("com.googlecode.protobuf-java-format" % "protobuf-java-format" % "1.2"),
-
-      ("com.klout" %% "scoozie" % "0.3.7").exclude("org.apache.hive","*")
+	  ("com.inadco.ecoadapters" % "ecoadapters" % "0.4.3-klout"),
+	  ("com.klout.pipeline" % "platform-protos" % "0.91.6").exclude("com.googlecode.protobuf-java-format","protobuf-java-format"),
+	  ("com.googlecode.protobuf-java-format" % "protobuf-java-format" % "1.2"),
+    ("com.klout" %% "scoozie" % "0.3.7").exclude("org.apache.hive","*"),
+    "us.theatr" %% "akka-quartz" % "0.2.0"
   )
-
-  
 
   def Resolvers = resolvers ++= Seq(
       "snapshots" at "http://oss.sonatype.org/content/repositories/snapshots",
@@ -89,8 +87,8 @@ object ApplicationBuild extends Build {
       "Klout Maven external libs Repository" at "http://maven-repo:8081/artifactory/ext-release-local",
       "Klout Maven external snapshots Repository" at "http://maven-repo:8081/artifactory/ext-snapshot-local",
       "local-maven-repo-releases" at "http://maven-repo:8081/artifactory/libs-release-local",
-      "local-maven-repo-snapshots" at "http://maven-repo:8081/artifactory/libs-snapshot-local/"
+      "local-maven-repo-snapshots" at "http://maven-repo:8081/artifactory/libs-snapshot-local/",
+      "theatr" at "http://repo.theatr.us"
   )
-
 
 }
