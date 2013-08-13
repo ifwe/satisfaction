@@ -12,7 +12,7 @@ object ApplicationBuild extends Build {
   ).settings(CommonSettings: _*).settings(version := appVersion)
 
   val samples = Project(
-      "samples",
+      "satisfaction-samples",
       file("modules/samples")
   ).settings(CommonSettings: _*).settings(version := appVersion).dependsOn(common)
 

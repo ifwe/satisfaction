@@ -6,8 +6,8 @@ import play.api.data._
 import play.api.data.Forms._
 
 import play.api.mvc._
+import com.klout.satisfaction._
 import com.klout.satisfaction.executor.api._
-import com.klout.satisfaction.common.dsl._
 
 object Application extends Controller {
 
@@ -44,23 +44,10 @@ object Application extends Controller {
 
     def displayDataOutput(data: DataOutput): String = {
         data match {
-            case tbl: HiveTable => "Table " + tbl.name
+            case tbl: HiveTable => "Table " + tbl.tblName
             case pth: HdfsPath  => "Path " + pth.path
             case _              => data.toString()
         }
-    }
-
-    def getExternalDependencies(internalGoalList: Set[InternalGoal]): List[DataOutput] = {
-        var depList = List[DataOutput]()
-        println(" GoalList = " + internalGoalList)
-        for (g <- internalGoalList) {
-            if (g.externalDependsOn != null)
-                depList = depList ::: g.externalDependsOn.map(_.dependsOn).flatten.toList
-            if (g.dependsOn != null)
-                depList = depList ::: getExternalDependencies(g.dependsOn)
-        }
-        println(" Dep List is " + depList)
-        depList.toList.distinct
     }
 
     def getDBTables(db: String) = Action {
