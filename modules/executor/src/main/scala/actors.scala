@@ -2,8 +2,6 @@ package com.klout.satisfaction
 package executor
 package actors
 
-import common.dsl._
-
 import org.apache.hadoop.fs._
 import org.apache.hadoop.conf._
 

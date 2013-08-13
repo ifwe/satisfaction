@@ -1,95 +1,68 @@
 package com.klout.satisfaction
 package samples
 
-import common._
-import dsl._
-import scoozie._
-
 import org.joda.time._
 
 object `package` {
 
-    object scoozies {
-        import com.klout.scoozie.{ dsl => ScoozieDsl }
-        val ScoreCalculationWf: ScoozieDsl.Workflow = null
-        val FeatureGenerationWf: ScoozieDsl.Workflow = null
-        val WaitForKsUidWf: ScoozieDsl.Workflow = null
-        val MomentGenerationWf: ScoozieDsl.Workflow = null
-    }
+    object Date extends Param[LocalDate]("dateString")
+    object NetworkAbbr extends Param[String]("networkAbbr")
 
-    import scoozies._
+    val Id: Witness => Witness = x => x
 
-    object MaxwellParameters {
-        val DateString = "dateString"
-        val Network = "network"
-    }
+    val WithNetwork: String => Witness => Witness = network => witness => witness update NetworkAbbr -> network
 
-    val KsUidInHdfs: ExternalGoal = ExternalGoal(
-        dependsOn = Set(HdfsPath("${nameNode}/data/prod/jobs/ksuid_assigned/${dateString}")),
-        variableParams = Set(MaxwellParameters.DateString)
-    )
-
-    val WaitForKsUid = InternalGoal(
+    val WaitForKsUidMapping = Goal(
         name = "wait_for_ksuid_mapping",
-        satisfier = ScoozieJob(WaitForKsUidWf),
-        variableParams = Set(MaxwellParameters.DateString),
-        externalDependsOn = Set(KsUidInHdfs),
-        dependsOn = null,
-        outputs = Set(HiveTable("ksuid_mapping"), HdfsPath("foo:"))
-    )
-
-    def RawContent(network: String): ExternalGoal = ExternalGoal(
-        dependsOn = Set(HdfsPath("${nameNode}/data/prod/jobs/rawContent/${network}/${dateString}")),
-        variableParams = Set(MaxwellParameters.DateString, MaxwellParameters.Network)
-    )
-
-    val networks: Set[String] = Set("tw", "fb", "fp")
-    def NetworkAbbr(network: String): Map[String, String] = Map("networkAbbr" -> network)
-
-    val FeatureGenerationMap = (for (network <- networks) yield {
-        val goal = InternalGoal(
-            name = s"feature_generation_${network}",
-            satisfier = ScoozieJob(FeatureGenerationWf),
-            variableParams = Set(MaxwellParameters.DateString),
-            constantParams = NetworkAbbr(network),
-            dependsOn = Set(WaitForKsUid),
-            externalDependsOn = Set(RawContent(network)),
-            outputs = Set(HiveTable("hb_feature_import"))
+        satisfier = None,
+        variables = Set(Date),
+        overrides = None,
+        dependencies = Set.empty,
+        evidence = Set(
+            VariablePath("/data/prod/jobs/ksuid_mapping_output/${dateString}")
         )
-        network -> goal
-    }) toMap
+    )
 
-    val FeatureGenerations: Set[InternalGoal] = FeatureGenerationMap.values.toSet
+    val FeatureGeneration = Goal(
+        name = "feature_generation",
+        satisfier = None, // will be Scoozie once implemented
+        variables = Set(Date, NetworkAbbr),
+        overrides = ParamOverrides(NetworkAbbr) set (
+            "tw" -> Set.empty, // ...
+            "fb" -> Set.empty // ...
+        ),
+        dependencies = Set(Id -> WaitForKsUidMapping),
+        evidence = Set(
+            VariablePath("/data/hive/maxwell/hb_feature_import/${dateString}/${networkAbbr}")
+        )
+    )
 
-    val MomentGenerations = for ((network, featureGeneration) <- FeatureGenerationMap) yield InternalGoal(
-        name = s"moment_generation_${network}",
-        satisfier = ScoozieJob(MomentGenerationWf),
-        variableParams = Set(MaxwellParameters.DateString),
-        constantParams = NetworkAbbr(network),
-        dependsOn = Set(featureGeneration),
-        externalDependsOn = null,
-        outputs = Set(HiveTable(s"moments_materialized_${network}")))
-
-    val ScoreCalculation = InternalGoal(
+    val ScoreCalculation = Goal(
         name = "score_calculation",
-        satisfier = ScoozieJob(ScoreCalculationWf),
-        variableParams = Set(MaxwellParameters.DateString),
-        dependsOn = FeatureGenerations,
-        externalDependsOn = null,
-        outputs = Set(HiveTable("maxwell_score"), HiveTable("network_score")))
+        satisfier = None, // will be Scoozie once implemented
+        variables = Set(Date),
+        overrides = None,
+        dependencies = Set(
+            WithNetwork("tw") -> FeatureGeneration,
+            WithNetwork("fb") -> FeatureGeneration
+        ),
+        evidence = Set(
+            VariablePath("/data/hive/maxwell/maxwell_score/${dateString}")
+        )
+    )
 
     val MaxwellPipeline = Project(
         name = "maxwell",
-        goalContextGenerator = DailyGoalContextGenerator(hour = 0, minute = 0),
-        goals = Set(WaitForKsUid, ScoreCalculation) ++ FeatureGenerations ++ MomentGenerations)
-
-    val SmallPipeline = Project(
-        name = "small",
-        goalContextGenerator = DailyGoalContextGenerator(hour = 2, minute = 3),
-        goals = Set(WaitForKsUid))
-
+        topLevelGoals = Set(ScoreCalculation),
+        projectParameters = ParamMap(
+            Date -> new LocalDate("2013-01-01"),
+            NetworkAbbr -> "tw"
+        ),
+        witnessGenerator = WitnessGenerator {
+            case thing @ Some(_) => thing
+            case None            => None
+        }
+    )
 }
 
 object MaxwellProject extends ProjectProvider(MaxwellPipeline)
-
-object SmallProject extends ProjectProvider(SmallPipeline)
