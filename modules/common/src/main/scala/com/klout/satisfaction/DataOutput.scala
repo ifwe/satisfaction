@@ -6,7 +6,7 @@ package com.klout.satisfaction
  */
 trait DataOutput extends Evidence {
 
-    def variables: Set[String]
+    def variables: Set[Param[_]]
     def exists(witness: Witness): Boolean
     def getDataInstance(witness: Witness): Option[DataInstance]
 

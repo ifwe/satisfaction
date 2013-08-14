@@ -10,7 +10,8 @@ import org.apache.hadoop.fs.Path
 object Hdfs {
 
     /// Dependency injection ???
-    val _fsURI = new URI("hdfs://jobs-dev-hnn:8020")
+    ///val _fsURI = new URI("hdfs://jobs-dev-hnn:8020")
+    val _fsURI = new URI("hdfs://jobs-aa-hnn:8020")
     val fs = FileSystem.get(_fsURI, Config.config)
 
     def exists(path: Path): Boolean = {

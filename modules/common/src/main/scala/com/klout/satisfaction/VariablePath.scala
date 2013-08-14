@@ -8,19 +8,27 @@ case class VariablePath(pathTemplate: String) extends DataOutput {
     def variables = Set.empty
 
     def exists(witness: Witness): Boolean = {
-        Hdfs.exists(getPathForWitness(witness))
-    }
-    def getDataInstance(witness: Witness): Option[DataInstance] = {
-        Some(new HdfsPath(getPathForWitness(witness)))
+        getPathForWitness(witness) match {
+            case None       => false
+            case Some(path) => Hdfs.exists(path)
+        }
     }
 
-    def getPathForWitness(witness: Witness): Path = {
-        var substPath: String = pathTemplate
-        witness.params.foreach{
-            case (k, v) =>
-                substPath = substPath.replaceAll("${" + k + "}", v)
+    def getDataInstance(witness: Witness): Option[DataInstance] = {
+        getPathForWitness(witness) match {
+            case None       => None
+            case Some(path) => Some(new HdfsPath(path))
         }
-        println(" Substitution path is " + substPath)
-        new Path(substPath)
+    }
+
+    def getPathForWitness(witness: Witness): Option[Path] = {
+        var substPath = SubstitutionUtils.substituteVarsInString(pathTemplate, witness.params)
+        substPath match {
+            case Left(missingVars) =>
+                println(" Missing vars " + missingVars.mkString(",") + " ; no Path for witness")
+                return None
+            case Right(substitutedPath) =>
+                return Some(new Path(substitutedPath))
+        }
     }
 }

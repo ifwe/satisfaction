@@ -17,6 +17,7 @@ import org.joda.time._
 import org.joda.time.format.DateTimeFormatter
 import org.joda.time.format.DateTimeFormat
 import org.apache.hadoop.hive.metastore.api.FieldSchema
+import com.klout.satisfaction.Param
 
 /**
  *  Scala Wrapper around Hive MetaStore object
@@ -197,13 +198,18 @@ class MetaStore(hvConfig: HiveConf) {
         getPartitionMetaData(part).get(MetaDataProps.SPACE_USED.toString()).toString
     }
 
+    def getPartition(db: String, tblName: String, partMap: Map[String, String]): Partition = {
+        val tbl = _hive.getTable(db, tblName)
+        _hive.getPartition(tbl, partMap, false)
+    }
+
     def getPartition(db: String, tblName: String, partSpec: List[String]): Partition = {
         this.synchronized({
             val tbl = _hive.getTable(db, tblName)
             val partMap = new HashMap[String, String]()
             val partCols = tbl.getPartCols()
             print("PArtCols = " + partCols)
-            for (i <- 0 to partCols.size - 1) {
+            for (i <- 0 until partCols.size) {
                 partMap.put(partCols.get(i).getName(), partSpec.get(i))
             }
             print(" PartMap = " + partMap)
@@ -326,6 +332,22 @@ class MetaStore(hvConfig: HiveConf) {
 
     }
 
+    class PartitionSpec(
+        name: String,
+        description: String) extends Param[String](name, Some(description))
+
+    def getVariablesForTable(db: String, tblName: String): Set[Param[_]] = {
+        val tbl = getTableByName(db, tblName)
+        val partCols = tbl.getPartitionKeys().toList
+        val vars = for (part <- partCols) yield {
+            val name = part.getName
+            val typeName = part.getType
+            val comment = part.getComment
+            val param = new PartitionSpec(name, comment)
+            param
+        }
+        vars.toSet
+    }
 }
 
 /**

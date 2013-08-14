@@ -1,6 +1,6 @@
-// package com.klout.satisfaction
+package com.klout.satisfaction
 
-// import hive.ms._
+import hive.ms._
 
 // class HiveSatisfier(ms: MetaStore) extends Satisfier with DataProducing {
 
@@ -12,3 +12,18 @@
 // }
 
 // object HiveSatisfier extends HiveSatisfier(MetaStore)
+
+class HiveSatisfier(query: String, ms: MetaStore) extends Satisfier {
+
+    def satisfy(params: ParamMap) = {
+
+    }
+
+    def getVariablesForTable() = {
+
+    }
+
+    def substituteProperties(queryTemplate: String, props: Map[String, String]): String = {
+        null
+    }
+}

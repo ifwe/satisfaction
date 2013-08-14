@@ -113,23 +113,30 @@ object Replicator {
 
     def main(argv: Array[String]): Unit = {
 
-        val toMs: MetaStore = MetaStore
+        ///val toMs: MetaStore = MetaStore
 
         /// insights
         var hc = new HiveConf(new Configuration(), this.getClass())
-        hc.setVar(HiveConf.ConfVars.METASTORECONNECTURLKEY, "jdbc:mysql://jobs-dev-sched1/hive_old_insights")
+        ///hc.setVar(HiveConf.ConfVars.METASTORECONNECTURLKEY, "jdbc:mysql://jobs-dev-sched1/hive_old_insights")
+        ///hc.setVar(HiveConf.ConfVars.METASTORE_CONNECTION_DRIVER, "com.mysql.jdbc.Driver")
+        ///hc.setVar(HiveConf.ConfVars.METASTORE_CONNECTION_USER_NAME, "hive")
+        ///hc.setVar(HiveConf.ConfVars.METASTOREPWD, "hiveklout")
+        hc.setVar(HiveConf.ConfVars.METASTORECONNECTURLKEY, "jdbc:mysql://mysql-hive1/hive_meta_db")
         hc.setVar(HiveConf.ConfVars.METASTORE_CONNECTION_DRIVER, "com.mysql.jdbc.Driver")
         hc.setVar(HiveConf.ConfVars.METASTORE_CONNECTION_USER_NAME, "hive")
         hc.setVar(HiveConf.ConfVars.METASTOREPWD, "hiveklout")
-
         val fromMs = new MetaStore(hc)
 
-        val now = MetaStore.YYYYMMDD.parseDateTime("20130729")
-        ///fromMs.prunePartitionsByRetention("bi_insights", "agg_moment", now,  92)
-        ///fromMs.prunePartitionsByRetention("bi_insights", "actor_action", now,  92)
-        ///fromMs.prunePartitionsByRetention("bi_insights", "ksuid_mapping", now,  30)
+        val prodHc = new HiveConf(new Configuration(), this.getClass())
+        prodHc.setVar(HiveConf.ConfVars.METASTOREURIS, "thrift://jobs-aa-sched1:9083")
+        val toMs = new MetaStore(prodHc)
 
-        ///fromMs.cleanPartitionsForDb("bi_insights")
+        ///val now = MetaStore.YYYYMMDD.parseDateTime("20130729")
+        ///fromMs.prunePartitionsByRetention("bi_insights", "agg_moment", now,  92)
+        //////fromMs.prunePartitionsByRetention("bi_insights", "actor_action", now,  92)
+        ////fromMs.prunePartitionsByRetention("bi_insights", "ksuid_mapping", now,  30)
+
+        fromMs.cleanPartitionsForDb("bi_insights")
 
         replicateDatabase(fromMs.hive, toMs.hive, "bi_insights")
         ///val tbl = fromMs.getTableByName("bi_insights", "users_relationships")

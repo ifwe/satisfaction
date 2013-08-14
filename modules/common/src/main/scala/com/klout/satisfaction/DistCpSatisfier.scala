@@ -1,7 +1,18 @@
 package com.klout.satisfaction
 
-object DistCpSatisfier extends Satisfier {
+import org.apache.hadoop.fs.Path
 
-    def satisfy(params: ParamMap) = ???
+class DistCpSatisfier(val src: VariablePath, val dest: VariablePath) extends Satisfier {
+    val config = hive.ms.Config.config
+
+    def satisfy(params: ParamMap) = {
+
+        val srcPath = src.getDataInstance(new Witness(params)).get.asInstanceOf[HdfsPath].path.toUri.toString
+        val destPath = dest.getDataInstance(new Witness(params)).get.asInstanceOf[HdfsPath].path.toUri.toString
+
+        val args: Array[String] = Array[String](srcPath, destPath)
+        org.apache.hadoop.tools.DistCp.main(args);
+
+    }
 
 }

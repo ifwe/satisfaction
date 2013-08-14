@@ -9,7 +9,18 @@ package com.klout.satisfaction
  */
 case class Witness(variables: ParamMap) {
 
-    lazy val params: Map[String, String] = ???
+    def apply(tuples: Set[Tuple2[String, String]]): Witness = {
+
+        null
+    }
+
+    def apply(fullMap: ParamMap, variables: Set[Param[_]]): Witness = {
+        null
+    }
+
+    lazy val params: Map[String, String] = {
+        variables.raw
+    }
 
     def update[T](paramPair: ParamPair[T]): Witness = this copy (variables update paramPair)
 }

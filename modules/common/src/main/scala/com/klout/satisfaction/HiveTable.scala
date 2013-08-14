@@ -2,6 +2,7 @@ package com.klout.satisfaction
 
 import hive.ms._
 import org.apache.hadoop.hive.ql.metadata._
+import collection.JavaConversions._
 
 case class HiveTable(
     dbName: String,
@@ -9,7 +10,9 @@ case class HiveTable(
 
     private val ms = hive.ms.MetaStore
 
-    def variables = Set.empty
+    def variables = {
+        ms.getVariablesForTable(dbName, tblName)
+    }
 
     def exists(witness: Witness): Boolean = {
         getPartition(witness) != null
@@ -21,15 +24,7 @@ case class HiveTable(
     }
 
     def getPartition(witness: Witness): Partition = {
-        val tbl = ms.getTableByName(dbName, tblName)
-        val partCols = tbl.getPartCols()
-        //// Place logic in MetaStore ???
-        var partSpec = List[String]()
-        for (i <- 0 until partCols.size - 1) {
-            partSpec ++ witness.params.get(partCols.get(i).getName())
-        }
-        print(" PartSpec = " + partSpec)
 
-        ms.getPartition(dbName, tblName, partSpec)
+        ms.getPartition(dbName, tblName, witness.params)
     }
 }

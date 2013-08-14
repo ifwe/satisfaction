@@ -11,7 +11,10 @@ class HiveTablePartition(
         MetaStore.getPartitionSize(part)
     }
 
-    def created: DateTime = ???
+    def created: DateTime = {
+
+        new DateTime(MetaStore.getPartitionMetaData(part).get("created").get.toLong * 1000)
+    }
 
     def lastAccessed: DateTime = {
         new DateTime(part.getLastAccessTime() * 1000)

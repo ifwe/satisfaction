@@ -5,5 +5,13 @@ case class Goal(
     satisfier: Option[Satisfier],
     variables: Set[Param[_]] = Set.empty,
     overrides: Option[ParamOverrides],
-    dependencies: Set[(Witness => Witness, Goal)],
-    evidence: Set[Evidence])
+    var dependencies: Set[(Witness => Witness, Goal)],
+    evidence: Set[Evidence]) {
+
+    val Id: (Witness => Witness) = { w: Witness => w }
+
+    def addDependency(goal: Goal) {
+        dependencies += Tuple2(Id, goal)
+    }
+
+}
