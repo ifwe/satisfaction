@@ -18,6 +18,9 @@ object HiveGoalFactory {
     def forTable(tbl: HiveTable, query: String): Goal = {
         null
     }
+    def forTableFromFile(name: String, tbl: HiveTable, fileName: String): Goal = {
+        null
+    }
 
 }
 

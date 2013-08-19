@@ -7,7 +7,7 @@ package com.klout.satisfaction
  *   XXX TODO handle special date/time logic
  *   XXX TODO handle variable types
  */
-case class Witness(variables: ParamMap) {
+case class Witness(val variables: ParamMap) {
 
     def apply(tuples: Set[Tuple2[String, String]]): Witness = {
 

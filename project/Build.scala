@@ -25,7 +25,7 @@ object ApplicationBuild extends Build {
       "willrogers",
       appVersion,
       path = file("apps/willrogers")
-  ).settings(CommonSettings: _*).dependsOn(common, executor)
+  ).settings(CommonSettings: _*).dependsOn(common, executor,samples)
 
   def CommonSettings = Dependencies ++ ScalariformSettings ++ Resolvers ++ Seq(
       scalacOptions ++= Seq(
@@ -75,10 +75,13 @@ object ApplicationBuild extends Build {
 	  ("mysql" % "mysql-connector-java" % "5.1.18" ),
     ("com.github.nscala-time" %% "nscala-time" % "0.4.2"),
 	("com.inadco.ecoadapters" % "ecoadapters" % "0.4.3-klout"),
+	("org.elasticsearch" % "elasticsearch-hadoop" % "0.0.1.klout").exclude("cascading" , "*"),
 	("com.klout.pipeline" % "platform-protos" % "0.91.6").exclude("com.googlecode.protobuf-java-format","protobuf-java-format"),
 	("com.googlecode.protobuf-java-format" % "protobuf-java-format" % "1.2"),
 
-      ("com.klout" %% "scoozie" % "0.3.7").exclude("org.apache.hive","*"),
+      ("com.klout" %% "scoozie" % "0.5.1" ),
+      ("com.klout.scoozie" %% "klout-scoozie-common" % "0.4" % "compile"),
+      ("com.klout.scoozie" %% "klout-scoozie-maxwell" % "0.4" % "compile"),
 	  ("org.specs2" %% "specs2" % "1.14" % "test")
   )
 

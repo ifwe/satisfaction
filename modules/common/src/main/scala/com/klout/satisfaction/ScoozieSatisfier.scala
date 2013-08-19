@@ -15,7 +15,7 @@ class ScoozieSatisfier(workflow: Workflow) extends Satisfier {
         val scoozieUrl = params.get(ScoozieUrlParam).get
 
         val oozieConfig = OozieConfig(scoozieUrl, params.raw)
-        RunWorkflow(workflow, appPath, oozieConfig)
+        RunWorkflow(workflow, appPath, oozieConfig, None)
     }
 
 }

@@ -17,6 +17,7 @@ class ParamMap(pairs: Set[ParamPair[_]]) {
     lazy val raw: Map[String, String] = pairs map (_.raw) toMap
 
     def withOverrides(overrides: ParamOverrides): ParamMap = {
+
         var newMap = this
 
         for {

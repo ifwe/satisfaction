@@ -38,4 +38,15 @@ object Projects extends Controller {
         }
     }
 
+    def main(argv: Array[String]): Unit = {
+        val allProjects = SyncApi.getProjects
+
+        println(" Number of projects = " + allProjects.names.size)
+        for (pname <- allProjects.names) {
+            val proj = SyncApi.getProject(pname)
+            println("project is " + proj.project)
+        }
+
+    }
+
 }

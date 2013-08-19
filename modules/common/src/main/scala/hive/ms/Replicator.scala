@@ -9,6 +9,9 @@ import org.apache.hadoop.conf.Configuration
 import java.util.HashMap
 import java.util.Map
 import org.apache.hadoop.hive.ql.metadata.HiveException
+import org.joda.time.DateTime
+import org.joda.time.format.DateTimeFormatter
+import org.joda.time.format.DateTimeFormat
 
 /**
  *  Replicator replicates one MetaStore into another
@@ -35,16 +38,20 @@ object Replicator {
 
         val fromTables = fromMs.getAllTables(dbName)
         fromTables.toList.map { tblName =>
-            try {
-                val fromTable = fromMs.getTable(dbName, tblName)
-                if (isHBase(fromTable)) {
-                    System.out.println(" Skipping HBase table " + fromTable.getTableName())
-                } else
-                    replicateTable(fromMs, toMs, fromTable)
+            if (tblName.compareTo("hb") > 0) {
+                try {
+                    val fromTable = fromMs.getTable(dbName, tblName)
+                    if (isHBase(fromTable)) {
+                        System.out.println(" Skipping HBase table " + fromTable.getTableName())
+                    } else
+                        replicateTable(fromMs, toMs, fromTable)
 
-            } catch {
-                case npe: NullPointerException =>
-                    System.out.println(" Corrupt table " + tblName + " ; Skipping ... ")
+                } catch {
+                    case npe: NullPointerException =>
+                        System.out.println(" Corrupt table " + tblName + " ; Skipping ... ")
+                }
+            } else {
+                println("Skipping already loaded table " + tblName)
             }
         }
     }
@@ -77,17 +84,27 @@ object Replicator {
                 try {
                     val partSpec = getPartitionSpecFromName(partName)
                     println(" PartSpec is " + partSpec)
-                    val oldPart = fromMs.getPartition(fromTable, partSpec, false)
-                    println(" Old part is  " + partSpec)
-                    println(" Old part path  is  " + oldPart.getPartitionPath())
 
-                    val newPart = toMs.getPartition(fromTable, getPartitionSpecFromName(partName), true, oldPart.getPartitionPath().toString(), true)
-                    println(" New Part is " + newPart)
-                    ///val newPart = toMs.createPartition(oldTbl, partSpec )
-                    toMs.setCurrentDatabase(fromTable.getDbName())
-                    toMs.alterPartition(fromTable.getTableName(), oldPart)
+                    val YYYYMMDD: DateTimeFormatter = DateTimeFormat.forPattern("YYYYMMdd")
+                    val dt = YYYYMMDD.parseDateTime(partSpec.get("dt"))
+                    val d20130801 = YYYYMMDD.parseDateTime("20130810")
+                    if (dt.isAfter(d20130801)) {
+                        val oldPart = fromMs.getPartition(fromTable, partSpec, false)
+                        println(" Old part is  " + partSpec)
+                        println(" Old part path  is  " + oldPart.getPartitionPath())
+
+                        val newPart = toMs.getPartition(fromTable, getPartitionSpecFromName(partName), true, oldPart.getPartitionPath().toString(), true)
+                        println(" New Part is " + newPart)
+                        ///val newPart = toMs.createPartition(oldTbl, partSpec )
+                        toMs.setCurrentDatabase(fromTable.getDbName())
+                        toMs.alterPartition(fromTable.getTableName(), oldPart)
+                    } else {
+                        println(" Skipping old partition " + partName);
+                    }
 
                 } catch {
+                    case ill: IllegalArgumentException =>
+                        println(" Something is wrong with partition " + partName)
                     case hve: HiveException =>
                         if (hve.getMessage().contains("new partition path should not be null or empty")) {
                             System.out.println("Skipping bogus partition " + partName)
@@ -136,7 +153,7 @@ object Replicator {
         //////fromMs.prunePartitionsByRetention("bi_insights", "actor_action", now,  92)
         ////fromMs.prunePartitionsByRetention("bi_insights", "ksuid_mapping", now,  30)
 
-        fromMs.cleanPartitionsForDb("bi_insights")
+        ////fromMs.cleanPartitionsForDb("bi_insights")
 
         replicateDatabase(fromMs.hive, toMs.hive, "bi_insights")
         ///val tbl = fromMs.getTableByName("bi_insights", "users_relationships")

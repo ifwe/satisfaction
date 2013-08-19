@@ -25,21 +25,28 @@ object Application extends Controller {
     }
 
     def allProjects = Action {
-        ///Ok( views.html.dbs( MetaStore.getDbs ) )
-        ///Ok( views.html.dbtabs( MetaStore.getDbs ) )
         ///Ok(views.html.projtabs(List("Maxwell", "Topic Thunder", "Insights", "Relevance")))
-        ///AsyncResult {
-        ///Api.getProjects() map { projects =>
-        val projects = SyncApi.getProjects
-        val projNames: Set[String] = projects.names
+        ///val projects = SyncApi.getProjects
+        ///val projNames: Set[String] = projects.names
+
+        val projNames = Set("Maxwell", "Topic Thunder", "Insights", "Bing")
         Ok(views.html.projtabs(projNames.toList))
     }
 
     def showProject(projName: String) = Action {
-        val project = SyncApi.getProject(projName)
-        val internalGoals = project.project.get.internalGoals.toList
-        val externalGoals = project.project.get.externalGoals.toList
+        ///val project = SyncApi.getProject(projName)
+        val project = getSimpleProject
+        //val internalGoals = project.project.get.internalGoals.toList
+        //val externalGoals = project.project.get.externalGoals.toList
+        val internalGoals = project.topLevelGoals.toList
+        val externalGoals = project.externalGoals.toList
+
         Ok(views.html.showproject(projName, internalGoals map (_.name), externalGoals map (_.name)))
+
+    }
+
+    def getSimpleProject(): Project = {
+        com.klout.satisfaction.projects.MaxwellProject.Project
     }
 
     def displayDataOutput(data: DataOutput): String = {
