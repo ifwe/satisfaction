@@ -10,34 +10,23 @@ import akka.pattern.{ ask, pipe }
 import akka.util.Timeout
 
 import scala.concurrent.duration._
-
 import play.api.libs.concurrent.Execution.Implicits._
 
-object `package` {
-
-    implicit val timeout = Timeout(5.seconds)
-
-    val system = ActorSystem("projects")
-
-    lazy val fs = {
-        val conf = new Configuration()
-        ///conf.set("fs.default.name", "jobs-aa-hnn:8020")
-        conf.set("fs.default.name", "jobs-dev-hnn:8020")
-        val fs = FileSystem.get(conf)
-        fs
-    }
-}
-
-class ProjectManager extends Actor {
+class ProjectManager extends Actor with ActorLogging {
 
     var currentProjects: Map[String, ActorRef] = Map.empty
 
     def receive = {
         case AddProject(path, name) =>
             val project = loadProjectFromJar(path, name)
-            currentProjects += name -> context.actorOf(Props(new ProjectOwner(project)))
+            val projectActor = context.actorOf(Props(new ProjectOwner(project)), name)
+            currentProjects += name -> projectActor
 
         case RemoveProject(name) =>
+            val removedProject = currentProjects get name
+            removedProject foreach { projectActor =>
+                context.stop(projectActor)
+            }
             currentProjects -= name
 
         case GetProject(name: String) =>
@@ -76,24 +65,3 @@ class ProjectManager extends Actor {
         project
     }
 }
-
-class ProjectOwner(project: Project) extends Actor {
-
-    def receive = {
-        case YourProject =>
-            sender ! MyProject(project)
-    }
-
-}
-
-case object YourProject
-case class MyProject(project: Project)
-
-case class AddProject(jarPath: String, name: String)
-case class RemoveProject(name: String)
-case class GetProject(name: String)
-case object GetProjects
-
-case class ProjectResult(project: Option[Project])
-case class ProjectList(names: Set[String])
-

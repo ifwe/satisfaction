@@ -7,6 +7,8 @@ case class Goal(
     overrides: Option[ParamOverrides],
     var dependencies: Set[(Witness => Witness, Goal)],
     evidence: Set[Evidence]) {
+  
+    lazy val uniqueId = java.util.UUID.randomUUID().toString
 
     def addDependency(goal: Goal): Goal = {
         dependencies += Tuple2(Goal.Identity, goal)
@@ -28,4 +30,3 @@ object Goal {
             new Witness(newParam)
     }
 }
-

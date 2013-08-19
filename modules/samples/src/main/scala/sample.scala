@@ -54,14 +54,8 @@ object `package` {
     val MaxwellPipeline = Project(
         name = "maxwell",
         topLevelGoals = Set(ScoreCalculation),
-        projectParameters = ParamMap(
-            Date -> new LocalDate("2013-01-01"),
-            NetworkAbbr -> "tw"
-        ),
-        witnessGenerator = WitnessGenerator {
-            case thing @ Some(_) => thing
-            case None            => None
-        }
+        projectParams = ParamMap.empty,
+        witnessGenerator = WitnessGenerator.daily("0 0 0 * * *", Date)
     )
 }
 
