@@ -7,9 +7,13 @@ package com.klout.satisfaction
  *   XXX TODO handle special date/time logic
  *   XXX TODO handle variable types
  */
-case class Witness(variables: ParamMap) {
+case class Witness(params: ParamMap) {
 
-    lazy val params: Map[String, String] = ???
+    lazy val variables: Map[String, String] = params.raw
 
-    def update[T](paramPair: ParamPair[T]): Witness = this copy (variables update paramPair)
+    def update[T](paramPair: ParamPair[T]): Witness = this copy (params + paramPair)
+}
+
+object Witness {
+    def apply(pairs: ParamPair[_]*): Witness = Witness(ParamMap(pairs: _*))
 }

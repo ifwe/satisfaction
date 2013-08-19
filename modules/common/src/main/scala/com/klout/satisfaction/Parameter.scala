@@ -1,7 +1,5 @@
 package com.klout.satisfaction
 
-// import scala.reflect.ClassTag
-
 abstract class Param[T: Paramable: Manifest](val name: String, val description: Option[String] = None) {
     def ->(t: T): ParamPair[T] = ParamPair(this, t)
 
@@ -13,8 +11,12 @@ case class ParamPair[T: Paramable](param: Param[T], value: T) {
     lazy val raw: (String, String) = param.name -> (Paramable toParam value)
 }
 
-class ParamMap(pairs: Set[ParamPair[_]]) {
+class ParamMap(private[satisfaction] val pairs: Set[ParamPair[_]]) {
     lazy val raw: Map[String, String] = pairs map (_.raw) toMap
+
+    def ++(other: ParamMap): ParamMap = {
+        (this /: other.pairs)(_ + _)
+    }
 
     def withOverrides(overrides: ParamOverrides): ParamMap = {
         var newMap = this
@@ -31,6 +33,9 @@ class ParamMap(pairs: Set[ParamPair[_]]) {
         newMap
     }
 
+    def ++(overrides: ParamOverrides): ParamMap =
+        withOverrides(overrides)
+
     def get[T](param: Param[T]): Option[T] =
         pairs find (_.param == param) map (_.asInstanceOf[T])
 
@@ -39,12 +44,20 @@ class ParamMap(pairs: Set[ParamPair[_]]) {
         new ParamMap(pairs + (param -> value))
     }
 
+    def +[T](param: Param[T], value: T): ParamMap =
+        update(param, value)
+
+    def +[T](pair: ParamPair[T]): ParamMap =
+        update(pair.param, pair.value)
+
     def update[T](pair: ParamPair[T]): ParamMap = update(pair.param, pair.value)
 
 }
 
 object ParamMap {
     def apply(pairs: ParamPair[_]*): ParamMap = new ParamMap(pairs.toSet)
+
+    val empty = new ParamMap(Set.empty)
 }
 
 trait Paramable[T] {
@@ -77,6 +90,8 @@ object ParamOverrides {
             Some(new ParamOverrides(newMap))
         }
     }
+
+    val empty = new ParamOverrides(Map.empty)
 
 }
 
