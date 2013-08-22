@@ -6,7 +6,7 @@ import akka.actor._
 import akka.pattern.{ ask, pipe }
 import akka.util.Timeout
 
-class ProjectOwner(project: Project) extends Actor with ActorLogging {
+class ProjectOwner(val project: Project) extends Actor with ActorLogging {
 
     def receive = {
         case YourProject =>
@@ -14,16 +14,19 @@ class ProjectOwner(project: Project) extends Actor with ActorLogging {
 
         case NewWitnessGenerated(witness) =>
             project.topLevelGoals foreach { goal =>
-                context.actorSelection("./${goal.uniqueId}") ! AreYouDone(witness)
+                println("Asking are you done for goal  " + goal.name + " with id " + goal.uniqueId)
+                ///context.actorSelection("./${goal.uniqueId}") ! AreYouDone(witness)
+                context.actorSelection(goal.uniqueId) ! AreYouDone(witness)
             }
     }
 
     override def preStart() {
         val goalRegistry = project.allGoals map { goal =>
+            println("Starting goal owner for Goal " + goal.name + " with id " + goal.uniqueId)
             goal -> context.actorOf(Props(new GoalOwner(goal, project.projectParams)), goal.uniqueId)
         } toMap
 
-        val witnessGenerator = context.actorOf(Props(new WitnessGeneratorActor(project.witnessGenerator)))
+        ///val witnessGenerator = context.actorOf(Props(new WitnessGeneratorActor(project.witnessGenerator)))
 
     }
 

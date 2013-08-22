@@ -18,6 +18,7 @@ case class IAmDone(witness: Witness, goal: Goal)
 
 case object SatisfyGoal
 case object GoalSatisfied
+case object GoalFailed
 
 case object MaybeGenerateWitness
 case class NewWitnessGenerated(witness: Witness)

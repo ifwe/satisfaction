@@ -14,33 +14,33 @@ case class HiveTable(
         ms.getVariablesForTable(dbName, tblName)
     }
 
-    def exists(params: ParamMap): Boolean = {
-        getDataInstance(params).isDefined
+    def exists(w: Witness): Boolean = {
+        getDataInstance(w).isDefined
     }
 
-    def getDataInstance(params: ParamMap): Option[DataInstance] = {
-        val partition = getPartition(params)
+    def getDataInstance(w: Witness): Option[DataInstance] = {
+        val partition = getPartition(w)
         Option(new HiveTablePartition(partition))
     }
 
     def getPartition(witness: Witness): Partition = {
 
-        ms.getPartition(dbName, tblName, witness.params)
+        ms.getPartition(dbName, tblName, witness.params.raw)
     }
-        /**
-    def getPartition(params: ParamMap): Partition = {
-        val tbl = ms.getTableByName(dbName, tblName)
-        val partCols = tbl.getPartCols()
-        //// Place logic in MetaStore ???
-        var partSpec = List[String]()
-        for (i <- 0 until partCols.size - 1) {
-            partSpec ++ params.raw.get(partCols.get(i).getName())
-        }
-        print(" PartSpec = " + partSpec)
-
-        ms.getPartition(dbName, tblName, partSpec)
->>>>>>> master
-    }
-    * **
-    */
+    /**
+     * def getPartition(params: ParamMap): Partition = {
+     * val tbl = ms.getTableByName(dbName, tblName)
+     * val partCols = tbl.getPartCols()
+     * //// Place logic in MetaStore ???
+     * var partSpec = List[String]()
+     * for (i <- 0 until partCols.size - 1) {
+     * partSpec ++ params.raw.get(partCols.get(i).getName())
+     * }
+     * print(" PartSpec = " + partSpec)
+     *
+     * ms.getPartition(dbName, tblName, partSpec)
+     * >>>>>>> master
+     * }
+     * **
+     */
 }

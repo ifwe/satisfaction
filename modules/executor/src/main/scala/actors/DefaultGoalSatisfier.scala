@@ -22,12 +22,13 @@ import play.api.libs.concurrent.Execution.Implicits._
  */
 class DefaultGoalSatisfier(
     evidence: Set[Evidence],
-    params: ParamMap) extends Actor with ActorLogging {
+    params: ParamMap,
+    witness: Witness) extends Actor with ActorLogging {
 
     var remainingEvidence: Set[Evidence] = evidence
 
     def receive = {
-        case SatisfyGoal =>
+        case Satisfy =>
             log.info(s"Asked to satisfy for params: $params")
             checkAgainLater()
 
@@ -37,7 +38,7 @@ class DefaultGoalSatisfier(
             } else {
                 log.info(s"Still waiting on evidence: $evidence")
                 remainingEvidence foreach { evidenceToCheck =>
-                    if (evidenceToCheck.exists(params)) {
+                    if (evidenceToCheck.exists(witness)) {
                         remainingEvidence - evidenceToCheck
                     }
                 }

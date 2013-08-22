@@ -1,6 +1,6 @@
 package com.klout.satisfaction
 
-abstract class Param[T: Paramable: Manifest](val name: String, val description: Option[String] = None) {
+class Param[T: Paramable: Manifest](val name: String, val description: Option[String] = None) {
     def ->(t: T): ParamPair[T] = ParamPair(this, t)
 
     override lazy val toString =

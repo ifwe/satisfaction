@@ -2,6 +2,6 @@ package com.klout.satisfaction
 
 trait Satisfier {
 
-    def satisfy(params: ParamMap)
+    def satisfy(param: ParamMap): Boolean
 
 }

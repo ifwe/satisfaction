@@ -4,11 +4,9 @@ package actors
 
 import org.apache.hadoop.fs._
 import org.apache.hadoop.conf._
-
 import akka.actor._
 import akka.pattern.{ ask, pipe }
 import akka.util.Timeout
-
 import scala.concurrent.duration._
 import play.api.libs.concurrent.Execution.Implicits._
 
@@ -19,15 +17,10 @@ class ProjectManager extends Actor with ActorLogging {
     def receive = {
         case AddProject(path, name) =>
             val project = loadProjectFromJar(path, name)
-            val projectActor = context.actorOf(Props(new ProjectOwner(project)), name)
-            currentProjects += name -> projectActor
+            addProject(project)
 
         case RemoveProject(name) =>
-            val removedProject = currentProjects get name
-            removedProject foreach { projectActor =>
-                context.stop(projectActor)
-            }
-            currentProjects -= name
+            removeProject(name)
 
         case GetProject(name: String) =>
             (currentProjects get name) match {
@@ -39,6 +32,19 @@ class ProjectManager extends Actor with ActorLogging {
 
         case GetProjects =>
             sender ! ProjectList(currentProjects.keys.toSet)
+    }
+
+    def addProject(project: Project) = {
+        val projectActor = context.actorOf(Props(new ProjectOwner(project)), project.name)
+        currentProjects += project.name -> projectActor
+    }
+
+    def removeProject(removedProjectName: String) = {
+        val removedProject = currentProjects get removedProjectName
+        removedProject foreach { projectActor =>
+            context.stop(projectActor)
+        }
+        currentProjects -= removedProjectName
     }
 
     def loadProjectFromJar(path: String, name: String): Project = {

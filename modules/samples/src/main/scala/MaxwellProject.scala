@@ -24,7 +24,7 @@ object MaxwellProject {
 
     def qualifyWitness(networkAbbr: String): (Witness => Witness) = {
         w: Witness =>
-            val newParam = w.variables.update(networkParam, networkAbbr)
+            val newParam = w.params.update(networkParam, networkAbbr)
             new Witness(newParam)
     }
     for (network <- featureNetworks) {

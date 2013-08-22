@@ -43,10 +43,12 @@ class GoalOwner(
             context.stop(satisfier)
 
         case AreYouDone(witness) =>
-            val params = getParams(witness)
-            if (goal.evidence forall (_.exists(params))) {
+            println(" Goal Owner Received Message  Are you done " + witness)
+            ///val params = getParams(witness)
+            if (goal.evidence forall (_.exists(witness))) {
                 sender ! IAmDone(witness, goal)
             } else {
+                println(" I am not all done ")
                 val witnessStatus = pendingWitnesses get witness match {
                     case None =>
                         val initalDependencies = goal.dependencies map {
@@ -66,7 +68,7 @@ class GoalOwner(
 
                 witnessStatus.remainingDeps foreach {
                     case (dependentWitness, goal) =>
-                        context.actorSelection("../${goal.uniqueId}") ! AreYouDone(dependentWitness)
+                        context.actorSelection(goal.uniqueId) ! AreYouDone(dependentWitness)
                 }
 
             }
@@ -91,12 +93,13 @@ class GoalOwner(
         val params = getParams(witness)
         val satisfierActor = goal.satisfier match {
             case Some(satisfier) => context.actorOf(Props(new GoalSatisfier(satisfier, params)))
-            case None            => context.actorOf(Props(new DefaultGoalSatisfier(goal.evidence, params)))
+            case None            => context.actorOf(Props(new DefaultGoalSatisfier(goal.evidence, params, witness)))
         }
         pendingSatisfiers += satisfierActor -> witness
         satisfierActor ! SatisfyGoal
     }
 
     def getParams(witness: Witness): ParamMap =
-        projectParams ++ witness.params ++ (goal.overrides getOrElse ParamOverrides.empty)
+        ///projectParams ++ witness.params ++ (goal.overrides getOrElse ParamOverrides.empty)
+        witness.params ++ (goal.overrides getOrElse ParamOverrides.empty)
 }

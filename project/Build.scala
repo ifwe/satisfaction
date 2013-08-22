@@ -82,7 +82,6 @@ object ApplicationBuild extends Build {
       ("com.klout" %% "scoozie" % "0.5.1" ),
       ("com.klout.scoozie" %% "klout-scoozie-common" % "0.4" % "compile"),
       ("com.klout.scoozie" %% "klout-scoozie-maxwell" % "0.4" % "compile"),
-	  ("org.specs2" %% "specs2" % "1.14" % "test")
 	  ("com.googlecode.protobuf-java-format" % "protobuf-java-format" % "1.2"),
 	  ("org.specs2" %% "specs2" % "1.14" % "test"),
     ("us.theatr" %% "akka-quartz" % "0.2.0")

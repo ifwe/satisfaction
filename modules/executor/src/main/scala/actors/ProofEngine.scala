@@ -1,0 +1,87 @@
+package com.klout.satisfaction
+package executor
+package actors
+
+import akka.actor.ActorSystem
+import akka.actor.Props
+import akka.pattern.ask
+import scala.concurrent.Await
+import akka.util.Timeout
+import scala.concurrent.duration._
+import akka.actor.ActorRef
+import akka.actor.EmptyLocalActorRef
+
+class ProofEngine {
+
+    val akkaSystem = ActorSystem("satisfaction")
+
+    /**
+     *  Blocking call to satisfy Goal
+     */
+    def satisfyGoalBlocking(goal: Goal, witness: Witness, duration: Duration): GoalStatus = {
+        val f = getProver(goal, witness) ? Satisfy
+        val response = Await.result(f, duration)
+        response match {
+            case s: Success =>
+                println(" Goal Was Satisfied")
+                s.goalStatus
+            case f: Failure =>
+                println(" Failure ")
+                f.goalStatus
+        }
+    }
+
+    def satisfyGoal(goal: Goal, witness: Witness): GoalStatus = {
+        satisfyGoalBlocking(goal, witness, timeout.duration)
+    }
+
+    implicit val timeout = Timeout(60 seconds)
+
+    /**
+     * def satisfyProject(project: Project, witness: Witness): Boolean = {
+     *
+     * val props = Props(new ProjectOwner(project))
+     * val actorRef = akkaSystem.actorOf(props, project.name)
+     *
+     * val future = actorRef ? new NewWitnessGenerated(witness)
+     *
+     * val result = Await.result(future, timeout.duration).asInstanceOf[Boolean]
+     *
+     * result
+     * }
+     *
+     */
+
+    def isSatisfied(goal: Goal, witness: Witness): Boolean = {
+        false
+    }
+
+    def getStatus(goal: Goal, witness: Witness): GoalStatus = {
+        val f = getProver(goal, witness) ? WhatsYourStatus
+
+        val response = Await.result(f, timeout.duration).asInstanceOf[StatusResponse]
+        response.goalStatus
+    }
+
+    def getProver(goal: Goal, witness: Witness): ActorRef = {
+        /// sic ....
+        //// Want to be able to access by actorFor
+        /**
+         * var actorFor = akkaSystem.actorFor( goal.getPredicateString(witness))
+         * actorFor match {
+         * case a : EmptyLocalActorRef =>
+         * akkaSystem.actorOf( Props( new PredicateProver( goal,witness)))
+         * case _ => actorFor
+         * }
+         * **
+         */
+        akkaSystem.actorOf(Props(new PredicateProver(goal, witness)), ProofEngine.getActorName(goal, witness))
+    }
+}
+object ProofEngine {
+
+    def getActorName(goal: Goal, witness: Witness): String = {
+        ///"akka://localhost/satisfaction/" + Goal.getPredicateString(goal, witness).replace("(", "/").replace(",", "/").replace(")", "").replace("=", "_eq_")
+        Goal.getPredicateString(goal, witness).replace("(", "_").replace(",", "___").replace(")", "").replace("=", "_eq_")
+    }
+}

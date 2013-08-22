@@ -7,7 +7,7 @@ case class Goal(
     overrides: Option[ParamOverrides],
     var dependencies: Set[(Witness => Witness, Goal)],
     evidence: Set[Evidence]) {
-  
+
     lazy val uniqueId = java.util.UUID.randomUUID().toString
 
     def addDependency(goal: Goal): Goal = {
@@ -19,6 +19,11 @@ case class Goal(
         dependencies += Tuple2(rule, goal)
         return this
     }
+
+    def getPredicateString(w: Witness): String = {
+        Goal.getPredicateString(this, w)
+    }
+
 }
 
 object Goal {
@@ -26,7 +31,11 @@ object Goal {
 
     def qualifyWitness(param: Param[String], paramValue: String): (Witness => Witness) = {
         w: Witness =>
-            val newParam = w.variables.update(param, paramValue)
+            val newParam = w.params.update(param, paramValue)
             new Witness(newParam)
+    }
+
+    def getPredicateString(goal: Goal, w: Witness): String = {
+        (goal.name + "(" + w.params.raw.mkString(",") + ")").replace(" ", "").replace("->", "=")
     }
 }

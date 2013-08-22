@@ -15,8 +15,8 @@ import hive.ms._
 
 class HiveSatisfier(query: String, ms: MetaStore) extends Satisfier {
 
-    def satisfy(params: ParamMap) = {
-
+    def satisfy(params: ParamMap): Boolean = {
+        true
     }
 
     def getVariablesForTable() = {
