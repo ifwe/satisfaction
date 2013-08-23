@@ -4,45 +4,38 @@ import scalaxb._
 import org.specs2.mutable._
 
 class HdfsPathSpec extends Specification {
+    val dtParam = new Variable("dt", classOf[String])
+    val networkParam = new Variable("networkAbbr", classOf[String])
 
     "VariablePath" should {
         "check if path exists " in {
-            val pathTempl = "hdfs://jobs-aa-hnn/data/hive/maxwell/actor_action/${dateString}/${networkAbbr}"
+            val pathTempl = "hdfs://jobs-dev-hnn/data/hive/maxwell/actor_action/${dateString}/${networkAbbr}"
 
             val varPath = new VariablePath(pathTempl)
 
-            object dtParam extends Param[String]("dateString")
-            object networkParam extends Param[String]("networkAbbr")
-
-            val witness = new Witness(ParamMap((dtParam -> "20130813"),
+            val witness = Witness(Substitution((dtParam -> "20130821"),
                 (networkParam -> "tw")))
             val pathExists = varPath.exists(witness)
             pathExists must be
         }
 
         "check if path doesnt exists " in {
-            val pathTempl = "hdfs://jobs-aa-hnn/data/hive/maxwell/actor_action/${dateString}/${networkAbbr}"
+            val pathTempl = "hdfs://jobs-dev-hnn/data/hive/maxwell/actor_action/${dateString}/${networkAbbr}"
 
             val varPath = new VariablePath(pathTempl)
 
-            object dtParam extends Param[String]("dateString")
-            object networkParam extends Param[String]("networkAbbr")
-
-            val witness = new Witness(ParamMap((dtParam -> "20150813"),
+            val witness = new Witness(Substitution((dtParam -> "20150813"),
                 (networkParam -> "horsehead")))
             val pathExists = varPath.exists(witness)
             pathExists must be.not
         }
 
         "check get DataInstance " in {
-            val pathTempl = "hdfs://jobs-aa-hnn/data/hive/maxwell/actor_action/${dateString}/${networkAbbr}"
+            val pathTempl = "hdfs://jobs-dev-hnn/data/hive/maxwell/actor_action/${dateString}/${networkAbbr}"
 
             val varPath = new VariablePath(pathTempl)
 
-            object dtParam extends Param[String]("dateString")
-            object networkParam extends Param[String]("networkAbbr")
-
-            val witness = new Witness(ParamMap((dtParam -> "20130813"),
+            val witness = new Witness(Substitution((dtParam -> "20130813"),
                 (networkParam -> "tw")))
 
             val pathInstance = varPath.getDataInstance(witness)
@@ -56,14 +49,11 @@ class HdfsPathSpec extends Specification {
         }
 
         "check cant get bogus DataInstance " in {
-            val pathTempl = "hdfs://jobs-aa-hnn/data/hive/maxwell/actor_action/${dateString}/${networkAbbr}"
+            val pathTempl = "hdfs://jobs-dev-hnn/data/hive/maxwell/actor_action/${dateString}/${networkAbbr}"
 
             val varPath = new VariablePath(pathTempl)
 
-            object dtParam extends Param[String]("dateString")
-            object networkParam extends Param[String]("networkAbbr")
-
-            val witness = new Witness(ParamMap((dtParam -> "20030813"),
+            val witness = new Witness(Substitution((dtParam -> "20030813"),
                 (networkParam -> "booger")))
 
             val pathInstance = varPath.getDataInstance(witness)

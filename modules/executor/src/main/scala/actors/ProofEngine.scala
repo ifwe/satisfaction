@@ -10,10 +10,12 @@ import akka.util.Timeout
 import scala.concurrent.duration._
 import akka.actor.ActorRef
 import akka.actor.EmptyLocalActorRef
+import scala.concurrent.Future
 
 class ProofEngine {
 
     val akkaSystem = ActorSystem("satisfaction")
+    val proverFactory = akkaSystem.actorOf(Props[ProverFactory], "ProverFactory")
 
     /**
      *  Blocking call to satisfy Goal
@@ -64,19 +66,25 @@ class ProofEngine {
     }
 
     def getProver(goal: Goal, witness: Witness): ActorRef = {
-        /// sic ....
-        //// Want to be able to access by actorFor
-        /**
-         * var actorFor = akkaSystem.actorFor( goal.getPredicateString(witness))
-         * actorFor match {
-         * case a : EmptyLocalActorRef =>
-         * akkaSystem.actorOf( Props( new PredicateProver( goal,witness)))
-         * case _ => actorFor
-         * }
-         * **
-         */
-        akkaSystem.actorOf(Props(new PredicateProver(goal, witness)), ProofEngine.getActorName(goal, witness))
+        ProverFactory.getProver(proverFactory, goal, witness)
     }
+
+    /// sic ....
+    //// Want to be able to access by actorFor
+    /**
+     * var actorFor = akkaSystem.actorFor( goal.getPredicateString(witness))
+     * actorFor match {
+     * case a : EmptyLocalActorRef =>
+     * akkaSystem.actorOf( Props( new PredicateProver( goal,witness)))
+     * case _ => actorFor
+     * }
+     * **
+     */
+
+    def stop() {
+        akkaSystem.shutdown
+    }
+
 }
 object ProofEngine {
 
@@ -84,4 +92,5 @@ object ProofEngine {
         ///"akka://localhost/satisfaction/" + Goal.getPredicateString(goal, witness).replace("(", "/").replace(",", "/").replace(")", "").replace("=", "_eq_")
         Goal.getPredicateString(goal, witness).replace("(", "_").replace(",", "___").replace(")", "").replace("=", "_eq_")
     }
+
 }

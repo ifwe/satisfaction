@@ -1,14 +1,16 @@
 package com.klout.satisfaction
 
+import collection._
+
 case class Goal(
     name: String,
     satisfier: Option[Satisfier],
-    variables: Set[Param[_]] = Set.empty,
-    overrides: Option[ParamOverrides],
-    var dependencies: Set[(Witness => Witness, Goal)],
-    evidence: Set[Evidence]) {
+    variables: Set[Variable[_]] = Set.empty,
+    overrides: Option[Substitution] = None,
+    var dependencies: Set[(Witness => Witness, Goal)] = Set[(Witness => Witness, Goal)](),
+    evidence: Set[Evidence] = Set.empty) {
 
-    lazy val uniqueId = java.util.UUID.randomUUID().toString
+    ///lazy val uniqueId = java.util.UUID.randomUUID().toString
 
     def addDependency(goal: Goal): Goal = {
         dependencies += Tuple2(Goal.Identity, goal)
@@ -29,13 +31,13 @@ case class Goal(
 object Goal {
     val Identity: (Witness => Witness) = { w: Witness => w }
 
-    def qualifyWitness(param: Param[String], paramValue: String): (Witness => Witness) = {
+    def qualifyWitness(param: Variable[String], paramValue: String): (Witness => Witness) = {
         w: Witness =>
-            val newParam = w.params.update(param, paramValue)
+            val newParam = w.substitution.update(param, paramValue)
             new Witness(newParam)
     }
 
     def getPredicateString(goal: Goal, w: Witness): String = {
-        (goal.name + "(" + w.params.raw.mkString(",") + ")").replace(" ", "").replace("->", "=")
+        (goal.name + "(" + w.substitution.raw.mkString(",") + ")").replace(" ", "").replace("->", "=")
     }
 }

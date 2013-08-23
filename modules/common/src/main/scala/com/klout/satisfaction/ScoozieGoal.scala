@@ -7,7 +7,7 @@ import com.klout.scoozie.runner._
 object ScoozieGoal {
 
     def apply(workflow: Workflow,
-              overrides: Option[ParamOverrides],
+              overrides: Option[Substitution],
               outputs: Set[DataOutput]): Goal = {
 
         val name = "ScoozieGoal :: " + workflow.name

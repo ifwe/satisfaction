@@ -3,8 +3,7 @@ package com.klout.satisfaction
 case class Project(
     name: String,
     topLevelGoals: Set[Goal],
-    projectParams: ParamMap,
-    witnessGenerator: WitnessGenerator) {
+    projectParams: Substitution) {
 
     lazy val allGoals: Set[Goal] = {
         def allGoals0(toCheck: List[Goal], accum: Set[Goal]): Set[Goal] = {

@@ -12,6 +12,7 @@ import com.klout.klout_scoozie.common.Network
 object MaxwellProject {
     object dateParam extends Param[String]("dt")
     object networkParam extends Param[String]("network_abbr")
+    object serviceIDParam extends Param[Int]("service_id")
 
     val calcScore = ScoozieGoal(
         workflow = ScoreCalculation.CalcScore,
@@ -45,7 +46,11 @@ object MaxwellProject {
                     "Klout Fact Content",
                     HiveTable("bi_maxwell", "actor_action"),
                     "fact_content_kl.hql")
-                kloutAA.addDependency(WaitForKSUIDMappingGoal)
+                kloutAA.addWitnessRule({ w: Witness =>
+                    val newParam = w.params.update(serviceIDParam, networkName.featureGroup);
+                    new Witness(newParam)
+                },
+                    WaitForKSUIDMappingGoal)
             case _ =>
                 val actorAction: Goal = HiveGoalFactory.forTableFromFile(
                     networkName.networkFull + " Fact Content",

@@ -10,6 +10,8 @@ import akka.actor.Props
 import akka.pattern.ask
 import scala.concurrent.Await
 import scala.concurrent.Future
+import scala.collection._
+import scala.concurrent.duration._
 
 //// Satisfy the current goal for the specified witness
 case class Satisfy(forceSatisfy: Boolean)
@@ -39,12 +41,12 @@ case class InvalidRequest(goalStatus: GoalStatus)
  *
  *  XXX Handle ActorNaming -- Why is namespace different
  */
-class PredicateProver(val goal: Goal, val witness: Witness) extends Actor with ActorLogging {
+class PredicateProver(val goal: Goal, val witness: Witness, val proverFactory: ActorRef) extends Actor with ActorLogging {
 
-    val dependencies: scala.collection.mutable.Map[String, ActorRef] = scala.collection.mutable.Map[String, ActorRef]()
+    val dependencies: mutable.Map[String, ActorRef] = scala.collection.mutable.Map[String, ActorRef]()
     var jobRunner: ActorRef = null
     val status: GoalStatus = new GoalStatus(goal, witness)
-    var asker: ActorRef = null
+    var listenerList: Set[ActorRef] = mutable.Set[ActorRef]()
 
     def receive = {
         /// Messages which can be sent from parents 
@@ -55,25 +57,21 @@ class PredicateProver(val goal: Goal, val witness: Witness) extends Actor with A
                 status.state = GoalState.AlreadySatisfied
                 sender ! Success(status)
             } else {
-                asker = sender
+                listenerList += sender
                 if (status.state != GoalState.Unstarted) {
                     sender ! InvalidRequest(status)
-                }
-                /// Go through our dependencies, and ask them to
-                /// satify
-                if (dependencies.size > 0) {
-                    dependencies.foreach {
-                        case (pred, actor) =>
-                            actor ! Satisfy
-                    }
-                    status.state = GoalState.WaitingOnDependencies
                 } else {
-                    //// Send yourself an empty message 
-
-                    ////system.actorFor(goal.getPredicateString(witness)) ! Success
-                    runLocalJob()
-                    ///context.self ! Success
-
+                    /// Go through our dependencies, and ask them to
+                    /// satify
+                    if (dependencies.size > 0) {
+                        dependencies.foreach {
+                            case (pred, actor) =>
+                                actor ! Satisfy
+                        }
+                        status.state = GoalState.WaitingOnDependencies
+                    } else {
+                        runLocalJob()
+                    }
                 }
             }
 
@@ -102,7 +100,7 @@ class PredicateProver(val goal: Goal, val witness: Witness) extends Actor with A
             println("Failure in our Chidren")
             status.addChildStatus(failedStatus)
             status.state = GoalState.DepFailed
-            asker ! Failure(status)
+            publishFailure
         //// Add a flag to see if we want to 
         //// abort sibling jobs which may be running 
         case Success(depStatus) =>
@@ -116,58 +114,67 @@ class PredicateProver(val goal: Goal, val witness: Witness) extends Actor with A
         case GoalSatisfied =>
             log.info(" Received Goal Satisfied, send to our parent  ")
             status.state = GoalState.Success
-            ///context.parent ! Success(status)
-            asker ! Success(status)
+            publishSuccess
         case GoalFailed =>
             log.info(" Received Goal Failed, send to our parent  ")
             status.state = GoalState.Failed
-            ///context.parent ! Success(status)
-            asker ! Failure(status)
+            publishFailure
 
         case InvalidRequest =>
     }
 
-    def runLocalJob() {
-        status.state = GoalState.SatifyingSelf
-        goal.satisfier match {
-            case Some(satisfier) =>
-                val jobRunActor = Props(new GoalSatisfier(satisfier, getParamMap))
-                this.jobRunner = context.system.actorOf((jobRunActor), "Satisfier_" + goal.name)
-                jobRunner ! Satisfy
-            case None =>
-                //// XXX Refactor names 
-                val jobRunActor = Props(new DefaultGoalSatisfier(goal.evidence, getParamMap, witness))
-                this.jobRunner = context.system.actorOf(jobRunActor)
-                jobRunner ! Satisfy
+    def publishSuccess = {
+        ////proverFactory ! Success(status)
+
+        ///val f = proverFactory ? GetListeners(goal, witness)
+        ///val response = Await.result(f, Duration(30, SECONDS))
+        ///response.asInstanceOf[Set[ActorRef]].foreach { lref =>
+        ///lref ! Success(status)
+        ///}
+        listenerList.foreach{ actor: ActorRef =>
+            actor ! Success(status)
+        }
+    }
+    def publishFailure = {
+        listenerList.foreach{ actor: ActorRef =>
+            actor ! Failure(status)
         }
     }
 
-    def getParamMap: ParamMap = {
-        witness.params
+    def runLocalJob() {
+        if (status.state != GoalState.SatifyingSelf) {
+            status.state = GoalState.SatifyingSelf
+            goal.satisfier match {
+                case Some(satisfier) =>
+                    val jobRunActor = Props(new JobRunner(satisfier, getSubstitution))
+                    this.jobRunner = context.system.actorOf((jobRunActor), "Satisfier_" + ProofEngine.getActorName(goal, witness))
+                    jobRunner ! Satisfy
+                case None =>
+                    //// XXX Refactor names 
+                    val jobRunActor = Props(new DefaultGoalSatisfier(
+                        immutable.Set(goal.evidence.toSeq: _*), getSubstitution, witness))
+                    this.jobRunner = context.system.actorOf(jobRunActor)
+                    jobRunner ! Satisfy
+            }
+        }
+    }
+
+    def getSubstitution: Substitution = {
+        witness.substitution
     }
 
     override def preStart() = {
 
         //// Create actors for all the sub actors, recursively
-        goal.dependencies.foreach{
-            case (wmap: (Witness => Witness), subGoal: Goal) =>
-                //// Generate different witness, based on the mapping function
-                val newWitness = wmap(witness)
-                val depPredicate = subGoal.getPredicateString(newWitness)
-                ///val checkActor = context.system.actorFor(depPredicate)
-                ///if (checkActor == null) {
-                if (true) {
-                    val depProps = Props(new PredicateProver(subGoal, newWitness))
-                    //// XXX Figure out actor name 
-                    ///val depProverRef = context.system.actorOf(depProps, ProofEngine.getActorName(subGoal, newWitness))
-                    val actorPath = context.self.path / ProofEngine.getActorName(subGoal, newWitness)
-                    log.info(" Creating child actor with path " + actorPath + " :: " + actorPath.name)
-                    val depProverRef = context.system.actorOf(depProps, actorPath.name)
+        if (goal.dependencies != null) {
+            goal.dependencies.foreach{
+                case (wmap: (Witness => Witness), subGoal: Goal) =>
+                    //// Generate different witness, based on the mapping function
+                    val newWitness = wmap(witness)
+                    val depPredicate = subGoal.getPredicateString(newWitness)
+                    val depProverRef = ProverFactory.getProver(proverFactory, subGoal, newWitness)
                     dependencies += (depPredicate -> depProverRef)
-                } else {
-                    ///dependencies += (depPredicate -> checkActor)
-                    false
-                }
+            }
         }
 
     }

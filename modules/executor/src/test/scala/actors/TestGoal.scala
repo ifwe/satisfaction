@@ -4,7 +4,7 @@ package actors
 
 object TestGoal {
 
-    def apply(name: String, variables: Set[Param[_]]): Goal = {
+    def apply(name: String, variables: Set[Variable[_]]): Goal = {
 
         val satisfier = new MockSatisfier()
         val evidence = Set[Evidence](satisfier)
@@ -17,7 +17,7 @@ object TestGoal {
 
     }
 
-    def SlowGoal(name: String, variables: Set[Param[_]], progressCount: Int, sleepTime: Long): Goal = {
+    def SlowGoal(name: String, variables: Set[Variable[_]], progressCount: Int, sleepTime: Long): Goal = {
 
         val satisfier = new SlowSatisfier(progressCount, sleepTime)
         val evidence = Set[Evidence](satisfier)
@@ -30,7 +30,7 @@ object TestGoal {
 
     }
 
-    def FailedGoal(name: String, variables: Set[Param[_]], progressCount: Int, sleepTime: Long): Goal = {
+    def FailedGoal(name: String, variables: Set[Variable[_]], progressCount: Int, sleepTime: Long): Goal = {
 
         val satisfier = new SlowSatisfier(progressCount, sleepTime)
         satisfier.retCode = false

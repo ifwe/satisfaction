@@ -46,4 +46,27 @@ class SubstitutionSpec extends Specification {
         }
     }
 
+    "Witness creation" should {
+        "create witness from variables" in {
+
+            val dtVar = new Variable("dt", classOf[Int])
+            val netVar = new Variable("network_abbr", classOf[String])
+            val ass1 = VariableAssignment[Int](dtVar, 2323)
+            val ass2 = VariableAssignment[String](new Variable("network_abbr", classOf[String]), "twitter")
+            //val witness = Witness( VariableAssignment("network", "twitter"),
+            //VariableAssignment[Int]("service_id", 1) )
+            val witness = Witness(ass1, ass2)
+
+            val vars = witness.variables
+            println("Witness is  " + witness)
+
+            vars.foreach(s => println(" Var is " + s))
+
+            vars must contain(dtVar)
+            vars must contain(netVar)
+
+        }
+
+    }
+
 }

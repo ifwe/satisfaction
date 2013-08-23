@@ -1,6 +1,7 @@
 package com.klout.satisfaction
 
 import util.matching._
+import collection._
 /**
  *  Set of functions for dealing with properties
  */
@@ -23,9 +24,9 @@ object SubstitutionUtils {
 
     /**
      *  Either return the template string with all the vars returned, or the
-     *    vars which ar missing
+     *    vars which are missing
      */
-    def substituteVarsInString(templateStr: String, varMap: Map[String, String]): Either[Set[String], String] = {
+    def substituteVarsInString(templateStr: String, varMap: immutable.Map[String, String]): Either[Set[String], String] = {
         var substStr: String = templateStr
         varMap.foreach{
             case (k, v) =>

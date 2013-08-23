@@ -11,15 +11,17 @@ object ApplicationBuild extends Build {
       file("modules/common")
   ).settings(CommonSettings: _*).settings(version := appVersion)
 
-  val samples = Project(
-      "satisfaction-samples",
-      file("modules/samples")
-  ).settings(CommonSettings: _*).settings(version := appVersion).dependsOn(common)
 
   val executor = Project(
       "executor",
       file("modules/executor")
   ).settings(CommonSettings: _*).settings(version := appVersion).dependsOn(common)
+
+  val samples = Project(
+      "satisfaction-samples",
+      file("modules/samples")
+  ).settings(CommonSettings: _*).settings(version := appVersion).dependsOn(common, executor)
+
 
   val willrogers = play.Project(
       "willrogers",

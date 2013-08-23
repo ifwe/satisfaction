@@ -22,7 +22,7 @@ case class VariablePath(pathTemplate: String) extends DataOutput {
     }
 
     def getPathForWitness(witness: Witness): Option[Path] = {
-        var substPath = SubstitutionUtils.substituteVarsInString(pathTemplate, witness.params.raw)
+        var substPath = SubstitutionUtils.substituteVarsInString(pathTemplate, witness.substitution.raw)
         substPath match {
             case Left(missingVars) =>
                 println(" Missing vars " + missingVars.mkString(",") + " ; no Path for witness")

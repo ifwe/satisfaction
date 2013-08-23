@@ -2,7 +2,7 @@ package com.klout.satisfaction;
 package executor
 package actors
 
-import com.klout.satisfaction.Satisfier
+///import com.klout.satisfaction.Satisfier
 
 /**
  *   Test class for Satisfier..
@@ -13,7 +13,7 @@ class MockSatisfier extends Satisfier with Evidence {
 
     var retCode = true
 
-    def satisfy(params: ParamMap): Boolean = {
+    def satisfy(params: Substitution): Boolean = {
         println(" Satisfy for params " + params.raw.mkString(","))
         varMap ++= params.raw.keySet
         println("  Returning code " + retCode)
@@ -21,8 +21,8 @@ class MockSatisfier extends Satisfier with Evidence {
     }
 
     def exists(w: Witness): Boolean = {
-        val xist = w.variables.keys.forall(v => varMap.contains(v))
-        println(" Does the evidence exist for witness " + w.params.raw.mkString + " ???? " + xist)
+        val xist = w.substitution.raw.keys.forall(v => varMap.contains(v))
+        println(" Does the evidence exist for witness " + w.variables.mkString + " ???? " + xist)
         xist
     }
 

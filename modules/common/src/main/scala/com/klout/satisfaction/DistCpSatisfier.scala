@@ -5,7 +5,7 @@ import org.apache.hadoop.fs.Path
 class DistCpSatisfier(val src: VariablePath, val dest: VariablePath) extends Satisfier {
     val config = hive.ms.Config.config
 
-    def satisfy(params: ParamMap): Boolean = {
+    def satisfy(params: Substitution): Boolean = {
         try {
 
             val srcPath = src.getDataInstance(new Witness(params)).get.asInstanceOf[HdfsPath].path.toUri.toString

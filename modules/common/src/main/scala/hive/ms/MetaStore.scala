@@ -17,7 +17,7 @@ import org.joda.time._
 import org.joda.time.format.DateTimeFormatter
 import org.joda.time.format.DateTimeFormat
 import org.apache.hadoop.hive.metastore.api.FieldSchema
-import com.klout.satisfaction.Param
+import com.klout.satisfaction.Variable
 
 /**
  *  Scala Wrapper around Hive MetaStore object
@@ -332,18 +332,16 @@ class MetaStore(hvConfig: HiveConf) {
 
     }
 
-    class PartitionSpec(
-        name: String,
-        description: String) extends Param[String](name, Some(description))
-
-    def getVariablesForTable(db: String, tblName: String): Set[Param[_]] = {
+    def getVariablesForTable(db: String, tblName: String): Set[Variable[_]] = {
         val tbl = getTableByName(db, tblName)
         val partCols = tbl.getPartitionKeys().toList
         val vars = for (part <- partCols) yield {
+            //// XXX Interpret partition type from column type
+            //// Interpret "dt" as magical date type column
             val name = part.getName
             val typeName = part.getType
             val comment = part.getComment
-            val param = new PartitionSpec(name, comment)
+            val param = new Variable(name, classOf[String], Some(comment))
             param
         }
         vars.toSet

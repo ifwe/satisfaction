@@ -15,7 +15,7 @@ import hive.ms._
 
 class HiveSatisfier(query: String, ms: MetaStore) extends Satisfier {
 
-    def satisfy(params: ParamMap): Boolean = {
+    def satisfy(params: Substitution): Boolean = {
         true
     }
 

@@ -1,64 +1,94 @@
 package com.klout.satisfaction
 
-class Param[T: Paramable: Manifest](val name: String, val description: Option[String] = None) {
-    def ->(t: T): ParamPair[T] = ParamPair(this, t)
+import collection._
+
+class Variable[T](val name: String, val clazz: Class[T], val description: Option[String] = None) {
+    def ->(t: T): VariableAssignment[T] = VariableAssignment(this, t)
 
     override lazy val toString =
-        s"name=[$name], class=[${manifest[T].runtimeClass}], description=[${description getOrElse ""}]"
+        s"name=[$name], class=[$clazz], description=[${description getOrElse ""}]"
+}
+object Variable {
+    //// Assume it is a string type if not defined
+    def assign(name: String, description: String): Variable[String] = {
+        new Variable(name, classOf[String], Some(description))
+    }
+    def assign(name: String): Variable[String] = {
+        new Variable(name, classOf[String])
+    }
+
 }
 
-case class ParamPair[T: Paramable](param: Param[T], value: T) {
-    lazy val raw: (String, String) = param.name -> (Paramable toParam value)
+case class VariableAssignment[T](variable: Variable[T], value: T) {
+    lazy val raw: (String, String) = variable.name -> value.toString
+
+}
+object VariableAssignment {
+    def assign[T](name: String, value: T)(implicit m: Manifest[T]): VariableAssignment[T] = {
+        new VariableAssignment(new Variable[T](name, m.runtimeClass.asInstanceOf[Class[T]]), value)
+    }
+
+    def assign[T](name: String, value: T, desc: String)(implicit m: Manifest[T]): VariableAssignment[T] = {
+        new VariableAssignment(new Variable[T](name, m.runtimeClass.asInstanceOf[Class[T]], Some(desc)), value)
+    }
 }
 
-class ParamMap(private[satisfaction] val pairs: Set[ParamPair[_]]) {
-    lazy val raw: Map[String, String] = pairs map (_.raw) toMap
+class Substitution(
+    val assignments: Set[VariableAssignment[_]]) {
 
-    def ++(other: ParamMap): ParamMap = {
-        (this /: other.pairs)(_ + _)
+    lazy val raw: immutable.Map[String, String] = assignments map (_.raw) toMap
+
+    def ++(other: Substitution): Substitution = {
+        (this /: other.assignments)(_ + _)
     }
 
-    def withOverrides(overrides: ParamOverrides): ParamMap = {
+    /**
+     * def withOverrides(overrides: ParamOverrides): Substitution = {
+     *
+     * var newMap = this
+     *
+     * for {
+     * (param, rules) <- overrides.map
+     * currentValue <- newMap get param
+     * overrides <- rules get currentValue
+     * VariableAssignment(param, value) <- overrides
+     * } {
+     * newMap = this update (param, value)
+     * }
+     *
+     * newMap
+     * }
+     * **
+     */
 
-        var newMap = this
+    /**
+     * def ++(overrides: ParamOverrides): Substitution =
+     * withOverrides(overrides)
+     *
+     */
 
-        for {
-            (param, rules) <- overrides.map
-            currentValue <- newMap get param
-            overrides <- rules get currentValue
-            ParamPair(param, value) <- overrides
-        } {
-            newMap = this update (param, value)
-        }
+    def get[T](param: Variable[T]): Option[T] =
+        assignments find (_.variable == param) map (_.asInstanceOf[T])
 
-        newMap
+    def update[T](param: Variable[T], value: T): Substitution = {
+        val filtered = assignments filterNot (_.variable == param)
+        new Substitution(filtered + (param -> value))
     }
 
-    def ++(overrides: ParamOverrides): ParamMap =
-        withOverrides(overrides)
-
-    def get[T](param: Param[T]): Option[T] =
-        pairs find (_.param == param) map (_.asInstanceOf[T])
-
-    def update[T](param: Param[T], value: T): ParamMap = {
-        val filtered = pairs filterNot (_.param == param)
-        new ParamMap(pairs + (param -> value))
-    }
-
-    def +[T](param: Param[T], value: T): ParamMap =
+    def +[T](param: Variable[T], value: T): Substitution =
         update(param, value)
 
-    def +[T](pair: ParamPair[T]): ParamMap =
-        update(pair.param, pair.value)
+    def +[T](pair: VariableAssignment[T]): Substitution =
+        update(pair.variable, pair.value)
 
-    def update[T](pair: ParamPair[T]): ParamMap = update(pair.param, pair.value)
+    def update[T](pair: VariableAssignment[T]): Substitution = update(pair.variable, pair.value)
 
 }
 
-object ParamMap {
-    def apply(pairs: ParamPair[_]*): ParamMap = new ParamMap(pairs.toSet)
+object Substitution {
+    def apply(pairs: VariableAssignment[_]*): Substitution = new Substitution(pairs.toSet)
 
-    val empty = new ParamMap(Set.empty)
+    val empty = new Substitution(Set.empty)
 }
 
 trait Paramable[T] {
@@ -80,28 +110,3 @@ object Paramable {
     implicit val LocalDateParamable = Paramable[LocalDate](_ toString "yyyyMMdd")
 }
 
-class ParamOverrides(private[satisfaction] val map: Map[Param[_], Map[Any, Set[ParamPair[_]]]])
-
-object ParamOverrides {
-
-    def apply[T: Paramable](param: Param[T]) = new {
-        def set(t: (T, Set[ParamPair[_]])*): Option[ParamOverrides] = {
-            val newValue: Map[Any, Set[ParamPair[_]]] = t.toMap
-            val newMap: Map[Param[_], Map[Any, Set[ParamPair[_]]]] = Map(param -> newValue)
-            Some(new ParamOverrides(newMap))
-        }
-    }
-
-    val empty = new ParamOverrides(Map.empty)
-
-}
-
-object example {
-    object NetworkAbbr extends Param[String]("network_abbr")
-    object DoDistcp extends Param[Boolean]("doDistcp")
-
-    val overrides = ParamOverrides(NetworkAbbr) set (
-        "li" -> Set(DoDistcp -> true),
-        "tw" -> Set(DoDistcp -> false)
-    )
-}

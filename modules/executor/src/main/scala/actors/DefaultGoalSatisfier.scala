@@ -22,7 +22,7 @@ import play.api.libs.concurrent.Execution.Implicits._
  */
 class DefaultGoalSatisfier(
     evidence: Set[Evidence],
-    params: ParamMap,
+    params: Substitution,
     witness: Witness) extends Actor with ActorLogging {
 
     var remainingEvidence: Set[Evidence] = evidence

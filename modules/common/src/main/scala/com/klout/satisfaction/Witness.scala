@@ -4,16 +4,18 @@ package com.klout.satisfaction
  *  Specialized context class
  *   for Goals
  *
- *   XXX TODO handle special date/time logic
- *   XXX TODO handle variable types
  */
-case class Witness(params: ParamMap) {
+case class Witness(val substitution: Substitution) {
 
-    lazy val variables: Map[String, String] = params.raw
+    lazy val variables: Set[Variable[_]] = substitution.assignments.map(_.variable).toSet
 
-    def update[T](paramPair: ParamPair[T]): Witness = this copy (params + paramPair)
+    def update[T](assignment: VariableAssignment[T]): Witness = this copy (substitution + assignment)
 }
 
 object Witness {
-    def apply(pairs: ParamPair[_]*): Witness = Witness(ParamMap(pairs: _*))
+    def apply(pairs: VariableAssignment[_]*): Witness = Witness(Substitution(pairs: _*))
+
+    def apply(variables: Set[Variable[_]], substitution: Substitution): Witness = {
+        new Witness(new Substitution(substitution.assignments.filter(x => variables.contains(x.variable))))
+    }
 }

@@ -4,9 +4,16 @@ import hive.ms._
 import org.apache.hadoop.hive.ql.metadata._
 import collection.JavaConversions._
 
-case class HiveTable(
+/**
+ *   Represents a group of partitions
+ *   on a table, which might be
+ *   partitioned further by a different
+ *     column
+ */
+case class HiveTablePartitionGroup(
     dbName: String,
-    tblName: String) extends DataOutput {
+    tblName: String,
+    grouping: VariableAssignment[Any]) extends DataOutput {
 
     private val ms = hive.ms.MetaStore
 
@@ -19,14 +26,17 @@ case class HiveTable(
     }
 
     def getDataInstance(w: Witness): Option[DataInstance] = {
-        val partition = getPartition(w)
-        Option(new HiveTablePartition(partition))
+        ////val partition = getPartition(w)
+        ///Option(new HiveTablePartition(partition))
+        null
     }
 
-    def getPartition(witness: Witness): Partition = {
+    def getPartitions(witness: Witness): Set[Partition] = {
+        val partNames = ms.getPartitionNamesForTable(dbName, tblName)
 
-        /// XXX FIX ME
-        ///ms.getPartition(dbName, tblName, witness.substitution.raw)
+        ///ms.getPartition(dbName, tblName, partSpec)
+
+        ///ms.getPartition(dbName, tblName, witness.params.raw)
         null
     }
     /**

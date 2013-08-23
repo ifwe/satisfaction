@@ -20,4 +20,8 @@ class HiveTablePartition(
         new DateTime(part.getLastAccessTime() * 1000)
     }
 
+    def exists: Boolean = {
+        true
+    }
+
 }

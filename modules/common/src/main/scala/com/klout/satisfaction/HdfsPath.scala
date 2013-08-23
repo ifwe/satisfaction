@@ -22,4 +22,8 @@ case class HdfsPath(val path: Path) extends DataInstance {
         new DateTime(status.getModificationTime)
     }
 
+    def exists: Boolean = {
+        Hdfs.exists(path)
+    }
+
 }

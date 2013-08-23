@@ -14,7 +14,8 @@ import org.apache.hadoop.fs._
 
 object Api {
 
-    lazy val projectManager = system.actorOf(Props[ProjectManager])
+    ///lazy val projectManager = system.actorOf(Props[ProjectManager])
+    lazy val projectManager = system.actorFor(" Bogus")
 
     def addProject(jarPath: String, projectName: String) {
         projectManager ! AddProject(jarPath, projectName)
