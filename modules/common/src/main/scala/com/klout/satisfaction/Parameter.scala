@@ -2,7 +2,7 @@ package com.klout.satisfaction
 
 import collection._
 
-class Variable[T](val name: String, val clazz: Class[T], val description: Option[String] = None) {
+case class Variable[T](val name: String, val clazz: Class[T], val description: Option[String] = None) {
     def ->(t: T): VariableAssignment[T] = VariableAssignment(this, t)
 
     override lazy val toString =
@@ -10,10 +10,10 @@ class Variable[T](val name: String, val clazz: Class[T], val description: Option
 }
 object Variable {
     //// Assume it is a string type if not defined
-    def assign(name: String, description: String): Variable[String] = {
+    def apply(name: String, description: String): Variable[String] = {
         new Variable(name, classOf[String], Some(description))
     }
-    def assign(name: String): Variable[String] = {
+    def apply(name: String): Variable[String] = {
         new Variable(name, classOf[String])
     }
 
@@ -24,11 +24,11 @@ case class VariableAssignment[T](variable: Variable[T], value: T) {
 
 }
 object VariableAssignment {
-    def assign[T](name: String, value: T)(implicit m: Manifest[T]): VariableAssignment[T] = {
+    def apply[T](name: String, value: T)(implicit m: Manifest[T]): VariableAssignment[T] = {
         new VariableAssignment(new Variable[T](name, m.runtimeClass.asInstanceOf[Class[T]]), value)
     }
 
-    def assign[T](name: String, value: T, desc: String)(implicit m: Manifest[T]): VariableAssignment[T] = {
+    def apply[T](name: String, value: T, desc: String)(implicit m: Manifest[T]): VariableAssignment[T] = {
         new VariableAssignment(new Variable[T](name, m.runtimeClass.asInstanceOf[Class[T]], Some(desc)), value)
     }
 }
@@ -68,11 +68,15 @@ class Substitution(
      */
 
     def get[T](param: Variable[T]): Option[T] =
-        assignments find (_.variable == param) map (_.asInstanceOf[T])
+        assignments find (_.variable == param) map (_.value.asInstanceOf[T])
 
     def update[T](param: Variable[T], value: T): Substitution = {
         val filtered = assignments filterNot (_.variable == param)
         new Substitution(filtered + (param -> value))
+    }
+
+    def contains[T](variable: Variable[T]): Boolean = {
+        assignments.map(_.variable).contains(variable)
     }
 
     def +[T](param: Variable[T], value: T): Substitution =
@@ -88,7 +92,13 @@ class Substitution(
 object Substitution {
     def apply(pairs: VariableAssignment[_]*): Substitution = new Substitution(pairs.toSet)
 
+    def apply(properties: Map[String, String]): Substitution = {
+        val assignSet = properties collect { case (k, v) => new VariableAssignment[String](Variable[String](k, classOf[String]), v) }
+        new Substitution(assignSet.toSet)
+    }
+
     val empty = new Substitution(Set.empty)
+
 }
 
 trait Paramable[T] {

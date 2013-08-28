@@ -5,23 +5,59 @@ import hive.ms._
 import org.joda.time._
 
 class HiveTablePartition(
-    part: Partition) extends DataInstance {
+    part: Partition,
+    ms: MetaStore) extends DataInstance {
 
     def size: Long = {
-        MetaStore.getPartitionSize(part)
+        ms.getPartitionSize(part)
     }
 
     def created: DateTime = {
+        val createdMetaData = getMetaData("created")
+        createdMetaData match {
+            case Some(secCount) =>
+                msDateTime(secCount.toLong)
+            case None =>
+                getMetaData("transient_lastDdlTime") match {
+                    case Some(fallbackTime) => msDateTime(fallbackTime.toLong)
+                    case None               => null
+                }
+        }
+    }
 
-        new DateTime(MetaStore.getPartitionMetaData(part).get("created").get.toLong * 1000)
+    /// SIC ... is that OK ???
+    def lastAccessedTime: DateTime = lastModifiedTime
+
+    def lastModifiedTime: DateTime = {
+        val createdMetaData = getMetaData("last_modified_time")
+        println(" created MetaData is  " + createdMetaData)
+        createdMetaData match {
+            case Some(secCount) =>
+                msDateTime(secCount.toLong)
+            case None => null
+        }
+    }
+
+    def msDateTime(msLong: Long): DateTime = {
+        println(" MS LONG = " + msLong)
+        new DateTime(msLong * 1000)
     }
 
     def lastAccessed: DateTime = {
-        new DateTime(part.getLastAccessTime() * 1000)
+        msDateTime(part.getLastAccessTime)
     }
 
     def exists: Boolean = {
+        /// XXX 
         true
+    }
+
+    def lastModifiedBy: String = {
+        getMetaData("last_modified_by").getOrElse(null)
+    }
+
+    def getMetaData(key: String): Option[String] = {
+        ms.getPartitionMetaData(part).get(key)
     }
 
 }

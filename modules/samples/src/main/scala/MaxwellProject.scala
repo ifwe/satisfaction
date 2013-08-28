@@ -10,9 +10,8 @@ import com.klout.klout_scoozie.common.Networks
 import com.klout.klout_scoozie.common.Network
 
 object MaxwellProject {
-    object dateParam extends Param[String]("dt")
-    object networkParam extends Param[String]("network_abbr")
-    object serviceIDParam extends Param[Int]("service_id")
+    val networkAbbrVar = Variable[String]("network_abbr", classOf[String])
+    val serviceIdVar = Variable[Int]("service_id", classOf[Int])
 
     val calcScore = ScoozieGoal(
         workflow = ScoreCalculation.CalcScore,
@@ -23,13 +22,13 @@ object MaxwellProject {
         Set(Networks.Klout, Networks.Facebook, Networks.Twitter,
             Networks.LinkedIn, Networks.Foursquare, Networks.FacebookPages)
 
-    def qualifyWitness(networkAbbr: String): (Witness => Witness) = {
+    def qualifyByNetwork(networkAbbr: String): (Witness => Witness) = {
         w: Witness =>
-            val newParam = w.params.update(networkParam, networkAbbr)
-            new Witness(newParam)
+            w.update(VariableAssignment[String](networkAbbrVar, networkAbbr))
     }
     for (network <- featureNetworks) {
-        calcScore.addWitnessRule(qualifyWitness(network.networkAbbr), featureGenGoal(network))
+        println(s" Adding dependency on score with features ${network.networkAbbr} ")
+        calcScore.addWitnessRule(qualifyByNetwork(network.networkAbbr), featureGenGoal(network))
     }
 
     def featureGenGoal(networkName: Network): Goal = {
@@ -47,8 +46,7 @@ object MaxwellProject {
                     HiveTable("bi_maxwell", "actor_action"),
                     "fact_content_kl.hql")
                 kloutAA.addWitnessRule({ w: Witness =>
-                    val newParam = w.params.update(serviceIDParam, networkName.featureGroup);
-                    new Witness(newParam)
+                    w.update(VariableAssignment[Int](serviceIdVar, networkName.featureGroup))
                 },
                     WaitForKSUIDMappingGoal)
             case _ =>
@@ -66,7 +64,6 @@ object MaxwellProject {
 
     val Project = new Project("Maxwell Score",
         Set(calcScore),
-        ParamMap((dateParam -> "20130815")), //// sic
         null)
 
 }

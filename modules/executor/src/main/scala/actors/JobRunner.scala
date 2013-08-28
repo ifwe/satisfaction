@@ -30,17 +30,26 @@ class JobRunner(
 
             if (satisfierFuture == null) {
                 satisfierFuture = future {
-                    val outStream = getLoggingOutput
                     val currOut = Console.out
                     val currErr = Console.err
-                    Console.setOut(outStream)
-                    Console.setErr(outStream)
-                    val result = satisfier.satisfy(params)
-                    outStream.flush()
-                    outStream.close()
-                    Console.setOut(currOut)
-                    Console.setOut(currErr)
-                    result
+                    val outStream = getLoggingOutput
+                    try {
+                        Console.setOut(outStream)
+                        Console.setErr(outStream)
+                        satisfier.satisfy(params)
+                    } catch {
+                        case t: Throwable =>
+                            log.error(t, "Unexpected Error while running job")
+                            t.printStackTrace(currErr)
+                            t.printStackTrace(new java.io.PrintWriter(outStream))
+
+                            false
+                    } finally {
+                        outStream.flush()
+                        outStream.close()
+                        Console.setOut(currOut)
+                        Console.setOut(currErr)
+                    }
                 }
                 messageSender = sender
                 satisfierFuture onComplete {

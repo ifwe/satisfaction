@@ -44,6 +44,33 @@ class SubstitutionSpec extends Specification {
                     missingVars must contain("actorId")
             }
         }
+
+        "Read Property file" in {
+            val goodProps = SubstitutionUtils.readProperties("modules/common/src/test/resources/goodset.properties")
+
+            goodProps.keySet must contain("myProp")
+            goodProps.keySet must contain("theBigProp")
+
+            goodProps.get("myProp").get mustEqual "myVal"
+            goodProps.get("theBigProp").get mustEqual "12244"
+
+        }
+
+        "Subst vars in Property file" in {
+            val goodProps = SubstitutionUtils.readProperties("modules/common/src/test/resources/subst_var.properties")
+
+            goodProps.keySet must contain("nameNode")
+            goodProps.keySet must contain("dataRoot")
+            ///goodProps.keySet must contain("myTablePath")
+
+            println(" NameNode is " + goodProps.get("nameNode").get)
+            println(" DataRoot is " + goodProps.get("dataRoot").get)
+            ///println(" MyTablePath is " + goodProps.get("myTablePath").get)
+            //goodProps.get("myProp").get mustEqual "myVal"
+            //goodProps.get("theBigProp").get mustEqual "12244"
+
+        }
+
     }
 
     "Witness creation" should {
@@ -67,6 +94,29 @@ class SubstitutionSpec extends Specification {
 
         }
 
+        "create typed Variable assignments" in {
+            val intAss = VariableAssignment("IntProperty", 1)
+            intAss.variable.clazz mustEqual classOf[Int]
+            intAss.variable.name mustEqual "IntProperty"
+            intAss.value mustEqual 1
+
+            val boolAss = VariableAssignment("BooleanProperty", true)
+            boolAss.variable.clazz mustEqual classOf[Boolean]
+            boolAss.variable.name mustEqual "BooleanProperty"
+            boolAss.value mustEqual true
+
+        }
+
+        "Substituion should get and update" in {
+            val subst1 = Substitution(VariableAssignment("FirstProp", "FirstVal"),
+                VariableAssignment("NumericVal", 3.14159)
+            )
+            val checkLookup = subst1.get(Variable("FirstProp")).get
+            println(" Value is " + checkLookup)
+            checkLookup mustEqual "FirstVal"
+        }
+        
+        
     }
 
 }

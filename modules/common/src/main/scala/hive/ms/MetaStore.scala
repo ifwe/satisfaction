@@ -199,8 +199,10 @@ class MetaStore(hvConfig: HiveConf) {
     }
 
     def getPartition(db: String, tblName: String, partMap: Map[String, String]): Partition = {
-        val tbl = _hive.getTable(db, tblName)
-        _hive.getPartition(tbl, partMap, false)
+        this.synchronized({
+            val tbl = _hive.getTable(db, tblName)
+            _hive.getPartition(tbl, partMap, false)
+        })
     }
 
     def getPartition(db: String, tblName: String, partSpec: List[String]): Partition = {
@@ -341,8 +343,13 @@ class MetaStore(hvConfig: HiveConf) {
             val name = part.getName
             val typeName = part.getType
             val comment = part.getComment
-            val param = new Variable(name, classOf[String], Some(comment))
-            param
+            if (comment != null) {
+                val param = new Variable(name, classOf[String], Some(comment))
+                param
+            } else {
+                new Variable(name, classOf[String], None)
+
+            }
         }
         vars.toSet
     }

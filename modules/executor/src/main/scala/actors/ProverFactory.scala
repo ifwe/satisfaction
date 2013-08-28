@@ -64,10 +64,10 @@ class ProverFactory extends Actor with ActorLogging {
         case GetListeners(goal, witness) =>
             val actorName = ProofEngine.getActorName(goal, witness)
             sender ! listenerMap.get(actorName).get
-        case Failure(goalStatus) =>
-            publishMessageToListeners(goalStatus, new Failure(goalStatus))
-        case Success(goalStatus) =>
-            publishMessageToListeners(goalStatus, new Success(goalStatus))
+        case GoalFailure(goalStatus) =>
+            publishMessageToListeners(goalStatus, new GoalFailure(goalStatus))
+        case GoalSuccess(goalStatus) =>
+            publishMessageToListeners(goalStatus, new GoalSuccess(goalStatus))
 
     }
 

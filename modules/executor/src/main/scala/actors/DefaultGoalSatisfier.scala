@@ -15,6 +15,7 @@ import play.api.libs.concurrent.Execution.Implicits._
 
 /**
  * When there is no Satisfier configured for a Goal, we use this one.
+ *
  * It simply waits for all of the evidence to be completed.
  *
  * Implementation Note: It is MUCH better to check and schedule future checks

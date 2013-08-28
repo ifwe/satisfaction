@@ -20,8 +20,8 @@ object ScoozieGoal {
         new Goal(name,
             Some(satisfier),
             variables,
-            null, /// overrides
-            null, /// dependencies
+            overrides, /// overrides
+            Set.empty, /// dependencies
             evidence
         )
     }

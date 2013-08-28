@@ -15,20 +15,28 @@ class HiveTableSpec extends Specification {
         "provide variables" in {
             val actorAction = new HiveTable("bi_maxwell", "actor_action")
             val params = actorAction.variables
+            val dtVar = Variable[String]("dt", classOf[String])
             params.foreach(p =>
-                println(" Parameter is " + p.name)
+                println (" Parameter is " + p.name)
             )
+
+            params.size must_== 2
+            params must contain(Variable[String]("dt", classOf[String]))
+            params must contain(Variable[String]("network_abbr", classOf[String]))
         }
         "implements exists" in {
             val actorAction = new HiveTable("bi_maxwell", "actor_action")
             val witness = new Witness(new Substitution(Set((dtParam -> "20130812"),
                 (networkParam -> "tw"))))
 
-            if (actorAction.exists(witness)) {
+            val xist = actorAction.exists(witness)
+            if (xist) {
                 println("  Witness exists ")
             } else {
                 println(" Witness doesn't exist")
             }
+
+            xist must be
         }
         "ksuid_mapping exists" in {
             val ksuid_mapping = new HiveTable("bi_maxwell", "ksuid_mapping")
@@ -36,6 +44,15 @@ class HiveTableSpec extends Specification {
 
             val dataInstance = ksuid_mapping.getDataInstance(witness)
         }
+        "ksuid_mapping doesnt exists" in {
+            val ksuid_mapping = new HiveTable("bi_maxwell", "ksuid_mapping")
+            val witness = new Witness(new Substitution(Set((dtParam -> "20190821"), (featureGroup -> 1))))
+
+            val doesNotExist = ksuid_mapping.exists(witness)
+
+            (!doesNotExist) must be
+        }
+
     }
 
 }

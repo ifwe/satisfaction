@@ -3,6 +3,9 @@ package executor
 package actors
 
 import akka.actor.ActorSystem
+import scala.concurrent.Future
+import scala.concurrent.Future._
+import scala.concurrent._
 import akka.actor.Props
 import akka.pattern.ask
 import scala.concurrent.Await
@@ -11,6 +14,7 @@ import scala.concurrent.duration._
 import akka.actor.ActorRef
 import akka.actor.EmptyLocalActorRef
 import scala.concurrent.Future
+import ExecutionContext.Implicits.global
 
 class ProofEngine {
 
@@ -24,20 +28,32 @@ class ProofEngine {
         val f = getProver(goal, witness) ? Satisfy
         val response = Await.result(f, duration)
         response match {
-            case s: Success =>
+            case s: GoalSuccess =>
                 println(" Goal Was Satisfied")
                 s.goalStatus
-            case f: Failure =>
+            case f: GoalFailure =>
                 println(" Failure ")
                 f.goalStatus
         }
     }
 
-    def satisfyGoal(goal: Goal, witness: Witness): GoalStatus = {
-        satisfyGoalBlocking(goal, witness, timeout.duration)
+    def satisfyGoal(goal: Goal, witness: Witness): Future[GoalStatus] = {
+        future {
+            val f = getProver(goal, witness) ? Satisfy
+            val response = Await.result(f, Duration(6, HOURS))
+            response match {
+                case s: GoalSuccess =>
+                    println(" Goal Was Satisfied")
+                    s.goalStatus
+                case f: GoalFailure =>
+                    println(" Failure ")
+                    f.goalStatus
+            }
+        }
+
     }
 
-    implicit val timeout = Timeout(60 seconds)
+    implicit val timeout = Timeout(24 hours)
 
     /**
      * def satisfyProject(project: Project, witness: Witness): Boolean = {
@@ -55,9 +71,12 @@ class ProofEngine {
      */
 
     def isSatisfied(goal: Goal, witness: Witness): Boolean = {
-        false
+        getStatus(goal, witness).state == GoalState.AlreadySatisfied
     }
 
+    /**
+     *  Status should return immediately
+     */
     def getStatus(goal: Goal, witness: Witness): GoalStatus = {
         val f = getProver(goal, witness) ? WhatsYourStatus
 

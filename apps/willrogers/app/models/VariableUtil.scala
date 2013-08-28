@@ -1,0 +1,5 @@
+package models
+
+object VariableUtil {
+
+}

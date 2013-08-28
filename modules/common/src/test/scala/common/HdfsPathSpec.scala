@@ -4,7 +4,7 @@ import scalaxb._
 import org.specs2.mutable._
 
 class HdfsPathSpec extends Specification {
-    val dtParam = new Variable("dt", classOf[String])
+    val dtParam = new Variable("dateString", classOf[String])
     val networkParam = new Variable("networkAbbr", classOf[String])
 
     "VariablePath" should {

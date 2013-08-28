@@ -20,14 +20,20 @@ case class HiveTable(
 
     def getDataInstance(w: Witness): Option[DataInstance] = {
         val partition = getPartition(w)
-        Option(new HiveTablePartition(partition))
+        println(" partition is " + partition)
+        if (partition != null)
+            Option(new HiveTablePartition(partition, ms))
+        else
+            None
     }
 
     def getPartition(witness: Witness): Partition = {
-
-        /// XXX FIX ME
-        ///ms.getPartition(dbName, tblName, witness.substitution.raw)
-        null
+        try {
+            ms.getPartition(dbName, tblName, witness.substitution.raw)
+        } catch {
+            case e: NoSuchElementException =>
+                null
+        }
     }
     /**
      * def getPartition(params: ParamMap): Partition = {

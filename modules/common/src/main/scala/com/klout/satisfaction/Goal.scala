@@ -7,17 +7,19 @@ case class Goal(
     satisfier: Option[Satisfier],
     variables: Set[Variable[_]] = Set.empty,
     overrides: Option[Substitution] = None,
-    var dependencies: Set[(Witness => Witness, Goal)] = Set[(Witness => Witness, Goal)](),
+    var dependencies: Set[(Witness => Witness, Goal)] = Set.empty,
     evidence: Set[Evidence] = Set.empty) {
 
     ///lazy val uniqueId = java.util.UUID.randomUUID().toString
 
     def addDependency(goal: Goal): Goal = {
+        println(" Dependencies = " + dependencies)
         dependencies += Tuple2(Goal.Identity, goal)
         return this
     }
 
     def addWitnessRule(rule: (Witness => Witness), goal: Goal): Goal = {
+        println(" Dependencies = " + dependencies)
         dependencies += Tuple2(rule, goal)
         return this
     }

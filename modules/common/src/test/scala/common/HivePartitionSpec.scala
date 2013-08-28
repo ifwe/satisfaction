@@ -5,7 +5,7 @@ import org.specs2.mutable._
 
 class HivePartitionSpec extends Specification {
     val dtParam = new Variable("dt", classOf[String])
-    val networkParam = new Variable("networkAbbr", classOf[String])
+    val networkParam = new Variable("network_abbr", classOf[String])
 
     "HivePartition" should {
         "check if partition exists " in {
@@ -24,6 +24,7 @@ class HivePartitionSpec extends Specification {
             val witness = new Witness(Substitution((dtParam -> "20150813"),
                 (networkParam -> "horsehead")))
             val pathExists = hiveTbl.exists(witness)
+            println(" pathExists is " + pathExists)
             pathExists must be.not
         }
 
@@ -41,19 +42,23 @@ class HivePartitionSpec extends Specification {
             println(" Size is " + hive.ms.Hdfs.prettyPrintSize(pathInstance.get.size))
             println(" LastAccessed is " + pathInstance.get.lastAccessed)
             println(" Created is " + pathInstance.get.created)
+
+            val checkPart = pathInstance.get.asInstanceOf[HiveTablePartition]
+            println(" Last Modified Time is " + checkPart.lastModifiedTime)
+
         }
 
         "check cant get bogus DataInstance " in {
-            val pathTempl = "hdfs://jobs-aa-hnn/data/hive/maxwell/actor_action/${dateString}/${networkAbbr}"
 
-            val varPath = new VariablePath(pathTempl)
+            val hiveTbl = new HiveTable("bi_maxwell", "actor_action")
 
             val witness = new Witness(Substitution((dtParam -> "20030813"),
                 (networkParam -> "booger")))
 
-            val pathInstance = varPath.getDataInstance(witness)
+            val pathInstance = hiveTbl.getDataInstance(witness)
+            println(" Path instance = " + pathInstance)
 
-            pathInstance.isEmpty must be
+            pathInstance mustEqual None
         }
 
     }

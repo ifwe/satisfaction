@@ -39,7 +39,8 @@ object HiveParser {
         val depends = for (ent <- readEntities) yield {
             val part = ent.getPartition()
             println(" Partition is " + part.getCompleteName())
-            new HiveTablePartition(part)
+            ////new HiveTablePartition(part,ms)
+            new HiveTablePartition(part, null)
         }
         depends.toSet[DataInstance]
     }

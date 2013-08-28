@@ -25,9 +25,8 @@ case class WhatsYourStatus()
 
 ///  Respond with your currrent status
 case class StatusResponse(goalStatus: GoalStatus)
-case class JobFailed(goalStatus: GoalStatus)
-case class Success(goalStatus: GoalStatus)
-case class Failure(goalStatus: GoalStatus)
+case class GoalSuccess(goalStatus: GoalStatus)
+case class GoalFailure(goalStatus: GoalStatus)
 //// Message that the actor can't handle the current request at this time ..
 case class InvalidRequest(goalStatus: GoalStatus)
 
@@ -35,11 +34,9 @@ case class InvalidRequest(goalStatus: GoalStatus)
  *  Actor who's responsibility is to satisfy a goal
  *
  *
- *  XXX TODO Use event bus to handle multiple listeners for events
  *  XXX Handle case to see if fully satisfied ( dependencies are satisfied)
  *  XXX  and cases where we want to force completion
  *
- *  XXX Handle ActorNaming -- Why is namespace different
  */
 class PredicateProver(val goal: Goal, val witness: Witness, val proverFactory: ActorRef) extends Actor with ActorLogging {
 
@@ -53,9 +50,12 @@ class PredicateProver(val goal: Goal, val witness: Witness, val proverFactory: A
 
         case Satisfy =>
             /// Check to see if 
-            if (goal.evidence.forall(e => e.exists(witness))) {
+            if (goal.evidence != null &&
+                goal.evidence.size != 0 &&
+                goal.evidence.forall(e => e.exists(witness))) {
+                println(" Check Already satisfied ?? ")
                 status.state = GoalState.AlreadySatisfied
-                sender ! Success(status)
+                sender ! GoalSuccess(status)
             } else {
                 listenerList += sender
                 if (status.state != GoalState.Unstarted) {
@@ -91,11 +91,10 @@ class PredicateProver(val goal: Goal, val witness: Witness, val proverFactory: A
             })
             sender ! StatusResponse(currentStatus)
 
-        case Abort     =>
+        case Abort =>
 
         /// Messages which can be sent from children
-        case JobFailed =>
-        case Failure(failedStatus) =>
+        case GoalFailure(failedStatus) =>
             //// 
             println("Failure in our Chidren")
             status.addChildStatus(failedStatus)
@@ -103,7 +102,7 @@ class PredicateProver(val goal: Goal, val witness: Witness, val proverFactory: A
             publishFailure
         //// Add a flag to see if we want to 
         //// abort sibling jobs which may be running 
-        case Success(depStatus) =>
+        case GoalSuccess(depStatus) =>
             if (depStatus != null)
                 status.addChildStatus(depStatus)
             //// Determine if 
@@ -132,12 +131,12 @@ class PredicateProver(val goal: Goal, val witness: Witness, val proverFactory: A
         ///lref ! Success(status)
         ///}
         listenerList.foreach{ actor: ActorRef =>
-            actor ! Success(status)
+            actor ! GoalSuccess(status)
         }
     }
     def publishFailure = {
         listenerList.foreach{ actor: ActorRef =>
-            actor ! Failure(status)
+            actor ! GoalFailure(status)
         }
     }
 
