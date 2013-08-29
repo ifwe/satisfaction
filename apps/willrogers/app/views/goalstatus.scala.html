@@ -1,0 +1,29 @@
+@(projName : String,  goalName : String, goalStatus : com.klout.satisfaction.executor.actors.GoalStatus, logs : Option[String]  )
+
+@import helper._
+@import scala.collection.JavaConversions._
+@import com.klout.satisfaction._
+@import com.klout.satisfaction.executor._
+
+<meta http-equiv="refresh" content="5">
+
+@main( s"Goal Status Project $projName Goal $goalName " ) {
+    
+     <h1>Satisfaction !!!</h1>
+    <h1>Project @projName Goal @goalName </h1>
+    <h2> Status of goal is <blink>@goalStatus.state</blink
+    
+   @logs match  {
+      case Some(logFile) => {
+   	    <h3>Current Log Output</h3> 
+   	    <div>
+   	    @logFile
+   	    </div>
+  	   }
+   	 case None => {
+      <h3>No current log output</h3>
+     }	    
+   }
+   	  
+    
+}

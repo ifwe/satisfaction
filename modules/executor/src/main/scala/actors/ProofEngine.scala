@@ -88,6 +88,21 @@ class ProofEngine {
         ProverFactory.getProver(proverFactory, goal, witness)
     }
 
+    def getGoalsInProgress: Set[GoalStatus] = {
+        val activeActorsF = proverFactory ? GetActiveActors
+        println(" Active actors are " + activeActorsF)
+
+        val activeActors = Await.result(activeActorsF, timeout.duration).asInstanceOf[Set[ActorRef]]
+
+        /// Get a set of futures for every actor, and ask their status
+        val listOfRequests: Set[Future[StatusResponse]] = activeActors.map(ask(_, WhatsYourStatus).mapTo[StatusResponse])
+        val futureList = Future.sequence(listOfRequests)
+        val fMap = futureList.map(_.map(_.goalStatus))
+
+        ///Await.result( fMap, timeout.duration).asInstanceOf[Set[GoalStatus]
+        Await.result(fMap, timeout.duration)
+    }
+
     /// sic ....
     //// Want to be able to access by actorFor
     /**
@@ -105,7 +120,7 @@ class ProofEngine {
     }
 
 }
-object ProofEngine {
+object ProofEngine extends ProofEngine {
 
     def getActorName(goal: Goal, witness: Witness): String = {
         ///"akka://localhost/satisfaction/" + Goal.getPredicateString(goal, witness).replace("(", "/").replace(",", "/").replace(")", "").replace("=", "_eq_")

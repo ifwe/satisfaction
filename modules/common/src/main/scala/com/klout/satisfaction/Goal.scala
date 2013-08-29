@@ -3,10 +3,10 @@ package com.klout.satisfaction
 import collection._
 
 case class Goal(
-    name: String,
-    satisfier: Option[Satisfier],
-    variables: Set[Variable[_]] = Set.empty,
-    overrides: Option[Substitution] = None,
+    val name: String,
+    val satisfier: Option[Satisfier],
+    val variables: Set[Variable[_]] = Set.empty,
+    var overrides: Option[Substitution] = None,
     var dependencies: Set[(Witness => Witness, Goal)] = Set.empty,
     evidence: Set[Evidence] = Set.empty) {
 

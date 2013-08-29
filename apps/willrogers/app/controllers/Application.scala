@@ -33,22 +33,6 @@ object Application extends Controller {
         Ok(views.html.projtabs(projNames.toList))
     }
 
-    def showProject(projName: String) = Action {
-        ///val project = SyncApi.getProject(projName)
-        val project = getSimpleProject
-        //val internalGoals = project.project.get.internalGoals.toList
-        //val externalGoals = project.project.get.externalGoals.toList
-        val internalGoals = project.topLevelGoals.toList
-        val externalGoals = project.externalGoals.toList
-
-        Ok(views.html.showproject(projName, internalGoals map (_.name), externalGoals map (_.name)))
-
-    }
-
-    def getSimpleProject(): Project = {
-        com.klout.satisfaction.projects.MaxwellProject.Project
-    }
-
     def displayDataOutput(data: DataOutput): String = {
         data match {
             case tbl: HiveTable => "Table " + tbl.tblName

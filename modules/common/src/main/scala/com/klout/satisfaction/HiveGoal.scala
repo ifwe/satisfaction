@@ -1,5 +1,7 @@
 package com.klout.satisfaction
 
+import hive.ms.MetaStore
+
 /**
  *  Factory methods to
  */
@@ -18,8 +20,18 @@ object HiveGoalFactory {
     def forTable(tbl: HiveTable, query: String): Goal = {
         null
     }
-    def forTableFromFile(name: String, tbl: HiveTable, fileName: String): Goal = {
-        null
+    def forTableFromFile(goalName: String, tbl: HiveTable, fileName: String): Goal = {
+        val hiveSatisfier = new HiveSatisfier(fileName, MetaStore)
+        val tblVariables = MetaStore.getVariablesForTable(tbl.dbName, tbl.tblName)
+        val hiveGoal = new Goal(
+            name = goalName,
+            satisfier = Some(hiveSatisfier),
+            variables = tblVariables,
+            overrides = None,
+            dependencies = Set.empty,
+            Set(tbl))
+
+        hiveGoal
     }
 
 }

@@ -25,56 +25,61 @@ import com.klout.satisfaction.Witness
  */
 
 case class GetActor(goal: Goal, witness: Witness)
+case class GetActiveActors
 case class ReleaseActor(goal: Goal, witness: Witness)
 case class GetListeners(goal: Goal, witness: Witness)
 
 class ProverFactory extends Actor with ActorLogging {
-    val actorMap: mutable.Map[String, ActorRef] = mutable.Map()
-    val listenerMap: mutable.Map[String, mutable.Set[ActorRef]] = mutable.Map[String, mutable.Set[ActorRef]]()
+    val actorMap: mutable.Map[Tuple2[Goal, Witness], ActorRef] = mutable.Map()
+    val listenerMap: mutable.Map[Tuple2[Goal, Witness], mutable.Set[ActorRef]] = mutable.Map[Tuple2[Goal, Witness], mutable.Set[ActorRef]]()
 
     def receive = {
         case GetActor(goal, witness) =>
-            val actorName = ProofEngine.getActorName(goal, witness)
-            if (actorMap.contains(actorName)) {
-                log.info(" Someone already listening to " + actorName)
-                val listenerList = listenerMap.get(actorName).get
+            ///val actorTuple = ProofEngine.getactorTuple(goal, witness)
+            val actorTuple: Tuple2[Goal, Witness] = (goal, witness)
+            if (actorMap.contains(actorTuple)) {
+                val listenerList = listenerMap.get(actorTuple).get
                 if (!listenerList.contains(sender))
                     listenerList += sender
-                sender ! actorMap.get(actorName).get
+                sender ! actorMap.get(actorTuple).get
             } else {
-                val actorRef = context.system.actorOf(Props(new PredicateProver(goal, witness, context.self)), actorName)
-                log.info(" Created Actor with name " + actorName + " with path " + actorRef.path)
-                actorMap.put(actorName, actorRef)
+                val actorRef = context.system.actorOf(Props(new PredicateProver(goal, witness, context.self)),
+                    ProofEngine.getActorName(goal, witness))
+                actorMap.put(actorTuple, actorRef)
                 val listenerList = mutable.Set[ActorRef]()
                 listenerList += sender
-                listenerMap.put(actorName, listenerList)
+                listenerMap.put(actorTuple, listenerList)
                 sender ! actorRef
             }
         case ReleaseActor(goal, witness) =>
-            val actorName = ProofEngine.getActorName(goal, witness)
-            if (listenerMap.contains(actorName)) {
-                val listenerList = listenerMap.get(actorName).get
+            val actorTuple = (goal, witness)
+            if (listenerMap.contains(actorTuple)) {
+                val listenerList = listenerMap.get(actorTuple).get
                 listenerList.remove(sender)
                 if (listenerList.size == 0) {
-                    listenerMap.remove(actorName)
-                    val deadRef = actorMap.remove(actorName).get
+                    listenerMap.remove(actorTuple)
+                    val deadRef = actorMap.remove(actorTuple).get
                     context.stop(deadRef)
                 }
             }
         case GetListeners(goal, witness) =>
-            val actorName = ProofEngine.getActorName(goal, witness)
-            sender ! listenerMap.get(actorName).get
+            val actorTuple = (goal, witness)
+            sender ! listenerMap.get(actorTuple).get
         case GoalFailure(goalStatus) =>
             publishMessageToListeners(goalStatus, new GoalFailure(goalStatus))
         case GoalSuccess(goalStatus) =>
             publishMessageToListeners(goalStatus, new GoalSuccess(goalStatus))
+        case GetActiveActors =>
+            val activeActors = actorMap.values.toSet
+            println("Number of active actors is " + activeActors.size + " Map size  " + actorMap.size)
+            sender ! activeActors
 
     }
 
     def publishMessageToListeners(goalStatus: GoalStatus, message: Any) = {
-        val actorName = ProofEngine.getActorName(goalStatus.goal, goalStatus.witness)
-        log.info(" Publishing message " + message + " to all listeners of " + actorName)
-        listenerMap.get(actorName) match {
+        val actorTuple = (goalStatus.goal, goalStatus.witness)
+        log.info(" Publishing message " + message + " to all listeners of " + actorTuple)
+        listenerMap.get(actorTuple) match {
             case Some(listenerList) =>
                 listenerList.foreach { listenRef =>
                     log.info(" sending to listener " + listenRef)

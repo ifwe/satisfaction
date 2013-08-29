@@ -6,11 +6,11 @@ import com.klout.scoozie.runner._
 
 object ScoozieGoal {
 
-    def apply(workflow: Workflow,
-              overrides: Option[Substitution],
+    def apply(name: String,
+              workflow: Workflow,
+              overrides: Option[Substitution] = None,
               outputs: Set[DataOutput]): Goal = {
 
-        val name = "ScoozieGoal :: " + workflow.name
         val evidence: Set[Evidence] = outputs.toSet[Evidence]
         val satisfier = new ScoozieSatisfier(workflow)
         val variables = (for (data <- outputs) yield {
@@ -28,7 +28,8 @@ object ScoozieGoal {
 
     def apply(workflow: Workflow,
               outputs: Set[DataOutput]): Goal = {
-        apply(workflow, null, outputs)
+        apply("ScoozieGoal :: " + workflow.name, workflow, null, outputs)
+
     }
 
 }

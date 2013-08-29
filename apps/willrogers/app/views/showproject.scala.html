@@ -15,12 +15,11 @@
     <td>
     <h3>External Dependencies</h3>
     </td>
-    <td>Goal Graph</td></tr>
    <tr>
    <td>
     <ul>
       @goalList.map { goal =>
-     	 <li>@goal </li> 	  
+     	 <li><a href="satisfygoal/@projName/@goal" target="_blank">@goal </a> </li> 	  
       }
     </ul>
     </td>
@@ -32,7 +31,6 @@
     </ul>
     </td> 
      
-     @jsplumbgraph
     
     
     </tr>

@@ -46,7 +46,7 @@ class TestSampleProjectSpec extends Specification {
             workflow = WaitForKsUidMapping.Flow,
             Set(HiveTable("bi_maxwell", "ksuid_mapping")))
 
-        val witness = Witness((runDateVar -> "20130826"), MaxwellProject.serviceIdVar -> 1)
+        val witness = Witness((runDateVar -> "20130827"), MaxwellProject.serviceIdVar -> 1)
 
         Satisfaction.satisfyGoal(waitForKSUID, witness)
 

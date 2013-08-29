@@ -1,16 +1,15 @@
-@(projName : String,  goalName : String, varList : List[Variable[_]]  )
+@(projName : String,  goalName : String, varList : List[com.klout.satisfaction.Variable[_]]   )
 
 @import helper._
 @import scala.collection.JavaConversions._
 @import com.klout.satisfaction._
-@import com.klout.satisfaction.Variable
 
 
 
 @main( "Satisfy Goal " + goalName + " for Project " + projName ) {
     
     <h1>Satisfy Goal @goalName for Project @projName  </h1>
-<form method="POST" action="/satisfyGoal/@projName/@goalName">
+<form method="POST" action="/satisfygoal/@projName/@goalName">
   <table>  
    <tr><td><h3>Variables</h3></td>
     <td>
@@ -28,7 +27,7 @@
     <ul>
       @varList.map { varObj =>
       	 <li>
-      	 @helper.inputText(metadataForm("@varObj.name"))
+      	  <input type="text" name="@varObj.name" />
       	 </li>
       } 
     </ul>
@@ -43,6 +42,8 @@
     
     </tr>
  </table>    
+   <input type="text" name="network_abbr">tw</input>
+  <input type="submit"><bold><blink>Satisfy !!!</blink></bold></input>
  </form>
     
 }

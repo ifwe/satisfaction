@@ -1,5 +1,11 @@
 package models
 
-object VariableUtil {
+import com.klout.satisfaction._
 
+object ProjectUtil {
+
+    /// place utility code here ..
+    def blah = {
+
+    }
 }

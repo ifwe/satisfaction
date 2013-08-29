@@ -26,15 +26,22 @@ object MaxwellProject {
         w: Witness =>
             w.update(VariableAssignment[String](networkAbbrVar, networkAbbr))
     }
-    for (network <- featureNetworks) {
-        println(s" Adding dependency on score with features ${network.networkAbbr} ")
-        calcScore.addWitnessRule(qualifyByNetwork(network.networkAbbr), featureGenGoal(network))
+
+    def getTopLevel: Goal = {
+        for (network <- featureNetworks) {
+            println(s" Adding dependency on score with features ${network.networkAbbr} ")
+            calcScore.addWitnessRule(qualifyByNetwork(network.networkAbbr), featureGenGoal(network))
+        }
+
+        return calcScore
     }
 
-    def featureGenGoal(networkName: Network): Goal = {
-        val featureGen = ScoozieGoal(workflow = FeatureGeneration.Finalize,
+    def featureGenGoal(network: Network): Goal = {
+        val featureGen = ScoozieGoal(name = s" Feature Generation for ${network.networkFull}",
+            workflow = FeatureGeneration.Finalize,
+            overrides = None,
             Set(HiveTable("bi_maxwell", "hb_feature_import")))
-        ///featureGen.addDependency(factContentGoal(networkName))
+        featureGen.addDependency(factContentGoal(network))
         featureGen
     }
 
@@ -63,7 +70,7 @@ object MaxwellProject {
         Set(HiveTable("bi_maxwell", "ksuid_mapping")))
 
     val Project = new Project("Maxwell Score",
-        Set(calcScore),
+        Set(getTopLevel),
         null)
 
 }

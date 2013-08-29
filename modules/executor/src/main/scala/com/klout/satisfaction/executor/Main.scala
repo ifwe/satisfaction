@@ -22,9 +22,16 @@ object Satisfaction {
 
         val fStatus = engine.satisfyGoal(goal, witness)
 
-        Iterator.continually(Await.ready(fStatus, Duration.Inf)).takeWhile(!_.isCompleted).foreach { f =>
+        println(" before continually")
+        Iterator.continually(Await.ready(fStatus, Duration(5, SECONDS))).takeWhile(!_.isCompleted).foreach { f =>
             println("Waiting on Future" + f)
+            val statuses = engine.getGoalsInProgress
+            println(statuses.size + " goals are in progress ")
+            statuses.foreach { status: GoalStatus =>
+                println("   Status for Goal " + status.goal.name + " for Witness " + status.witness + " is " + status.state)
+            }
         }
+        println(" after continually")
 
         fStatus.value match {
             case Some(something) => something match {
@@ -47,6 +54,11 @@ object Satisfaction {
         println(" before continually")
         Iterator.continually(Thread.sleep(2000)).foreach { _ =>
             println("BLAH ")
+            val statuses = engine.getGoalsInProgress
+            println(statuses.size + " goals are in progress ")
+            statuses.foreach { status: GoalStatus =>
+                println("   Status for Goal " + status.goal.name + " for Witness " + status.witness + " is " + status.state)
+            }
         }
 
         println(" After continually")
