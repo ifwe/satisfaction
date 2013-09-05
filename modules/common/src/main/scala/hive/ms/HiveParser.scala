@@ -40,7 +40,7 @@ object HiveParser {
             val part = ent.getPartition()
             println(" Partition is " + part.getCompleteName())
             ////new HiveTablePartition(part,ms)
-            new HiveTablePartition(part, null)
+            new HiveTablePartition(part)
         }
         depends.toSet[DataInstance]
     }

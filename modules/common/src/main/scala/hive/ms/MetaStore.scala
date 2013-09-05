@@ -68,6 +68,10 @@ class MetaStore(hvConfig: HiveConf) {
         this.synchronized({ _hive.getPartitions(tbl).toList })
     }
 
+    def getPartitionSetForTable(tbl: Table, partialVars: Map[String, String]) = {
+        this.synchronized({ _hive.getPartitions(tbl, partialVars).toList })
+    }
+
     def getPartitionSize(part: Partition): Long = {
         this.synchronized({
             val pMd = getPartitionMetaData(part)

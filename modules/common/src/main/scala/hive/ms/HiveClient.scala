@@ -1,14 +1,16 @@
 package hive.ms
 
 import java.sql._
+import org.apache.hive.jdbc._
 /**
  * Executes jobs locally
  */
 class HiveClient(val jdbcDriverUrl: String) {
-    val driverClass = Class.forName("org.apache.hive.jdbc.HiveDriver")
+    val driverClass = Class.forName("org.apache.hadoop.hive.jdbc.HiveDriver")
     val connection = DriverManager.getConnection(jdbcDriverUrl)
 
     def useDatabase(dbName: String) {
+        println(" Using database " + dbName)
         val statement = connection.createStatement()
         statement.execute("use " + dbName)
     }

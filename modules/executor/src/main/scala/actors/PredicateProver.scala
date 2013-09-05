@@ -12,6 +12,7 @@ import scala.concurrent.Await
 import scala.concurrent.Future
 import scala.collection._
 import scala.concurrent.duration._
+import scala.concurrent.ExecutionContext
 
 //// Satisfy the current goal for the specified witness
 case class Satisfy(forceSatisfy: Boolean)
@@ -44,6 +45,7 @@ class PredicateProver(val goal: Goal, val witness: Witness, val proverFactory: A
     var jobRunner: ActorRef = null
     val status: GoalStatus = new GoalStatus(goal, witness)
     var listenerList: Set[ActorRef] = mutable.Set[ActorRef]()
+    implicit val ec: ExecutionContext = ExecutionContext.global /// ???
 
     def receive = {
         /// Messages which can be sent from parents 
@@ -84,11 +86,26 @@ class PredicateProver(val goal: Goal, val witness: Witness, val proverFactory: A
             /// Go through and ask all our 
             val futureSet = dependencies.map {
                 case (pred, actorRef) =>
-                    actorRef ask WhatsYourStatus
+                    (actorRef ask WhatsYourStatus).mapTo[StatusResponse]
             }
-            futureSet.foreach(f => {
-                currentStatus.addChildStatus(f.asInstanceOf[StatusResponse].goalStatus)
-            })
+            /**
+             * futureSet.foreach(f => {
+             * f onSuccess {
+             * }
+             *
+             * case Success(resp) =>
+             * currentStatus.addChildStatus(resp.goalStatus)
+             * }
+             * currentStatus.addChildStatus(f.goalStatus)
+             * ///currentStatus.addChildStatus(f.apTo[StatusResponse].goalStatus)
+             * })
+             *
+             */
+            Future.sequence(futureSet).map { statusList =>
+                statusList.foreach { resp =>
+                    currentStatus.addChildStatus(resp.goalStatus)
+                }
+            }
             sender ! StatusResponse(currentStatus)
 
         case Abort =>

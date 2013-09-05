@@ -11,6 +11,7 @@ import com.klout.klout_scoozie.common.Network
 
 object MaxwellProject {
     val networkAbbrVar = Variable[String]("network_abbr", classOf[String])
+    val featureGroupVar = Variable[String]("feature_group", classOf[String])
     val serviceIdVar = Variable[Int]("service_id", classOf[Int])
 
     val calcScore = ScoozieGoal(
@@ -27,10 +28,17 @@ object MaxwellProject {
             w.update(VariableAssignment[String](networkAbbrVar, networkAbbr))
     }
 
+    def qualifyByFeatureGroup(fg: Int): (Witness => Witness) = {
+        w: Witness =>
+            w.update(VariableAssignment[String](featureGroupVar, fg.toString))
+    }
+
     def getTopLevel: Goal = {
         for (network <- featureNetworks) {
             println(s" Adding dependency on score with features ${network.networkAbbr} ")
-            calcScore.addWitnessRule(qualifyByNetwork(network.networkAbbr), featureGenGoal(network))
+            calcScore.addWitnessRule(
+                qualifyByFeatureGroup(network.featureGroup),
+                featureGenGoal(network))
         }
 
         return calcScore
@@ -41,8 +49,9 @@ object MaxwellProject {
             workflow = FeatureGeneration.Finalize,
             overrides = None,
             Set(HiveTable("bi_maxwell", "hb_feature_import")))
-        featureGen.addDependency(factContentGoal(network))
-        featureGen
+        featureGen.addWitnessRule(
+            Goal.stripVariable(Variable("feature_group")) compose qualifyByNetwork(network.networkAbbr),
+            factContentGoal(network))
     }
 
     def factContentGoal(networkName: Network): Goal = {
@@ -52,22 +61,22 @@ object MaxwellProject {
                     "Klout Fact Content",
                     HiveTable("bi_maxwell", "actor_action"),
                     "fact_content_kl.hql")
-                kloutAA.addWitnessRule({ w: Witness =>
-                    w.update(VariableAssignment[Int](serviceIdVar, networkName.featureGroup))
-                },
+                kloutAA.addWitnessRule(Goal.stripVariable(Variable("network_abbr")),
                     WaitForKSUIDMappingGoal)
             case _ =>
                 val actorAction: Goal = HiveGoalFactory.forTableFromFile(
                     networkName.networkFull + " Fact Content",
                     HiveTable("bi_maxwell", "actor_action"),
                     "fact_content.hql")
-                actorAction.addDependency(WaitForKSUIDMappingGoal)
+                actorAction.addWitnessRule(
+                    Goal.stripVariable(Variable("network_abbr")),
+                    WaitForKSUIDMappingGoal)
         }
     }
 
     val WaitForKSUIDMappingGoal: Goal = ScoozieGoal(
         workflow = WaitForKsUidMapping.Flow,
-        Set(HiveTable("bi_maxwell", "ksuid_mapping")))
+        Set(HiveTablePartitionGroup("bi_maxwell", "ksuid_mapping", Variable("dt").asInstanceOf[Variable[Any]])))
 
     val Project = new Project("Maxwell Score",
         Set(getTopLevel),

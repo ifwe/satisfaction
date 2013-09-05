@@ -30,41 +30,48 @@ case class ReleaseActor(goal: Goal, witness: Witness)
 case class GetListeners(goal: Goal, witness: Witness)
 
 class ProverFactory extends Actor with ActorLogging {
-    val actorMap: mutable.Map[Tuple2[Goal, Witness], ActorRef] = mutable.Map()
-    val listenerMap: mutable.Map[Tuple2[Goal, Witness], mutable.Set[ActorRef]] = mutable.Map[Tuple2[Goal, Witness], mutable.Set[ActorRef]]()
+    ///val actorMap: mutable.Map[Tuple2[Goal, Witness], ActorRef] = mutable.Map()
+    ///val listenerMap: mutable.Map[Tuple2[Goal, Witness], mutable.Set[ActorRef]] = mutable.Map[Tuple2[Goal, Witness], mutable.Set[ActorRef]]()
+    val actorMap: mutable.Map[String, ActorRef] = mutable.Map()
+    val listenerMap: mutable.Map[String, mutable.Set[ActorRef]] = mutable.Map[String, mutable.Set[ActorRef]]()
 
     def receive = {
         case GetActor(goal, witness) =>
             ///val actorTuple = ProofEngine.getactorTuple(goal, witness)
             val actorTuple: Tuple2[Goal, Witness] = (goal, witness)
-            if (actorMap.contains(actorTuple)) {
-                val listenerList = listenerMap.get(actorTuple).get
+            val actorTupleName = ProofEngine.getActorName(goal, witness)
+            println("Before check for Tuple map is  " + actorMap)
+            println("Before check for Tuple " + ProofEngine.getActorName(goal, witness))
+            if (actorMap.contains(actorTupleName)) {
+                val listenerList = listenerMap.get(actorTupleName).get
                 if (!listenerList.contains(sender))
                     listenerList += sender
-                sender ! actorMap.get(actorTuple).get
+                sender ! actorMap.get(actorTupleName).get
             } else {
                 val actorRef = context.system.actorOf(Props(new PredicateProver(goal, witness, context.self)),
                     ProofEngine.getActorName(goal, witness))
-                actorMap.put(actorTuple, actorRef)
+                actorMap.put(actorTupleName, actorRef)
                 val listenerList = mutable.Set[ActorRef]()
                 listenerList += sender
-                listenerMap.put(actorTuple, listenerList)
+                listenerMap.put(actorTupleName, listenerList)
                 sender ! actorRef
             }
         case ReleaseActor(goal, witness) =>
             val actorTuple = (goal, witness)
-            if (listenerMap.contains(actorTuple)) {
-                val listenerList = listenerMap.get(actorTuple).get
+            val actorTupleName = ProofEngine.getActorName(goal, witness)
+            if (listenerMap.contains(actorTupleName)) {
+                val listenerList = listenerMap.get(actorTupleName).get
                 listenerList.remove(sender)
                 if (listenerList.size == 0) {
-                    listenerMap.remove(actorTuple)
-                    val deadRef = actorMap.remove(actorTuple).get
+                    listenerMap.remove(actorTupleName)
+                    val deadRef = actorMap.remove(actorTupleName).get
                     context.stop(deadRef)
                 }
             }
         case GetListeners(goal, witness) =>
             val actorTuple = (goal, witness)
-            sender ! listenerMap.get(actorTuple).get
+            val actorTupleName = ProofEngine.getActorName(goal, witness)
+            sender ! listenerMap.get(actorTupleName).get
         case GoalFailure(goalStatus) =>
             publishMessageToListeners(goalStatus, new GoalFailure(goalStatus))
         case GoalSuccess(goalStatus) =>
@@ -78,8 +85,9 @@ class ProverFactory extends Actor with ActorLogging {
 
     def publishMessageToListeners(goalStatus: GoalStatus, message: Any) = {
         val actorTuple = (goalStatus.goal, goalStatus.witness)
+        val actorTupleName = ProofEngine.getActorName(goalStatus.goal, goalStatus.witness)
         log.info(" Publishing message " + message + " to all listeners of " + actorTuple)
-        listenerMap.get(actorTuple) match {
+        listenerMap.get(actorTupleName) match {
             case Some(listenerList) =>
                 listenerList.foreach { listenRef =>
                     log.info(" sending to listener " + listenRef)

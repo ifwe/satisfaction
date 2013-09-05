@@ -5,7 +5,7 @@ import org.specs2.mutable._
 
 class HiveDriverSpec extends Specification {
     "DriverTest" should {
-        "analyze semantic " in {
+        "access hive client " in {
             HiveClient.useDatabase("bi_maxwell")
             val query = " create table blah as select * from bi_maxwell.actor_action where dt='20130812' and network_abbr='tw' "
 

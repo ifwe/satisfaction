@@ -4,9 +4,10 @@ import org.apache.hadoop.hive.ql.metadata.Partition
 import hive.ms._
 import org.joda.time._
 
-class HiveTablePartition(
-    part: Partition,
-    ms: MetaStore) extends DataInstance {
+case class HiveTablePartition(
+    part: Partition) extends DataInstance {
+
+    implicit val ms: MetaStore = MetaStore
 
     def size: Long = {
         ms.getPartitionSize(part)

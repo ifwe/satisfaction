@@ -10,16 +10,12 @@ case class Goal(
     var dependencies: Set[(Witness => Witness, Goal)] = Set.empty,
     evidence: Set[Evidence] = Set.empty) {
 
-    ///lazy val uniqueId = java.util.UUID.randomUUID().toString
-
     def addDependency(goal: Goal): Goal = {
-        println(" Dependencies = " + dependencies)
         dependencies += Tuple2(Goal.Identity, goal)
         return this
     }
 
     def addWitnessRule(rule: (Witness => Witness), goal: Goal): Goal = {
-        println(" Dependencies = " + dependencies)
         dependencies += Tuple2(rule, goal)
         return this
     }
@@ -37,6 +33,12 @@ object Goal {
         w: Witness =>
             val newParam = w.substitution.update(param, paramValue)
             new Witness(newParam)
+    }
+
+    def stripVariable(param: Variable[_]): (Witness => Witness) = {
+        w: Witness =>
+            val withoutParam = w.substitution.assignments.filter(!_.variable.equals(param))
+            new Witness(new Substitution(withoutParam))
     }
 
     def getPredicateString(goal: Goal, w: Witness): String = {

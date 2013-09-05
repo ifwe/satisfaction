@@ -1,4 +1,4 @@
-@(projName : String,  goalName : String, varList : List[com.klout.satisfaction.Variable[_]]   )
+@(projName : String,  goalName : String, errorList : List[String] , varList : List[com.klout.satisfaction.Variable[_]] , pg : Option[PlumbGraph]  )
 
 @import helper._
 @import scala.collection.JavaConversions._
@@ -7,8 +7,15 @@
 
 
 @main( "Satisfy Goal " + goalName + " for Project " + projName ) {
-    
+	
     <h1>Satisfy Goal @goalName for Project @projName  </h1>
+    
+   <ul>
+   @errorList.map { error =>
+       <li><div	style="color:red;font-weight=bold">@error</div></li>
+   	} 
+   </ul>
+    
 <form method="POST" action="/satisfygoal/@projName/@goalName">
   <table>  
    <tr><td><h3>Variables</h3></td>
@@ -39,10 +46,16 @@
       	 <li>@varObj.description</li>
       } 
     </ul>
+    </td>
     
+    </td>
+  @pg match { case Some(graph) =>
+  		  @jsplumbgraph(graph) 
+  }
+  	 
+    <td>
     </tr>
  </table>    
-   <input type="text" name="network_abbr">tw</input>
   <input type="submit"><bold><blink>Satisfy !!!</blink></bold></input>
  </form>
     

@@ -44,6 +44,7 @@ class ProofEngine {
             response match {
                 case s: GoalSuccess =>
                     println(" Goal Was Satisfied")
+                    proverFactory ! new ReleaseActor(goal, witness)
                     s.goalStatus
                 case f: GoalFailure =>
                     println(" Failure ")

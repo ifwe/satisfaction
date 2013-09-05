@@ -13,12 +13,12 @@ import collection.JavaConversions._
 case class HiveTablePartitionGroup(
     dbName: String,
     tblName: String,
-    grouping: VariableAssignment[Any]) extends DataOutput {
+    grouping: Variable[Any]) extends DataOutput {
 
     private val ms = hive.ms.MetaStore
 
     def variables = {
-        ms.getVariablesForTable(dbName, tblName)
+        Set(grouping)
     }
 
     def exists(w: Witness): Boolean = {
@@ -26,33 +26,16 @@ case class HiveTablePartitionGroup(
     }
 
     def getDataInstance(w: Witness): Option[DataInstance] = {
-        ////val partition = getPartition(w)
-        ///Option(new HiveTablePartition(partition))
-        null
+        val tbl = ms.getTableByName(dbName, tblName)
+        if (!w.variables.contains(grouping))
+            None
+        val partMap: Map[String, String] = Map(grouping.name -> Some(w.substitution.get(grouping)).toString)
+        val hivePartSet = ms.getPartitionSetForTable(tbl, partMap)
+        if (hivePartSet.size > 0) {
+            Some(new HivePartitionSet(hivePartSet.map(new HiveTablePartition(_)).toSet))
+        } else {
+            None
+        }
     }
 
-    def getPartitions(witness: Witness): Set[Partition] = {
-        val partNames = ms.getPartitionNamesForTable(dbName, tblName)
-
-        ///ms.getPartition(dbName, tblName, partSpec)
-
-        ///ms.getPartition(dbName, tblName, witness.params.raw)
-        null
-    }
-    /**
-     * def getPartition(params: ParamMap): Partition = {
-     * val tbl = ms.getTableByName(dbName, tblName)
-     * val partCols = tbl.getPartCols()
-     * //// Place logic in MetaStore ???
-     * var partSpec = List[String]()
-     * for (i <- 0 until partCols.size - 1) {
-     * partSpec ++ params.raw.get(partCols.get(i).getName())
-     * }
-     * print(" PartSpec = " + partSpec)
-     *
-     * ms.getPartition(dbName, tblName, partSpec)
-     * >>>>>>> master
-     * }
-     * **
-     */
 }

@@ -1,4 +1,4 @@
-@(projName : String,  goalName : String, goalStatus : com.klout.satisfaction.executor.actors.GoalStatus, logs : Option[String]  )
+@(projName : String,  goalName : String, goalStatus : com.klout.satisfaction.executor.actors.GoalStatus, logs : Option[String], pg : Option[PlumbGraph]  )
 
 @import helper._
 @import scala.collection.JavaConversions._
@@ -13,17 +13,33 @@
     <h1>Project @projName Goal @goalName </h1>
     <h2> Status of goal is <blink>@goalStatus.state</blink
     
+  <table>
+  <tr>
+  <td>
+	    <h3>Current Log Output</h3> 
+ <div id="log_output" style="width:800px;height:200:px;overflow:scroll"> 
+  
    @logs match  {
       case Some(logFile) => {
-   	    <h3>Current Log Output</h3> 
-   	    <div>
-   	    @logFile
-   	    </div>
+      	
+   	    @Html( logFile )
   	   }
    	 case None => {
       <h3>No current log output</h3>
      }	    
    }
+   </div>
+   </td>
+   <td>
+   
+    @pg match { case Some(graph) =>
+  		  @jsplumbgraph(graph) 
+  }
+  	 
+   </td>
+   
+   </tr>
+   </table>
    	  
     
 }

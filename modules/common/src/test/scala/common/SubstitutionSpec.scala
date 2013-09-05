@@ -115,8 +115,7 @@ class SubstitutionSpec extends Specification {
             println(" Value is " + checkLookup)
             checkLookup mustEqual "FirstVal"
         }
-        
-        
+
     }
 
 }
