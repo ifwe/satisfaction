@@ -2,14 +2,18 @@ package com.klout.satisfaction
 
 import scalaxb._
 import org.specs2.mutable._
+import scala.util.parsing.input.CharSequenceReader
+import org.specs2.runner.JUnitRunner
+import org.junit.runner.RunWith
 
+@RunWith(classOf[JUnitRunner])
 class SubstitutionSpec extends Specification {
 
     "SubstitutionUtils" should {
         "find variables in string " in {
             val str = " select * from my_view_${networkAbbr} where dt= ${dateString}  "
 
-            val vars = SubstitutionUtils.findVariablesInString(str)
+            val vars = Substituter.findVariablesInString(str)
             vars.foreach(str => println(str))
 
             vars must contain("networkAbbr")
@@ -19,7 +23,8 @@ class SubstitutionSpec extends Specification {
             val tempStr = " select * from my_view_${networkAbbr} where dt= ${dateString}"
 
             val varMap = Map(("networkAbbr" -> "tw"), ("dateString" -> "20130813"))
-            val str = SubstitutionUtils.substituteVarsInString(tempStr, varMap)
+
+            val str = Substituter.substitute(new CharSequenceReader(tempStr), Substitution(varMap))
             str.isRight must be
 
             println(" Substr string is " + str)
@@ -28,12 +33,41 @@ class SubstitutionSpec extends Specification {
                     substituted mustEqual " select * from my_view_tw where dt= 20130813"
             }
         }
+        "handle missing curly brace " in {
+            val tempStr = " select * from my_view_${networkAbbr where dt= ${dateString}"
+
+            val varMap = Map(("networkAbbr" -> "tw"), ("dateString" -> "20130813"))
+
+            val str = Substituter.substitute(new CharSequenceReader(tempStr), Substitution(varMap))
+            str.isLeft must be
+
+            str match {
+                case Left(missingVars) =>
+                    missingVars.foreach(v => println(" Missing var " + v))
+                    missingVars.size mustEqual 1
+                    missingVars must contain("networkAbbr")
+            }
+        }
+        " handle dollar signs without curly " in {
+            val tempStr = " select $nonCurly from my_view_${networkAbbr} where dt= ${dateString}"
+
+            val varMap = Map(("networkAbbr" -> "tw"), ("dateString" -> "20130813"))
+
+            val str = Substituter.substitute(new CharSequenceReader(tempStr), Substitution(varMap))
+            str.isRight must be
+
+            println(" Substr string is " + str)
+            str match {
+                case Right(substituted) =>
+                    substituted mustEqual " select $nonCurly from my_view_tw where dt= 20130813"
+            }
+        }
         "detect unsubstituted variables in string " in {
             val tempStr = " select * from my_view_${networkAbbr} where dt= ${dateString}" +
                 " and ks_uid = ${ksUid} and actor_id = ${actorId}  "
 
             val varMap = Map(("networkAbbr" -> "tw"), ("dateString" -> "20130813"))
-            val str = SubstitutionUtils.substituteVarsInString(tempStr, varMap)
+            val str = Substituter.substitute(new CharSequenceReader(tempStr), Substitution(varMap))
             str.isLeft must be
 
             str match {
@@ -46,7 +80,7 @@ class SubstitutionSpec extends Specification {
         }
 
         "Read Property file" in {
-            val goodProps = SubstitutionUtils.readProperties("modules/common/src/test/resources/goodset.properties")
+            val goodProps = Substituter.readProperties("modules/common/src/test/resources/goodset.properties")
 
             goodProps.keySet must contain("myProp")
             goodProps.keySet must contain("theBigProp")
@@ -57,7 +91,7 @@ class SubstitutionSpec extends Specification {
         }
 
         "Subst vars in Property file" in {
-            val goodProps = SubstitutionUtils.readProperties("modules/common/src/test/resources/subst_var.properties")
+            val goodProps = Substituter.readProperties("modules/common/src/test/resources/subst_var.properties")
 
             goodProps.keySet must contain("nameNode")
             goodProps.keySet must contain("dataRoot")

@@ -1,51 +1,42 @@
 package com.klout.satisfaction
 
 import hive.ms.MetaStore
+import hive.ms.HiveClient
+import scala.io.Source
 
 /**
- *  Factory methods to
  */
-object HiveGoalFactory {
+object HiveGoal {
+    lazy val hiveClient: HiveClient = HiveClient
 
-    /**
-     *  Load from the file, and
-     */
-    def fromFile(fileName: String): Goal = ???
+    def readResource(fileName: String): String = {
+        val resourceUrl = classOf[Goal].getClassLoader().getResource(fileName)
+        println(s" Resource URL is $resourceUrl")
+        if (resourceUrl == null)
+            throw new IllegalArgumentException(s"Resource $fileName not found")
+        val readLines = Source.fromURL(resourceUrl).getLines.mkString("\n")
+        println(readLines)
 
-    def fromQuery(query: String): Goal = ???
-
-    /**
-     *  Examine ,
-     */
-    def forTable(tbl: HiveTable, query: String): Goal = {
-        null
+        readLines
     }
-    def forTableFromFile(goalName: String, tbl: HiveTable, fileName: String): Goal = {
-        val hiveSatisfier = new HiveSatisfier(fileName, MetaStore)
-        val tblVariables = MetaStore.getVariablesForTable(tbl.dbName, tbl.tblName)
-        val hiveGoal = new Goal(
-            name = goalName,
+
+    def apply(name: String,
+              query: String,
+              table: HiveTable,
+              overrides: Option[Substitution] = None,
+              depends: Set[(Witness => Witness, Goal)] = Set.empty): Goal = {
+
+        val hiveSatisfier = new HiveSatisfier(query, hiveClient)
+        val tblVariables = MetaStore.getVariablesForTable(table.dbName, table.tblName)
+        val tblOutputs = collection.Set(table)
+
+        new Goal(name = name,
             satisfier = Some(hiveSatisfier),
             variables = tblVariables,
-            overrides = None,
-            dependencies = Set.empty,
-            Set(tbl))
-
-        hiveGoal
+            overrides,
+            depends,
+            evidence = tblOutputs
+        )
     }
 
-}
-
-/**
- *  Simple HiveGoal, where we know what the dependencies are ahead of time.
- */
-class HiveGoal(val ms: hive.ms.MetaStore) {
-    def apply(name: String,
-              hqlString: String,
-              depends: Set[(Witness => Witness, Goal)],
-              outputs: Set[DataOutput]): Goal = {
-        val hiveSatisfier = new HiveSatisfier(hqlString, ms)
-
-        null
-    }
 }

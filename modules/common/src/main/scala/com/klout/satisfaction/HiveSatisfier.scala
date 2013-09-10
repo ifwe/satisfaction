@@ -13,17 +13,26 @@ import hive.ms._
 
 // object HiveSatisfier extends HiveSatisfier(MetaStore)
 
-class HiveSatisfier(query: String, ms: MetaStore) extends Satisfier {
+case class HiveSatisfier(queryTemplate: String, driver: HiveClient) extends Satisfier {
 
     def satisfy(params: Substitution): Boolean = {
-        true
-    }
-
-    def getVariablesForTable() = {
-
-    }
-
-    def substituteProperties(queryTemplate: String, props: Map[String, String]): String = {
-        null
+        val queryMatch = Substituter.substitute(queryTemplate, params) match {
+            case Left(badVars) =>
+                println(" Missing variables in query Template ")
+                badVars.foreach { s => println("  ## " + s) }
+                return false
+            case Right(query) =>
+                try {
+                    println(s" Executing query $query")
+                    val results = driver.executeQuery(query)
+                    return results
+                } catch {
+                    case unexpected =>
+                        println(s" Unexpected error $unexpected")
+                        unexpected.printStackTrace()
+                        false
+                }
+        }
+        false
     }
 }

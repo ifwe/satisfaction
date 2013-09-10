@@ -57,20 +57,21 @@ object MaxwellProject {
     def factContentGoal(networkName: Network): Goal = {
         networkName.networkAbbr match {
             case "klout" =>
-                val kloutAA: Goal = HiveGoalFactory.forTableFromFile(
-                    "Klout Fact Content",
-                    HiveTable("bi_maxwell", "actor_action"),
-                    "fact_content_kl.hql")
+                val kloutAA: Goal = HiveGoal(
+                    name = "Klout Fact Content",
+                    query = HiveGoal.readResource("fact_content_kl.hql"),
+                    table = HiveTable("bi_maxwell", "actor_action"));
                 kloutAA.addWitnessRule(Goal.stripVariable(Variable("network_abbr")),
-                    WaitForKSUIDMappingGoal)
+                    WaitForKSUIDMappingGoal);
             case _ =>
-                val actorAction: Goal = HiveGoalFactory.forTableFromFile(
-                    networkName.networkFull + " Fact Content",
-                    HiveTable("bi_maxwell", "actor_action"),
-                    "fact_content.hql")
+                val actorAction: Goal = HiveGoal(
+                    name = networkName.networkFull + " Fact Content",
+                    query = HiveGoal.readResource("fact_content.hql"),
+                    table = HiveTable("bi_maxwell", "actor_action"),
+                    overrides = None, Set.empty);
                 actorAction.addWitnessRule(
                     Goal.stripVariable(Variable("network_abbr")),
-                    WaitForKSUIDMappingGoal)
+                    WaitForKSUIDMappingGoal);
         }
     }
 

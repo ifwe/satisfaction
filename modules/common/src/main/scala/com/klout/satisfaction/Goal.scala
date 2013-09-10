@@ -8,7 +8,7 @@ case class Goal(
     val variables: Set[Variable[_]] = Set.empty,
     var overrides: Option[Substitution] = None,
     var dependencies: Set[(Witness => Witness, Goal)] = Set.empty,
-    evidence: Set[Evidence] = Set.empty) {
+    evidence: Set[_ <: Evidence] = Set.empty) {
 
     def addDependency(goal: Goal): Goal = {
         dependencies += Tuple2(Goal.Identity, goal)

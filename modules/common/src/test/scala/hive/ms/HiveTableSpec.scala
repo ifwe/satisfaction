@@ -5,7 +5,10 @@ import org.specs2.mutable._
 import com.klout.satisfaction.HiveTable
 import com.klout.satisfaction.Witness
 import com.klout.satisfaction._
+import org.specs2.runner.JUnitRunner
+import org.junit.runner.RunWith
 
+@RunWith(classOf[JUnitRunner])
 class HiveTableSpec extends Specification {
     val dtParam = new Variable("dt", classOf[String])
     val networkParam = new Variable("network_abbr", classOf[String])
