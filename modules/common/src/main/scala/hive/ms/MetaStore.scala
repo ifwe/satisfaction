@@ -18,6 +18,9 @@ import org.joda.time.format.DateTimeFormatter
 import org.joda.time.format.DateTimeFormat
 import org.apache.hadoop.hive.metastore.api.FieldSchema
 import com.klout.satisfaction.Variable
+import com.klout.satisfaction.DataInstance
+import com.klout.satisfaction.HiveTablePartition
+import com.klout.satisfaction.DataOutput
 
 /**
  *  Scala Wrapper around Hive MetaStore object
@@ -303,6 +306,24 @@ class MetaStore(hvConfig: HiveConf) {
             println("Table Metat Data is " + tbl.getParameters)
             tbl.getParameters.toMap
         })
+    }
+
+    /**
+     *  Set metadata for specific Hive Partition
+     */
+    def setInstanceMetaData(di: DataInstance, key: String, md: String): Unit = {
+        di match {
+            case part: HiveTablePartition =>
+                setPartitionMetaData(part.part, key, md)
+            /// XXX find some way to store other metadata
+        }
+    }
+
+    /**
+     *  Set MetaData for abstract outputs
+     */
+    def setOutputMetaData(dataOut: DataOutput): Unit = {
+
     }
 
     /**

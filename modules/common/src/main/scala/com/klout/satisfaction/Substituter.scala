@@ -36,7 +36,6 @@ object Substituter {
                             case Right(varTuple) =>
                                 val varName = varTuple._1
                                 reader = varTuple._2
-                                println(" Found variable " + varName)
                                 subst.get(Variable(varName)) match {
                                     case Some(lookup) => sb ++= lookup
                                     case None         => missingList += varName
@@ -91,7 +90,10 @@ object Substituter {
 
                     case Left(extraVars) =>
                         /// There are some missing variables which need to be defined elsewhere ...
-                        throw new IllegalArgumentException(s" Missing variables is property $k with value $v -- " + extraVars)
+                        /// XXXX Barf on missing vars ???
+                        ///throw new IllegalArgumentException(s" Missing variables is property $k with value $v -- " + extraVars)
+                        println(s" Missing variables is property $k with value $v -- " + extraVars)
+                        ("" -> "")
                     case Right(line) =>
                         (k -> line)
                 }

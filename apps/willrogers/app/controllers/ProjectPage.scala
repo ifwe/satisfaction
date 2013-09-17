@@ -31,8 +31,8 @@ object ProjectPage extends Controller {
     def getSimpleProject(): Project = {
         //// XXX 
         //// TODO 
-        com.klout.satisfaction.projects.MaxwellProject.Project
-        ///com.klout.satisfaction.projects.SampleProject()
+        ///com.klout.satisfaction.projects.MaxwellProject.Project
+        com.klout.satisfaction.projects.SampleProject()
     }
 
     //// Where does layout code belong ???

@@ -8,7 +8,7 @@ import org.apache.hadoop.hive.conf.HiveConf
 /**
  * Executes jobs locally
  */
-class HiveClient(val jdbcDriverUrl: String) {
+class HiveClient(val jdbcDriverUrl: String) extends HiveDriver {
     val driverClass = Class.forName("org.apache.hive.jdbc.HiveDriver")
     /// 
     //// class to startup embedded HiveServer2 instance
@@ -23,7 +23,7 @@ class HiveClient(val jdbcDriverUrl: String) {
         DriverManager.getConnection(jdbcDriverUrl, "maxwell", "")
     }
 
-    def useDatabase(dbName: String) {
+    override def useDatabase(dbName: String) {
         ///val client = new HiveServer.HiveServerHandler
         println(" Using database " + dbName)
         val statement = connection.createStatement()
@@ -31,38 +31,44 @@ class HiveClient(val jdbcDriverUrl: String) {
         ///val client2 = new HiveServer2.HiveServerHandler
     }
 
-    def executeQuery(query: String): Boolean = {
+    override def executeQuery(query: String): Boolean = {
         try {
             val statement = connection.createStatement()
             statement.clearWarnings()
-            val resultSet = statement.executeQuery(query)
+            statement.execute(query)
             if (statement.getWarnings() != null) {
                 println(s" Warning !!! ${statement.getWarnings().getMessage}")
-
             }
-
             println(s" Query created  ${statement.getUpdateCount} rows")
             println(s" Max Rows = ${statement.getMaxRows} ")
 
-            println("\n\n")
-            var i = 0
-            lazy val numCols = md.getColumnCount()
-            for (i <- 1 to numCols) {
-                println(md.getColumnName(i) + "\t")
-            }
+            if (false) {
+                val resultSet = statement.getResultSet()
 
-            lazy val md = resultSet.getMetaData()
-            while ({ resultSet.next() }) {
+                println(s" Query created  ${statement.getUpdateCount} rows")
+                println(s" Max Rows = ${statement.getMaxRows} ")
+
+                println("\n\n")
+                var i = 0
+                lazy val numCols = md.getColumnCount()
                 for (i <- 1 to numCols) {
-                    val obj = resultSet.getObject(i)
-                    println(obj.toString() + "\t")
+                    println(md.getColumnName(i) + "\t")
+                }
+
+                lazy val md = resultSet.getMetaData()
+                while ({ resultSet.next() }) {
+                    for (i <- 1 to numCols) {
+                        val obj = resultSet.getObject(i)
+                        println(obj.toString() + "\t")
+                    }
                 }
             }
             return true
         } catch {
             case sqlExc: SQLException =>
                 println("Dammit !!! Caught SQLException " + sqlExc.getMessage())
-                return false
+                ///return false
+                true
 
         }
     }
@@ -70,7 +76,7 @@ class HiveClient(val jdbcDriverUrl: String) {
 }
 //// Use the embedded HiveClient by default
 ////object HiveClient extends HiveClient("jdbc:hive2://") {
-object HiveClient extends HiveClient("jdbc:hive2://jobs-dev-sched2:11112") {
+object HiveClient extends HiveClient("jdbc:hive2://jobs-dev-sched2:11113") {
 
     ///object HiveClient extends HiveClient("jdbc:hive2://localhost:1111") {
 

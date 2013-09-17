@@ -2,7 +2,12 @@ package hive.ms
 
 import scalaxb._
 import org.specs2.mutable._
+import org.specs2.runner.JUnitRunner
+import org.junit.runner.RunWith
+import org.apache.log4j.Logger
+import org.apache.log4j.Level
 
+@RunWith(classOf[JUnitRunner])
 class HiveParserSpec extends Specification {
     "ParserTest" should {
         "parse simple query" in {

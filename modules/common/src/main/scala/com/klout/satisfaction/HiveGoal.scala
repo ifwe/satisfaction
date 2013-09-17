@@ -3,11 +3,14 @@ package com.klout.satisfaction
 import hive.ms.MetaStore
 import hive.ms.HiveClient
 import scala.io.Source
+import hive.ms.HiveDriver
+import hive.ms.HiveLocalDriver
 
 /**
  */
 object HiveGoal {
-    lazy val hiveClient: HiveClient = HiveClient
+    implicit lazy val hiveDriver: HiveDriver = new HiveLocalDriver
+    ///lazy val hiveClient: HiveClient = HiveClient
 
     def readResource(fileName: String): String = {
         val resourceUrl = classOf[Goal].getClassLoader().getResource(fileName)
@@ -26,7 +29,7 @@ object HiveGoal {
               overrides: Option[Substitution] = None,
               depends: Set[(Witness => Witness, Goal)] = Set.empty): Goal = {
 
-        val hiveSatisfier = new HiveSatisfier(query, hiveClient)
+        val hiveSatisfier = new HiveSatisfier(query, hiveDriver)
         val tblVariables = MetaStore.getVariablesForTable(table.dbName, table.tblName)
         val tblOutputs = collection.Set(table)
 

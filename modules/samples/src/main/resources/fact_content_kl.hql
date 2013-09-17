@@ -1,4 +1,3 @@
-source oozie-setup.hql ;
 set hive.exec.parallel=true;
 
 create external table if not exists raw_content

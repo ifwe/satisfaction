@@ -107,6 +107,7 @@ object SatisfyGoalPage extends Controller {
         state match {
             case GoalState.Aborted               => "Gray"
             case GoalState.Success               => "Green"
+            case GoalState.AlreadySatisfied      => "DarkGreen"
             case GoalState.Failed                => "Red"
             case GoalState.DepFailed             => "Orange"
             case GoalState.SatifyingSelf         => "Purple"

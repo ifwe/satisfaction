@@ -1,10 +1,14 @@
-source oozie-setup.hql ;
+
+use bi_maxwell;
+
 set hive.exec.parallel=true;
 
 SET hive.exec.compress.output=true; 
 SET io.seqfile.compression.type=BLOCK;
 
 SET io.sort.mb=512;
+
+
 
 create external table if not exists raw_content
 partitioned by (dt string, network_abbr string)
@@ -140,8 +144,5 @@ WHERE
   
 ;
 
-select assert(count(*) > ${minCount}, concat("Missing data for actor_action for ${networkAbbr}"))
-from actor_action
-where dt='${dateString}' and network_abbr='${networkAbbr}';
 
 

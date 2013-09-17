@@ -23,7 +23,7 @@ object Satisfaction {
         val fStatus = engine.satisfyGoal(goal, witness)
 
         println(" before continually")
-        Iterator.continually(Await.ready(fStatus, Duration(5, SECONDS))).takeWhile(!_.isCompleted).foreach { f =>
+        Iterator.continually(Await.ready(fStatus, Duration(300, SECONDS))).takeWhile(!_.isCompleted).foreach { f =>
             println("Waiting on Future" + f)
             val statuses = engine.getGoalsInProgress
             println(statuses.size + " goals are in progress ")
@@ -38,7 +38,7 @@ object Satisfaction {
                 case tr: Try[GoalStatus] =>
                     tr match {
                         case Success(s) =>
-                            println(" Success  is " + s.state)
+                            println(" Result is " + s.state)
                         case Failure(f) =>
                             println("Failure " + f)
                             f.printStackTrace()
