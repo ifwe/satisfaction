@@ -7,15 +7,24 @@ import org.apache.hadoop.fs.Path
 /**
  *
  */
-object Hdfs {
 
-    /// Dependency injection ???
-    val _fsURI = new URI("hdfs://jobs-dev-hnn:8020")
-    ///val _fsURI = new URI("hdfs://jobs-aa-hnn:8020")
-    val fs = FileSystem.get(_fsURI, Config.config)
+case class Hdfs(val fsURI: String) {
+
+    lazy val fs = FileSystem.get(new URI(fsURI), Config.config)
 
     def exists(path: Path): Boolean = {
         return fs.exists(path)
+    }
+
+    def markSuccess(path: Path): Unit = {
+        val successPath = new Path(path.toUri + "/_SUCCESS")
+        if (!fs.exists(successPath)) {
+            val writer = fs.create(successPath)
+            writer.hsync
+            writer.flush
+            writer.hflush
+            writer.close
+        }
     }
 
     def getSpaceUsed(path: Path): Long = {
@@ -36,6 +45,9 @@ object Hdfs {
             0
         }
     }
+
+}
+object Hdfs extends Hdfs("hdfs://jobs-dev-hnn:8020") {
 
     def rounded(dbl: Double): String = {
         (((dbl * 100).toInt) / 100.0).toString

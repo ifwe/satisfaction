@@ -150,6 +150,30 @@ class SubstitutionSpec extends Specification {
             checkLookup mustEqual "FirstVal"
         }
 
+        "Qualify witness function" in {
+            val subst1 = Substitution(VariableAssignment("dt", "20130917"))
+            val mapFunc = Goal.qualifyWitness(Variable("tableAlias"), "friends")
+
+            val subst2 = mapFunc(Witness(subst1))
+            println(" qualified witness is " + subst2)
+            subst2.substitution.assignments.foreach(println)
+
+            subst2.substitution.assignments.size mustEqual 2
+        }
+
+        "compose Qualify witness function" in {
+            val subst1 = Substitution(VariableAssignment("dt", "20130917"))
+            val mapFunc1 = Goal.qualifyWitness(Variable("tableAlias"), "friends")
+            val mapFunc2 = Goal.qualifyWitness(Variable("graphType"), "TWITTER_FRIENDS")
+            val mapFunc = mapFunc1 compose mapFunc2
+
+            val subst2 = mapFunc(Witness(subst1))
+            println(" qualified witness is " + subst2)
+            subst2.substitution.assignments.foreach{ ass => println("COMPOSED " + ass) }
+
+            subst2.substitution.assignments.size mustEqual 3
+        }
+
     }
 
 }

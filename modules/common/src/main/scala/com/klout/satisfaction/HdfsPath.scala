@@ -10,6 +10,8 @@ case class HdfsPath(val path: Path) extends DataInstance {
 
     lazy val status: FileStatus = Hdfs.fs.getFileStatus(path)
 
+    lazy implicit val hdfs: Hdfs = Hdfs
+
     def size: Long = {
         Hdfs.getSpaceUsed(path)
     }
@@ -23,7 +25,18 @@ case class HdfsPath(val path: Path) extends DataInstance {
     }
 
     def exists: Boolean = {
-        Hdfs.exists(path)
+        if (hdfs.exists(path)) {
+            if (hdfs.exists(new Path(path.toUri() + "/_SUCCESS"))) {
+                return true
+            } else {
+                return false
+            }
+        } else {
+            return false
+        }
     }
 
+    override def toString: String = {
+        path.toUri.toString
+    }
 }
