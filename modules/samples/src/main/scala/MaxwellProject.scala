@@ -1,6 +1,6 @@
 package com.klout.satisfaction.projects
 
-import com.klout.satisfaction.Project
+import com.klout.satisfaction.Track
 import com.klout.satisfaction._
 import com.klout.scoozie._
 import com.klout.klout_scoozie._
@@ -79,8 +79,7 @@ object MaxwellProject {
         workflow = WaitForKsUidMapping.Flow,
         Set(HiveTablePartitionGroup("bi_maxwell", "ksuid_mapping", Variable("dt").asInstanceOf[Variable[Any]])))
 
-    val Project = new Project("Maxwell Score",
-        Set(getTopLevel),
-        null)
+    val Project = new Track("Maxwell Score",
+        Set(getTopLevel) )
 
 }

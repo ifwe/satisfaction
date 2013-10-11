@@ -1,6 +1,6 @@
 package bollinger
 
-import com.klout.satisfaction.Project
+import com.klout.satisfaction.Track
 
 /**
  * object BollingerProject extends Project(

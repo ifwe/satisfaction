@@ -13,7 +13,9 @@ object HiveGoal {
     ///lazy val hiveClient: HiveClient = HiveClient
 
     def readResource(fileName: String): String = {
-        val resourceUrl = classOf[Goal].getClassLoader().getResource(fileName)
+        val resourceLoader = resourceClassLoader
+        println(" Resource Loader is " + resourceLoader )
+        val resourceUrl = resourceLoader.getResource(fileName)
         println(s" Resource URL is $resourceUrl")
         if (resourceUrl == null)
             throw new IllegalArgumentException(s"Resource $fileName not found")
@@ -21,6 +23,14 @@ object HiveGoal {
         println(readLines)
 
         readLines
+    }
+    
+    def resourceClassLoader : ClassLoader = {
+      var ldr = Thread.currentThread.getContextClassLoader
+      if(ldr == null) {
+        ldr = this.getClass.getClassLoader
+      }
+      ldr
     }
 
     def apply(name: String,

@@ -1,6 +1,7 @@
 package com.klout.satisfaction
 
 import scalaxb._
+import brickhouse.udf.collect._
 import org.specs2.mutable._
 import scala.util.parsing.input.CharSequenceReader
 import org.specs2.runner.JUnitRunner
@@ -9,6 +10,11 @@ import org.junit.runner.RunWith
 @RunWith(classOf[JUnitRunner])
 class SubstitutionSpec extends Specification {
 
+    "ExtraClasspath" should {
+        "be able to instantate nonmanaged dependency" in {
+            val udf = new AppendArrayUDF()
+        }
+    }
     "SubstitutionUtils" should {
         "find variables in string " in {
             val str = " select * from my_view_${networkAbbr} where dt= ${dateString}  "

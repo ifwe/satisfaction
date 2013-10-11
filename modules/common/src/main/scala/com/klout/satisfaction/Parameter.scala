@@ -7,6 +7,8 @@ case class Variable[T](val name: String, val clazz: Class[T], val description: O
 
     override lazy val toString =
         s"name=[$name], class=[$clazz], description=[${description getOrElse ""}]"
+    
+    
 }
 object Variable {
     //// Assume it is a string type if not defined
@@ -17,6 +19,7 @@ object Variable {
         new Variable(name, classOf[String])
     }
 
+    
 }
 
 case class VariableAssignment[T](variable: Variable[T], value: T) {
@@ -41,25 +44,6 @@ class Substitution(
     def ++(other: Substitution): Substitution = {
         (this /: other.assignments)(_ + _)
     }
-
-    /**
-     * def withOverrides(overrides: ParamOverrides): Substitution = {
-     *
-     * var newMap = this
-     *
-     * for {
-     * (param, rules) <- overrides.map
-     * currentValue <- newMap get param
-     * overrides <- rules get currentValue
-     * VariableAssignment(param, value) <- overrides
-     * } {
-     * newMap = this update (param, value)
-     * }
-     *
-     * newMap
-     * }
-     * **
-     */
 
     /**
      * def ++(overrides: ParamOverrides): Substitution =

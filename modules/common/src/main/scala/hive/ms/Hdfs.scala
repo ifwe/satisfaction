@@ -3,17 +3,96 @@ package hive.ms
 import org.apache.hadoop.fs.FileSystem
 import java.net.URI
 import org.apache.hadoop.fs.Path
+import org.apache.hadoop.fs.FileStatus
+import scala.collection.mutable.ArrayBuffer
+import org.apache.hadoop.fs.FsUrlStreamHandlerFactory
 
 /**
  *
  */
 
 case class Hdfs(val fsURI: String) {
+  
+   /**
+    *  Handle URLs starting with hdfs:// prefix
+    */
+    var initUrl = false
+    val initURLStreamHandler = {
+      if ( !initUrl) {
+          //// HADOOP-9041
+          //// cal FileSystem.loadFileSystems() first
+         val fsClass = classOf[org.apache.hadoop.fs.FileSystem] 
+         val meths = fsClass.getDeclaredMethods()
+         val loadFSMeth = fsClass.getDeclaredMethod("loadFileSystems")
+         loadFSMeth.setAccessible(true)
+         loadFSMeth.invoke(null)
+         
+         val fsFactory : FsUrlStreamHandlerFactory  =  new org.apache.hadoop.fs.FsUrlStreamHandlerFactory();
+         java.net.URL.setURLStreamHandlerFactory(fsFactory);
+         initUrl = true
+       }
+    }
 
     lazy val fs = FileSystem.get(new URI(fsURI), Config.config)
+    
+    
+    
+    implicit def URI2Path( value : java.net.URI) : Path = {
+    	new Path( value.toString())
+    }
+    
+    implicit def /( ths : Path,  that : String) : Path= {
+       val uri = ths.toUri.toString
+       if( uri.endsWith("/") || that.startsWith("/")) {
+           new Path( uri + that)
+       } else {
+          new Path( uri + "/" + that)
+       }
+    }
+    
+    
+    def listFiles( rootPath : Path ) : Seq[FileStatus] = {
+        fs.listStatus(rootPath)
+    }
+    
+    def listFilesRecursively( rootPath : Path ) : Seq[FileStatus] = {
+      var fullList : collection.mutable.Buffer[FileStatus] = new ArrayBuffer[FileStatus]
+      listFiles( rootPath).foreach( { fs : FileStatus =>
+         if( fs.isFile ) {
+           fullList += fs
+         } else {
+           fullList += fs
+           fullList ++= listFilesRecursively( fs.getPath)
+         }
+      })
+      fullList
+    }
+    
+    def globFiles( rootPath : Path ) : Seq[FileStatus] = {
+       fs.globStatus(rootPath)
+    }
+    
+    def globFilesRecursively( rootPath : Path ) : Seq[FileStatus] = {
+      var fullList : collection.mutable.Buffer[FileStatus] = new ArrayBuffer[FileStatus]
+      listFiles( rootPath).foreach( { fs : FileStatus =>
+         if( fs.isFile ) {
+           fullList += fs
+         } else {
+           fullList += fs
+           fullList ++= globFilesRecursively( fs.getPath)
+         }
+      })
+      fullList
+    }
+    
+    
 
     def exists(path: Path): Boolean = {
         return fs.exists(path)
+    }
+    
+    def open( pth : Path) : io.BufferedSource = {
+       io.Source.fromInputStream( fs.open( pth))
     }
 
     def markSuccess(path: Path): Unit = {

@@ -6,7 +6,7 @@ import Results._
 import play.api.libs.concurrent.Execution.Implicits._
 import scala.concurrent.duration._
 import com.klout.satisfaction.executor.api._
-import com.klout.satisfaction.Project
+import com.klout.satisfaction.Track
 import com.klout.satisfaction.Goal
 import models.PlumbGraph
 import models._
@@ -28,7 +28,7 @@ object ProjectPage extends Controller {
 
     }
 
-    def getSimpleProject(): Project = {
+    def getSimpleProject(): Track = {
         //// XXX 
         //// TODO 
         ///com.klout.satisfaction.projects.MaxwellProject.Project

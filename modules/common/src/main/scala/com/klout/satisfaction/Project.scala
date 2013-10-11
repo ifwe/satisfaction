@@ -1,11 +1,12 @@
 package com.klout.satisfaction
 
 import org.joda.time.format.DateTimeFormat
+import org.joda.time.DateTime
+///import sbt.BuildDependencies
 
-case class Project(
+case class Track(
     name: String,
-    topLevelGoals: Set[Goal],
-    projectParams: Substitution) {
+    topLevelGoals: Set[Goal] ) {
 
     lazy val allGoals: Set[Goal] = {
         def allGoals0(toCheck: List[Goal], accum: Set[Goal]): Set[Goal] = {
@@ -26,8 +27,26 @@ case class Project(
     lazy val internalGoals: Set[Goal] = allGoals filter (_.satisfier.isDefined)
 
     lazy val externalGoals: Set[Goal] = allGoals filter (_.satisfier.isEmpty)
+    
+    
+    def getWitnessVariables : Set[Variable[_]] = {
+      topLevelGoals.flatMap( _.variables ).toSeq.distinct.toSet
+    }
+    
+    /**
+     *  Attach a set 
+     *   of properties along with the Track
+     * 
+     */
+     var projectProperties : collection.mutable.Map[String,String] = new collection.mutable.HashMap[String,String]
 
 }
+
+trait TemporalVariable {
+  
+    def getObjectForTime( dt : DateTime) : Any
+}
+
 
 trait ProjectOriented {
 

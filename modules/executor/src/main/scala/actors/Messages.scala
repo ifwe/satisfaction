@@ -7,7 +7,7 @@ case class RemoveProject(name: String)
 case class GetProject(name: String)
 case object GetProjects
 
-case class ProjectResult(project: Option[Project])
+case class ProjectResult(project: Option[Track])
 case class ProjectList(names: Set[String])
 
 case object CheckEvidence

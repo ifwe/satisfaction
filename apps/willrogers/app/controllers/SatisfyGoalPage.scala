@@ -170,7 +170,7 @@ object SatisfyGoalPage extends Controller {
 
     def getGoalByName(projName: String, goalName: String): Option[Goal] = {
 
-        val project: Project = getProjectByName(projName)
+        val project: Track = getProjectByName(projName)
         println("Size of project allGoals is " + project.allGoals.size)
         println(project.allGoals)
         project.allGoals.find(_.name.equals(goalName.trim))
@@ -185,6 +185,6 @@ object SatisfyGoalPage extends Controller {
         ProofEngine.getStatus(goal, witness)
     }
 
-    def getProjectByName(projName: String): Project = ProjectPage.getSimpleProject
+    def getProjectByName(projName: String): Track = ProjectPage.getSimpleProject
 
 }

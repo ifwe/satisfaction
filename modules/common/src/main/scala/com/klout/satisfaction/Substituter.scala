@@ -3,6 +3,7 @@ package com.klout.satisfaction
 import scala.util.parsing.input.Reader
 import scala.util.parsing.input.CharSequenceReader
 import scala.collection.mutable.Buffer
+import java.io.InputStream
 
 /**
  * Read a String with ${variables} and output the lines with the values substituted
@@ -101,7 +102,15 @@ object Substituter {
     }
 
     def readProperties(propertyFile: String): Map[String, String] = {
-        val fileProps = io.Source.fromFile(propertyFile).getLines.filterNot(_.isEmpty).
+       readProperties( io.Source.fromFile( propertyFile)) 
+    } 
+    
+    def readProperties( strm : InputStream): Map[String, String] = {
+       readProperties( io.Source.fromInputStream( strm)) 
+    } 
+    
+    def readProperties( source : io.BufferedSource): Map[String, String] = {
+        val fileProps = source.getLines.filterNot(_.isEmpty).
             filterNot(_.startsWith("#")).collect{ case s: String => parseLine(s) }.toMap
 
         substituteVarsInMap(fileProps)

@@ -6,6 +6,14 @@ import scalaxb._
 import org.specs2.mutable._
 import scala.concurrent.duration._
 import org.joda.time.DateTime
+import scala.concurrent.Future
+import scala.concurrent.ExecutionContext
+import scala.concurrent.ExecutionContext.Implicits.global
+import org.specs2.runner.JUnitRunner
+import org.junit.runner.RunWith
+import scala.util.Success
+import scala.util.Failure
+
 
 class ProofEngineSpec extends Specification {
     val NetworkAbbr = new Variable[String]("network_abbr", classOf[String])
@@ -27,16 +35,22 @@ class ProofEngineSpec extends Specification {
             status.state must_== GoalState.Unstarted
         }
 
+
         "satisfy a single goal" in {
             val engine = new ProofEngine()
             val vars: Set[Variable[_]] = Set(NetworkAbbr, runDate)
             val singleGoal = TestGoal("SimpleGoal", vars)
 
             val witness = Witness((runDate -> "20130815"), (NetworkAbbr -> "tw"))
-            val result = engine.satisfyGoal(singleGoal, witness)
-            println(result.state)
-            ///engine.stop
-            result.state must_== GoalState.Success
+            val resultFuture : Future[GoalStatus] = engine.satisfyGoal(singleGoal, witness)
+            resultFuture.onComplete( { 
+              case Success(status) => println(status.state);
+              	status.state must_== GoalState.Success
+              case Failure(t) =>
+                t.printStackTrace()
+                true must_== false
+            } )
+            resultFuture.wait
         }
 
         "satisfy a goal hierarchy" in {
@@ -49,10 +63,15 @@ class ProofEngineSpec extends Specification {
             singleGoal.addDependency(dep1).addDependency(dep2).addDependency(dep3)
 
             val witness = Witness((runDate -> "20130815"), (NetworkAbbr -> "tw"))
-            val result = engine.satisfyGoal(singleGoal, witness)
-            println(result.state)
-            ///engine.stop
-            result.state must_== GoalState.Success
+            val resultFuture = engine.satisfyGoal(singleGoal, witness)
+              resultFuture.onComplete( { 
+              case Success(status) => println(status.state);
+              	status.state must_== GoalState.Success
+              case Failure(t) =>
+                t.printStackTrace()
+                true must_== false
+            } )
+            resultFuture.wait
         }
 
         "satisfy a goal deeply nested hierarchy" in {
@@ -72,10 +91,15 @@ class ProofEngineSpec extends Specification {
             dep4.addDependency(dep5)
             dep5.addDependency(dep6)
             val witness = Witness((runDate -> "20130821"), (NetworkAbbr -> "ig"))
-            val result = engine.satisfyGoal(singleGoal, witness)
-            println(result.state)
-            ///engine.stop
-            result.state must_== GoalState.Success
+            val resultFuture = engine.satisfyGoal(singleGoal, witness)
+              resultFuture.onComplete( { 
+              case Success(status) => println(status.state);
+              	status.state must_== GoalState.Success
+              case Failure(t) =>
+                t.printStackTrace()
+                true must_== false
+            } )
+            resultFuture.wait
         }
 
         "satisfy a  three level goal hierarchy" in {
@@ -89,10 +113,15 @@ class ProofEngineSpec extends Specification {
             singleGoal.addDependency(dep1).addDependency(dep2).addDependency(dep3)
 
             val witness = Witness((runDate -> "20130815"), (NetworkAbbr -> "tw"))
-            val result = engine.satisfyGoal(singleGoal, witness)
-            println(result.state)
-            ///engine.stop
-            result.state must_== GoalState.Success
+            val resultFuture = engine.satisfyGoal(singleGoal, witness)
+              resultFuture.onComplete( { 
+              case Success(status) => println(status.state);
+              	status.state must_== GoalState.Success
+              case Failure(t) =>
+                t.printStackTrace()
+                true must_== false
+            } )
+            resultFuture.wait
         }
 
         "satisfy a single slow goal" in {
