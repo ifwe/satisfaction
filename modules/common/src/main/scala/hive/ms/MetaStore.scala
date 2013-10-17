@@ -21,6 +21,7 @@ import com.klout.satisfaction.Variable
 import com.klout.satisfaction.DataInstance
 import com.klout.satisfaction.HiveTablePartition
 import com.klout.satisfaction.DataOutput
+import org.apache.hadoop.hive.metastore.api.MetaException
 
 /**
  *  Scala Wrapper around Hive MetaStore object
@@ -30,6 +31,7 @@ import com.klout.satisfaction.DataOutput
 class MetaStore(hvConfig: HiveConf) {
 
     private val _hive = Hive.get(hvConfig)
+    private val _hdfs = new Hdfs( ("hdfs://jobs-dev-hnn:8020"))
 
     def hive(): Hive = { _hive }
 
@@ -81,7 +83,7 @@ class MetaStore(hvConfig: HiveConf) {
             println(" MetaData is " + pMd)
             if (!pMd.contains(MetaDataProps.SPACE_USED.toString)) {
 
-                val realPs: Long = Hdfs.getSpaceUsed(part.getPartitionPath())
+                val realPs: Long = _hdfs.getSpaceUsed(part.getPartitionPath())
                 Logger.info(" Real Part size is " + realPs)
                 println(" Real Part size is " + realPs)
                 setPartitionMetaData(part, MetaDataProps.SPACE_USED.toString(), realPs.toString)
@@ -104,17 +106,16 @@ class MetaStore(hvConfig: HiveConf) {
      */
     def cleanPartitions(db: String, tblName: String) = {
         this.synchronized({
-
             try {
                 val tbl = _hive.getTable(db, tblName)
                 if (!tbl.isView && tbl.isPartitioned()) {
                     _hive.getPartitions(tbl).toList.map { part =>
-                        if (Hdfs.exists(part.getPartitionPath)) {
-                            if (Hdfs.getSpaceUsed(part.getPartitionPath()) == 0) {
+                        if (_hdfs.exists(part.getPartitionPath)) {
+                            if (_hdfs.getSpaceUsed(part.getPartitionPath()) == 0) {
                                 Logger.info("Dropping empty partition " + part.getValues + " for table " + tblName)
                                 println("Dropping empty partition " + part.getValues + " for table " + tblName)
                                 _hive.dropPartition(db, tblName, part.getValues(), true)
-                                Hdfs.fs.delete(part.getPartitionPath())
+                                _hdfs.fs.delete(part.getPartitionPath())
                             } else {
                                 Logger.info(" Keeping partition " + part.getValues + " for table " + tblName)
                                 println(" Keeping partition " + part.getValues + " for table " + tblName)
@@ -129,11 +130,16 @@ class MetaStore(hvConfig: HiveConf) {
             } catch {
                 case npe: NullPointerException =>
                     Logger.error("Unable to access table " + tblName + "; Error in Table.checkValidity")
+                case noClass: NoClassDefFoundError =>
+                    Logger.error(" Ignoring HBase table, or table with undefined output format")
+                case metaExc: MetaException =>
+                    Logger.error(" Unexpected MetaException " + metaExc) 
+                case runtime: RuntimeException =>
+                    Logger.error(" Unexpected RuntimeException " + runtime) 
             }
         })
     }
 
-    val YYYYMMDD: DateTimeFormatter = DateTimeFormat.forPattern("YYYYMMdd")
 
     def prunePartitionsByRetention(db: String, tblName: String, now: DateTime, reten: Int) = {
         this.synchronized({
@@ -157,10 +163,10 @@ class MetaStore(hvConfig: HiveConf) {
                         val numDays = Days.daysBetween(partDate, now).getDays()
                         println(" Number of days between " + partDate + " and  " + now + " = " + numDays)
                         if (numDays > reten) {
-                            if (Hdfs.exists(part.getPartitionPath)) {
+                            if (_hdfs.exists(part.getPartitionPath)) {
                                 Logger.info("Deleting obsolete dated path " + part.getPartitionPath())
                                 println("Deleting obsolete dated path " + part.getPartitionPath())
-                                Hdfs.fs.delete(part.getPartitionPath())
+                                _hdfs.fs.delete(part.getPartitionPath())
                             }
                             Logger.info("Dropping obsolete partition " + part.getValues + " for table " + tblName)
                             println("Dropping obsolete partition " + part.getValues + " for table " + tblName)
@@ -182,9 +188,11 @@ class MetaStore(hvConfig: HiveConf) {
         this.synchronized({
             val tblList = _hive.getTablesForDb(db, "*").toList
             tblList.map { tblName =>
+              if( tblName.compareTo( "ksuid_mapping") > 0) {
                 Logger.info(" Cleaning table " + db + "@" + tblName)
                 println(" Cleaning table " + db + "@" + tblName)
                 cleanPartitions(db, tblName)
+              }
             }
         })
     }
@@ -200,6 +208,89 @@ class MetaStore(hvConfig: HiveConf) {
     def getSpaceUsed(db: String, tblName: String): String = {
         getTableMetaData(db, tblName, MetaDataProps.SPACE_USED.toString())
     }
+    
+    
+    /**
+     * XXX  Add to HiveTable and HivePartition DataInstances ..
+     */
+    def getRecentTime( ethr : Either[Table,Partition]) : DateTime = {
+      ethr match {
+        case Left( tbl ) =>
+          val lat =  tbl.getLastAccessTime
+          if( lat != 0)
+             return new DateTime( lat*10000)
+        
+          val create = tbl.getTTable.getCreateTime
+          if(create != 0) {
+            return new DateTime( create*10000)
+          }
+        case Right(part) =>
+          val lat = part.getLastAccessTime()
+          if( lat != 0)
+            return new DateTime( lat*10000)
+          
+          val create = part.getTPartition.getCreateTime
+          if(create != 0) {
+            return new DateTime( create*10000)
+          }
+          
+      }
+      
+      null
+    }
+    
+    
+    /**
+     *  Bucket the data according to activity, 
+     *    so that we can replicate only necessary data,
+     *  and that we can clean up unneeded tables and parttions   
+     */
+    def getTablesByActivity( db: String, periodDates : Seq[DateTime]) : Map[Interval,Seq[Either[Table,Partition]]] = { 
+      
+      val map =  collection.mutable.HashMap[Interval,Seq[Either[Table,Partition]]]()
+      val periods = MetaStore.getIntervalsForDates( periodDates)
+      periods.foreach( per => {
+        println( " Putting buffers in for period " + per.toString)
+    	  map.put( per, new collection.mutable.ArrayBuffer[Either[Table,Partition]])
+      })
+      
+      
+      val tables = _hive.getAllTables( db)
+      println(" Number of tables is " + tables.size)
+      tables.foreach( tblName => {
+          println(" Processing table "+ tblName)
+          val tbl = _hive.getTable( db, tblName)
+          if(! tbl.isView)
+            if( tbl.isPartitioned() ) {
+              val parts = _hive.getPartitions(tbl)
+              parts.foreach( part => {
+               val partDt = getRecentTime( Right(part)) 
+               println(" part last access time is " + partDt)
+               periods.foreach( per => {
+                if( per.contains(partDt) ) {
+                   val buffer = map.get(per).get
+                   buffer  :+ tbl
+                 }
+               })
+              })
+            } else {
+            
+              /// Change to be create time if last access is 0
+              val tblDt =  getRecentTime(Left(tbl))
+              println(" Table last access time is " + tblDt)
+              periods.foreach( per => {
+                 if( per.contains(tblDt) ) {
+                   val buffer = map.get(per).get
+                   buffer :+ tbl
+                }
+              })
+            }
+       } )
+      
+      map.toMap
+    }
+    
+      
 
     def getSpaceUsedPartition(part: Partition): String = {
         getPartitionMetaData(part).get(MetaDataProps.SPACE_USED.toString()).toString
@@ -250,12 +341,14 @@ class MetaStore(hvConfig: HiveConf) {
     }
 
     /**
-     * Scan HDFS at the table location, and add partition matching certain
+     * Scan _hdfs at the table location, and add partition matching certain
      *
      */
     def recoverPartitions(db: String, tblName: String) = {
 
     }
+    
+    
 
     /**
      *  Set a MetaData property on a Table
@@ -337,8 +430,10 @@ class MetaStore(hvConfig: HiveConf) {
     /**
      *  Given the name of a view, find all the tables that the view is ultimately
      *    dependent upon.
+     *    XXX As derived from metadata ???0
      */
     def getTableDependencies(db: String, viewName: String): List[Table] = {
+        
         null
     }
 
@@ -354,6 +449,7 @@ class MetaStore(hvConfig: HiveConf) {
 
     /**
      *  Set the goal associated with this table into metadata
+     *   
      */
     def setGoalDefinition(db: String, tblName: String, goalDef: String) = {
 
@@ -384,8 +480,36 @@ class MetaStore(hvConfig: HiveConf) {
  *  Companion object
  */
 object MetaStore extends MetaStore(Config.config) {
+    def apply( msURI : java.net.URI ) : MetaStore = {
+      val conf = Config.initHiveConf
+      conf.setVar(HiveConf.ConfVars.METASTOREURIS, msURI.toASCIIString())
+      
+      new MetaStore(conf)
+    }
+  
+    /**
+     *  From a set of dates 
+     *  XXXX Move to time utility class
+     */
+    def getIntervalsForDates( dates : Seq[DateTime]) : Seq[Interval] = {
+      val backward = dates.sortWith( (dt1, dt2) => dt1.isAfter(dt2) )
+       backward.foldLeft[Seq[Interval]]( Seq[Interval]() )( (seqP, dt) => {
+         var lastDt :DateTime = null 
+         if( lastDt != null) {
+           println(" Current DT = " + dt + " ; Last DT =- " + lastDt)
+           val newInterval = new Interval( dt, lastDt) 
+           lastDt = dt
+           seqP :+ newInterval
+          } else {
+           lastDt = dt
+           seqP 
+          }
+      } )
+    }
+      
 
-    ///val YYYYMMDD : DateTimeFormatter = DateTimeFormat.forPattern("YYYYMMdd")
+
+    val YYYYMMDD : DateTimeFormatter = DateTimeFormat.forPattern("YYYYMMdd")
     def main(argv: Array[String]): Unit = {
 
         val toMs: MetaStore = MetaStore

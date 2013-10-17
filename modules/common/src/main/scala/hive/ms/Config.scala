@@ -12,10 +12,12 @@ object Config {
     def initHiveConf: HiveConf = {
         print(ShimLoader.getMajorVersion())
         var hc = new HiveConf(new Configuration(), this.getClass())
-        hc.setVar(HiveConf.ConfVars.METASTOREURIS, "thrift://jobs-dev-sched2:9084")
+        hc.setVar(HiveConf.ConfVars.METASTOREURIS, "thrift://jobs-dev-sched2:9083")
 
         return hc
     }
+    
+    
 
     val config = initHiveConf
 

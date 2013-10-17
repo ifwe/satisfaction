@@ -6,6 +6,7 @@ import org.apache.hadoop.hive.conf.HiveConf
 import org.apache.hadoop.hive.ql.session.SessionState
 import org.apache.hadoop.hive.shims.ShimLoader
 import org.apache.hadoop.util.VersionInfo
+import org.apache.hadoop.hive.ql.QueryPlan
 ///import org.apache.hive.service.cli.HiveSQLException
 //import org.apache.hadoop.hive.service.HiveServer
 //import org.apache.hive.HiveServer2
@@ -75,16 +76,27 @@ class HiveLocalDriver extends HiveDriver {
     }
 
     def auxJarsPath(): String = {
+      //// XXX associate aux lib with project 
+      ////   link to project upload plugin ..
+      ////   download from HDFS
         new java.io.File("/Users/jeromebanks/NewGit/satisfaction/auxlib").listFiles.filter(_.getName.endsWith("jar")).map(
             "file:////" + _.getAbsolutePath
         ).mkString(",")
     }
 
-    override def useDatabase(dbName: String) {
+    override def useDatabase(dbName: String) = {
         ///val client = new HiveServer.HiveServerHandler
         println(" Using database " + dbName)
         executeQuery("use " + dbName)
         ///val client2 = new HiveServer2.HiveServerHandler
+    }
+    
+    def getQueryPlan( query: String ) : QueryPlan = {
+       val retCode = driver.compile(query)
+       println(" Compiling " + query + " has return Code " + retCode)
+       
+      
+       null
     }
 
     override def executeQuery(query: String): Boolean = {

@@ -27,8 +27,8 @@ case class Hdfs(val fsURI: String) {
          loadFSMeth.setAccessible(true)
          loadFSMeth.invoke(null)
          
-         val fsFactory : FsUrlStreamHandlerFactory  =  new org.apache.hadoop.fs.FsUrlStreamHandlerFactory();
-         java.net.URL.setURLStreamHandlerFactory(fsFactory);
+         //val fsFactory : FsUrlStreamHandlerFactory  =  new org.apache.hadoop.fs.FsUrlStreamHandlerFactory();
+         ///java.net.URL.setURLStreamHandlerFactory(fsFactory);
          initUrl = true
        }
     }
@@ -108,8 +108,8 @@ case class Hdfs(val fsURI: String) {
 
     def getSpaceUsed(path: Path): Long = {
         var totalLen: Long = 0
-        if (Hdfs.fs.exists(path)) {
-            val status = Hdfs.fs.getFileStatus(path)
+        if (fs.exists(path)) {
+            val status = fs.getFileStatus(path)
             if (status.isDirectory()) {
                 val fsArr = fs.listFiles(status.getPath(), true)
                 while (fsArr.hasNext()) {
@@ -127,6 +127,7 @@ case class Hdfs(val fsURI: String) {
 
 }
 object Hdfs extends Hdfs("hdfs://jobs-dev-hnn:8020") {
+  
 
     def rounded(dbl: Double): String = {
         (((dbl * 100).toInt) / 100.0).toString

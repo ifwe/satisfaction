@@ -18,9 +18,22 @@ import org.joda.time.format.DateTimeFormat
  *   XXX TODO
  *     Set up Federation, by altering certain properties
  *      in the new MetaStore
+ *      
+ *  XXX Make a regular class, not object     
+ *   parameterize certain features ( like dest url, number of days to replicate )    
+ *    whether to Distcp data 
+ *    
+ *     
+ *   
  */
 object Replicator {
+   val YYYYMMDD: DateTimeFormatter = DateTimeFormat.forPattern("YYYYMMdd")
 
+   def getEarliestDate : DateTime = {
+     val thirtyDaysAgo = DateTime.now.minusDays( 30)
+     
+     thirtyDaysAgo
+   }
     /*
    *  
    */
@@ -38,7 +51,8 @@ object Replicator {
 
         val fromTables = fromMs.getAllTables(dbName)
         fromTables.toList.map { tblName =>
-            if (tblName.compareTo("hb") > 0) {
+        ///if (tblName.compareTo("hc") > 0) {
+        if ( true ) {
                 try {
                     val fromTable = fromMs.getTable(dbName, tblName)
                     if (isHBase(fromTable)) {
@@ -59,6 +73,22 @@ object Replicator {
     def isHBase(tbl: Table): Boolean = {
         tbl.getInputFormatClass().getName().equals("org.apache.hadoop.hive.hbase.HiveHBaseTableInputFormat")
     }
+    
+    def movedLocation( oldLoc : java.net.URI , destURI : java.net.URI) : java.net.URI = {
+      val newLoc = new java.net.URI( destURI.getScheme(),
+          destURI.getUserInfo(),
+          destURI.getHost(),
+          destURI.getPort(),
+          oldLoc.getPath(),
+          oldLoc.getQuery(),
+          oldLoc.getFragment() )
+    		  		
+     
+      newLoc
+    }
+    
+    /// XXX set dest path as value on Replicator object
+    val JOBS_DEV = new java.net.URI("hdfs://jobs-dev-hnn:8020")
 
     /**
      *  Replicate a table from one database to another data
@@ -67,10 +97,14 @@ object Replicator {
         System.out.println(" Replicating Table " + fromTable.getTableName())
         val oldTbl = toMs.getTable(fromTable.getDbName(), fromTable.getTableName(), false)
         if (oldTbl == null) {
-            toMs.createTable(fromTable)
+           fromTable.setDataLocation( movedLocation( fromTable.getDataLocation , JOBS_DEV))
+         
+            val toTable = toMs.createTable(fromTable)
             ///oldTbl = toMs.getTable( fromTable.getDbName(), fromTable.getTableName())
+            
         } else {
             toMs.setCurrentDatabase(fromTable.getDbName()) /// sic ..
+            fromTable.setDataLocation( movedLocation( fromTable.getDataLocation , JOBS_DEV))
             toMs.alterTable(fromTable.getTableName(), fromTable)
         }
         if (fromTable.isPartitioned()) {
@@ -85,11 +119,10 @@ object Replicator {
                     val partSpec = getPartitionSpecFromName(partName)
                     println(" PartSpec is " + partSpec)
 
-                    val YYYYMMDD: DateTimeFormatter = DateTimeFormat.forPattern("YYYYMMdd")
                     val dt = YYYYMMDD.parseDateTime(partSpec.get("dt"))
-                    val d20130801 = YYYYMMDD.parseDateTime("20130810")
-                    if (dt.isAfter(d20130801)) {
+                    if (dt.isAfter(getEarliestDate)) {
                         val oldPart = fromMs.getPartition(fromTable, partSpec, false)
+                        
                         println(" Old part is  " + partSpec)
                         println(" Old part path  is  " + oldPart.getPartitionPath())
 
@@ -138,15 +171,18 @@ object Replicator {
         ///hc.setVar(HiveConf.ConfVars.METASTORE_CONNECTION_DRIVER, "com.mysql.jdbc.Driver")
         ///hc.setVar(HiveConf.ConfVars.METASTORE_CONNECTION_USER_NAME, "hive")
         ///hc.setVar(HiveConf.ConfVars.METASTOREPWD, "hiveklout")
-        hc.setVar(HiveConf.ConfVars.METASTORECONNECTURLKEY, "jdbc:mysql://mysql-hive1/hive_meta_db")
-        hc.setVar(HiveConf.ConfVars.METASTORE_CONNECTION_DRIVER, "com.mysql.jdbc.Driver")
-        hc.setVar(HiveConf.ConfVars.METASTORE_CONNECTION_USER_NAME, "hive")
-        hc.setVar(HiveConf.ConfVars.METASTOREPWD, "hiveklout")
-        val fromMs = new MetaStore(hc)
+        ///hc.setVar(HiveConf.ConfVars.METASTORECONNECTURLKEY, "jdbc:mysql://mysql-hive1/hive_meta_db")
+        ///hc.setVar(HiveConf.ConfVars.METASTORE_CONNECTION_DRIVER, "com.mysql.jdbc.Driver")
+        ///hc.setVar(HiveConf.ConfVars.METASTORE_CONNECTION_USER_NAME, "hive")
+        ///hc.setVar(HiveConf.ConfVars.METASTOREPWD, "hiveklout")
 
         val prodHc = new HiveConf(new Configuration(), this.getClass())
         prodHc.setVar(HiveConf.ConfVars.METASTOREURIS, "thrift://jobs-aa-sched1:9083")
-        val toMs = new MetaStore(prodHc)
+        val fromMs = new MetaStore(prodHc)
+        
+        val stageHc = new HiveConf(new Configuration(), this.getClass())
+        stageHc.setVar(HiveConf.ConfVars.METASTOREURIS, "thrift://jobs-dev-sched2:9083")
+        val toMs = new MetaStore(stageHc)
 
         ///val now = MetaStore.YYYYMMDD.parseDateTime("20130729")
         ///fromMs.prunePartitionsByRetention("bi_insights", "agg_moment", now,  92)
@@ -155,7 +191,7 @@ object Replicator {
 
         ////fromMs.cleanPartitionsForDb("bi_insights")
 
-        replicateDatabase(fromMs.hive, toMs.hive, "bi_insights")
+        replicateDatabase(fromMs.hive, toMs.hive, "bi_maxwell")
         ///val tbl = fromMs.getTableByName("bi_insights", "users_relationships")
 
         //replicateTable( fromMs.hive, toMs.hive, tbl )
