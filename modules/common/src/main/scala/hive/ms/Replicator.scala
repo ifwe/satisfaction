@@ -49,7 +49,7 @@ object Replicator {
             toMs.alterDatabase(dbName, fromDb)
         }
 
-        val fromTables = fromMs.getAllTables(dbName)
+        val fromTables = fromMs.getTablesByPattern(dbName, "user_graph*")
         fromTables.toList.map { tblName =>
         ///if (tblName.compareTo("hc") > 0) {
         if ( true ) {

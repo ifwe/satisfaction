@@ -10,6 +10,10 @@ case class Witness(val substitution: Substitution) {
     lazy val variables: Set[Variable[_]] = substitution.assignments.map(_.variable).toSet
 
     def update[T](assignment: VariableAssignment[T]): Witness = this copy (substitution + assignment)
+    
+    def filter( vars : Set[Variable[_]]) : Witness = {
+      Witness( vars, substitution)
+    }
 }
 
 object Witness {

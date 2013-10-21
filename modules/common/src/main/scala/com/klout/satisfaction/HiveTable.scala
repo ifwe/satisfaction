@@ -29,7 +29,9 @@ case class HiveTable(
 
     def getPartition(witness: Witness): Partition = {
         try {
-            ms.getPartition(dbName, tblName, witness.substitution.raw)
+            
+            val tblWitness = witness.filter( variables)
+            ms.getPartition(dbName, tblName, tblWitness.substitution.raw)
         } catch {
             case e: NoSuchElementException =>
                 null

@@ -24,14 +24,6 @@ object Application extends Controller {
         Ok(views.html.dbtabs(MetaStore.getDbs))
     }
 
-    def allProjects = Action {
-        ///Ok(views.html.projtabs(List("Maxwell", "Topic Thunder", "Insights", "Relevance")))
-        ///val projects = SyncApi.getProjects
-        ///val projNames: Set[String] = projects.names
-
-        val projNames = Set("Maxwell", "Topic Thunder", "Insights", "Bing")
-        Ok(views.html.projtabs(projNames.toList))
-    }
 
     def displayDataOutput(data: DataOutput): String = {
         data match {

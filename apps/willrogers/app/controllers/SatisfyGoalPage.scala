@@ -21,6 +21,7 @@ import models.PlumbGraph
 import models.VariableFormHandler
 import collection._
 import play.mvc.Results
+import track.TrackDescriptor
 
 object SatisfyGoalPage extends Controller {
 
@@ -185,6 +186,11 @@ object SatisfyGoalPage extends Controller {
         ProofEngine.getStatus(goal, witness)
     }
 
-    def getProjectByName(projName: String): Track = ProjectPage.getSimpleProject
+    def getProjectByName(projName: String): Track = {
+      
+        val trackDesc = TrackDescriptor( projName)
+        val trackOpt : Option[Track] = ProjectPage.trackFactory.getTrack( trackDesc)
+        trackOpt.get
+    } 
 
 }

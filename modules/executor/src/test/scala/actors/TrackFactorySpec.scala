@@ -36,7 +36,7 @@ class TrackFactorySpec extends Specification {
            val path = tf.getTrackPath( td)
            println("Track Path is " + path.toUri.toString)
            
-           path.toUri.toString must_== "hdfs://jobs-dev-hnn/user/satisfaction/track/maxwell/version_SNAPSHOT"
+           path.toUri.toString must_== "hdfs://jobs-dev-hnn/user/satisfaction/track/maxwell/version_LATEST"
              
            val rtTd = tf.parseTrackPath( path)  
            println(" Track Descriptor is " + rtTd)
@@ -60,6 +60,34 @@ class TrackFactorySpec extends Specification {
            rtTd must_== td
           
         }
+       
+       "Parse a track descriptor with a port number" in {
+          val tf = new TrackFactory( new java.net.URI( "hdfs://jobs-dev-hnn:8020"),
+                 "/user/satisfaction")
+          
+          val td = TrackDescriptor("maxwell", "jerome", "20.0_beta",Some("myfeature"))
+         
+           val path = tf.getTrackPath( td)
+           println("Track Path is " + path.toUri.toString)
+           
+           path.toUri.toString must_== "hdfs://jobs-dev-hnn:8020/user/satisfaction/track/maxwell/user/jerome/variant/myfeature/version_20.0_beta"
+             
+           val rtTd = tf.parseTrackPath( path)  
+           println(" Track Descriptor is " + rtTd)
+           rtTd must_== td
+          
+        }
+       
+       
+       "GetAllTracks" in {
+          val tf = new TrackFactory( new java.net.URI( "hdfs://jobs-dev-hnn"),
+                 "/user/satisfaction")
+         
+          val allTracks = tf.getAllTracks
+          allTracks.foreach( tr => {
+            println(" ALL TRACKS :: Track is " + tr )
+          })
+       }
 
     }
 }

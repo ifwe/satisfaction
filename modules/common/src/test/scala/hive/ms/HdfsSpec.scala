@@ -15,7 +15,7 @@ class HdfsSpec extends Specification {
     "Hdfs" should {
         "create URLS starting with hdfs" in {
           val hdfs = Hdfs
-          val hdfsUrl = new java.net.URL("hdfs://jobs-dev-hnn/user/satisfaction/track/usergraph/version_SNAPSHOT/satisfaction.properties")
+          val hdfsUrl = new java.net.URL("hdfs://jobs-dev-hnn/user/satisfaction/track/usergraph/version_1.1/satisfaction.properties")
          
           val stream = hdfsUrl.openStream
           val props  = Substituter.readProperties( stream)

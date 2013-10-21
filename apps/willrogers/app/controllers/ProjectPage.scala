@@ -12,28 +12,42 @@ import models.PlumbGraph
 import models._
 import com.klout.satisfaction.executor.actors.GoalStatus
 import collection._
+import com.klout.satisfaction.executor.track._
 
 object ProjectPage extends Controller {
+  val trackFactory = new TrackFactory( new java.net.URI("hdfs://jobs-dev-hnn:8020"))
+  
+  
+  
+    def allProjects = Action {
+        ///Ok(views.html.projtabs(List("Maxwell", "Topic Thunder", "Insights", "Relevance")))
+        ///val projects = SyncApi.getProjects
+        ///val projNames: Set[String] = projects.names
+        val projNames = trackFactory.getAllTracks.map( _.trackName ).toList.distinct
+
+        Ok(views.html.projtabs(projNames))
+    }
 
     def showProject(projName: String) = Action {
         ///val project = SyncApi.getProject(projName)
-        val project = getSimpleProject
+       //// Display only major projects 
+        val trackDesc = TrackDescriptor( projName)
+        val trackOpt : Option[Track] = trackFactory.getTrack( trackDesc)
         //val internalGoals = project.project.get.internalGoals.toList
         //val externalGoals = project.project.get.externalGoals.toList
         ///val internalGoals = project.topLevelGoals.toList
-        val internalGoals = project.allGoals.toList
-        val externalGoals = project.externalGoals.toList
+        trackOpt match {
+          case Some(track) =>
+          val internalGoals = track.allGoals.toList
+          val externalGoals = track.externalGoals.toList
 
-        Ok(views.html.showproject(projName, internalGoals map (_.name), externalGoals map (_.name)))
+          Ok(views.html.showproject(projName, internalGoals map (_.name), externalGoals map (_.name)))
+        case None =>
+          Ok( views.html.brokenproject( projName))
+        }
 
     }
 
-    def getSimpleProject(): Track = {
-        //// XXX 
-        //// TODO 
-        ///com.klout.satisfaction.projects.MaxwellProject.Project
-        com.klout.satisfaction.projects.SampleProject()
-    }
 
     //// Where does layout code belong ???
     def getPlumbGraphForGoal(topLevelGoal: Goal): PlumbGraph = {

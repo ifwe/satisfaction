@@ -11,27 +11,22 @@ import org.apache.hadoop.fs.FsUrlStreamHandlerFactory
  *
  */
 
-case class Hdfs(val fsURI: String) {
-  
-   /**
-    *  Handle URLs starting with hdfs:// prefix
-    */
-    var initUrl = false
-    val initURLStreamHandler = {
-      if ( !initUrl) {
-          //// HADOOP-9041
-          //// cal FileSystem.loadFileSystems() first
+
+object HdfsFactoryInit {
          val fsClass = classOf[org.apache.hadoop.fs.FileSystem] 
          val meths = fsClass.getDeclaredMethods()
          val loadFSMeth = fsClass.getDeclaredMethod("loadFileSystems")
          loadFSMeth.setAccessible(true)
          loadFSMeth.invoke(null)
          
-         //val fsFactory : FsUrlStreamHandlerFactory  =  new org.apache.hadoop.fs.FsUrlStreamHandlerFactory();
-         ///java.net.URL.setURLStreamHandlerFactory(fsFactory);
-         initUrl = true
-       }
-    }
+         val fsFactory : FsUrlStreamHandlerFactory  =  new org.apache.hadoop.fs.FsUrlStreamHandlerFactory();
+         java.net.URL.setURLStreamHandlerFactory(fsFactory);
+}
+
+  
+case class Hdfs(val fsURI: String) {
+  
+  val init = HdfsFactoryInit
 
     lazy val fs = FileSystem.get(new URI(fsURI), Config.config)
     

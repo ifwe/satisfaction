@@ -8,7 +8,7 @@ GET     /                           controllers.Application.index
 
 GET     /alldbs                      controllers.Application.allDBs
 GET     /dbtabs                      controllers.Application.allDBs
-GET     /projtabs                      controllers.Application.allProjects
+GET     /projtabs                      controllers.ProjectPage.allProjects
 GET     /showproject/:projName         controllers.ProjectPage.showProject(projName: String)
 GET     /alltables/:db                   controllers.Application.getDBTables(db: String)
 GET     /showtable/:db/:tblName                   controllers.Application.showDBTable(db: String, tblName: String)
@@ -19,6 +19,7 @@ POST     /addmetadata/:db/:tblName                   controllers.MetaDataPage.ad
 GET     /satisfygoal/:projName/:goalName                   controllers.SatisfyGoalPage.showSatisfyForm(projName: String, goalName: String)
 POST     /satisfygoal/:projName/:goalName                   controllers.SatisfyGoalPage.satisfyGoalAction(projName: String, goalName: String)
 GET     /goalstatus/:projName/:goalName                   controllers.SatisfyGoalPage.goalStatus(projName: String, goalName: String)
+GET     /schedules/                   controllers.ScheduleTrackPage.showSchedulesAction()
 
 
 # Map static resources from the /public folder to the /assets URL path
