@@ -14,7 +14,7 @@ import org.joda.time.DateTime
 
 object GoalState extends Enumeration {
     type State = Value
-    val Unstarted, AlreadySatisfied, WaitingOnDependencies, SatifyingSelf, DepFailed, Failed, Success, Aborted = Value
+    val Unstarted, AlreadySatisfied, WaitingOnDependencies, Running, DependencyFailed, Failed, Success, Aborted = Value
 
 }
 
@@ -33,6 +33,18 @@ case class GoalStatus(goal: Goal, witness: Witness) {
         val predName = child.goal.getPredicateString(child.witness)
         dependencyStatus.put(predName, child)
         this
+    }
+    
+    
+    /**
+     *  Return true if the actor's state
+     *   can no longer change
+     */
+    def isTerminal : Boolean = {
+       state == GoalState.Success ||
+         state == GoalState.Failed ||
+         state == GoalState.Aborted || 
+         state == GoalState.DependencyFailed
     }
 
 }

@@ -34,12 +34,14 @@ class HiveLocalDriver extends HiveDriver {
     lazy implicit val hiveConf = Config.config
 
     lazy val driver = {
+         /// XXX FIX ME ...
+         /// 
         hiveConf.set("mapreduce.framework.name", "classic")
         hiveConf.set("mapreduce.jobtracker.address", "jobs-dev-hnn:8021")
         hiveConf.set("mapred.job.tracker", "jobs-dev-hnn:8021")
         hiveConf.set("yarn.resourcemanager.address", "scr@wyoucloudera")
 
-        hiveConf.set("hive.exec.post.hooks", "com.klout.satisfaction.GatherStatsHook")
+        ////hiveConf.set("hive.exec.post.hooks", "com.klout.satisfaction.GatherStatsHook")
         //// XXX TODO  Each project should have on set of auxjars 
         ///hiveConf.setAuxJars()
         val auxJars = auxJarsPath

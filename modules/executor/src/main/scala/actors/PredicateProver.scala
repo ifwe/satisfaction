@@ -52,10 +52,11 @@ class PredicateProver(val goal: Goal, val witness: Witness, val proverFactory: A
 
         case Satisfy =>
             /// Check to see if 
+            log.info(s" PredicateProver received Satisfy message witness is $witness ")
             if (goal.evidence != null &&
                 goal.evidence.size != 0 &&
                 goal.evidence.forall(e => e.exists(witness))) {
-                println(" Check Already satisfied ?? ")
+                log.info(" Check Already satisfied ?? ")
                 status.state = GoalState.AlreadySatisfied
                 sender ! GoalSuccess(status)
             } else {
@@ -80,8 +81,8 @@ class PredicateProver(val goal: Goal, val witness: Witness, val proverFactory: A
         case WhatsYourStatus =>
             //// Do a blocking call to just return  
 
-            val currentStatus = new GoalStatus(goal, witness)
-            currentStatus.state = status.state
+            ///val currentStatus = new GoalStatus(goal, witness)
+            ///currentStatus.state = status.state
 
             /// Go through and ask all our 
             val futureSet = dependencies.map {
@@ -103,10 +104,10 @@ class PredicateProver(val goal: Goal, val witness: Witness, val proverFactory: A
              */
             Future.sequence(futureSet).map { statusList =>
                 statusList.foreach { resp =>
-                    currentStatus.addChildStatus(resp.goalStatus)
+                    status.addChildStatus(resp.goalStatus)
                 }
             }
-            sender ! StatusResponse(currentStatus)
+            sender ! StatusResponse(status)
 
         case Abort =>
 
@@ -115,18 +116,22 @@ class PredicateProver(val goal: Goal, val witness: Witness, val proverFactory: A
             //// 
             println("Failure in our Chidren")
             status.addChildStatus(failedStatus)
-            status.state = GoalState.DepFailed
+            status.state = GoalState.DependencyFailed
             publishFailure
         //// Add a flag to see if we want to 
         //// abort sibling jobs which may be running 
         case GoalSuccess(depStatus) =>
             if (depStatus != null)
                 status.addChildStatus(depStatus)
-            //// Determine if 
+            //// Determine if all jobs completed
             if (status.dependencyStatus.size == dependencies.size) {
-                runLocalJob()
+               if(status.dependencyStatus.values.forall( _.state == GoalState.Success) ) {
+                  runLocalJob()
+               } else {
+                 /// XXX One of our children failed 
+               }
             }
-        //// XXX Refactor names 
+        //// XXX Refactor names -- Really Goal AlreadySatisfied
         case GoalSatisfied =>
             log.info(" Received Goal Satisfied, send to our parent  ")
             status.state = GoalState.Success
@@ -150,16 +155,19 @@ class PredicateProver(val goal: Goal, val witness: Witness, val proverFactory: A
         listenerList.foreach{ actor: ActorRef =>
             actor ! GoalSuccess(status)
         }
+        
+        proverFactory ! GoalSuccess( status)
     }
     def publishFailure = {
         listenerList.foreach{ actor: ActorRef =>
             actor ! GoalFailure(status)
         }
+        proverFactory ! GoalFailure( status)
     }
 
     def runLocalJob() {
-        if (status.state != GoalState.SatifyingSelf) {
-            status.state = GoalState.SatifyingSelf
+        if (status.state != GoalState.Running) {
+            status.state = GoalState.Running
             goal.satisfier match {
                 case Some(satisfier) =>
                     val jobRunActor = Props(new JobRunner(satisfier, getSubstitution))

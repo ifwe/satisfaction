@@ -24,17 +24,19 @@ object ApplicationBuild extends Build {
       file("modules/executor")
   ).settings(CommonSettings: _*).settings(version := appVersion).dependsOn(common)
 
+/**
   val samples = Project(
       "satisfaction-samples",
       file("modules/samples")
   ).settings(CommonSettings: _*).settings(version := appVersion).dependsOn(common, executor)
 
+**/
 
   val willrogers = play.Project(
       "willrogers",
       appVersion,
       path = file("apps/willrogers")
-  ).settings(CommonSettings: _*).dependsOn(common, executor,samples)
+  ).settings(CommonSettings: _*).dependsOn(common, executor)
 
   def CommonSettings = Dependencies ++  Resolvers ++ Seq(
       scalacOptions ++= Seq(
@@ -87,6 +89,7 @@ object ApplicationBuild extends Build {
 	  ("org.apache.hadoop" % "hadoop-tools" % "2.0.0-mr1-cdh4.2.1"),
 	  ("org.apache.hadoop" % "hadoop-mapreduce-client-core" % "2.0.0-cdh4.2.1"),
 	  ("org.apache.hadoop" % "hadoop-core" % "2.0.0-mr1-cdh4.2.1"),
+	  ("org.apache.hadoop" % "hadoop-lzo" % "0.4.10"),
 	  ("javax.jdo" % "jdo-api" % "3.0.1"),
 	  ("mysql" % "mysql-connector-java" % "5.1.18" ),
     ("com.github.nscala-time" %% "nscala-time" % "0.4.2"),

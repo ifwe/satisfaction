@@ -26,7 +26,7 @@ class JobRunner(
 
     def receive = {
         case Satisfy =>
-            log.info(s"Asked to satisfy for params: $params.mkString")
+            log.info(s"Asked to satisfy for params: ${params}")
 
             if (satisfierFuture == null) {
                 satisfierFuture = future {

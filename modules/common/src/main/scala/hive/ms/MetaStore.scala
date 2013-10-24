@@ -22,6 +22,7 @@ import com.klout.satisfaction.DataInstance
 import com.klout.satisfaction.HiveTablePartition
 import com.klout.satisfaction.DataOutput
 import org.apache.hadoop.hive.metastore.api.MetaException
+import scala.collection._
 
 /**
  *  Scala Wrapper around Hive MetaStore object
@@ -32,6 +33,9 @@ class MetaStore(hvConfig: HiveConf) {
 
     private val _hive = Hive.get(hvConfig)
     private val _hdfs = new Hdfs( ("hdfs://jobs-dev-hnn:8020"))
+    private var _dbList : List[String] = _initDbList
+    private var _tableMap : collection.immutable.Map[String,List[String]] = _initTableMap 
+    private var _viewMap : collection.immutable.Map[String,List[String]] = _initViewMap
 
     def hive(): Hive = { _hive }
 
@@ -41,27 +45,74 @@ class MetaStore(hvConfig: HiveConf) {
         val SLA = Value("SLA")
     }
 
-    def getDbs = {
+    private def _initDbList = {
         this.synchronized({
             _hive.getAllDatabases().toList
         })
     }
-
-    def getTables(db: String) = {
-        this.synchronized({
-            _hive.getAllTables(db).toList
-            /**
-             * _hive.getAllTables( db).toList.filter( tbl =>
-             * try{
-             * _hive.getTable( db, tbl).getTableType() != TableType.VIRTUAL_VIEW
-             * } catch {
-             * case e:Exception => false
-             * }
-             * )
-             *
-             */
-        })
+    
+    def getDbs = {
+      _dbList
     }
+
+    def getTables(db: String) : List[String]= {
+        _tableMap.get(db).get
+    }
+    
+    def getViews(db: String) : List[String]= {
+        _viewMap.get(db).get
+    }
+    
+    
+    /**
+     *  Since tables cached, we may periodically need to reload them
+     */
+    def reloadMetaStore() = {
+        _dbList = _initDbList
+        _tableMap = _initTableMap 
+        _viewMap = _initViewMap
+        true
+    }
+
+
+    private def _initTableMap :  collection.immutable.Map[String,List[String]] = {
+      this.synchronized({
+       	 var buildMap : immutable.Map[String,List[String]]= Map.empty
+        _dbList.foreach( db => {
+        	buildMap = buildMap + ( db ->
+        	_hive.getAllTables( db).toList.filter( tbl =>
+              try{
+        	   _hive.getTable( db, tbl).getTableType() != TableType.VIRTUAL_VIEW
+              } catch {
+        	    case e:Exception =>
+                  println("Unable to get table " + tbl + " Exception " + e)
+        		  false
+                })
+        	 )
+         })
+         buildMap
+      })
+    }
+    
+    private def _initViewMap :  collection.immutable.Map[String,List[String]] = {
+      this.synchronized({
+       	 var buildMap : immutable.Map[String,List[String]]= Map.empty
+         _dbList.foreach( db => {
+        	buildMap = buildMap + ( db ->
+        	_hive.getAllTables( db).toList.filter( tbl =>
+              try{
+        	   _hive.getTable( db, tbl).getTableType() == TableType.VIRTUAL_VIEW
+              } catch {
+        	    case e:Exception =>
+                  println("Unable to get table " + tbl + " Exception " + e)
+        		  false
+                })
+        	 )
+         })
+         buildMap
+      })
+    }
+    
 
     def getPartitionNamesForTable(db: String, tblName: String): List[String] = {
         this.synchronized({
@@ -455,7 +506,7 @@ class MetaStore(hvConfig: HiveConf) {
 
     }
 
-    def getVariablesForTable(db: String, tblName: String): Set[Variable[_]] = {
+    def getVariablesForTable(db: String, tblName: String): collection.immutable.Set[Variable[_]] = {
         val tbl = getTableByName(db, tblName)
         val partCols = tbl.getPartitionKeys().toList
         val vars = for (part <- partCols) yield {

@@ -1,0 +1,59 @@
+@(gsList : Set[com.klout.satisfaction.executor.actors.GoalStatus]  )
+
+@import helper._
+@import scala.collection.JavaConversions._
+@import com.klout.satisfaction._
+@import com.klout.satisfaction.executor._
+@import com.klout.satisfaction.executor.actors.GoalState
+@import models.HtmlUtil
+
+
+@main( s"Satisfaction Current Status " ) {
+    
+     <h1>Satisfaction !!!</h1>
+     <h2>Overview of all running jobs</h2>
+    
+  <table>
+  <theads>
+   <td>Track</td>
+   <td>Goal Name</td>
+   <td>Status</td>
+   <td>Witness</td>
+   <td>Started</td>
+   </theads>
+  @gsList.filter( _.state == GoalState.Running ).map { gs => 
+     <tr>
+     <td>N/A</td>
+     <td>@gs.goal.name</td>
+     <td>@gs.state</td>
+     <td>@HtmlUtil.formatWitness( gs.witness )</td>
+     <td>@HtmlUtil.formatDate( gs.timeStarted )</td>
+     </tr>
+  }
+   
+   </table>
+   	  
+     <h2>Recently completed Goals</h2>
+    
+  <table>
+  <theads>
+   <td>Track</td>
+   <td>Goal Name</td>
+   <td>Status</td>
+   <td>Witness</td>
+   <td>Started</td>
+   </theads>
+  @gsList.filter(  gs => { gs.state == GoalState.Success || gs.state == GoalState.Failed }  ).map { gs => 
+     <tr>
+     <td>N/A</td>
+     <td>@gs.goal.name</td>
+     <td>@gs.state</td>
+     <td>@HtmlUtil.formatWitness( gs.witness )</td>
+     <td>@HtmlUtil.formatDate( gs.timeStarted )</td>
+     </tr>
+  }
+   
+   </table>
+   	  
+    
+}

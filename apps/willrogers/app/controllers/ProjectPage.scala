@@ -15,7 +15,7 @@ import collection._
 import com.klout.satisfaction.executor.track._
 
 object ProjectPage extends Controller {
-  val trackFactory = new TrackFactory( new java.net.URI("hdfs://jobs-dev-hnn:8020"))
+  val trackFactory : TrackFactory = TrackFactory
   
   
   

@@ -14,6 +14,7 @@ import com.klout.satisfaction._
 import com.klout.satisfaction.executor._
 import com.klout.satisfaction.executor.actors.ProofEngine
 import com.klout.satisfaction.executor.actors._
+import com.klout.satisfaction.executor.track._
 import com.klout.satisfaction.executor.actors.GoalState
 import java.io.FileInputStream
 import java.io.File
@@ -21,7 +22,6 @@ import models.PlumbGraph
 import models.VariableFormHandler
 import collection._
 import play.mvc.Results
-import track.TrackFactory
 
 /**
  *   Page for seeing which Tracks have been scheduled,

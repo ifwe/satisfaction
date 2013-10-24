@@ -31,6 +31,8 @@ case class HiveTable(
         try {
             
             val tblWitness = witness.filter( variables)
+            println( "variables for table is " + variables  +  " ; Witness variables = " + witness.variables)
+            println(s" TableWitness = $tblWitness == regular witness = $witness")
             ms.getPartition(dbName, tblName, tblWitness.substitution.raw)
         } catch {
             case e: NoSuchElementException =>

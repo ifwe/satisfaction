@@ -14,6 +14,7 @@ case class Witness(val substitution: Substitution) {
     def filter( vars : Set[Variable[_]]) : Witness = {
       Witness( vars, substitution)
     }
+    
 }
 
 object Witness {

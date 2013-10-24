@@ -8,6 +8,15 @@ case class Variable[T](val name: String, val clazz: Class[T], val description: O
     override lazy val toString =
         s"name=[$name], class=[$clazz], description=[${description getOrElse ""}]"
     
+    override def equals( other : Any ) : Boolean = {
+      //// assume just the names are the same
+      if( other.isInstanceOf[Variable[_]]) {
+    	  val otherVar = other.asInstanceOf[Variable[_]]
+    	  name.equals( otherVar.name)
+      } else {
+        false
+      }
+    }
     
 }
 object Variable {
@@ -25,6 +34,9 @@ object Variable {
 case class VariableAssignment[T](variable: Variable[T], value: T) {
     lazy val raw: (String, String) = variable.name -> value.toString
 
+    override def toString : String = {
+        s"(${variable.name} => $value)" 
+    }
 }
 object VariableAssignment {
     def apply[T](name: String, value: T)(implicit m: Manifest[T]): VariableAssignment[T] = {
@@ -71,6 +83,9 @@ class Substitution(
 
     def update[T](pair: VariableAssignment[T]): Substitution = update(pair.variable, pair.value)
 
+    override def toString : String = {
+       assignments.mkString(";")
+    }
 }
 
 object Substitution {

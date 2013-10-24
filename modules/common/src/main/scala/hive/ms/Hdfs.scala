@@ -19,8 +19,20 @@ object HdfsFactoryInit {
          loadFSMeth.setAccessible(true)
          loadFSMeth.invoke(null)
          
-         val fsFactory : FsUrlStreamHandlerFactory  =  new org.apache.hadoop.fs.FsUrlStreamHandlerFactory();
-         java.net.URL.setURLStreamHandlerFactory(fsFactory);
+         val fsFactory : FsUrlStreamHandlerFactory  =  {
+            
+              val newFactory = new org.apache.hadoop.fs.FsUrlStreamHandlerFactory();
+              try { 
+                  java.net.URL.setURLStreamHandlerFactory(newFactory);
+                  newFactory
+              }catch { 
+                case  e :  Throwable =>
+                  if( e.getMessage.contains("factory already defined")) {
+                     println(" Ignoing factory already defined error") 
+                  }
+                  fsFactory
+              }
+         }
 }
 
   

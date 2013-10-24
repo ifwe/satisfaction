@@ -21,7 +21,6 @@ import models.PlumbGraph
 import models.VariableFormHandler
 import collection._
 import play.mvc.Results
-import track.TrackDescriptor
 
 object SatisfyGoalPage extends Controller {
 
@@ -52,6 +51,14 @@ object SatisfyGoalPage extends Controller {
                 NotFound(s"Dude, we can't find the goal ${goalName} in poject ${projName}")
         }
     }
+    
+    
+    def currentStatusAction() = Action {
+        //// XXX Apply sort order to statuses
+        val statList = ProofEngine.getGoalsInProgress
+        println(" Number of Goals in Progress are " + statList.size)
+        Ok(views.html.currentstatus( statList))
+    }
 
     def showSatisfyForm(projName: String, goalName: String) = Action {
         val goal = getGoalByName(projName, goalName)
@@ -70,7 +77,7 @@ object SatisfyGoalPage extends Controller {
         getStatusForGoal(projName, goalName) match {
             case Some(status) =>
                 val plumb = plumbGraphForStatus(status)
-                if (status.state == GoalState.SatifyingSelf) {
+                if (status.state == GoalState.Running) {
                     /// Read log files 
                     val logs = readLogFile(status.goal, status.witness)
                     Ok(views.html.goalstatus(projName, goalName, status, Some(logs), Some(plumb)))
@@ -110,8 +117,8 @@ object SatisfyGoalPage extends Controller {
             case GoalState.Success               => "Green"
             case GoalState.AlreadySatisfied      => "DarkGreen"
             case GoalState.Failed                => "Red"
-            case GoalState.DepFailed             => "Orange"
-            case GoalState.SatifyingSelf         => "Purple"
+            case GoalState.DependencyFailed             => "Orange"
+            case GoalState.Running         => "Purple"
             case GoalState.WaitingOnDependencies => "Yellow"
             case _                               => "White"
         }
@@ -168,13 +175,15 @@ object SatisfyGoalPage extends Controller {
         else
             None
     }
+    
+    
 
     def getGoalByName(projName: String, goalName: String): Option[Goal] = {
 
         val project: Track = getProjectByName(projName)
         println("Size of project allGoals is " + project.allGoals.size)
         println(project.allGoals)
-        project.allGoals.find(_.name.equals(goalName.trim))
+        project.allGoals.find(_.name.trim.equals(goalName.trim))
     }
 
     def satisfyGoal(goal: Goal, witness: Witness): GoalStatus = {
@@ -188,7 +197,7 @@ object SatisfyGoalPage extends Controller {
 
     def getProjectByName(projName: String): Track = {
       
-        val trackDesc = TrackDescriptor( projName)
+        val trackDesc = com.klout.satisfaction.executor.track.TrackDescriptor( projName)
         val trackOpt : Option[Track] = ProjectPage.trackFactory.getTrack( trackDesc)
         trackOpt.get
     } 

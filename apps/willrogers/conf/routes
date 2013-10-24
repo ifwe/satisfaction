@@ -9,6 +9,7 @@ GET     /                           controllers.Application.index
 GET     /alldbs                      controllers.Application.allDBs
 GET     /dbtabs                      controllers.Application.allDBs
 GET     /projtabs                      controllers.ProjectPage.allProjects
+GET     /current                   controllers.SatisfyGoalPage.currentStatusAction()
 GET     /showproject/:projName         controllers.ProjectPage.showProject(projName: String)
 GET     /alltables/:db                   controllers.Application.getDBTables(db: String)
 GET     /showtable/:db/:tblName                   controllers.Application.showDBTable(db: String, tblName: String)

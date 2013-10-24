@@ -91,9 +91,10 @@ class ProofEngine {
 
     def getGoalsInProgress: Set[GoalStatus] = {
         val activeActorsF = proverFactory ? GetActiveActors
-        println(" Active actors are " + activeActorsF)
 
         val activeActors = Await.result(activeActorsF, timeout.duration).asInstanceOf[Set[ActorRef]]
+        println("Getting Goals in progres ")
+        println(" Active actors are " + activeActors)
 
         /// Get a set of futures for every actor, and ask their status
         val listOfRequests: Set[Future[StatusResponse]] = activeActors.map(ask(_, WhatsYourStatus).mapTo[StatusResponse])
@@ -101,7 +102,14 @@ class ProofEngine {
         val fMap = futureList.map(_.map(_.goalStatus))
 
         ///Await.result( fMap, timeout.duration).asInstanceOf[Set[GoalStatus]
-        Await.result(fMap, timeout.duration)
+        var resultSet = Await.result(fMap, timeout.duration)
+        
+        //// Not quite what we want because we only want the ones for a particular track ...
+        while( resultSet.size < activeActors.size ) {
+           println(" Result Set size is " + resultSet.size)
+           resultSet = Await.result(fMap, timeout.duration)
+        }
+        resultSet
     }
 
     /// sic ....

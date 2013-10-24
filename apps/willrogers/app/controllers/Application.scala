@@ -34,7 +34,7 @@ object Application extends Controller {
     }
 
     def getDBTables(db: String) = Action {
-        Ok(views.html.alltables(db, MetaStore.getTables(db)))
+        Ok(views.html.alltables(db, MetaStore.getTables(db), MetaStore.getViews(db)))
     }
 
     def showDBTable(db: String, tblName: String) = Action {
