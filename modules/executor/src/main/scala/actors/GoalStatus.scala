@@ -35,6 +35,8 @@ case class GoalStatus(goal: Goal, witness: Witness) {
         this
     }
     
+    var execResult : ExecutionResult = null
+    
     
     /**
      *  Return true if the actor's state

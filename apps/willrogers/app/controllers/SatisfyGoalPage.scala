@@ -68,11 +68,10 @@ object SatisfyGoalPage extends Controller {
                 val pg = ProjectPage.getFullPlumbGraphForGoal(goal.get)
                 Ok(views.html.satisfygoal(projName, goalName, List(), goal.get.variables.toList, Some(pg)))
             case None =>
-                NotFound(s"Dude, we can't find the goal ${goalName} in poject ${projName}")
+                NotFound(s"Dude, we can't find the goal ${goalName} in Track ${projName}")
         }
     }
 
-    /// XXXX TODO .. get status for all running witnesses
     def goalStatus(projName: String, goalName: String) = Action {
         getStatusForGoal(projName, goalName) match {
             case Some(status) =>
@@ -85,8 +84,16 @@ object SatisfyGoalPage extends Controller {
                     Ok(views.html.goalstatus(projName, goalName, status, None, Some(plumb)))
                 }
             case None =>
-                NotFound(s"Dude, we can't find the goal ${goalName} in poject ${projName}")
+              goalHistory( projName, goalName)
+                ///NotFound(s"Dude, we can't find the goal ${goalName} in Track ${projName}")
         }
+    }
+    
+    
+    def goalHistory( projName : String, goalName : String ) =  {
+         val goalPaths = LogWrapper.getLogPathsForGoal( goalName).toList
+         Ok( views.html.goalhistory( projName, goalName, goalPaths) )
+      
     }
 
     /// XXX  pass in method to for customize ??
@@ -154,12 +161,10 @@ object SatisfyGoalPage extends Controller {
     }
 
     def readLogFile(goal: Goal, witness: Witness): String = {
-        //// XXX TODO
-        //// Come up with reasonable naming convention for log files ...
+        val logFile = LogWrapper.logPathForGoal(goal.name, witness)
 
-        val file = new File(witness.substitution.raw.mkString("_").replace(" ", "_").replace("->", "_"))
-        if (file.exists()) {
-            io.Source.fromFile(file).getLines.mkString("<br>\n")
+        if (logFile.exists()) {
+            io.Source.fromFile(logFile).getLines.mkString("<br>\n")
         } else {
             ""
         }

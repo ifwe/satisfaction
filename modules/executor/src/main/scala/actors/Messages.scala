@@ -11,5 +11,5 @@ case class ProjectResult(project: Option[Track])
 case class ProjectList(names: Set[String])
 
 case object CheckEvidence
-case object GoalSatisfied
-case object GoalFailed
+case class JobRunSuccess( val result : ExecutionResult )
+case class JobRunFailed( val result : ExecutionResult )

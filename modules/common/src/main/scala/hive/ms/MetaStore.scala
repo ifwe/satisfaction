@@ -82,10 +82,11 @@ class MetaStore(hvConfig: HiveConf) {
         	buildMap = buildMap + ( db ->
         	_hive.getAllTables( db).toList.filter( tbl =>
               try{
+                println(s" Getting table $db :: $tbl")
         	   _hive.getTable( db, tbl).getTableType() != TableType.VIRTUAL_VIEW
               } catch {
-        	    case e:Exception =>
-                  println("Unable to get table " + tbl + " Exception " + e)
+        	    case e:Throwable =>
+                  println("Ignoring ..Unable to get table " + tbl + " Exception " + e)
         		  false
                 })
         	 )
@@ -101,10 +102,11 @@ class MetaStore(hvConfig: HiveConf) {
         	buildMap = buildMap + ( db ->
         	_hive.getAllTables( db).toList.filter( tbl =>
               try{
+                println(s" Getting view $db :: $tbl")
         	   _hive.getTable( db, tbl).getTableType() == TableType.VIRTUAL_VIEW
               } catch {
-        	    case e:Exception =>
-                  println("Unable to get table " + tbl + " Exception " + e)
+        	    case e: Throwable  =>
+                  println(" Ignore ..Unable to get table " + tbl + " Exception " + e)
         		  false
                 })
         	 )

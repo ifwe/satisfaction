@@ -16,7 +16,7 @@ import org.joda.time.Days
 // object HiveSatisfier extends HiveSatisfier(MetaStore)
 
 ///case class HiveSatisfier(queryTemplate: String, driver: HiveClient) extends Satisfier {
-case class HiveSatisfier(queryTemplate: String, driver: HiveDriver) extends Satisfier with ProjectOriented {
+case class HiveSatisfier(queryTemplate: String, driver: HiveDriver) extends Satisfier with ProjectOriented with MetricsProducing {
 
     def executeMultipleHqls(hql: String): Boolean = {
         val multipleQueries = hql.split(";")
@@ -55,4 +55,18 @@ case class HiveSatisfier(queryTemplate: String, driver: HiveDriver) extends Sati
         println("Fall through to bottom ")
         false
     }
+    
+   ///
+    def jobMetrics : MetricsCollection =  {
+       if( driver.isInstanceOf[MetricsProducing])  {
+           val mpDriver = driver.asInstanceOf[MetricsProducing] 
+            mpDriver.jobMetrics
+       } else {
+         new MetricsCollection("Hive Query")
+       }
+    }
+   
+     
+    
+   
 }

@@ -16,68 +16,59 @@ import scala.util.Try
 import java.io.OutputStream
 import java.io.FileOutputStream
 import java.io.File
+import org.joda.time.DateTime
 
 class JobRunner(
     satisfier: Satisfier,
+    goal : Goal, 
+    witness : Witness,
     params: Substitution) extends Actor with ActorLogging {
 
     var satisfierFuture: Future[Boolean] = null
     var messageSender: ActorRef = null
+    val logger = new LogWrapper[Boolean]( goal, witness)
+    var startTime : DateTime = null
+    var endTime : DateTime = null
 
     def receive = {
         case Satisfy =>
             log.info(s"Asked to satisfy for params: ${params}")
 
             if (satisfierFuture == null) {
+                startTime = DateTime.now
                 satisfierFuture = future {
-                    val currOut = Console.out
-                    val currErr = Console.err
-                    val outStream = getLoggingOutput
-                    try {
-                        Console.setOut(outStream)
-                        Console.setErr(outStream)
-                        satisfier.satisfy(params)
-                    } catch {
-                        case t: Throwable =>
-                            log.error(t, "Unexpected Error while running job")
-                            t.printStackTrace(currErr)
-                            t.printStackTrace(new java.io.PrintWriter(outStream))
-
-                            false
-                    } finally {
-                        outStream.flush()
-                        outStream.close()
-                        Console.setOut(currOut)
-                        Console.setOut(currErr)
+                    logger.log( { () => satisfier.satisfy(params) } ) match {
+                      case Some(result) => result
+                      case None => false
                     }
                 }
                 messageSender = sender
                 satisfierFuture onComplete {
+                    endTime = DateTime.now
                     checkResults(_)
                 }
             }
-
     }
 
-    def getLoggingOutput: OutputStream = {
-        //// XXX TODO
-        //// Come up with reasonable naming convention for log files ...
-        new FileOutputStream(new File(params.raw.mkString("_").replace(" ", "_").replace("->", "_")))
-    }
 
     def checkResults(result: Try[Boolean]) = {
         log.info("Sending GoalSatisfied to parent")
         log.info("Some result =  " + result)
+    val execResult = new ExecutionResult( goal.name, startTime, endTime)
+        if (satisfier.isInstanceOf[MetricsProducing]) {
+        	val metricsSatisfier = satisfier.asInstanceOf[MetricsProducing]
+        	execResult.metrics.mergeMetrics( metricsSatisfier.jobMetrics )
+        }
         if (result.isSuccess) {
             if (result.get) {
-                messageSender ! GoalSatisfied
+                messageSender ! new JobRunSuccess(execResult)
             } else {
-                log.info(" Bool is false " + GoalFailed)
-                messageSender ! GoalFailed
+                log.info(" Bool is false " + execResult)
+                messageSender ! new JobRunFailed(execResult)
             }
         } else {
             log.info(" result isFailure " + result.failed.get)
-            messageSender ! GoalFailed
+            messageSender ! new JobRunFailed(execResult)
         }
     }
 

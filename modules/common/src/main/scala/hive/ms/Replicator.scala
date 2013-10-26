@@ -177,12 +177,15 @@ object Replicator {
         ///hc.setVar(HiveConf.ConfVars.METASTOREPWD, "hiveklout")
 
         val prodHc = new HiveConf(new Configuration(), this.getClass())
-        prodHc.setVar(HiveConf.ConfVars.METASTOREURIS, "thrift://jobs-aa-sched1:9083")
+        ///prodHc.setVar(HiveConf.ConfVars.METASTOREURIS, "thrift://jobs-aa-sched1:9083")
+        prodHc.setVar(HiveConf.ConfVars.METASTOREURIS, "thrift://jobs-dev-sched2:9083")
         val fromMs = new MetaStore(prodHc)
+        println(" Production MetaStore = " + fromMs)
         
         val stageHc = new HiveConf(new Configuration(), this.getClass())
-        stageHc.setVar(HiveConf.ConfVars.METASTOREURIS, "thrift://jobs-dev-sched2:9083")
+        stageHc.setVar(HiveConf.ConfVars.METASTOREURIS, "thrift://10.1.100.145:9085")
         val toMs = new MetaStore(stageHc)
+        println(" Destination MetaStore = " + toMs)
 
         ///val now = MetaStore.YYYYMMDD.parseDateTime("20130729")
         ///fromMs.prunePartitionsByRetention("bi_insights", "agg_moment", now,  92)

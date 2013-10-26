@@ -7,6 +7,12 @@ import org.apache.hadoop.hive.ql.session.SessionState
 import org.apache.hadoop.hive.shims.ShimLoader
 import org.apache.hadoop.util.VersionInfo
 import org.apache.hadoop.hive.ql.QueryPlan
+import com.klout.satisfaction.MetricsProducing
+import collection.JavaConversions._
+import org.apache.hadoop.hive.ql.MapRedStats
+import collection.mutable.{HashMap => MutableHashMap}
+import com.klout.satisfaction.MetricsCollection
+
 ///import org.apache.hive.service.cli.HiveSQLException
 //import org.apache.hadoop.hive.service.HiveServer
 //import org.apache.hive.HiveServer2
@@ -30,12 +36,12 @@ trait HiveDriver {
 
 }
 
-class HiveLocalDriver extends HiveDriver {
+class HiveLocalDriver extends HiveDriver with MetricsProducing {
     lazy implicit val hiveConf = Config.config
 
     lazy val driver = {
          /// XXX FIX ME ...
-         /// 
+         ///   need to use project properties 
         hiveConf.set("mapreduce.framework.name", "classic")
         hiveConf.set("mapreduce.jobtracker.address", "jobs-dev-hnn:8021")
         hiveConf.set("mapred.job.tracker", "jobs-dev-hnn:8021")
@@ -127,5 +133,38 @@ class HiveLocalDriver extends HiveDriver {
 
         }
     }
+    
+    val SumCounters = List[String]()
+        
+   override def jobMetrics() : MetricsCollection = {
+      
+       val mc = new MetricsCollection("HiveQuery")
+        updateJobMetrics( mc.metrics )
+       mc
+    }
+    
+  def updateJobMetrics( metricsMap : collection.mutable.Map[String,Any]) : Unit = {
+      val mapRedStats : List[MapRedStats] = SessionState.get.getLastMapRedStatsList.toList
+      var totalCpuMsec : Long = 0 
+      var totalMappers : Long = 0
+      var totalReducers :  Long = 0
+      val counterSum : collection.mutable.Map[String,Long] = new MutableHashMap[String,Long]
+      mapRedStats.foreach( mrs => {
+          totalCpuMsec += mrs.getCpuMSec
+          totalMappers += mrs.getNumMap
+          totalReducers += mrs.getNumReduce
+          
+          println(" Examingng MapRedStats for job " + mrs.getJobId() )
+          mrs.getCounters.write( new java.io.DataOutputStream(System.out))
+          
+          //// Printout counters 
+      })
+      
+      metricsMap.put("TOTAL_NUM_MAPPERS", totalMappers)
+      metricsMap.put("TOTAL_NUM_REDUCERS", totalReducers)
+      metricsMap.put("TOTAL_CPU_MSEC", totalCpuMsec)
+     
+   }
+   
 
 }

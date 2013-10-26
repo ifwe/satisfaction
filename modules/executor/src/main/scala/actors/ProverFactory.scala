@@ -57,8 +57,9 @@ class ProverFactory extends Actor with ActorLogging {
     }
     
     def receive = {
-        case GetActor(goal, witness) =>
-            ///val actorTuple = ProofEngine.getactorTuple(goal, witness)
+        case GetActor(goal, witnessArg) =>
+            val witness = witnessArg.filter( goal.variables.toSet)
+            
             log.info(s"Getting ProverActor for goal $goal.name and witness $witness ")
             checkVariables( goal, witness)
             val actorTuple: Tuple2[Goal, Witness] = (goal, witness)
@@ -79,7 +80,8 @@ class ProverFactory extends Actor with ActorLogging {
                 listenerMap.put(actorTupleName, listenerList)
                 sender ! actorRef
             }
-        case ReleaseActor(goal, witness) =>
+        case ReleaseActor(goal, witnessArg) =>
+            val witness = witnessArg.filter( goal.variables.toSet)
             log.info( "Received a Release Actor message for goal " + goal.name + " witness " + witness )
             val actorTuple = (goal, witness)
             val actorTupleName = ProofEngine.getActorName(goal, witness)
@@ -93,7 +95,8 @@ class ProverFactory extends Actor with ActorLogging {
                     context.stop(deadRef)
                 }
             }
-        case GetListeners(goal, witness) =>
+        case GetListeners(goal, witnessArg) =>
+            val witness = witnessArg.filter( goal.variables.toSet)
             val actorTuple = (goal, witness)
             val actorTupleName = ProofEngine.getActorName(goal, witness)
             sender ! listenerMap.get(actorTupleName).get

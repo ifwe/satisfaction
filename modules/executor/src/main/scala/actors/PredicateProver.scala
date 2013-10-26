@@ -131,14 +131,15 @@ class PredicateProver(val goal: Goal, val witness: Witness, val proverFactory: A
                  /// XXX One of our children failed 
                }
             }
-        //// XXX Refactor names -- Really Goal AlreadySatisfied
-        case GoalSatisfied =>
+        case JobRunSuccess(result) =>
             log.info(" Received Goal Satisfied, send to our parent  ")
             status.state = GoalState.Success
-            publishSuccess
-        case GoalFailed =>
+            status.execResult  = result
+            publishSuccess 
+        case JobRunFailed(result) =>
             log.info(" Received Goal Failed, send to our parent  ")
             status.state = GoalState.Failed
+            status.execResult = result
             publishFailure
 
         case InvalidRequest =>
@@ -170,7 +171,7 @@ class PredicateProver(val goal: Goal, val witness: Witness, val proverFactory: A
             status.state = GoalState.Running
             goal.satisfier match {
                 case Some(satisfier) =>
-                    val jobRunActor = Props(new JobRunner(satisfier, getSubstitution))
+                    val jobRunActor = Props(new JobRunner(satisfier, goal, witness, getSubstitution))
                     this.jobRunner = context.system.actorOf((jobRunActor), "Satisfier_" + ProofEngine.getActorName(goal, witness))
                     jobRunner ! Satisfy
                 case None =>

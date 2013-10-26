@@ -53,7 +53,7 @@ class DefaultGoalSatisfier(
 
     def finished() {
         log.info("No more evidence left.")
-        context.parent ! GoalSatisfied
+        context.parent ! JobRunSuccess
     }
 
     def checkAgainLater() {
