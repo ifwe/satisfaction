@@ -28,7 +28,7 @@ object HdfsFactoryInit {
               }catch { 
                 case  e :  Throwable =>
                   if( e.getMessage.contains("factory already defined")) {
-                     println(" Ignoing factory already defined error") 
+                     println(" Ignoring factory already defined error") 
                   }
                   fsFactory
               }
@@ -41,8 +41,6 @@ case class Hdfs(val fsURI: String) {
   val init = HdfsFactoryInit
 
     lazy val fs = FileSystem.get(new URI(fsURI), Config.config)
-    
-    
     
     implicit def URI2Path( value : java.net.URI) : Path = {
     	new Path( value.toString())

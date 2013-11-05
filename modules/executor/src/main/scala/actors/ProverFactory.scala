@@ -12,6 +12,7 @@ import com.klout.satisfaction.Goal
 import com.klout.satisfaction.Witness
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
+import akka.util.Timeout
 
 
 /**
@@ -27,8 +28,8 @@ import scala.concurrent.ExecutionContext
  *
  */
 
-case class GetActor(goal: Goal, witness: Witness)
-case class GetActiveActors
+case class GetActor(track : Track, goal: Goal, witness: Witness)
+case class GetActiveActors()
 case class ReleaseActor(goal: Goal, witness: Witness)
 case class KillActor( goal : Goal, witness : Witness)
 case class GetListeners(goal: Goal, witness: Witness)
@@ -57,7 +58,7 @@ class ProverFactory extends Actor with ActorLogging {
     }
     
     def receive = {
-        case GetActor(goal, witnessArg) =>
+        case GetActor(track, goal, witnessArg) =>
             val witness = witnessArg.filter( goal.variables.toSet)
             
             log.info(s"Getting ProverActor for goal $goal.name and witness $witness ")
@@ -72,7 +73,7 @@ class ProverFactory extends Actor with ActorLogging {
                     listenerList += sender
                 sender ! actorMap.get(actorTupleName).get
             } else {
-                val actorRef = context.system.actorOf(Props(new PredicateProver(goal, witness, context.self)),
+                val actorRef = context.system.actorOf(Props(new PredicateProver(track, goal, witness, context.self)),
                     ProofEngine.getActorName(goal, witness))
                 actorMap.put(actorTupleName, actorRef)
                 val listenerList = mutable.Set[ActorRef]()
@@ -105,7 +106,7 @@ class ProverFactory extends Actor with ActorLogging {
         case GoalSuccess(goalStatus) =>
             publishMessageToListeners(goalStatus, new GoalSuccess(goalStatus))
             //// Schedule a message to release this actor after a while
-            system.scheduler.scheduleOnce( 30 seconds, self, new KillActor( goalStatus.goal, goalStatus.witness) )
+            context.system.scheduler.scheduleOnce( 30 seconds, self, new KillActor( goalStatus.goal, goalStatus.witness) )
         case KillActor( goal,witness) =>
             log.info(s" Killing Actor for goal ${goal.name} $witness") 
             val actorTupleName = ProofEngine.getActorName(goal, witness)
@@ -142,8 +143,10 @@ class ProverFactory extends Actor with ActorLogging {
 }
 object ProverFactory {
 
-    def getProver(proverFactory: ActorRef, goal: Goal, witness: Witness): ActorRef = {
-        val f = proverFactory ? GetActor(goal, witness)
+    implicit val timeout = Timeout( 30 seconds )
+    
+    def getProver(proverFactory: ActorRef, track : Track, goal: Goal, witness: Witness): ActorRef = {
+        val f = proverFactory ? GetActor(track, goal, witness)
         Await.result(f, timeout.duration).asInstanceOf[ActorRef]
     }
 

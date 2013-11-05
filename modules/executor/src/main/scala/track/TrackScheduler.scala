@@ -145,7 +145,7 @@ object TrackScheduler extends TrackScheduler( ProofEngine, TrackFactory) {
         	   trck.topLevelGoals.foreach( goal => { 
         	      log.info(s" Satisfying Goal $goal.name with witness $witness ")
         	      goal.variables.foreach( v => println( s"  Goal $goal.name has variable " + v))
-                  proofEngine.satisfyGoal(goal, witness)
+                  proofEngine.satisfyGoal(trck,goal, witness)
               } )
              case None =>
               println(" Track " + mess.trackDesc.trackName + " not found ")

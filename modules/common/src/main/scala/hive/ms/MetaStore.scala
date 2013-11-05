@@ -33,9 +33,11 @@ class MetaStore(hvConfig: HiveConf) {
 
     private val _hive = Hive.get(hvConfig)
     private val _hdfs = new Hdfs( ("hdfs://jobs-dev-hnn:8020"))
-    private var _dbList : List[String] = _initDbList
-    private var _tableMap : collection.immutable.Map[String,List[String]] = _initTableMap 
-    private var _viewMap : collection.immutable.Map[String,List[String]] = _initViewMap
+    
+    val PRELOAD = false
+    private var _dbList : List[String] = if( PRELOAD)  { _initDbList  } else { null }
+    private var _tableMap : collection.immutable.Map[String,List[String]] = if( PRELOAD) { _initTableMap  } else { null }
+    private var _viewMap : collection.immutable.Map[String,List[String]] = if( PRELOAD ) { _initViewMap } else { null }
 
     def hive(): Hive = { _hive }
 
@@ -52,14 +54,17 @@ class MetaStore(hvConfig: HiveConf) {
     }
     
     def getDbs = {
+      if(_dbList == null ) _dbList = _initDbList
       _dbList
     }
 
     def getTables(db: String) : List[String]= {
+        if(_tableMap == null ) _tableMap = _initTableMap
         _tableMap.get(db).get
     }
     
     def getViews(db: String) : List[String]= {
+        if(_viewMap == null ) _viewMap = _initViewMap
         _viewMap.get(db).get
     }
     
@@ -78,7 +83,7 @@ class MetaStore(hvConfig: HiveConf) {
     private def _initTableMap :  collection.immutable.Map[String,List[String]] = {
       this.synchronized({
        	 var buildMap : immutable.Map[String,List[String]]= Map.empty
-        _dbList.foreach( db => {
+           getDbs.foreach( db => {
         	buildMap = buildMap + ( db ->
         	_hive.getAllTables( db).toList.filter( tbl =>
               try{
@@ -98,7 +103,7 @@ class MetaStore(hvConfig: HiveConf) {
     private def _initViewMap :  collection.immutable.Map[String,List[String]] = {
       this.synchronized({
        	 var buildMap : immutable.Map[String,List[String]]= Map.empty
-         _dbList.foreach( db => {
+          getDbs.foreach( db => {
         	buildMap = buildMap + ( db ->
         	_hive.getAllTables( db).toList.filter( tbl =>
               try{

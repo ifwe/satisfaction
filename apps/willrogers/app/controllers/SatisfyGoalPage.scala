@@ -24,31 +24,31 @@ import play.mvc.Results
 
 object SatisfyGoalPage extends Controller {
 
-    def satisfyGoalAction(projName: String, goalName: String) = Action { implicit request =>
-        println(s" Satisfying Goal  $projName $goalName")
+    def satisfyGoalAction(trackName: String, goalName: String) = Action { implicit request =>
+        println(s" Satisfying Goal  $trackName $goalName")
         //// Can't use standard Play Form object ...
         ////  because  witness can have different variables
         //// XXX For now assume everything is "dt", and "network_abbr"
         println(request.body.asFormUrlEncoded)
-        val goalOpt = getGoalByName(projName, goalName)
+        val goalOpt = getTrackGoalByName(trackName, goalName)
         goalOpt match {
-            case Some(goal) =>
-                val variableFormHandler = new VariableFormHandler(goal.variables)
+            case Some(goalTuple) =>
+                val variableFormHandler = new VariableFormHandler(goalTuple._2.variables)
                 variableFormHandler.processRequest(request) match {
                     case Right(subst) =>
                         val witness = Witness(subst)
-                        val status: GoalStatus = this.satisfyGoal(goal, witness)
+                        val status: GoalStatus = this.satisfyGoal(goalTuple._1, goalTuple._2, witness)
                         println(" Got Goal Stqtus = " + status.state)
 
-                        Redirect(s"/goalstatus/$projName/$goalName")
+                        Redirect(s"/goalstatus/$trackName/$goalName")
                     case Left(errorMessages) =>
                         /// Bring him back to the first page
-                        val pg = ProjectPage.getFullPlumbGraphForGoal(goal)
-                        Ok(views.html.satisfygoal(projName, goalName, errorMessages.toList, goal.variables.toList, Some(pg)))
+                        val pg = ProjectPage.getFullPlumbGraphForGoal(goalTuple._2)
+                        Ok(views.html.satisfygoal(trackName, goalName, errorMessages.toList, goalTuple._2.variables.toList, Some(pg)))
 
                 }
             case None =>
-                NotFound(s"Dude, we can't find the goal ${goalName} in poject ${projName}")
+                NotFound(s"Dude, we can't find the goal ${goalName} in the Track ${trackName}")
         }
     }
     
@@ -60,39 +60,42 @@ object SatisfyGoalPage extends Controller {
         Ok(views.html.currentstatus( statList))
     }
 
-    def showSatisfyForm(projName: String, goalName: String) = Action {
-        val goal = getGoalByName(projName, goalName)
+    def showSatisfyForm(trackName: String, goalName: String) = Action {
+        val goal = getTrackGoalByName(trackName, goalName)
         goal match {
-            case Some(_) =>
+            case Some(tuple) =>
                 ///val pg = ProjectPage.getPlumbGraphForGoal(goal.get)
-                val pg = ProjectPage.getFullPlumbGraphForGoal(goal.get)
-                Ok(views.html.satisfygoal(projName, goalName, List(), goal.get.variables.toList, Some(pg)))
+                val pg = ProjectPage.getFullPlumbGraphForGoal(tuple._2)
+                Ok(views.html.satisfygoal(trackName, goalName, List(), tuple._2.variables.toList, Some(pg)))
             case None =>
-                NotFound(s"Dude, we can't find the goal ${goalName} in Track ${projName}")
+                NotFound(s"Dude, we can't find the goal ${goalName} in Track ${trackName}")
         }
     }
 
-    def goalStatus(projName: String, goalName: String) = Action {
-        getStatusForGoal(projName, goalName) match {
+    def goalStatus(trackName: String, goalName: String) = Action {
+        println(s" GOAL STATUS $trackName :: $goalName ")
+        getStatusForGoal(trackName, goalName) match {
             case Some(status) =>
                 val plumb = plumbGraphForStatus(status)
                 if (status.state == GoalState.Running) {
                     /// Read log files 
-                    val logs = readLogFile(status.goal, status.witness)
-                    Ok(views.html.goalstatus(projName, goalName, status, Some(logs), Some(plumb)))
+                    println(s" Running Job for status $status")
+                    val logs = readLogFile(status.track, status.goal, status.witness)
+                    Ok(views.html.goalstatus(trackName, goalName, status, Some(logs), Some(plumb)))
                 } else {
-                    Ok(views.html.goalstatus(projName, goalName, status, None, Some(plumb)))
+                    Ok(views.html.goalstatus(trackName, goalName, status, None, Some(plumb)))
                 }
             case None =>
-              goalHistory( projName, goalName)
+              println( " NO STATUS FOUND -- DISPlaying history ")
+              goalHistory( trackName, goalName)
                 ///NotFound(s"Dude, we can't find the goal ${goalName} in Track ${projName}")
         }
     }
     
     
-    def goalHistory( projName : String, goalName : String ) =  {
-         val goalPaths = LogWrapper.getLogPathsForGoal( goalName).toList
-         Ok( views.html.goalhistory( projName, goalName, goalPaths) )
+    def goalHistory( trackName : String, goalName : String ) =  {
+         val goalPaths = LogWrapper.getLogPathsForGoal( trackName, goalName).toList
+         Ok( views.html.goalhistory( trackName, goalName, goalPaths) )
       
     }
 
@@ -160,8 +163,8 @@ object SatisfyGoalPage extends Controller {
 
     }
 
-    def readLogFile(goal: Goal, witness: Witness): String = {
-        val logFile = LogWrapper.logPathForGoal(goal.name, witness)
+    def readLogFile(track : Track, goal: Goal, witness: Witness): String = {
+        val logFile = LogWrapper.logPathForGoalWitness(track, goal, witness)
 
         if (logFile.exists()) {
             io.Source.fromFile(logFile).getLines.mkString("<br>\n")
@@ -170,11 +173,13 @@ object SatisfyGoalPage extends Controller {
         }
     }
 
-    def getStatusForGoal(projName: String, goalName: String): Option[GoalStatus] = {
+    def getStatusForGoal(trackName: String, goalName: String): Option[GoalStatus] = {
 
         /// XXX TODO Push to ProofEngine ..
         //// use project name 
-        val statList = ProofEngine.getGoalsInProgress.filter(_.goal.name.equals(goalName))
+         ///val allStats = ProofEngine.getGoalsInProgress 
+         ///allStats.foreach { stat => println( stat.track.name  + " :: " + stat.goal.name)}
+        val statList = ProofEngine.getGoalsInProgress.filter(_.track.name.equals(trackName)).filter(_.goal.name.equals(goalName))
         if (statList.size > 0)
             Some(statList.head)
         else
@@ -183,26 +188,31 @@ object SatisfyGoalPage extends Controller {
     
     
 
-    def getGoalByName(projName: String, goalName: String): Option[Goal] = {
+    def getTrackGoalByName(trackName: String, goalName: String): Option[Tuple2[Track,Goal]] = {
 
-        val project: Track = getProjectByName(projName)
-        println("Size of project allGoals is " + project.allGoals.size)
-        println(project.allGoals)
-        project.allGoals.find(_.name.trim.equals(goalName.trim))
+        val track: Track = getTrackByName(trackName)
+        ///println("Size of project allGoals is " + track.allGoals.size)
+        println(track.allGoals)
+        val someGoal = track.allGoals.find(_.name.trim.equals(goalName.trim))
+        someGoal match {
+          case Some(goal) =>
+            Some(Tuple2[Track,Goal]( track, goal))
+          case None => None
+        }
     }
 
-    def satisfyGoal(goal: Goal, witness: Witness): GoalStatus = {
+    def satisfyGoal(track : Track, goal: Goal, witness: Witness): GoalStatus = {
 
         //// instead of holding onto the Future, 
         //// just ask again to get current status,
         //// and bring up project status page
-        ProofEngine.satisfyGoal(goal, witness)
-        ProofEngine.getStatus(goal, witness)
+        ProofEngine.satisfyGoal(track, goal, witness)
+        ProofEngine.getStatus(track, goal, witness)
     }
 
-    def getProjectByName(projName: String): Track = {
+    def getTrackByName(trackName: String): Track = {
       
-        val trackDesc = com.klout.satisfaction.executor.track.TrackDescriptor( projName)
+        val trackDesc = com.klout.satisfaction.executor.track.TrackDescriptor( trackName)
         val trackOpt : Option[Track] = ProjectPage.trackFactory.getTrack( trackDesc)
         trackOpt.get
     } 

@@ -13,6 +13,8 @@ import scala.concurrent.Future
 import scala.collection._
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
+import akka.util.Timeout
+import org.joda.time.DateTime
 
 //// Satisfy the current goal for the specified witness
 case class Satisfy(forceSatisfy: Boolean)
@@ -24,12 +26,15 @@ case class Abort()
 /// Query the current status of all witnesses 
 case class WhatsYourStatus()
 
+/// Re-run a job which has previously been marked as failure 
+case class RestartJob()
+
 ///  Respond with your currrent status
 case class StatusResponse(goalStatus: GoalStatus)
 case class GoalSuccess(goalStatus: GoalStatus)
 case class GoalFailure(goalStatus: GoalStatus)
 //// Message that the actor can't handle the current request at this time ..
-case class InvalidRequest(goalStatus: GoalStatus)
+case class InvalidRequest(goalStatus: GoalStatus, reason : String)
 
 /**
  *  Actor who's responsibility is to satisfy a goal
@@ -39,13 +44,14 @@ case class InvalidRequest(goalStatus: GoalStatus)
  *  XXX  and cases where we want to force completion
  *
  */
-class PredicateProver(val goal: Goal, val witness: Witness, val proverFactory: ActorRef) extends Actor with ActorLogging {
+class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, val proverFactory: ActorRef) extends Actor with ActorLogging {
 
     val dependencies: mutable.Map[String, ActorRef] = scala.collection.mutable.Map[String, ActorRef]()
     var jobRunner: ActorRef = null
-    val status: GoalStatus = new GoalStatus(goal, witness)
+    val status: GoalStatus = new GoalStatus(track, goal, witness)
     var listenerList: Set[ActorRef] = mutable.Set[ActorRef]()
     implicit val ec: ExecutionContext = ExecutionContext.global /// ???
+    implicit val timeout = Timeout(5 minutes)
 
     def receive = {
         /// Messages which can be sent from parents 
@@ -58,11 +64,12 @@ class PredicateProver(val goal: Goal, val witness: Witness, val proverFactory: A
                 goal.evidence.forall(e => e.exists(witness))) {
                 log.info(" Check Already satisfied ?? ")
                 status.state = GoalState.AlreadySatisfied
+                status.timeFinished = DateTime.now
                 sender ! GoalSuccess(status)
             } else {
                 listenerList += sender
                 if (status.state != GoalState.Unstarted) {
-                    sender ! InvalidRequest(status)
+                    sender ! InvalidRequest(status, "Job has already been started")
                 } else {
                     /// Go through our dependencies, and ask them to
                     /// satify
@@ -108,8 +115,36 @@ class PredicateProver(val goal: Goal, val witness: Witness, val proverFactory: A
                 }
             }
             sender ! StatusResponse(status)
+        case RestartJob =>
+          status.state match {
+            case GoalState.Failed =>
+              /// Restart our job Runner
+               runLocalJob()
+            case GoalState.DependencyFailed =>
+                  dependencies.foreach {
+                    case (pred, actor) =>
+                              log.info(s"Checking actor $pred for Job Restart")
+                              //// Sequentially ask the dependencies what they're status is 
+                              val checkStatusF : Future[StatusResponse] = (actor ? WhatsYourStatus).mapTo[StatusResponse]
+                              val checkStatus = Await.result(checkStatusF, Duration(30, SECONDS))
+                              checkStatus match {
+                                case GoalState.Failed =>
+                                  log.info(s"Actor $pred has job failed; sending restart... ")
+                                  actor ! RestartJob
+                                case GoalState.DependencyFailed =>
+                                  log.info(s"Actor $pred has dependency job failed; sending restart...")
+                                  actor ! RestartJob
+                                case _ =>
+                                  /// don't restart if job hasn't failed 
+                              }
+                    }
+                status.state = GoalState.WaitingOnDependencies
+            case _ =>
+              sender ! InvalidRequest(status,"Job needs to have failed in order to be restarted")
+          }
 
         case Abort =>
+           //// If our job is running ... kill it 
 
         /// Messages which can be sent from children
         case GoalFailure(failedStatus) =>
@@ -135,11 +170,13 @@ class PredicateProver(val goal: Goal, val witness: Witness, val proverFactory: A
             log.info(" Received Goal Satisfied, send to our parent  ")
             status.state = GoalState.Success
             status.execResult  = result
+            status.timeFinished = DateTime.now
             publishSuccess 
         case JobRunFailed(result) =>
             log.info(" Received Goal Failed, send to our parent  ")
             status.state = GoalState.Failed
             status.execResult = result
+            status.timeFinished = DateTime.now
             publishFailure
 
         case InvalidRequest =>
@@ -171,7 +208,7 @@ class PredicateProver(val goal: Goal, val witness: Witness, val proverFactory: A
             status.state = GoalState.Running
             goal.satisfier match {
                 case Some(satisfier) =>
-                    val jobRunActor = Props(new JobRunner(satisfier, goal, witness, getSubstitution))
+                    val jobRunActor = Props(new JobRunner(satisfier, track ,goal, witness, getSubstitution))
                     this.jobRunner = context.system.actorOf((jobRunActor), "Satisfier_" + ProofEngine.getActorName(goal, witness))
                     jobRunner ! Satisfy
                 case None =>
@@ -197,7 +234,7 @@ class PredicateProver(val goal: Goal, val witness: Witness, val proverFactory: A
                     //// Generate different witness, based on the mapping function
                     val newWitness = wmap(witness)
                     val depPredicate = subGoal.getPredicateString(newWitness)
-                    val depProverRef = ProverFactory.getProver(proverFactory, subGoal, newWitness)
+                    val depProverRef = ProverFactory.getProver(proverFactory, track, subGoal, newWitness)
                     dependencies += (depPredicate -> depProverRef)
             }
         }

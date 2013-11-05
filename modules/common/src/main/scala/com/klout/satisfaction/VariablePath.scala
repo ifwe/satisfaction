@@ -3,7 +3,7 @@ package com.klout.satisfaction
 import hive.ms.Hdfs
 import org.apache.hadoop.fs.Path
 
-case class VariablePath(pathTemplate: String) extends DataOutput with ProjectOriented {
+case class VariablePath(pathTemplate: String) extends DataOutput with TrackOriented {
 
     def variables = {
         /// XXX interpret certain variables as dates

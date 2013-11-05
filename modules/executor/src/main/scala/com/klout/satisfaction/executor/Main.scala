@@ -18,9 +18,9 @@ import scala.util.Try
 object Satisfaction {
     val engine = new ProofEngine()
 
-    def satisfyGoal(goal: Goal, witness: Witness) {
+    def satisfyGoal(track :Track, goal: Goal, witness: Witness) {
 
-        val fStatus = engine.satisfyGoal(goal, witness)
+        val fStatus = engine.satisfyGoal(track, goal, witness)
 
         println(" before continually")
         Iterator.continually(Await.ready(fStatus, Duration(300, SECONDS))).takeWhile(!_.isCompleted).foreach { f =>

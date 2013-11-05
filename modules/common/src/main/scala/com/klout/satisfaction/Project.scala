@@ -42,17 +42,25 @@ case class Track(
 
 }
 
+object Track extends Track("EmptyTrack",Set.empty) {
+  
+}
+
 trait TemporalVariable {
   
     def getObjectForTime( dt : DateTime) : Any
 }
 
 
-trait ProjectOriented {
+trait TrackOriented {
 
     val YYYYMMDD = DateTimeFormat.forPattern("YYYYMMdd")
 
     def projectName = "maxwell"
+      
+    def setTrack( track : Track ) = {
+      
+    }
 
     def getProjectProperties(witness: Substitution): Substitution = {
         var maxwellProperties: Substitution = Substitution(Substituter.readProperties(s"${projectName}.properties"))

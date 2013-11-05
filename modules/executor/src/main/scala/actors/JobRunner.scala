@@ -20,13 +20,14 @@ import org.joda.time.DateTime
 
 class JobRunner(
     satisfier: Satisfier,
+    track : Track,
     goal : Goal, 
     witness : Witness,
-    params: Substitution) extends Actor with ActorLogging {
+    params: Substitution ) extends Actor with ActorLogging {
 
     var satisfierFuture: Future[Boolean] = null
     var messageSender: ActorRef = null
-    val logger = new LogWrapper[Boolean]( goal, witness)
+    val logger = new LogWrapper[Boolean]( track, goal, witness)
     var startTime : DateTime = null
     var endTime : DateTime = null
 
@@ -48,17 +49,19 @@ class JobRunner(
                     checkResults(_)
                 }
             }
+          
     }
 
 
     def checkResults(result: Try[Boolean]) = {
         log.info("Sending GoalSatisfied to parent")
         log.info("Some result =  " + result)
-    val execResult = new ExecutionResult( goal.name, startTime, endTime)
+        val execResult = new ExecutionResult( goal.name, startTime, endTime)
         if (satisfier.isInstanceOf[MetricsProducing]) {
         	val metricsSatisfier = satisfier.asInstanceOf[MetricsProducing]
         	execResult.metrics.mergeMetrics( metricsSatisfier.jobMetrics )
         }
+        execResult.hdfsLogPath = logger.getHdfsLogPath
         if (result.isSuccess) {
             if (result.get) {
                 messageSender ! new JobRunSuccess(execResult)

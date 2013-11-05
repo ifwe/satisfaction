@@ -2,6 +2,7 @@ package hive.ms
 
 import org.apache.hadoop.hive.ql.metadata.Hive
 import org.apache.hadoop.hive.ql.metadata.Table
+import org.apache.hadoop.hive.ql.metadata.Partition
 import org.apache.hadoop.hive.metastore.api.Database
 import scala.collection.JavaConversions._
 import org.apache.hadoop.hive.conf.HiveConf
@@ -12,6 +13,7 @@ import org.apache.hadoop.hive.ql.metadata.HiveException
 import org.joda.time.DateTime
 import org.joda.time.format.DateTimeFormatter
 import org.joda.time.format.DateTimeFormat
+//import org.apache.hadoop.hive.metastore.api.Partition
 
 /**
  *  Replicator replicates one MetaStore into another
@@ -42,17 +44,18 @@ object Replicator {
         val fromDb = fromMs.getDatabase(dbName)
         if (toDb == null) {
             System.out.println(" Creating Database " + dbName)
+            fromDb.setLocationUri( movedLocation( new java.net.URI(fromDb.getLocationUri()), JOBS_DEV).toASCIIString() )
             toMs.createDatabase(fromDb)
             toDb = toMs.getDatabase(dbName)
         } else {
             System.out.println(" Altering Database " + dbName)
+            fromDb.setLocationUri( movedLocation( new java.net.URI(fromDb.getLocationUri()), JOBS_DEV).toASCIIString() )
             toMs.alterDatabase(dbName, fromDb)
         }
 
-        val fromTables = fromMs.getTablesByPattern(dbName, "user_graph*")
+        val fromTables = fromMs.getTablesByPattern(dbName, "*")
         fromTables.toList.map { tblName =>
-        ///if (tblName.compareTo("hc") > 0) {
-        if ( true ) {
+        if ( tblName.compareTo("b") > 0 ) {
                 try {
                     val fromTable = fromMs.getTable(dbName, tblName)
                     if (isHBase(fromTable)) {
@@ -63,6 +66,8 @@ object Replicator {
                 } catch {
                     case npe: NullPointerException =>
                         System.out.println(" Corrupt table " + tblName + " ; Skipping ... ")
+                    case unexpected: Throwable =>
+                        System.out.println(" Unexpected exception while loading  " + tblName + " ; Skipping ... ")
                 }
             } else {
                 println("Skipping already loaded table " + tblName)
@@ -125,6 +130,7 @@ object Replicator {
                         
                         println(" Old part is  " + partSpec)
                         println(" Old part path  is  " + oldPart.getPartitionPath())
+                         oldPart.setLocation( movedLocation( oldPart.getDataLocation(), JOBS_DEV).toASCIIString() )
 
                         val newPart = toMs.getPartition(fromTable, getPartitionSpecFromName(partName), true, oldPart.getPartitionPath().toString(), true)
                         println(" New Part is " + newPart)
@@ -160,8 +166,29 @@ object Replicator {
 
         return retMap
     }
+    
+    
+    def setDatabaseLocation( ms: MetaStore,  dbName : String, dbLoc : String) = {
+      val hvDb  = ms.hive.getDatabase(dbName)
+      hvDb.setLocationUri(dbLoc)
+      hvDb.setLocationUriIsSet(true)
+      
+      ms.hive.alterDatabase(dbName, hvDb)
+      
+    }
 
     def main(argv: Array[String]): Unit = {
+        val stageHc = new HiveConf(new Configuration(), this.getClass())
+        stageHc.setVar(HiveConf.ConfVars.METASTOREURIS, "thrift://jobs-dev-hive1:9085")
+        val toMs = new MetaStore(stageHc)
+        println(" Destination MetaStore = " + toMs)
+        
+
+        ///val now = MetaStore.YYYYMMDD.parseDateTime("20130729")
+        setDatabaseLocation(toMs, "bi_maxwell", "hdfs://jobs-dev-hnn/user/hive/warehouse/bi_maxwell.db")
+      
+    }
+    def main2(argv: Array[String]): Unit = {
 
         ///val toMs: MetaStore = MetaStore
 
@@ -177,13 +204,13 @@ object Replicator {
         ///hc.setVar(HiveConf.ConfVars.METASTOREPWD, "hiveklout")
 
         val prodHc = new HiveConf(new Configuration(), this.getClass())
-        ///prodHc.setVar(HiveConf.ConfVars.METASTOREURIS, "thrift://jobs-aa-sched1:9083")
-        prodHc.setVar(HiveConf.ConfVars.METASTOREURIS, "thrift://jobs-dev-sched2:9083")
+        prodHc.setVar(HiveConf.ConfVars.METASTOREURIS, "thrift://jobs-aa-sched1:9083")
+        ///prodHc.setVar(HiveConf.ConfVars.METASTOREURIS, "thrift://jobs--hive1:9085")
         val fromMs = new MetaStore(prodHc)
         println(" Production MetaStore = " + fromMs)
         
         val stageHc = new HiveConf(new Configuration(), this.getClass())
-        stageHc.setVar(HiveConf.ConfVars.METASTOREURIS, "thrift://10.1.100.145:9085")
+        stageHc.setVar(HiveConf.ConfVars.METASTOREURIS, "thrift://jobs-dev-hive1:9085")
         val toMs = new MetaStore(stageHc)
         println(" Destination MetaStore = " + toMs)
 
@@ -194,7 +221,9 @@ object Replicator {
 
         ////fromMs.cleanPartitionsForDb("bi_insights")
 
-        replicateDatabase(fromMs.hive, toMs.hive, "bi_maxwell")
+        ///replicateDatabase(fromMs.hive, toMs.hive, "bi_maxwell")
+        ///replicateDatabase(fromMs.hive, toMs.hive, "bi_thunder")
+        replicateDatabase(fromMs.hive, toMs.hive, "bing")
         ///val tbl = fromMs.getTableByName("bi_insights", "users_relationships")
 
         //replicateTable( fromMs.hive, toMs.hive, tbl )

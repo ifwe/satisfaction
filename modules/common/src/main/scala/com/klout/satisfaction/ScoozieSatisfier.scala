@@ -7,7 +7,7 @@ import com.klout.scoozie.jobs._
 
 import util.{ Left, Right }
 
-class ScoozieSatisfier(workflow: Workflow) extends Satisfier {
+class ScoozieSatisfier(workflow: Workflow) extends Satisfier with TrackOriented {
 
     val appPathParam: Variable[String] = Variable("scoozie.wf.application.path")
     val ScoozieUrlParam: Variable[String] = Variable("scoozie.oozie.url")

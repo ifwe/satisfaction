@@ -26,7 +26,3 @@ GET     /schedules/                   controllers.ScheduleTrackPage.showSchedule
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)
 
-GET     /projects                   controllers.Projects.getProjects()
-GET     /project/:name              controllers.Projects.getProject(name: String)
-POST    /project                    controllers.Projects.addProject(path: String, name: String)
-DELETE  /project/:name              controllers.Projects.removeProject(name: String)

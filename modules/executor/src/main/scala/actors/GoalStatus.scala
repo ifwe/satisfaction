@@ -18,13 +18,13 @@ object GoalState extends Enumeration {
 
 }
 
-case class GoalStatus(goal: Goal, witness: Witness) {
+case class GoalStatus(track : Track, goal: Goal, witness: Witness) {
 
     var state: GoalState.Value = GoalState.Unstarted
 
     var dependencyStatus = scala.collection.mutable.Map[String, GoalStatus]()
 
-    var timeStarted: DateTime = null
+    val timeStarted: DateTime = DateTime.now
     var timeFinished: DateTime = null
 
     var errorMessage: String = null
@@ -36,8 +36,7 @@ case class GoalStatus(goal: Goal, witness: Witness) {
     }
     
     var execResult : ExecutionResult = null
-    
-    
+   
     /**
      *  Return true if the actor's state
      *   can no longer change

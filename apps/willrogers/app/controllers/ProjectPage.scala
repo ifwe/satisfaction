@@ -5,7 +5,6 @@ import play.api.mvc._
 import Results._
 import play.api.libs.concurrent.Execution.Implicits._
 import scala.concurrent.duration._
-import com.klout.satisfaction.executor.api._
 import com.klout.satisfaction.Track
 import com.klout.satisfaction.Goal
 import models.PlumbGraph

@@ -55,6 +55,7 @@ object ApplicationBuild extends Build {
   )
 
 
+  ///val hiveVersion = "0.10.0-cdh4.3.2"
   val hiveVersion = "0.10.0-cdh4.2.1-p98.51"
   ///val hiveVersion = "0.11.0"
 
@@ -106,6 +107,7 @@ object ApplicationBuild extends Build {
     ("us.theatr" %% "akka-quartz" % "0.2.0"),
 	  ("org.apache.thrift" % "libfb303" % "0.7.0" ),
 	  ("org.antlr" % "antlr-runtime" % "3.4" ),
+	  ("org.antlr" % "antlr" % "3.0.1" ),
 
 	  ( "org.scala-lang" % "scala-reflect" % "2.10.2" )
 

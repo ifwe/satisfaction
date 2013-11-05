@@ -1,14 +1,12 @@
 import play.api._
 
-import com.klout.satisfaction.executor.api._
 
 object Global extends GlobalSettings {
 
-    // val HdfsProjectRootPath = "/user/jerome/satisfaction/prod/projects"
-    val HdfsProjectRootPath = "/satisfaction/prod/projects"
 
     override def onStart(app: Application) {
-        Api.initProjects(HdfsProjectRootPath)
+        /// XXX initialize name-node, job-tracker, and metastore 
+        //// with values from app.configuration 
         
         println(" Starting up Will Rogers;  I never metastore I didn't like ...")
         

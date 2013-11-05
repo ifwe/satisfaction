@@ -12,6 +12,7 @@ import collection.JavaConversions._
 import org.apache.hadoop.hive.ql.MapRedStats
 import collection.mutable.{HashMap => MutableHashMap}
 import com.klout.satisfaction.MetricsCollection
+import scala.io.Source
 
 ///import org.apache.hive.service.cli.HiveSQLException
 //import org.apache.hadoop.hive.service.HiveServer
@@ -63,6 +64,7 @@ class HiveLocalDriver extends HiveDriver with MetricsProducing {
         dr.init
         SessionState.start(hiveConf)
         ///registerJars
+        ///sourceFile("oozie-setup.hql")
         println(" HiveDriver is " + dr)
         println(" HiveConfig is " + hiveConf)
         val shims = ShimLoader.getHadoopShims
@@ -87,6 +89,7 @@ class HiveLocalDriver extends HiveDriver with MetricsProducing {
       //// XXX associate aux lib with project 
       ////   link to project upload plugin ..
       ////   download from HDFS
+       println(" User Directory = " + System.getProperty("user.dir"))
         new java.io.File("/Users/jeromebanks/NewGit/satisfaction/auxlib").listFiles.filter(_.getName.endsWith("jar")).map(
             "file:////" + _.getAbsolutePath
         ).mkString(",")
@@ -103,17 +106,29 @@ class HiveLocalDriver extends HiveDriver with MetricsProducing {
        val retCode = driver.compile(query)
        println(" Compiling " + query + " has return Code " + retCode)
        
+       
+       driver.getPlan()
       
-       null
+    }
+    
+    def sourceFile( fileName : String ) : Boolean = {
+       println(s" Sourcing file $fileName")
+       val readFile   =scala.io.Source.fromFile( fileName ).mkString
+       println(s" Text is $readFile")
+       //// XXX do proper escaping, and parse out comments ...
+       readFile.split(";").filter( _.startsWith("---")).forall( executeQuery(_) )
     }
 
     override def executeQuery(query: String): Boolean = {
         try {
 
+            println(s"HIVE_DRIVER :: Executing Query $query")
             if (query.trim.startsWith("set") || query.trim.startsWith("SET")) {
                 val setExpr = query.trim.split(" ")(1)
                 val kv = setExpr.split("=")
                 println(s" Setting configuration ${kv(0)} to ${kv(1)} ")
+                if( SessionState.get == null)
+                  SessionState.start( hiveConf)
                 SessionState.get.getConf.set(kv(0), kv(1))
                 return true
             }
@@ -129,6 +144,7 @@ class HiveLocalDriver extends HiveDriver with MetricsProducing {
             ///case sqlExc: HiveSQLException =>
             case sqlExc: Exception =>
                 println("Dammit !!! Caught Hive SQLException " + sqlExc.getMessage())
+                sqlExc.printStackTrace
                 return false
 
         }

@@ -24,6 +24,7 @@ case class Goal(
         Goal.getPredicateString(this, w)
     }
 
+    
 }
 
 object Goal {

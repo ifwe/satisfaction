@@ -5,7 +5,7 @@ import org.apache.hadoop.mapred.JobConf
 import org.apache.hadoop.tools.DistCp
 import org.apache.hadoop.util.ToolRunner
 
-class DistCpSatisfier(val src: VariablePath, val dest: VariablePath) extends Satisfier with ProjectOriented {
+class DistCpSatisfier(val src: VariablePath, val dest: VariablePath) extends Satisfier with TrackOriented {
     val config = hive.ms.Config.config
 
     implicit lazy val hdfs = hive.ms.Hdfs

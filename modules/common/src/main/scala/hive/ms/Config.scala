@@ -12,7 +12,8 @@ object Config {
     def initHiveConf: HiveConf = {
         print(ShimLoader.getMajorVersion())
         var hc = new HiveConf(new Configuration(), this.getClass())
-        hc.setVar(HiveConf.ConfVars.METASTOREURIS, "thrift://jobs-dev-sched2:9083")
+        hc.setVar(HiveConf.ConfVars.METASTOREURIS, "thrift://jobs-dev-hive1:9085")
+        ///hc.setVar(HiveConf.ConfVars.METASTOREURIS, "thrift://jobs-aa-sched1:9083")
 
         return hc
     }

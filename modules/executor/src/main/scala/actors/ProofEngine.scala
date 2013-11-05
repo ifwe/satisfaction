@@ -20,12 +20,13 @@ class ProofEngine {
 
     val akkaSystem = ActorSystem("satisfaction")
     val proverFactory = akkaSystem.actorOf(Props[ProverFactory], "ProverFactory")
+    implicit val timeout = Timeout(24 hours)
 
     /**
      *  Blocking call to satisfy Goal
      */
-    def satisfyGoalBlocking(goal: Goal, witness: Witness, duration: Duration): GoalStatus = {
-        val f = getProver(goal, witness) ? Satisfy
+    def satisfyGoalBlocking(track : Track, goal: Goal, witness: Witness, duration: Duration): GoalStatus = {
+        val f = getProver(track,goal, witness) ? Satisfy
         val response = Await.result(f, duration)
         response match {
             case s: GoalSuccess =>
@@ -37,24 +38,38 @@ class ProofEngine {
         }
     }
 
-    def satisfyGoal(goal: Goal, witness: Witness): Future[GoalStatus] = {
+    def satisfyGoal(track : Track, goal: Goal, witness: Witness): Future[GoalStatus] = {
         future {
-            val f = getProver(goal, witness) ? Satisfy
+            val f = getProver(track, goal, witness) ? Satisfy
             val response = Await.result(f, Duration(6, HOURS))
             response match {
                 case s: GoalSuccess =>
                     println(" Goal Was Satisfied")
-                    proverFactory ! new ReleaseActor(goal, witness)
+                    ProverFactory.releaseProver(proverFactory, goal, witness)
                     s.goalStatus
                 case f: GoalFailure =>
                     println(" Failure ")
                     f.goalStatus
             }
         }
-
+    }
+    
+    def restartGoal( track : Track, goal : Goal, witness: Witness ) : Future[GoalStatus] = {
+       future {
+            val f = getProver(track, goal, witness) ? RestartJob
+            val response = Await.result(f, Duration(6, HOURS))
+            response match {
+                case s: GoalSuccess =>
+                    println(" Goal Was Satisfied")
+                    ProverFactory.releaseProver(proverFactory, goal, witness)
+                    s.goalStatus
+                case f: GoalFailure =>
+                    println(" Failure ")
+                    f.goalStatus
+            }
+        }
     }
 
-    implicit val timeout = Timeout(24 hours)
 
     /**
      * def satisfyProject(project: Project, witness: Witness): Boolean = {
@@ -71,22 +86,22 @@ class ProofEngine {
      *
      */
 
-    def isSatisfied(goal: Goal, witness: Witness): Boolean = {
-        getStatus(goal, witness).state == GoalState.AlreadySatisfied
+    def isSatisfied(track: Track, goal: Goal, witness: Witness): Boolean = {
+        getStatus(track, goal, witness).state == GoalState.AlreadySatisfied
     }
 
     /**
      *  Status should return immediately
      */
-    def getStatus(goal: Goal, witness: Witness): GoalStatus = {
-        val f = getProver(goal, witness) ? WhatsYourStatus
+    def getStatus(track : Track, goal: Goal, witness: Witness): GoalStatus = {
+        val f = getProver(track, goal, witness) ? WhatsYourStatus
 
         val response = Await.result(f, timeout.duration).asInstanceOf[StatusResponse]
         response.goalStatus
     }
 
-    def getProver(goal: Goal, witness: Witness): ActorRef = {
-        ProverFactory.getProver(proverFactory, goal, witness)
+    def getProver(track : Track, goal: Goal, witness: Witness): ActorRef = {
+        ProverFactory.getProver(proverFactory, track, goal, witness)
     }
 
     def getGoalsInProgress: Set[GoalStatus] = {
@@ -110,6 +125,11 @@ class ProofEngine {
            resultSet = Await.result(fMap, timeout.duration)
         }
         resultSet
+    }
+    
+    
+    def getGoalStatus( trackName : String, goalName : String ) : Option[GoalStatus] = {
+      null  
     }
 
     /// sic ....

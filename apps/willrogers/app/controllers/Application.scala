@@ -7,7 +7,6 @@ import play.api.data.Forms._
 
 import play.api.mvc._
 import com.klout.satisfaction._
-import com.klout.satisfaction.executor.api._
 
 object Application extends Controller {
 
