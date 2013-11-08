@@ -61,7 +61,7 @@ object LogWrapper {
     
     
     def pathString( str : String ) : String = {
-      str.replace(" ","_").replace("=>",":").replace("(","_").replace(")","_")
+      str.replace(" ","_").replace("=>","@").replace("(","_").replace(")","_")
     }
     
     def logPathForGoalWitness( track: Track, goal : Goal, witness : Witness ) : File = {
@@ -80,9 +80,15 @@ object LogWrapper {
     
     
     def uploadToHdfs( track : Track, goal : Goal, witness : Witness ) = {
-      val localPath = logPathForGoalWitness( track, goal, witness)
-      val destPath = hdfsPathForGoalWitness( track, goal, witness)
-      hdfs.fs.copyFromLocalFile( false, true, new Path( localPath.getPath ), new Path( destPath))
+      try {
+        val localPath = logPathForGoalWitness( track, goal, witness)
+        val destPath = hdfsPathForGoalWitness( track, goal, witness)
+        hdfs.fs.copyFromLocalFile( false, true, new Path( localPath.getPath ), new Path( destPath))
+      } catch {
+        case unexpected : Throwable =>
+          System.out.println(" Unexpected error copying logs ot HDFS" + unexpected)
+          unexpected.printStackTrace
+      }
     }
     
     /// Parse the path, in order to determine the goals and Witness

@@ -1,5 +1,17 @@
 package com.klout.satisfaction
 
+
+/**
+ *  counters for units which may measure amout of progress 
+ *   which has occurred so for,
+ *  For example, number of seconds elapsed, number of mappers completed,
+ *    number of steps in a Query accomplished, number of units in oozie flow
+ *   
+ */
+case class ProgressUnit( val amount : Double, val units : String)  {
+        
+}
+    
 /**
  * Some satisfiers may be able to get insight into how much progress
  *   has been done so for, so that predictions can be made as to
@@ -9,17 +21,6 @@ package com.klout.satisfaction
  *   or multiple job clients ...
  */
 trait ProgressCounter {
-  
-    /**
-     *  counters for units which may measure amout of progress 
-     *   which has occurred so for,
-     *  For example, number of seconds elapsed, number of mappers completed,
-     *    number of steps in a Query accomplished, number of units in oozie flow
-     *   
-     */
-    case class ProgressUnit( val amount : Double, val units : String)  {
-        
-    }
     
     /**
      *  Rough estimate of total progress of the task so far.
