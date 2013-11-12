@@ -25,7 +25,8 @@ case class VariablePath(pathTemplate: String) extends DataOutput with TrackOrien
     }
 
     def getPathForWitness(witness: Witness): Option[Path] = {
-        val fullSubstituter = getProjectProperties(witness.substitution)
+        /// XXX Who is going to set the Track ????
+        val fullSubstituter = getTrackProperties(witness.substitution)
         var substPath = Substituter.substitute(pathTemplate, fullSubstituter)
         substPath match {
             case Left(missingVars) =>

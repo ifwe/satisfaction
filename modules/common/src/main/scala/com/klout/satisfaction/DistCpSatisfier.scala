@@ -4,24 +4,32 @@ import org.apache.hadoop.fs.Path
 import org.apache.hadoop.mapred.JobConf
 import org.apache.hadoop.tools.DistCp
 import org.apache.hadoop.util.ToolRunner
+import org.joda.time.DateTime
 
 class DistCpSatisfier(val src: VariablePath, val dest: VariablePath) extends Satisfier with TrackOriented {
     val config = hive.ms.Config.config
 
     implicit lazy val hdfs = hive.ms.Hdfs
+    var execResult : ExecutionResult = null
 
-    def satisfy(projParams: Substitution): Boolean = {
+    @Override
+    override def satisfy(projParams: Substitution): ExecutionResult = {
         try {
-
+          
             val srcPath: HdfsPath = src.getDataInstance(new Witness(projParams)).get.asInstanceOf[HdfsPath]
             val destPath: HdfsPath = dest.getDataInstance(new Witness(projParams)).get.asInstanceOf[HdfsPath]
+           
+            val execName = s"DistCp $srcPath to $destPath"
+            execResult = new ExecutionResult( execName, DateTime.now)
 
             if (destPath.exists) {
                 if (srcPath.path.equals(destPath)) {
                     //// If the src path is actually the same as the destpath for some reason,
                     ////  Like the src cluster being the same as the dest cluster...
                     ////  Don't bother copying
-                    return true
+                    execResult.isSuccess = true
+                    execResult.timeEnded = DateTime.now
+                    return execResult
                 } else {
                     //// Otherwise, it seems like someone wanted the path to be overwritten
                     //// Delete it first
@@ -37,17 +45,19 @@ class DistCpSatisfier(val src: VariablePath, val dest: VariablePath) extends Sat
             println(s" Result of DistCp is $result")
             if (result == 0) {
                 hdfs.markSuccess(destPath.path)
-                return true
+                execResult.markSuccess
             } else {
-                return false
+                execResult.markFailure
             }
         } catch {
             case unexpected: Throwable =>
                 println(s" Received unexpected error while performing DistCp $unexpected")
                 unexpected.printStackTrace(System.out)
-                false
+                execResult.markUnexpected( unexpected)
         }
     }
+    
+    
 
     def distcp(args: Array[String]): Int = {
         val job = new JobConf();

@@ -6,6 +6,9 @@ import java.io._
 import scala.Console
 import hive.ms.Hdfs
 import org.apache.hadoop.fs.Path
+import scala.util.Try
+import scala.util.Success
+import scala.util.Failure
 
 /**
  *  Divert all output from STDOUT and STDERR to a defined log file
@@ -13,8 +16,8 @@ import org.apache.hadoop.fs.Path
  */
 case class LogWrapper[T]( track : Track, goal : Goal, witness : Witness) {
 
-  
-  def log( functor :  () => T  ) : Option[T] = {
+   
+  def log( functor :  () => T  ) : Try[T] = {
      val currOut = Console.out
      val currErr = Console.err
      val outStream = getLoggingOutput
@@ -24,14 +27,14 @@ case class LogWrapper[T]( track : Track, goal : Goal, witness : Witness) {
        
          val result : T =  functor()
          
-         Some(result)
+         Success(result)
      } catch {
         case t: Throwable =>
         println(t, "Unexpected Error while running job")
         t.printStackTrace(currErr)
         t.printStackTrace(new java.io.PrintWriter(outStream))
        
-        None
+        Failure( t)
     } finally {
       outStream.flush()
       outStream.close()
@@ -48,6 +51,15 @@ case class LogWrapper[T]( track : Track, goal : Goal, witness : Witness) {
   
   def getHdfsLogPath : String  = {
      LogWrapper.hdfsPathForGoalWitness( track, goal, witness)
+  }
+  
+  
+  /**
+   *  Allow the log output to be streamed directly,
+   *    So that it can be seen through some UI  
+   */
+  def streamLogs : InputStream = {
+     new FileInputStream( LogWrapper.logPathForGoalWitness( track, goal, witness) )
   }
 
 }

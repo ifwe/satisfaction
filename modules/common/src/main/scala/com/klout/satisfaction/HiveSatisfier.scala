@@ -3,6 +3,7 @@ package com.klout.satisfaction
 import hive.ms._
 import org.joda.time.format.DateTimeFormat
 import org.joda.time.Days
+import org.joda.time.DateTime
 
 // class HiveSatisfier(ms: MetaStore) extends Satisfier with DataProducing {
 
@@ -33,27 +34,37 @@ case class HiveSatisfier(queryTemplate: String, driver: HiveDriver) extends Sati
         true
     }
 
-    def satisfy(params: Substitution): Boolean = {
+    @Override
+    override def satisfy(params: Substitution): ExecutionResult = {
+        val timeStarted = new DateTime
         println(" Project substitution is as follows " + params.assignments.mkString)
 
-        val allProps = getProjectProperties(params)
+        val allProps = getTrackProperties(params)
         val queryMatch = Substituter.substitute(queryTemplate, allProps) match {
             case Left(badVars) =>
                 println(" Missing variables in query Template ")
                 badVars.foreach { s => println("  ## " + s) }
-                return false
+                val execResult = new ExecutionResult( queryTemplate, new DateTime)
+                execResult.markFailure
+                execResult.errorMessage = "Missing variables in queryTemplate " + badVars.mkString(",")
+                execResult
             case Right(query) =>
+                val startTime = new DateTime
                 try {
-                    return executeMultipleHqls(query)
+                    val result=  executeMultipleHqls(query)
+                    val execResult = new ExecutionResult( query, startTime)
+                    execResult.metrics.mergeMetrics( jobMetrics)
+                    if( result) { execResult.markSuccess } else { execResult.markFailure }
                 } catch {
                     case unexpected =>
                         println(s" Unexpected error $unexpected")
                         unexpected.printStackTrace()
-                        return false
+                        val execResult = new ExecutionResult(query, startTime)
+                        execResult.markUnexpected(unexpected)
                 }
         }
-        println("Fall through to bottom ")
-        false
+        val execResult = new ExecutionResult("BogusResult", new DateTime)
+        execResult.markFailure
     }
     
    ///

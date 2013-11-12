@@ -99,6 +99,10 @@ case class Hdfs(val fsURI: String) {
     def open( pth : Path) : io.BufferedSource = {
        io.Source.fromInputStream( fs.open( pth))
     }
+    
+    def isDirectory( path : Path) : Boolean = {
+      fs.getFileStatus(path).isDirectory()
+    }
 
     def markSuccess(path: Path): Unit = {
         val successPath = new Path(path.toUri + "/_SUCCESS")

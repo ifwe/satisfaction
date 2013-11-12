@@ -177,7 +177,7 @@ object Replicator {
       
     }
 
-    def main(argv: Array[String]): Unit = {
+    def main3(argv: Array[String]): Unit = {
         val stageHc = new HiveConf(new Configuration(), this.getClass())
         stageHc.setVar(HiveConf.ConfVars.METASTOREURIS, "thrift://jobs-dev-hive1:9085")
         val toMs = new MetaStore(stageHc)
@@ -188,7 +188,7 @@ object Replicator {
         setDatabaseLocation(toMs, "bi_maxwell", "hdfs://jobs-dev-hnn/user/hive/warehouse/bi_maxwell.db")
       
     }
-    def main2(argv: Array[String]): Unit = {
+    def main(argv: Array[String]): Unit = {
 
         ///val toMs: MetaStore = MetaStore
 
@@ -204,13 +204,13 @@ object Replicator {
         ///hc.setVar(HiveConf.ConfVars.METASTOREPWD, "hiveklout")
 
         val prodHc = new HiveConf(new Configuration(), this.getClass())
-        prodHc.setVar(HiveConf.ConfVars.METASTOREURIS, "thrift://jobs-aa-sched1:9083")
+        prodHc.setVar(HiveConf.ConfVars.METASTOREURIS, "thrift://jobs-dev-hive1:9085")
         ///prodHc.setVar(HiveConf.ConfVars.METASTOREURIS, "thrift://jobs--hive1:9085")
         val fromMs = new MetaStore(prodHc)
         println(" Production MetaStore = " + fromMs)
         
         val stageHc = new HiveConf(new Configuration(), this.getClass())
-        stageHc.setVar(HiveConf.ConfVars.METASTOREURIS, "thrift://jobs-dev-hive1:9085")
+        stageHc.setVar(HiveConf.ConfVars.METASTOREURIS, "thrift://jobs-dev-hive2:9085")
         val toMs = new MetaStore(stageHc)
         println(" Destination MetaStore = " + toMs)
 
@@ -223,10 +223,16 @@ object Replicator {
 
         ///replicateDatabase(fromMs.hive, toMs.hive, "bi_maxwell")
         ///replicateDatabase(fromMs.hive, toMs.hive, "bi_thunder")
-        replicateDatabase(fromMs.hive, toMs.hive, "bing")
-        ///val tbl = fromMs.getTableByName("bi_insights", "users_relationships")
+        ///replicateDatabase(fromMs.hive, toMs.hive, "bing")
+        ///val tbl = fromMs.getTableByName("bi_maxwell", "ksuid_mapping")
+        //val tbl = fromMs.getTableByName("bi_maxwell", "ksuid_mapping")
+        val tbl = fromMs.getTableByName("bi_maxwell", "hb_feature_import")
+        ////val tbl2 = fromMs.getTableByName("bi_maxwell", "actor_action")
+        ///val tbl3 = fromMs.getTableByName("bi_maxwell", "fact_content")
 
-        //replicateTable( fromMs.hive, toMs.hive, tbl )
+        replicateTable( fromMs.hive, toMs.hive, tbl )
+        //replicateTable( fromMs.hive, toMs.hive, tbl2 )
+        ///replicateTable( fromMs.hive, toMs.hive, tbl3 )
 
     }
 

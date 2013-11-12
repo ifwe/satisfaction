@@ -4,7 +4,7 @@ import collection.mutable.{ HashMap => MutableHashMap }
 
 trait Satisfier {
 
-    def satisfy(subst: Substitution): Boolean
+    def satisfy(subst: Substitution): ExecutionResult
 
 }
 

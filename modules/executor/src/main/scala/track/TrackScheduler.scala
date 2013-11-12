@@ -49,7 +49,7 @@ case class TrackScheduler( private val proofEngine : ProofEngine ,
      	} else {
      	  /// XXX Fixme  ???? Allow the substitution to be parially specified
      	  println(s" Getting non temporal variable $v.name from track properties ")
-     	  val varValMatch = track.projectProperties.get( v.name)
+     	  val varValMatch = track.trackProperties.raw.get( v.name)
      	  
      	  varValMatch match {
      	    case Some(varVal) =>

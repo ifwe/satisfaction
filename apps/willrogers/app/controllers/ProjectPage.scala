@@ -23,6 +23,7 @@ object ProjectPage extends Controller {
         ///val projects = SyncApi.getProjects
         ///val projNames: Set[String] = projects.names
         val projNames = trackFactory.getAllTracks.map( _.trackName ).toList.distinct
+        println(" Project Names = " + projNames.mkString(" :: "))
 
         Ok(views.html.projtabs(projNames))
     }

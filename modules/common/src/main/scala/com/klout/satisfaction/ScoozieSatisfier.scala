@@ -4,8 +4,8 @@ import com.klout.scoozie._
 import com.klout.scoozie.dsl._
 import com.klout.scoozie.runner._
 import com.klout.scoozie.jobs._
-
 import util.{ Left, Right }
+import org.joda.time.DateTime
 
 class ScoozieSatisfier(workflow: Workflow) extends Satisfier with TrackOriented {
 
@@ -13,7 +13,9 @@ class ScoozieSatisfier(workflow: Workflow) extends Satisfier with TrackOriented 
     val ScoozieUrlParam: Variable[String] = Variable("scoozie.oozie.url")
     val appRootParam: Variable[String] = Variable("applicationRoot")
 
-    def satisfy(params: Substitution): Boolean = {
+    @Override
+    override def satisfy(params: Substitution): ExecutionResult = {
+        val timeStarted  = new DateTime
         try {
             val allParams = massageProperties(params ++ getProjectProperties)
 
@@ -37,16 +39,21 @@ class ScoozieSatisfier(workflow: Workflow) extends Satisfier with TrackOriented 
                     //// XXX TODO ... more diagnostic option
                     println(s" Oozie job ${oozieFail.jobId} failed miserably  !!!")
                     println(s" Console available at ${oozieFail.consoleUrl})")
-                    false
+                    val execResult = new ExecutionResult(oozieFail.jobId , timeStarted)
+                    
+                    execResult.errorMessage = oozieFail.jobLog
+                      execResult
                 case Right(oozieSuccess) =>
                     println(s" Huzzah !!! Oozie job ${oozieSuccess.jobId} has completed with great success!!!")
-                    true
+                    val execResult = new ExecutionResult( oozieSuccess.jobId, timeStarted)
+                    execResult.markSuccess
             }
         } catch {
             case unexpected: Throwable =>
                 println(" Unexpected exception " + unexpected)
                 unexpected.printStackTrace()
-                false
+                val execResult = new ExecutionResult( "Job Failed " + workflow.name, timeStarted )
+                execResult.markUnexpected( unexpected)
         }
     }
 

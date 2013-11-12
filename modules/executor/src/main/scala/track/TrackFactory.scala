@@ -128,8 +128,7 @@ case class TrackFactory(val trackPathURI : java.net.URI,
         case Some(trackClazz)  =>
          val track = trackClazz.newInstance 
       //// XXX mutability of track properties
-         track.projectProperties = new collection.mutable.HashMap[String,String]
-        track.projectProperties ++= trackProps
+         track.trackProperties =  Substitution(trackProps) 
          trackProps.get("satisfaction.track.schedule") match {
            case Some(schedStr) =>
               println( "Scheduling "+ trackDesc.trackName + " at " + schedStr)
@@ -151,12 +150,22 @@ case class TrackFactory(val trackPathURI : java.net.URI,
      }
    }
    
+   def jarURLS( jarPath : Path ) : Array[java.net.URL] = {
+     if( hdfs.isDirectory( jarPath) ) {
+       
+       hdfs.listFiles( jarPath).filter( _.getPath.getName.endsWith(".jar")).map( _.getPath.toUri.toURL).toArray
+     } else {
+        val hdfsUrl = jarPath.toUri.toURL
+        println(" HDFS URL is " + hdfsUrl.toString)
+        Array( hdfsUrl)
+       
+     }
+   }
+   
    def loadTrackClass( jarPath : Path , trackClassName : String ) : Option[Class[_ <: Track]]  = {
      try {
-     /// Let's see if we can load remotely
-      val hdfsUrl = jarPath.toUri.toURL
-      println(" HDFS URL is " + hdfsUrl.toString)
-      val urlClassloader = new java.net.URLClassLoader(Array(hdfsUrl), this.getClass.getClassLoader)
+      
+      val urlClassloader = new java.net.URLClassLoader(jarURLS( jarPath), this.getClass.getClassLoader)
       Thread.currentThread.setContextClassLoader(urlClassloader)
       
       //// Accessing object instances 

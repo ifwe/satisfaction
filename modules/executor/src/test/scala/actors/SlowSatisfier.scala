@@ -10,7 +10,8 @@ import com.klout.satisfaction.Satisfier
  */
 class SlowSatisfier(progressCount: Int, sleepTime: Long) extends MockSatisfier with Evidence {
 
-    override def satisfy(params: Substitution) = {
+    @Override
+    override def satisfy(params: Substitution) : ExecutionResult = {
         for (i <- Range(0, progressCount)) {
             println("Doing the thing ;; Progress Count = " + i)
             Thread.sleep(sleepTime)

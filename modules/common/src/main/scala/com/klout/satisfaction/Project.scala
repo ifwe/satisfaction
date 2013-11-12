@@ -37,7 +37,7 @@ case class Track(
      *   of properties along with the Track
      * 
      */
-     var projectProperties : collection.mutable.Map[String,String] = new collection.mutable.HashMap[String,String]
+     var trackProperties : Substitution = null
 
 }
 
@@ -54,15 +54,19 @@ trait TemporalVariable {
 trait TrackOriented {
 
     val YYYYMMDD = DateTimeFormat.forPattern("YYYYMMdd")
+    
+    var track : Track = null
 
-    def projectName = "maxwell"
+    def trackName = track.name
+      
+      
       
     def setTrack( track : Track ) = {
-      
+    	this.track = track
     }
 
-    def getProjectProperties(witness: Substitution): Substitution = {
-        var maxwellProperties: Substitution = Substitution(Substituter.readProperties(s"${projectName}.properties"))
+    def getTrackProperties(witness: Substitution): Substitution = {
+        var projProperties : Substitution =  track.trackProperties
 
         ///// Some munging logic to translate between camel case 
         //// and  underscores
@@ -80,18 +84,18 @@ trait TrackOriented {
                 (Variable("monthAgoString") -> YYYYMMDD.print(jodaDate.minusDays(30))));
 
             println(s" Adding Date variables ${dateVars.raw.mkString}")
-            maxwellProperties = maxwellProperties ++ dateVars
+            projProperties = projProperties ++ dateVars
 
         }
 
         /// XXX Other domains won't have social networks ...
         if (witness.contains(Variable("network_abbr"))) {
-            maxwellProperties = maxwellProperties + (Variable("networkAbbr") -> witness.get(Variable("network_abbr")).get)
+            projProperties = projProperties + (Variable("networkAbbr") -> witness.get(Variable("network_abbr")).get)
             //// needs to be handled outside of satisfier ???
-            maxwellProperties = maxwellProperties + (Variable("featureGroup") -> "3")
+            projProperties = projProperties + (Variable("featureGroup") -> "3")
         }
 
-        maxwellProperties ++ witness
+        projProperties ++ witness
 
     }
 }
