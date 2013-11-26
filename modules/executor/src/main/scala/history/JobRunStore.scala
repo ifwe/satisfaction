@@ -2,6 +2,8 @@ package com.klout.satisfaction
 package executor
 package history
 
+import actors.GoalStatus
+
 /**
  * Abstract away the persistence for job runs...
  *   Link to the metastore ...
@@ -9,6 +11,7 @@ package history
  *   XXX  Should we use hraven here ??
  *     or be agnostic ?/ 
  */
-trait JobRunStore {
+trait JobHistoryStore {
 
+      def recordGoalStatus(  goalStatus : GoalStatus )
 }

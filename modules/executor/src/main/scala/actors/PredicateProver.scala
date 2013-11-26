@@ -48,7 +48,7 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
 
     val dependencies: mutable.Map[String, ActorRef] = scala.collection.mutable.Map[String, ActorRef]()
     var jobRunner: ActorRef = null
-    val status: GoalStatus = new GoalStatus(track, goal, witness)
+    val status: GoalStatus = new GoalStatus(track.descriptor, goal.name, witness)
     var listenerList: Set[ActorRef] = mutable.Set[ActorRef]()
     implicit val ec: ExecutionContext = ExecutionContext.global /// ???
     implicit val timeout = Timeout(5 minutes)
@@ -58,7 +58,7 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
 
         case Satisfy =>
             /// Check to see if 
-            log.info(s" PredicateProver received Satisfy message witness is $witness ")
+            log.info(s" PredicateProver ${track.descriptor.trackName}::${goal.name} received Satisfy message witness is $witness ")
             if (goal.evidence != null &&
                 goal.evidence.size != 0 &&
                 goal.evidence.forall(e => e.exists(witness))) {
@@ -67,8 +67,10 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
                 status.timeFinished = DateTime.now
                 sender ! GoalSuccess(status)
             } else {
+                log.info(s" Adding $sender to listener list")
                 listenerList += sender
                 if (status.state != GoalState.Unstarted) {
+                  //// XXX Test dependency on running job ...
                     sender ! InvalidRequest(status, "Job has already been started")
                 } else {
                     /// Go through our dependencies, and ask them to
@@ -149,31 +151,34 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
         /// Messages which can be sent from children
         case GoalFailure(failedStatus) =>
             //// 
-            println("Failure in our Chidren")
+            log.info(s" ${goal.name} Received Goal FAILURE ${failedStatus.state} from goal ${failedStatus.goalName}   ")
             status.addChildStatus(failedStatus)
             status.state = GoalState.DependencyFailed
             publishFailure
         //// Add a flag to see if we want to 
         //// abort sibling jobs which may be running 
         case GoalSuccess(depStatus) =>
+            log.info(s" ${goal.name} Received Goal Success ${depStatus.state} from goal ${depStatus.goalName}   ")
             if (depStatus != null)
                 status.addChildStatus(depStatus)
             //// Determine if all jobs completed
+            log.info( s" Received Deps = ${status.dependencyStatus.size} :: num Deps = ${dependencies.size} ")
             if (status.dependencyStatus.size == dependencies.size) {
-               if(status.dependencyStatus.values.forall( _.state == GoalState.Success) ) {
+               if(status.canProceed) {
                   runLocalJob()
                } else {
                  /// XXX One of our children failed 
+                 log.info(s" Nope --- its not OK to continue")
                }
             }
         case JobRunSuccess(result) =>
-            log.info(" Received Goal Satisfied, send to our parent  ")
+            log.info(s" ${goal.name} Received Goal Satisfied from ${result.executionName} , send to our parent  ")
             status.state = GoalState.Success
             status.execResult  = result
             status.timeFinished = DateTime.now
             publishSuccess 
         case JobRunFailed(result) =>
-            log.info(" Received Goal Failed, send to our parent  ")
+            log.info(s" ${goal.name} Received Goal Failed from ${result.executionName} , send to our parent  ")
             status.state = GoalState.Failed
             status.execResult = result
             status.timeFinished = DateTime.now

@@ -2,6 +2,8 @@ package com.klout.satisfaction;
 package executor
 package actors
 
+import org.joda.time.DateTime
+
 ///import com.klout.satisfaction.Satisfier
 
 /**
@@ -18,7 +20,12 @@ class MockSatisfier extends Satisfier with Evidence {
         println(" Satisfy for params " + params.raw.mkString(","))
         varMap ++= params.raw.keySet
         println("  Returning code " + retCode)
-        retCode
+        val execResult = new ExecutionResult("MockSatisfier", new DateTime )
+        execResult.isSuccess = retCode
+        execResult.timeEnded  = new DateTime
+        
+        
+        execResult
     }
 
     def exists(w: Witness): Boolean = {

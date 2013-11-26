@@ -23,8 +23,8 @@
    </theads>
   @gsList.filter( _.state == GoalState.Running ).map { gs => 
      <tr>
-     <td>@gs.track.name</td>
-     <td>@gs.goal.name</td>
+     <td>@gs.track.trackName</td>
+     <td>@gs.goalName</td>
      <td>@gs.state</td>
      <td>@HtmlUtil.formatWitness( gs.witness )</td>
      <td>@HtmlUtil.formatDate( gs.timeStarted )</td>
@@ -44,8 +44,8 @@
    </theads>
   @gsList.filter( _.state == GoalState.WaitingOnDependencies ).map { gs => 
      <tr>
-     <td>@gs.track.name</td>
-     <td>@gs.goal.name</td>
+     <td>@gs.track.trackName</td>
+     <td>@gs.goalName</td>
      <td>@gs.state</td>
      <td>@HtmlUtil.formatWitness( gs.witness )</td>
      <td>@HtmlUtil.formatDate( gs.timeStarted )</td>
@@ -68,8 +68,8 @@
    </theads>
   @gsList.filter(  gs => { gs.state == GoalState.Success || gs.state == GoalState.Failed }  ).map { gs => 
      <tr>
-     <td>@gs.track.name</td>
-     <td>@gs.goal.name</td>
+     <td>@gs.track.trackName</td>
+     <td>@gs.goalName</td>
      <td>@gs.state</td>
      <td>@HtmlUtil.formatWitness( gs.witness )</td>
      <td>@HtmlUtil.formatDate( gs.timeStarted )</td>

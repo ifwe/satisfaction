@@ -1,6 +1,6 @@
 package hive.ms
 
-import java.sql._
+import scala.util.control.Breaks._
 import org.apache.hive.jdbc._
 import org.apache.hadoop.hive.conf.HiveConf
 import org.apache.hadoop.hive.ql.session.SessionState
@@ -13,6 +13,16 @@ import org.apache.hadoop.hive.ql.MapRedStats
 import collection.mutable.{HashMap => MutableHashMap}
 import com.klout.satisfaction.MetricsCollection
 import scala.io.Source
+import java.net.URLClassLoader
+import java.io.File
+import java.net.URL
+import org.apache.hadoop.hive.ql.exec.Utilities
+import java.lang.reflect.Method
+import com.klout.satisfaction.TrackOriented
+import org.apache.hadoop.hive.ql.processors.CommandProcessorResponse
+import java.io.BufferedReader
+import java.io.FileReader
+import scala.util.control.Breaks
 
 ///import org.apache.hive.service.cli.HiveSQLException
 //import org.apache.hadoop.hive.service.HiveServer
@@ -37,25 +47,20 @@ trait HiveDriver {
 
 }
 
-class HiveLocalDriver extends HiveDriver with MetricsProducing {
+
+
+class HiveLocalDriver extends HiveDriver with MetricsProducing with TrackOriented {
     lazy implicit val hiveConf = Config.config
 
     lazy val driver = {
-         /// XXX FIX ME ...
-         ///   need to use project properties 
-        hiveConf.set("mapreduce.framework.name", "classic")
-        hiveConf.set("mapreduce.jobtracker.address", "jobs-dev-hnn:8021")
-        hiveConf.set("mapred.job.tracker", "jobs-dev-hnn:8021")
-        hiveConf.set("yarn.resourcemanager.address", "scr@wyoucloudera")
-
+      
+      
         ////hiveConf.set("hive.exec.post.hooks", "com.klout.satisfaction.GatherStatsHook")
         //// XXX TODO  Each project should have on set of auxjars 
         ///hiveConf.setAuxJars()
         val auxJars = auxJarsPath
         println(s" AUX JARS PATH = ${auxJars}")
         hiveConf.setAuxJars(auxJars)
-        ///hiveConf.setAuxJars("/Users/jeromebanks/NewGit/satisfaction/auxlib")
-        ///hiveConf.setAuxJars("/user/maxwell/hive_data_store/lib")
 
         println("Version :: " + VersionInfo.getBuildVersion)
 
@@ -63,8 +68,7 @@ class HiveLocalDriver extends HiveDriver with MetricsProducing {
 
         dr.init
         SessionState.start(hiveConf)
-        ///registerJars
-        ///sourceFile("oozie-setup.hql")
+        registerJars
         println(" HiveDriver is " + dr)
         println(" HiveConfig is " + hiveConf)
         val shims = ShimLoader.getHadoopShims
@@ -76,22 +80,36 @@ class HiveLocalDriver extends HiveDriver with MetricsProducing {
     /// Want to make it on a per-project basis
     /// but for now, but them in the auxlib directory
     def registerJars(): Unit = {
-        new java.io.File("/Users/jeromebanks/NewGit/satisfaction/auxlib").listFiles.filter(_.getName.endsWith("jar")).foreach(
+        auxJarFolder.listFiles.filter(_.getName.endsWith("jar")).foreach(
             f => {
                 println(s" Register jar ${f.getAbsolutePath} ")
-                SessionState.registerJar("file:///" + f.getAbsolutePath)
+                val jarUrl = "file://" + f.getAbsolutePath
+                SessionState.registerJar(jarUrl)
+                
             }
         )
-
     }
+    
+    def auxJarFolder : File = {
+       if(_auxJarFolder != null)  {
+         new File(_auxJarFolder)
+       } else {
+         track.auxJarFolder
+       }
+    }
+    
+    private var _auxJarFolder : String = null
 
-    def auxJarsPath(): String = {
+    def setAuxJarFolder( folder : String) = {
+      _auxJarFolder = folder 
+    }
+    
+    def auxJarsPath: String = {
       //// XXX associate aux lib with project 
       ////   link to project upload plugin ..
       ////   download from HDFS
-       println(" User Directory = " + System.getProperty("user.dir"))
-        new java.io.File("/Users/jeromebanks/NewGit/satisfaction/auxlib").listFiles.filter(_.getName.endsWith("jar")).map(
-            "file:////" + _.getAbsolutePath
+      auxJarFolder.listFiles.filter(_.getName.endsWith("jar")).map(
+            "file://" + _.getAbsolutePath
         ).mkString(",")
     }
 
@@ -123,7 +141,7 @@ class HiveLocalDriver extends HiveDriver with MetricsProducing {
         try {
 
             println(s"HIVE_DRIVER :: Executing Query $query")
-            if (query.trim.startsWith("set") || query.trim.startsWith("SET")) {
+            if (query.trim.toLowerCase.startsWith("set")) {
                 val setExpr = query.trim.split(" ")(1)
                 val kv = setExpr.split("=")
                 println(s" Setting configuration ${kv(0)} to ${kv(1)} ")
@@ -132,11 +150,21 @@ class HiveLocalDriver extends HiveDriver with MetricsProducing {
                 SessionState.get.getConf.set(kv(0), kv(1))
                 return true
             }
+            if( query.trim.toLowerCase.equals("source") || query.contains("oozie-setup")) {
+              /// XXX TODO source the file ...
+              /// for now ignore, because always oozie-setup.hql 
+              println(s" Ignoring source statement $query ")
+              
+              return true
+            }
 
             val response = driver.run(query)
+            println(s"Response Code ${response.getResponseCode} :: SQLState ${response.getSQLState} ")
             if (response.getResponseCode() != 0) {
                 println("Error while processing statement: " + response.getErrorMessage(), response.getSQLState(), response.getResponseCode());
                 return false
+            } else {
+            	readResults( response, 500)
             }
 
             true
@@ -150,6 +178,29 @@ class HiveLocalDriver extends HiveDriver with MetricsProducing {
         }
     }
     
+    
+    def readResults( response : CommandProcessorResponse, maxRows : Int ) = {
+      if(response.getSchema != null) {
+        response.getSchema.getFieldSchemas.foreach( field => {
+            print(s"${field.getName}\t")
+        })
+      }
+      val session = SessionState.get
+      
+      val tmpFile = session.getTmpOutputFile
+      val resultReader = new BufferedReader( new FileReader(tmpFile))
+      breakable { for ( i<-0 to maxRows) {
+         val line = resultReader.readLine
+         if( line == null)  {
+           break
+         } else {
+           println(line)
+         }
+        }
+      }
+
+    }
+    
     val SumCounters = List[String]()
         
    override def jobMetrics() : MetricsCollection = {
@@ -160,7 +211,9 @@ class HiveLocalDriver extends HiveDriver with MetricsProducing {
     }
     
   def updateJobMetrics( metricsMap : collection.mutable.Map[String,Any]) : Unit = {
-      val mapRedStats : List[MapRedStats] = SessionState.get.getLastMapRedStatsList.toList
+    val lastMapRedStats = SessionState.get.getLastMapRedStatsList
+    if( lastMapRedStats != null) {
+      val mapRedStats : List[MapRedStats] = lastMapRedStats.toList
       var totalCpuMsec : Long = 0 
       var totalMappers : Long = 0
       var totalReducers :  Long = 0
@@ -179,8 +232,38 @@ class HiveLocalDriver extends HiveDriver with MetricsProducing {
       metricsMap.put("TOTAL_NUM_MAPPERS", totalMappers)
       metricsMap.put("TOTAL_NUM_REDUCERS", totalReducers)
       metricsMap.put("TOTAL_CPU_MSEC", totalCpuMsec)
+    }
      
    }
-   
 
+}
+
+
+object HiveDriver {
+ 
+   def apply( auxJarPath : String ) :HiveDriver = {
+     
+     val parentLoader = if( Thread.currentThread.getContextClassLoader != null) { 
+       Thread.currentThread.getContextClassLoader
+     } else { 
+        this.getClass.getClassLoader
+     }
+     val pathFile = new File( auxJarPath)
+     val urls = pathFile.listFiles.map("file://" + _.getPath ).map( new URL(_))
+     val urlClassLoader = new URLClassLoader( urls, parentLoader)
+     Thread.currentThread.setContextClassLoader( urlClassLoader)
+     
+     val driverClass = urlClassLoader.loadClass("hive.ms.HiveLocalDriver")
+     
+     val hiveDriver = driverClass.newInstance.asInstanceOf[HiveLocalDriver]
+     val method = driverClass.getMethod( "setAuxJarFolder", classOf[String] )
+     method.invoke(hiveDriver, auxJarPath)
+     
+    
+     
+     
+     hiveDriver
+   }
+  
+  
 }

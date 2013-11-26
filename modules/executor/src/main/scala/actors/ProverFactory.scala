@@ -30,9 +30,9 @@ import akka.util.Timeout
 
 case class GetActor(track : Track, goal: Goal, witness: Witness)
 case class GetActiveActors()
-case class ReleaseActor(goal: Goal, witness: Witness)
-case class KillActor( goal : Goal, witness : Witness)
-case class GetListeners(goal: Goal, witness: Witness)
+case class ReleaseActor(goalName : String, witness: Witness)
+case class KillActor( goalName : String, witness : Witness)
+case class GetListeners(goalName: String, witness: Witness)
 
 class ProverFactory extends Actor with ActorLogging {
     ///val actorMap: mutable.Map[Tuple2[Goal, Witness], ActorRef] = mutable.Map()
@@ -81,11 +81,12 @@ class ProverFactory extends Actor with ActorLogging {
                 listenerMap.put(actorTupleName, listenerList)
                 sender ! actorRef
             }
-        case ReleaseActor(goal, witnessArg) =>
-            val witness = witnessArg.filter( goal.variables.toSet)
-            log.info( "Received a Release Actor message for goal " + goal.name + " witness " + witness )
-            val actorTuple = (goal, witness)
-            val actorTupleName = ProofEngine.getActorName(goal, witness)
+        case ReleaseActor(goalName, witnessArg) =>
+            //val witness = witnessArg.filter( goal.variables.toSet)
+            val witness = witnessArg
+            log.info( "Received a Release Actor message for goal " + goalName + " witness " + witness )
+            val actorTuple = (goalName, witness)
+            val actorTupleName = ProofEngine.getActorName(goalName, witness)
             if (listenerMap.contains(actorTupleName)) {
                 val listenerList = listenerMap.get(actorTupleName).get
                 listenerList.remove(sender)
@@ -97,7 +98,9 @@ class ProverFactory extends Actor with ActorLogging {
                 }
             }
         case GetListeners(goal, witnessArg) =>
-            val witness = witnessArg.filter( goal.variables.toSet)
+            //// XXX Do we need to filter witness variables somehow ???
+            ////val witness = witnessArg.filter( goal.variables.toSet)
+            val witness = witnessArg
             val actorTuple = (goal, witness)
             val actorTupleName = ProofEngine.getActorName(goal, witness)
             sender ! listenerMap.get(actorTupleName).get
@@ -106,10 +109,10 @@ class ProverFactory extends Actor with ActorLogging {
         case GoalSuccess(goalStatus) =>
             publishMessageToListeners(goalStatus, new GoalSuccess(goalStatus))
             //// Schedule a message to release this actor after a while
-            context.system.scheduler.scheduleOnce( 30 seconds, self, new KillActor( goalStatus.goal, goalStatus.witness) )
-        case KillActor( goal,witness) =>
-            log.info(s" Killing Actor for goal ${goal.name} $witness") 
-            val actorTupleName = ProofEngine.getActorName(goal, witness)
+            context.system.scheduler.scheduleOnce( 30 seconds, self, new KillActor( goalStatus.goalName, goalStatus.witness) )
+        case KillActor( goalName,witness) =>
+            log.info(s" Killing Actor for goal ${goalName} $witness") 
+            val actorTupleName = ProofEngine.getActorName(goalName, witness)
             actorMap .remove( actorTupleName ) match {
               case Some(actorRef : ActorRef) =>
                 context.stop( actorRef)
@@ -124,8 +127,8 @@ class ProverFactory extends Actor with ActorLogging {
     }
 
     def publishMessageToListeners(goalStatus: GoalStatus, message: Any) = {
-        val actorTuple = (goalStatus.goal, goalStatus.witness)
-        val actorTupleName = ProofEngine.getActorName(goalStatus.goal, goalStatus.witness)
+        val actorTuple = (goalStatus.goalName, goalStatus.witness)
+        val actorTupleName = ProofEngine.getActorName(goalStatus.goalName, goalStatus.witness)
         log.info(" Publishing message " + message + " to all listeners of " + actorTuple)
         listenerMap.get(actorTupleName) match {
             case Some(listenerList) =>
@@ -151,7 +154,7 @@ object ProverFactory {
     }
 
     def releaseProver(proverFactory: ActorRef, goal: Goal, witness: Witness) = {
-        proverFactory ! ReleaseActor(goal, witness)
+        proverFactory ! ReleaseActor(goal.name, witness)
     }
 
 }

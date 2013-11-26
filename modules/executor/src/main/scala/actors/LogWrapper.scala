@@ -46,11 +46,11 @@ case class LogWrapper[T]( track : Track, goal : Goal, witness : Witness) {
   }
 
   def getLoggingOutput: OutputStream = {
-     new FileOutputStream( LogWrapper.logPathForGoalWitness( track, goal, witness) )
+     new FileOutputStream( LogWrapper.logPathForGoalWitness( track.descriptor, goal.name, witness) )
   }
   
   def getHdfsLogPath : String  = {
-     LogWrapper.hdfsPathForGoalWitness( track, goal, witness)
+     LogWrapper.hdfsPathForGoalWitness( track.descriptor, goal.name, witness)
   }
   
   
@@ -59,7 +59,7 @@ case class LogWrapper[T]( track : Track, goal : Goal, witness : Witness) {
    *    So that it can be seen through some UI  
    */
   def streamLogs : InputStream = {
-     new FileInputStream( LogWrapper.logPathForGoalWitness( track, goal, witness) )
+     new FileInputStream( LogWrapper.logPathForGoalWitness( track.descriptor, goal.name, witness) )
   }
 
 }
@@ -76,16 +76,16 @@ object LogWrapper {
       str.replace(" ","_").replace("=>","@").replace("(","_").replace(")","_")
     }
     
-    def logPathForGoalWitness( track: Track, goal : Goal, witness : Witness ) : File = {
-        new File(rootedPathForGoalWitness( LogWrapper.rootDirectory.getPath ,track, goal, witness))
+    def logPathForGoalWitness( track: TrackDescriptor, goalName : String, witness : Witness ) : File = {
+        new File(rootedPathForGoalWitness( LogWrapper.rootDirectory.getPath ,track, goalName, witness))
     }
     
-    def hdfsPathForGoalWitness( track: Track, goal : Goal, witness : Witness ) : String = {
-        rootedPathForGoalWitness( hdfsRootDirectory ,track, goal, witness)
+    def hdfsPathForGoalWitness( track: TrackDescriptor, goalName : String, witness : Witness ) : String = {
+        rootedPathForGoalWitness( hdfsRootDirectory ,track, goalName, witness)
     }
     
-    def rootedPathForGoalWitness(root: String, track: Track, goal : Goal, witness : Witness ) : String = {
-        val goalFile = new File( root + "/" + pathString(track.name) + "/" + pathString(goal.name) )
+    def rootedPathForGoalWitness(root: String, track: TrackDescriptor, goalName : String, witness : Witness ) : String = {
+        val goalFile = new File( root + "/" + pathString(track.trackName) + "/" + pathString(goalName) )
         goalFile.mkdirs
         goalFile.getPath() +  "/" + pathString(witness.substitution.toString ) 
     }
@@ -93,8 +93,8 @@ object LogWrapper {
     
     def uploadToHdfs( track : Track, goal : Goal, witness : Witness ) = {
       try {
-        val localPath = logPathForGoalWitness( track, goal, witness)
-        val destPath = hdfsPathForGoalWitness( track, goal, witness)
+        val localPath = logPathForGoalWitness( track.descriptor, goal.name, witness)
+        val destPath = hdfsPathForGoalWitness( track.descriptor, goal.name, witness)
         hdfs.fs.copyFromLocalFile( false, true, new Path( localPath.getPath ), new Path( destPath))
       } catch {
         case unexpected : Throwable =>

@@ -9,29 +9,6 @@ import org.joda.time.format.DateTimeFormat
 import org.joda.time.format.DateTimeFormatter
 import org.joda.time.format.ISOPeriodFormat
 
-/**
-   *  Case class describing how a track can be deployed.
-   *  There might be multiple versions of a track, by different users,
-   *   for different possible variants.
-   *   
-   *   For example, in a staging or dev environment, multiple users could be
-   *    working on the same track, possibly with multiple features or variants.
-   *   In a production system, one could imagine multiple tracks, running in parallel,
-   *    in order to compare results before releasing.
-   */
-  case class TrackDescriptor( val trackName : String, val forUser : String, val version : String, variant : Option[String] = None) {
-   
-     override def toString() = {
-       s"TrackDescriptor::name=$trackName forUser=$forUser Version= $version Variant=$variant"
-     }
- }
-  
-  object TrackDescriptor  {  
-     def apply( tName : String ) : TrackDescriptor = {
-        new TrackDescriptor( tName, tName, "LATEST", None) 
-     }
-  }
-  
   
   /**
    *  A TrackSchedule represents when the scheduler starts the Track, and 

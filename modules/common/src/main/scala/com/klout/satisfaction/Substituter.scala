@@ -21,6 +21,7 @@ object Substituter {
         return substitute(new CharSequenceReader(str), subst)
     }
     def substitute(readerBegin: CharSequenceReader, subst: Substitution): Either[Set[String], String] = {
+      try {
         val sb: StringBuilder = new StringBuilder
         val missingList: Buffer[String] = new collection.mutable.ArrayBuffer()
 
@@ -37,8 +38,11 @@ object Substituter {
                             case Right(varTuple) =>
                                 val varName = varTuple._1
                                 reader = varTuple._2
+                                println( s" VARNAME = $varName ")
                                 subst.get(Variable(varName)) match {
-                                    case Some(lookup) => sb ++= lookup
+                                    case Some(lookup) => 
+                                      println(s"LOOKUP is $lookup " )
+                                      sb ++= lookup
                                     case None         => missingList += varName
                                 }
                         }
@@ -56,6 +60,12 @@ object Substituter {
             Left(missingList.toSet)
         else
             Right(sb.toString)
+    } catch { 
+      case unexpected : Throwable =>
+        println(" Unexpedted error in substitures " + unexpected)
+        unexpected.printStackTrace()
+        throw unexpected
+    }
     }
 
     def isValidCharacter(ch: Char): Boolean = {

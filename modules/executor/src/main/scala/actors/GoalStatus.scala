@@ -18,7 +18,7 @@ object GoalState extends Enumeration {
 
 }
 
-case class GoalStatus(track : Track, goal: Goal, witness: Witness) {
+case class GoalStatus(track : TrackDescriptor, goalName: String, witness: Witness) {
 
     var state: GoalState.Value = GoalState.Unstarted
 
@@ -30,9 +30,17 @@ case class GoalStatus(track : Track, goal: Goal, witness: Witness) {
     var errorMessage: String = null
 
     def addChildStatus(child: GoalStatus): GoalStatus = {
-        val predName = child.goal.getPredicateString(child.witness)
+        val predName = Goal.getPredicateString(child.goalName, child.witness)
         dependencyStatus.put(predName, child)
         this
+    }
+    
+    def numReceivedStatuses = {
+       dependencyStatus.size
+    }
+    
+    def canProceed = {
+      dependencyStatus.values.forall( stat => {GoalStatus.canProceed( stat.state )  } )
     }
     
     var execResult : ExecutionResult = null
@@ -48,4 +56,10 @@ case class GoalStatus(track : Track, goal: Goal, witness: Witness) {
          state == GoalState.DependencyFailed
     }
 
+}
+
+object GoalStatus {
+    def canProceed( gs : GoalState.Value  )  : Boolean = {
+       gs == GoalState.Success || gs == GoalState.AlreadySatisfied 
+    }
 }

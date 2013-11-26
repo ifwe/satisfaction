@@ -17,12 +17,12 @@ class ScoozieSatisfier(workflow: Workflow) extends Satisfier with TrackOriented 
     override def satisfy(params: Substitution): ExecutionResult = {
         val timeStarted  = new DateTime
         try {
-            val allParams = massageProperties(params ++ getProjectProperties)
+            val allParams = params ++ getTrackProperties( params)
 
             if (!allParams.contains(appPathParam)) {
                 throw new IllegalArgumentException("Must specify application path ")
             }
-            val appPath = allParams.get(appPathParam).get
+            val appPath = scoozieApplicationPath( allParams.get(appPathParam).get, params)
             println(" Application path = " + appPath)
             if (!allParams.contains(ScoozieUrlParam)) {
                 throw new IllegalArgumentException("Must specify Oozie URL ")
@@ -57,25 +57,10 @@ class ScoozieSatisfier(workflow: Workflow) extends Satisfier with TrackOriented 
         }
     }
 
-    /**
-     *  Translate "dt" to "dateString"
-     *  Not sure if this should be "Klout-Specific"
-     *   or there is "oozie-specific" logic we need to set
-     *   for now , just to make sure that
-     *     oozie gets date string correctly
-     *   also add yesterdayString for oozie specific logic
-     *
-     *   XXX
-     *   FIXME
-     */
-    //// XXX
-    def massageProperties(params: Substitution): Substitution = {
-        params.update(VariableAssignment("dateString", params.get(Variable("dt")).get)).
-            update(VariableAssignment("networkAbbr", params.get(Variable("network_abbr"))))
-    }
-
-    def getProjectProperties: Substitution = {
-        Substitution(Helpers.readProperties("modules/samples/src/test/resources/maxwell.properties"))
+    
+    def scoozieApplicationPath( basePath : String, witness : Substitution ) : String = {
+      val suffix = witness.pathString
+      s"$basePath/scoozie_${workflow.name}_$suffix.xml"
     }
 
 }

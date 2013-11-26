@@ -204,8 +204,8 @@ object Replicator {
         ///hc.setVar(HiveConf.ConfVars.METASTOREPWD, "hiveklout")
 
         val prodHc = new HiveConf(new Configuration(), this.getClass())
-        prodHc.setVar(HiveConf.ConfVars.METASTOREURIS, "thrift://jobs-dev-hive1:9085")
-        ///prodHc.setVar(HiveConf.ConfVars.METASTOREURIS, "thrift://jobs--hive1:9085")
+        ///prodHc.setVar(HiveConf.ConfVars.METASTOREURIS, "thrift://jobs-dev-hive1:9085")
+        prodHc.setVar(HiveConf.ConfVars.METASTOREURIS, "thrift://jobs-aa-sched1:9083")
         val fromMs = new MetaStore(prodHc)
         println(" Production MetaStore = " + fromMs)
         
@@ -226,7 +226,7 @@ object Replicator {
         ///replicateDatabase(fromMs.hive, toMs.hive, "bing")
         ///val tbl = fromMs.getTableByName("bi_maxwell", "ksuid_mapping")
         //val tbl = fromMs.getTableByName("bi_maxwell", "ksuid_mapping")
-        val tbl = fromMs.getTableByName("bi_maxwell", "hb_feature_import")
+        val tbl = fromMs.getTableByName("bi_maxwell", "wikipedia_extract")
         ////val tbl2 = fromMs.getTableByName("bi_maxwell", "actor_action")
         ///val tbl3 = fromMs.getTableByName("bi_maxwell", "fact_content")
 

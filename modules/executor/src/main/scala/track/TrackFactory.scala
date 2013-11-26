@@ -99,6 +99,13 @@ case class TrackFactory(val trackPathURI : java.net.URI,
    }
    
    
+   /**
+    *  Given a track,
+    */
+   def getDescriptor( track: Track ) : TrackDescriptor = {
+      track.descriptor
+   }
+   
    
    /**
     *  Get the actual  Track object, with the top level goals

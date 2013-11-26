@@ -28,7 +28,7 @@ object ScoozieGoal {
 
     def apply(workflow: Workflow,
               outputs: Set[DataOutput]): Goal = {
-        apply("ScoozieGoal :: " + workflow.name, workflow, null, outputs)
+        apply( workflow.name, workflow, null, outputs)
 
     }
 

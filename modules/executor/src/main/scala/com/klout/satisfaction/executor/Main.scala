@@ -28,7 +28,7 @@ object Satisfaction {
             val statuses = engine.getGoalsInProgress
             println(statuses.size + " goals are in progress ")
             statuses.foreach { status: GoalStatus =>
-                println("   Status for Goal " + status.goal.name + " for Witness " + status.witness + " is " + status.state)
+                println("   Status for Goal " + status.goalName + " for Witness " + status.witness + " is " + status.state)
             }
         }
         println(" after continually")
@@ -57,7 +57,7 @@ object Satisfaction {
             val statuses = engine.getGoalsInProgress
             println(statuses.size + " goals are in progress ")
             statuses.foreach { status: GoalStatus =>
-                println("   Status for Goal " + status.goal.name + " for Witness " + status.witness + " is " + status.state)
+                println("   Status for Goal " + status.goalName + " for Witness " + status.witness + " is " + status.state)
             }
         }
 

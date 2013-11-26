@@ -80,7 +80,7 @@ object SatisfyGoalPage extends Controller {
                 if (status.state == GoalState.Running) {
                     /// Read log files 
                     println(s" Running Job for status $status")
-                    val logs = readLogFile(status.track, status.goal, status.witness)
+                    val logs = readLogFile(status.track, status.goalName, status.witness)
                     Ok(views.html.goalstatus(trackName, goalName, status, Some(logs), Some(plumb)))
                 } else {
                     Ok(views.html.goalstatus(trackName, goalName, status, None, Some(plumb)))
@@ -107,7 +107,7 @@ object SatisfyGoalPage extends Controller {
         val nodeMap: mutable.Map[String, PlumbGraph.NodeDiv] = mutable.Map()
 
         val topNodeDiv = new PlumbGraph.NodeDiv(
-            divContent = status.goal.name
+            divContent = status.goalName
         )
         topNodeDiv.width = 10
         topNodeDiv.height = 10
@@ -142,11 +142,11 @@ object SatisfyGoalPage extends Controller {
         var startX = currentNode.posX - (currentNode.width + 2) * numDeps / 2
         currentGoal.dependencyStatus.values.foreach { depGoalStatus =>
             var depNode: PlumbGraph.NodeDiv = null
-            if (nodeMap.contains(depGoalStatus.goal.name))
-                depNode = nodeMap.get(depGoalStatus.goal.name).get
+            if (nodeMap.contains(depGoalStatus.goalName))
+                depNode = nodeMap.get(depGoalStatus.goalName).get
             else {
-                depNode = new PlumbGraph.NodeDiv(divContent = depGoalStatus.goal.name)
-                nodeMap.put(depGoalStatus.goal.name, depNode)
+                depNode = new PlumbGraph.NodeDiv(divContent = depGoalStatus.goalName)
+                nodeMap.put(depGoalStatus.goalName, depNode)
                 pg.addNodeDiv(depNode)
             }
 
@@ -163,8 +163,8 @@ object SatisfyGoalPage extends Controller {
 
     }
 
-    def readLogFile(track : Track, goal: Goal, witness: Witness): String = {
-        val logFile = LogWrapper.logPathForGoalWitness(track, goal, witness)
+    def readLogFile(track : TrackDescriptor, goalName: String, witness: Witness): String = {
+        val logFile = LogWrapper.logPathForGoalWitness(track, goalName, witness)
 
         if (logFile.exists()) {
             io.Source.fromFile(logFile).getLines.mkString("<br>\n")
@@ -179,7 +179,7 @@ object SatisfyGoalPage extends Controller {
         //// use project name 
          ///val allStats = ProofEngine.getGoalsInProgress 
          ///allStats.foreach { stat => println( stat.track.name  + " :: " + stat.goal.name)}
-        val statList = ProofEngine.getGoalsInProgress.filter(_.track.name.equals(trackName)).filter(_.goal.name.equals(goalName))
+        val statList = ProofEngine.getGoalsInProgress.filter(_.track.trackName.equals(trackName)).filter(_.goalName.equals(goalName))
         if (statList.size > 0)
             Some(statList.head)
         else
@@ -211,8 +211,8 @@ object SatisfyGoalPage extends Controller {
     }
 
     def getTrackByName(trackName: String): Track = {
-      
-        val trackDesc = com.klout.satisfaction.executor.track.TrackDescriptor( trackName)
+        /// XXX Figure out how to use version and variant
+        val trackDesc = TrackDescriptor( trackName)
         val trackOpt : Option[Track] = ProjectPage.trackFactory.getTrack( trackDesc)
         trackOpt.get
     } 

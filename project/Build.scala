@@ -94,12 +94,9 @@ object ApplicationBuild extends Build {
 	  ("javax.jdo" % "jdo-api" % "3.0.1"),
 	  ("mysql" % "mysql-connector-java" % "5.1.18" ),
     ("com.github.nscala-time" %% "nscala-time" % "0.4.2"),
-	("com.inadco.ecoadapters" % "ecoadapters" % "0.4.3-klout"),
-	("org.elasticsearch" % "elasticsearch-hadoop" % "0.0.1.klout").exclude("cascading" , "*"),
-	//////("com.klout.pipeline" % "platform-protos" % "0.91.6").exclude("com.googlecode.protobuf-java-format","protobuf-java-format"),
 	("com.googlecode.protobuf-java-format" % "protobuf-java-format" % "1.2"),
 
-      ("com.klout" %% "scoozie" % "0.5.2" ).exclude("org.apache.hive","*"),
+      ("com.klout" %% "scoozie" % "0.5.3" ).exclude("org.apache.hive","*"),
       ("com.klout.scoozie" %% "klout-scoozie-maxwell" % "0.4" % "compile").exclude("org.apache.hadoop.hive","*"),
       ("com.klout.scoozie" %% "klout-scoozie-common" % "0.5" % "compile").exclude("org.apache.hive","*"),
 	  ("com.googlecode.protobuf-java-format" % "protobuf-java-format" % "1.2"),

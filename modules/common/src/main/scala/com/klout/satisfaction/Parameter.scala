@@ -86,6 +86,10 @@ class Substitution(
     override def toString : String = {
        assignments.mkString(";")
     }
+    
+    def pathString : String = {
+      toString.replace(" ","_").replace("=>","@").replace("(","_").replace(")","_").replace(";","_")
+    }
 }
 
 object Substitution {

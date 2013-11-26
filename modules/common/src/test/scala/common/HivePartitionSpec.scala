@@ -1,6 +1,8 @@
 package com.klout.satisfaction
 
 import scalaxb._
+
+
 import org.specs2.mutable._
 
 class HivePartitionSpec extends Specification {
@@ -12,11 +14,23 @@ class HivePartitionSpec extends Specification {
 
             val hiveTbl = new HiveTable("bi_maxwell", "actor_action")
 
-            val witness = new Witness(Substitution((dtParam -> "20130813"),
+            val witness = new Witness(Substitution((dtParam -> "20131117"),
                 (networkParam -> "tw")))
             val pathExists = hiveTbl.exists(witness)
-            pathExists must be
+            println(s" PATH EXISTS = $pathExists")
+            pathExists mustEqual true
         }
+        
+        "check if partition doesnt exists dt " in {
+            val hiveTbl = new HiveTable("bi_maxwell", "actor_action")
+
+            val witness = new Witness(Substitution((dtParam -> "20150813"),
+                (networkParam -> "tw")))
+            val pathExists = hiveTbl.exists(witness)
+            println(" pathExists is " + pathExists)
+            pathExists mustEqual false
+        }
+
 
         "check if partition doesnt exists " in {
             val hiveTbl = new HiveTable("bi_maxwell", "actor_action")
@@ -25,13 +39,13 @@ class HivePartitionSpec extends Specification {
                 (networkParam -> "horsehead")))
             val pathExists = hiveTbl.exists(witness)
             println(" pathExists is " + pathExists)
-            pathExists must be.not
+            pathExists mustEqual false
         }
 
         "check get DataInstance " in {
             val hiveTbl = new HiveTable("bi_maxwell", "actor_action")
 
-            val witness = new Witness(Substitution((dtParam -> "20130813"),
+            val witness = new Witness(Substitution((dtParam -> "20131113"),
                 (networkParam -> "tw")))
 
             val pathInstance = hiveTbl.getDataInstance(witness)
@@ -60,6 +74,56 @@ class HivePartitionSpec extends Specification {
 
             pathInstance mustEqual None
         }
+
+    }
+    
+    "HivePartitionGroup" should {
+      
+      "check if group exists" in {
+        
+        val partGroup = new HiveTablePartitionGroup("bi_maxwell","ksuid_mapping", Variable("dt"))
+        
+        val witness = new Witness( Substitution( dtParam -> "20131121"))
+        
+        val doesExist = partGroup.exists( witness)
+        
+        doesExist mustEqual true
+      }
+
+      "check get partition group" in {
+        
+        val partGroup = new HiveTablePartitionGroup("bi_maxwell","ksuid_mapping", Variable("dt"))
+        
+        val witness = new Witness( Substitution( dtParam -> "20131121"))
+        
+        val dataInstance = partGroup.getDataInstance(witness)
+        
+        println(s" Partition Group instance is $dataInstance ")
+        
+        dataInstance.isDefined must be
+        
+        println(s" Size is ${dataInstance.get.size} ")
+        println(s" Created is ${dataInstance.get.created} ")
+        println(s" LastAccessed is ${dataInstance.get.lastAccessed} ")
+        println(s" Exists is ${dataInstance.get.exists} ")
+        
+        dataInstance.get.size must beGreaterThan( 1024l )
+      }
+      
+      "check partition group doesn't exist " in {
+        val partGroup = new HiveTablePartitionGroup("bi_maxwell","ksuid_mapping", Variable("dt"))
+        
+        val witness = new Witness( Substitution( dtParam -> "20130221"))
+        
+        val dataInstance = partGroup.getDataInstance(witness)
+        
+        println(s" Partition Group instance is $dataInstance ")
+        
+        dataInstance.isDefined must be.not
+        
+        
+      }
+      
 
     }
 

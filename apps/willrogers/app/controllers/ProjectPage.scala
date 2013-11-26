@@ -12,6 +12,7 @@ import models._
 import com.klout.satisfaction.executor.actors.GoalStatus
 import collection._
 import com.klout.satisfaction.executor.track._
+import com.klout.satisfaction.TrackDescriptor
 
 object ProjectPage extends Controller {
   val trackFactory : TrackFactory = TrackFactory

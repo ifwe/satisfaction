@@ -9,37 +9,18 @@ import hive.ms.HiveLocalDriver
 /**
  */
 object HiveGoal {
-    implicit lazy val hiveDriver: HiveDriver = new HiveLocalDriver
-    ///lazy val hiveClient: HiveClient = HiveClient
 
-    def readResource(fileName: String): String = {
-        val resourceLoader = resourceClassLoader
-        println(" Resource Loader is " + resourceLoader )
-        val resourceUrl = resourceLoader.getResource(fileName)
-        println(s" Resource URL is $resourceUrl")
-        if (resourceUrl == null)
-            throw new IllegalArgumentException(s"Resource $fileName not found")
-        val readLines = Source.fromURL(resourceUrl).getLines.mkString("\n")
-        println(readLines)
-
-        readLines
-    }
-    
-    def resourceClassLoader : ClassLoader = {
-      var ldr = Thread.currentThread.getContextClassLoader
-      if(ldr == null) {
-        ldr = this.getClass.getClassLoader
-      }
-      ldr
-    }
 
     def apply(name: String,
-              query: String,
+              queryResource: String,
               table: HiveTable,
               overrides: Option[Substitution] = None,
               depends: Set[(Witness => Witness, Goal)] = Set.empty): Goal = {
 
-        val hiveSatisfier = new HiveSatisfier(query, hiveDriver)
+      //// Set the jar path 
+        ///val hiveSatisfier = new HiveSatisfier(query, HiveDriver("/Users/jeromebanks/NewGit/satisfaction/auxlib"))
+        val hiveSatisfier = new HiveSatisfier(queryResource, new  HiveLocalDriver )
+        
         val tblVariables = MetaStore.getVariablesForTable(table.dbName, table.tblName)
         val tblOutputs = collection.Set(table)
 
@@ -49,7 +30,13 @@ object HiveGoal {
             overrides,
             depends,
             evidence = tblOutputs
-        )
+        ) with TrackOriented {
+           override def setTrack( track : Track ) {
+              super.setTrack(track) 
+              val toSatisfier = satisfier.get.asInstanceOf[TrackOriented]
+              toSatisfier.setTrack(track)
+           }
+        }
     }
 
 }

@@ -101,6 +101,10 @@ class ProofEngine {
     }
 
     def getProver(track : Track, goal: Goal, witness: Witness): ActorRef = {
+        if( goal.isInstanceOf[TrackOriented]) {
+          val to = goal.asInstanceOf[TrackOriented]
+          to.setTrack( track)
+        }
         ProverFactory.getProver(proverFactory, track, goal, witness)
     }
 
@@ -120,10 +124,14 @@ class ProofEngine {
         var resultSet = Await.result(fMap, timeout.duration)
         
         //// Not quite what we want because we only want the ones for a particular track ...
+        println(s" REsultSet SIZE is ${resultSet.size} Active Actors = ${activeActors.size} ")
         while( resultSet.size < activeActors.size ) {
            println(" Result Set size is " + resultSet.size)
            resultSet = Await.result(fMap, timeout.duration)
         }
+        resultSet.foreach( statResp => {
+            println(" Status = " + statResp.goalName + " :: " + statResp.witness + " :: " + statResp.state + " result = " + statResp.execResult)
+        })
         resultSet
     }
     
@@ -154,6 +162,9 @@ object ProofEngine extends ProofEngine {
     def getActorName(goal: Goal, witness: Witness): String = {
         ///"akka://localhost/satisfaction/" + Goal.getPredicateString(goal, witness).replace("(", "/").replace(",", "/").replace(")", "").replace("=", "_eq_")
         Goal.getPredicateString(goal, witness).replace("(", "_").replace(",", "___").replace(")", "").replace("=", "_eq_")
+    }
+    def getActorName(goalName: String, witness: Witness): String = {
+        Goal.getPredicateString(goalName, witness).replace("(", "_").replace(",", "___").replace(")", "").replace("=", "_eq_")
     }
 
 }

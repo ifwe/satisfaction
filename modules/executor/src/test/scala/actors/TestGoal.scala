@@ -16,6 +16,7 @@ object TestGoal {
         goal
 
     }
+    
 
     def SlowGoal(name: String, variables: Set[Variable[_]], progressCount: Int, sleepTime: Long): Goal = {
 
@@ -29,6 +30,21 @@ object TestGoal {
         goal
 
     }
+    
+    def AlreadySatisfiedGoal(name: String, variables: Set[Variable[_]], progressCount: Int, sleepTime: Long): Goal = {
+
+        val satisfier = new SlowSatisfier(progressCount, sleepTime)
+        satisfier.varMap = satisfier.varMap ++ variables.map( _.name )
+        val evidence = Set[Evidence](satisfier)
+        val overrides = null
+        val dependencies = Set[(Witness => Witness, Goal)]()
+
+        val goal = new Goal(name, Some(satisfier), variables, overrides, dependencies, evidence)
+
+        goal
+
+    }
+
 
     def FailedGoal(name: String, variables: Set[Variable[_]], progressCount: Int, sleepTime: Long): Goal = {
 

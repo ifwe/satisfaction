@@ -14,6 +14,12 @@ object Config {
         var hc = new HiveConf(new Configuration(), this.getClass())
         hc.setVar(HiveConf.ConfVars.METASTOREURIS, "thrift://jobs-dev-hive2:9085")
         ///hc.setVar(HiveConf.ConfVars.METASTOREURIS, "thrift://jobs-aa-sched1:9083")
+        
+        hc.set("mapreduce.framework.name", "classic")
+        hc.set("mapreduce.jobtracker.address", "jobs-dev-hnn:8021")
+        hc.set("mapred.job.tracker", "jobs-dev-hnn:8021")
+        hc.set("yarn.resourcemanager.address", "scr@wyoucloudera")
+
 
         return hc
     }

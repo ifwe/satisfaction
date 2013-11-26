@@ -3,40 +3,62 @@ package com.klout.satisfaction
 import hive.ms._
 import org.apache.hadoop.hive.ql.metadata._
 import collection.JavaConversions._
+import org.apache.hadoop.fs.Path
 
 case class HiveTable(
     dbName: String,
     tblName: String) extends DataOutput {
 
     implicit val ms = hive.ms.MetaStore
+    implicit val hdfs = hive.ms.Hdfs
+    
+    val checkSuccessFile = true
 
     def variables = {
         ms.getVariablesForTable(dbName, tblName)
     }
 
     def exists(w: Witness): Boolean = {
-        getDataInstance(w).isDefined
+      val partitionOpt = getPartition( w)
+      if(partitionOpt.isDefined ) {
+        if( checkSuccessFile) {
+        	val partition = partitionOpt.get
+        	println(s" PARTITION = $partition")
+        	println(s" PARTITION = $partition PART PATH = ${partition.getPartitionPath}")
+            val successPath = new Path(partition.getPartitionPath + "/_SUCCESS")
+        	hdfs.exists( successPath)
+        } else{
+          true
+        } 
+      } else {
+        false
+      }
     }
 
     def getDataInstance(w: Witness): Option[DataInstance] = {
         val partition = getPartition(w)
-        println(" partition is " + partition)
-        if (partition != null)
-            Option(new HiveTablePartition(partition))
-        else
-            None
+        partition match {
+          case Some(part) => Some(new HiveTablePartition(part))
+          case None => None 
+        }
     }
 
-    def getPartition(witness: Witness): Partition = {
+    def getPartition(witness: Witness): Option[Partition] = {
         try {
             
             val tblWitness = witness.filter( variables)
             println( "variables for table is " + variables  +  " ; Witness variables = " + witness.variables)
             println(s" TableWitness = $tblWitness == regular witness = $witness")
-            ms.getPartition(dbName, tblName, tblWitness.substitution.raw)
+            val part = ms.getPartition(dbName, tblName, tblWitness.substitution.raw)
+            if( part != null) {
+              Some(part)
+            } else {
+              None
+            }
         } catch {
             case e: NoSuchElementException =>
-                null
+              None
         }
+        
     }
 }

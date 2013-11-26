@@ -4,6 +4,7 @@ import hive.ms._
 import org.joda.time.format.DateTimeFormat
 import org.joda.time.Days
 import org.joda.time.DateTime
+import scala.io.Source
 
 // class HiveSatisfier(ms: MetaStore) extends Satisfier with DataProducing {
 
@@ -17,9 +18,9 @@ import org.joda.time.DateTime
 // object HiveSatisfier extends HiveSatisfier(MetaStore)
 
 ///case class HiveSatisfier(queryTemplate: String, driver: HiveClient) extends Satisfier {
-case class HiveSatisfier(queryTemplate: String, driver: HiveDriver) extends Satisfier with TrackOriented with MetricsProducing {
+case class HiveSatisfier(queryResource: String, driver: HiveDriver) extends Satisfier with TrackOriented with MetricsProducing {
 
-    def executeMultipleHqls(hql: String): Boolean = {
+    def executeMultiple(hql: String): Boolean = {
         val multipleQueries = hql.split(";")
         multipleQueries.foreach(query => {
             if (query.trim.length > 0) {
@@ -33,6 +34,38 @@ case class HiveSatisfier(queryTemplate: String, driver: HiveDriver) extends Sati
         })
         true
     }
+    
+    
+    override def setTrack( tr : Track ) = {
+      super.setTrack( tr)
+      if(driver.isInstanceOf[TrackOriented]) {
+         val trackCast = driver.asInstanceOf[TrackOriented]
+         trackCast.setTrack(tr)
+      }
+    }
+    
+    def queryTemplate : String = {
+       if( queryResource.endsWith(".hql"))  { 
+          HiveSatisfier.readResource( queryResource) 
+       } else {
+         queryResource
+       }
+    }
+    
+    def loadSetup = {
+      try {
+        val setupScript = HiveSatisfier.readResource("setup.hql")
+        println(s" Running setup script $setupScript")
+        executeMultiple( setupScript)
+        
+      } catch { 
+        case ill : IllegalArgumentException =>
+          println("Unable to find setup.hql")
+        case unexpected:Throwable  =>
+         throw unexpected 
+      }
+      
+    }
 
     @Override
     override def satisfy(params: Substitution): ExecutionResult = {
@@ -40,6 +73,7 @@ case class HiveSatisfier(queryTemplate: String, driver: HiveDriver) extends Sati
         println(" Project substitution is as follows " + params.assignments.mkString)
 
         val allProps = getTrackProperties(params)
+        println(s" Track Properties is $allProps ")
         val queryMatch = Substituter.substitute(queryTemplate, allProps) match {
             case Left(badVars) =>
                 println(" Missing variables in query Template ")
@@ -51,7 +85,10 @@ case class HiveSatisfier(queryTemplate: String, driver: HiveDriver) extends Sati
             case Right(query) =>
                 val startTime = new DateTime
                 try {
-                    val result=  executeMultipleHqls(query)
+                    loadSetup
+                    println(" Beginning executing Hive queries ..")
+                    driver.useDatabase("bi_maxwell")
+                    val result=  executeMultiple(query)
                     val execResult = new ExecutionResult( query, startTime)
                     execResult.metrics.mergeMetrics( jobMetrics)
                     if( result) { execResult.markSuccess } else { execResult.markFailure }
@@ -77,7 +114,30 @@ case class HiveSatisfier(queryTemplate: String, driver: HiveDriver) extends Sati
        }
     }
    
-     
     
    
+}
+
+object HiveSatisfier {
+    def readResource(fileName: String): String = {
+        val resourceLoader = resourceClassLoader
+        println(" Resource Loader is " + resourceLoader )
+        val resourceUrl = resourceLoader.getResource(fileName)
+        println(s" Resource URL is $resourceUrl")
+        if (resourceUrl == null)
+            throw new IllegalArgumentException(s"Resource $fileName not found")
+        val readLines = Source.fromURL(resourceUrl).getLines.mkString("\n")
+        println(readLines)
+
+        readLines
+    }
+    
+    def resourceClassLoader : ClassLoader = {
+      var ldr = Thread.currentThread.getContextClassLoader
+      if(ldr == null) {
+        ldr = this.getClass.getClassLoader
+      }
+      ldr
+    }
+  
 }

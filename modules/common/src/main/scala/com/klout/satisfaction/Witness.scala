@@ -15,6 +15,11 @@ case class Witness(val substitution: Substitution) {
       Witness( vars, substitution)
     }
     
+      
+    def pathString : String = {
+      substitution.pathString
+    }
+    
 }
 
 object Witness {

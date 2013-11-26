@@ -14,6 +14,11 @@ case class Goal(
         dependencies += Tuple2(Goal.Identity, goal)
         return this
     }
+    
+    def addDataDependency( depData : DataOutput) : Goal = {
+       dependencies += Tuple2( Goal.Identity, Goal(s"Data ${depData.toString} ", null, depData.variables))  
+       this
+    }
 
     def addWitnessRule(rule: (Witness => Witness), goal: Goal): Goal = {
         dependencies += Tuple2(rule, goal)
@@ -43,6 +48,10 @@ object Goal {
     }
 
     def getPredicateString(goal: Goal, w: Witness): String = {
-        (goal.name + "(" + w.substitution.raw.mkString(",") + ")").replace(" ", "").replace("->", "=")
+        getPredicateString( goal.name, w)
+    }
+    
+    def getPredicateString(goalName: String, w: Witness): String = {
+        (goalName + "(" + w.substitution.raw.mkString(",") + ")").replace(" ", "").replace("->", "=")
     }
 }
