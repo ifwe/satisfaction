@@ -6,6 +6,8 @@ import java.io.FileInputStream
 import java.io.File
 import java.lang.reflect.Method
 import java.net.URLClassLoader
+import org.apache.hadoop.fs.Path
+import hive.ms.Hdfs
 
 /**
    *  Case class describing how a track can be deployed.
@@ -35,7 +37,7 @@ import java.net.URLClassLoader
    */
 
 case class Track(
-    descriptor : TrackDescriptor,
+    var descriptor : TrackDescriptor,
     topLevelGoals: Set[Goal] ) {
 
     def apply( trackName : String, topLevelGoals : Set[Goal]) : Track = {
@@ -76,20 +78,67 @@ case class Track(
      *   of properties along with the Track
      * 
      */
-     var trackProperties : Substitution = null
+     private var _trackProperties : Substitution = null
+     def trackProperties : Substitution = {
+       _trackProperties
+     }
 
+     private var _trackPath : Path = null;
      
-     def readProperties( pathString : String ) = {
-       trackProperties = Substitution( Substituter.readProperties(new FileInputStream( pathString )))
+     def trackPath : Path = {
+       _trackPath
+     }
+     def setTrackPath( path : Path ) = {
+       _trackPath = path
      }
      
-     var auxJarFolder : File = null
+     def readProperties( pathString : String ) = {
+       _trackProperties = Substitution( Substituter.readProperties(new FileInputStream( pathString )))
+     }
+     
+     def setTrackProperties( props : Substitution) = {
+    	  _trackProperties = props
+     }
+     
+   /** 
+    *  Read a resource from HDFS 
+    * 
+    */
+   def getResource(   resourceFile : String ) : String  = {
+     Hdfs.readFile( new Path( resourcePath.toUri.toString + "/" + resourceFile ))
+   }
+   
+   def resourcePath : Path = {
+     val resourceDir = _trackProperties.raw.get("satisfaction.track.resource") match {
+       case Some(path) => path
+       case None => "resource" 
+     }
+      new Path(_trackPath + "/" + resourceDir)
+   }
+   
+   def listResources : Seq[Path] = {
+      Hdfs.listFilesRecursively( resourcePath ).map( _.getPath )
+   }
+     
+     private var _auxJarFolder : File = null
+     
+     
+     def auxJarFolder : File = {
+    	if( _auxJarFolder != null) { 
+    	   _auxJarFolder 
+    	} else{
+    	   throw new RuntimeException("AuxJars accessed, but not registered yet !!!")	
+    	}
+     }
+     def setAuxJarFolder( auxJar : File) = {
+       _auxJarFolder = auxJar
+     }
         /// Want to make it on a per-project basis
     /// but for now, but them in the auxlib directory
      
      
     def registerJars( folder : String): Unit = {
-        auxJarFolder = new File( folder)
+        _auxJarFolder = new File( folder)
         this.auxJarFolder.listFiles.filter(_.getName.endsWith("jar")).foreach(
             f => {
                 println(s" Register jar ${f.getAbsolutePath} ")

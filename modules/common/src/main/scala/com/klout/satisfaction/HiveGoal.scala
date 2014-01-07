@@ -33,6 +33,7 @@ object HiveGoal {
         ) with TrackOriented {
            override def setTrack( track : Track ) {
               super.setTrack(track) 
+              println(" HiveGoal setTrack")
               val toSatisfier = satisfier.get.asInstanceOf[TrackOriented]
               toSatisfier.setTrack(track)
            }

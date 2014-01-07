@@ -14,6 +14,7 @@ import akka.actor.ActorLogging
 import org.joda.time.DateTime
 import org.joda.time.format.DateTimeFormat
 import org.apache.hadoop.fs.Path
+import org.apache.hadoop.fs.FileStatus
 
 /**
  *  Class for Executor to access deployed Tracks (i.e Projects)
@@ -35,6 +36,8 @@ case class TrackFactory(val trackPathURI : java.net.URI,
     val scheduler : TrackScheduler = TrackScheduler) {
    private implicit val hdfs = new Hdfs(trackPathURI.toASCIIString)
    
+   val auxJarsPathBase = new java.io.File(System.getProperty("user.dir") + "/auxJars")
+   
    
    private var trackMap : collection.mutable.Map[TrackDescriptor,Track] = collection.mutable.HashMap[TrackDescriptor,Track]()
    
@@ -52,6 +55,8 @@ case class TrackFactory(val trackPathURI : java.net.URI,
           parseTrackPath( fs.getPath )       
       }) 
    }
+   
+   
   
    
    /**
@@ -94,7 +99,63 @@ case class TrackFactory(val trackPathURI : java.net.URI,
     *   (needed by the various satisfiers of goals).
     *  when a project is first deployed  
     */
-   def registerTrack( trackDesc : TrackDescriptor ) = {
+   def registerTrackXXXX( trackDesc : TrackDescriptor ) = {
+     ////
+     
+   }
+   
+   /**
+    * Once a track has been loaded, 
+    *   make sure that it has setup everything it needs to run ..
+    */
+   def initializeTrack( track: Track , trackProps : Map[String,String] ) = {
+     println(s" Initializing Track ${track.descriptor.trackName}")
+     track.setTrackProperties(Substitution(trackProps ))
+                
+     val trackPath = getTrackPath( track.descriptor )
+     
+     trackProps.get( "satisfaction.track.auxjar") match {
+     case Some(trackAuxJar) =>
+        val auxJarsPath = new java.io.File( this.auxJarsPathBase.getPath() + "/" + track.descriptor.trackName)
+        auxJarsPath.mkdirs
+        val auxJarPath = new Path(trackPath + "/" + trackAuxJar)
+        hdfs.listFiles( auxJarPath ).foreach { fs : FileStatus => {
+    	    println(s" Copying  ${fs.getPath} to local aux jars path ${auxJarsPath.getPath}" )
+    	   hdfs.fs.copyToLocalFile( fs.getPath, new Path( "file://" +  auxJarsPath.getPath ) )
+         }}
+        
+        track.setAuxJarFolder( auxJarsPath)
+        track.registerJars( auxJarsPath.getPath)
+     case None =>
+     }
+       
+     trackProps.get("satisfaction.track.schedule") match {
+      case Some(schedStr) =>
+           println( "Scheduling "+ track.descriptor.trackName + " at " + schedStr)
+          val sched = TrackSchedule(schedStr)
+          scheduler.scheduleTrack(track.descriptor ,sched)
+      case None =>
+           println(" No schedule defined for track " + track.descriptor.trackName )
+     }
+     
+     track.setTrackPath( getTrackPath( track.descriptor))
+     
+     //// Now that has been initialized, go through all the Track's Goals, 
+     //// and  inject the Track value ...
+     track.allGoals.foreach { goal  : Goal => {
+    	 if( goal.isInstanceOf[TrackOriented]) {
+    		 val trackGoal : TrackOriented = goal.asInstanceOf[TrackOriented]
+    		 trackGoal.setTrack(track)
+    		 /// Inject the DataOutputs ???
+    		 goal.evidence.foreach { outp => {
+    			 if( outp.isInstanceOf[TrackOriented]) {
+    			   val trackOutp = outp.asInstanceOf[TrackOriented]
+    			   trackOutp.setTrack(track)
+    			 }
+    		 }}
+    	 }
+      }
+     }
      
    }
    
@@ -134,21 +195,12 @@ case class TrackFactory(val trackPathURI : java.net.URI,
       trackClazzOpt match {
         case Some(trackClazz)  =>
          val track = trackClazz.newInstance 
-      //// XXX mutability of track properties
-         track.trackProperties =  Substitution(trackProps) 
-         trackProps.get("satisfaction.track.schedule") match {
-           case Some(schedStr) =>
-              println( "Scheduling "+ trackDesc.trackName + " at " + schedStr)
-              val sched = TrackSchedule(schedStr)
-              scheduler.scheduleTrack(trackDesc,sched)
-           case None =>
-              println(" No schedule defined for track " + trackDesc.trackName )
-         }
-         
-     
+         track.descriptor = trackDesc
+         initializeTrack( track,  trackProps)
       	 Some(track)
         case None => None
       }
+      
      } catch {
        case exc : Throwable =>
          /// Unexpected 
@@ -258,4 +310,6 @@ case class TrackFactory(val trackPathURI : java.net.URI,
    }
 }
 
-object TrackFactory extends TrackFactory( new java.net.URI("hdfs://jobs-dev-hnn:8020"), "/user/satisfaction", TrackScheduler)
+object TrackFactory extends TrackFactory( new java.net.URI("hdfs://jobs-dev-hnn:8020"), "/user/satisfaction", TrackScheduler) {
+  
+}

@@ -109,6 +109,7 @@ class HiveLocalDriver extends HiveDriver with MetricsProducing with TrackOriente
       ////   link to project upload plugin ..
       ////   download from HDFS
       auxJarFolder.listFiles.filter(_.getName.endsWith("jar")).map(
+      ////new File("/Users/jeromebanks/NewGit/satisfaction/apps/willrogers/lib").listFiles.filter(_.getName.endsWith("jar")).map(
             "file://" + _.getAbsolutePath
         ).mkString(",")
     }

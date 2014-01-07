@@ -14,9 +14,6 @@ object Application extends Controller {
         Ok(views.html.toplevel())
     }
 
-    def editHive = Action {
-        Ok(views.html.hiveeditor())
-    }
 
     def allDBs = Action {
         ///Ok( views.html.dbs( MetaStore.getDbs ) )

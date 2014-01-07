@@ -14,13 +14,14 @@ GET     /showproject/:projName         controllers.ProjectPage.showProject(projN
 GET     /alltables/:db                   controllers.Application.getDBTables(db: String)
 GET     /showtable/:db/:tblName                   controllers.Application.showDBTable(db: String, tblName: String)
 GET     /showpartition/:db/:tblName/:partName                   controllers.Application.showPartition(db: String, tblName: String, partName: String)
-GET     /edithive                   controllers.Application.editHive()
 GET     /metadata/:db/:tblName                   controllers.MetaDataPage.showMetaData(db: String, tblName: String)
 POST     /addmetadata/:db/:tblName                   controllers.MetaDataPage.addMetaData(db: String, tblName: String)
 GET     /satisfygoal/:projName/:goalName                   controllers.SatisfyGoalPage.showSatisfyForm(projName: String, goalName: String)
 POST     /satisfygoal/:projName/:goalName                   controllers.SatisfyGoalPage.satisfyGoalAction(projName: String, goalName: String)
 GET     /goalstatus/:projName/:goalName                   controllers.SatisfyGoalPage.goalStatus(projName: String, goalName: String)
 GET     /schedules/                   controllers.ScheduleTrackPage.showSchedulesAction()
+GET     /listfiles/:trackName                  controllers.EditPage.listFiles(trackName: String)
+GET     /editfile/:trackName/:fileName          controllers.EditPage.editFile(trackName: String, fileName: String)
 
 
 # Map static resources from the /public folder to the /assets URL path

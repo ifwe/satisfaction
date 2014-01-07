@@ -73,6 +73,11 @@ case class Hdfs(val fsURI: String) {
       fullList
     }
     
+    def readFile( path : Path ) : String = {
+      io.Source.fromInputStream( fs.open( path) ).getLines.mkString("\n")
+    }
+    
+    
     def globFiles( rootPath : Path ) : Seq[FileStatus] = {
        fs.globStatus(rootPath)
     }

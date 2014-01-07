@@ -39,7 +39,7 @@ class HadoopJobProgress( val hadoopJob : RunningJob ) extends ProgressCounter {
      *  Include a bunch of counters, so that more accurate progress may be measured ..
      */
     @Override
-    def progressUnits : Set[ProgressUnit] = {
+    override def progressUnits : Set[ProgressUnit] = {
       /// XXX TODO.. filter out only the counters we care about 
       /// XXX Make scala wrapper around hadoop counters ...
        hadoopJob.getCounters.write( new java.io.DataOutputStream(System.out))

@@ -9,7 +9,7 @@ object MultidayGoal {
     val startDate : Variable[String] = Variable("start_date")
     val endDate : Variable[String] = Variable("end_date")
 
-   def apply( subGoal : Goal ) : Goal = {
+   ///def apply( subGoal : Goal ) : Goal = {
      
-   }
+   ///}
 }

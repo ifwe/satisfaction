@@ -1,0 +1,23 @@
+@(trackName: String, files: List[String])
+
+@import helper._
+
+@main("All Resource Files for Track " +  trackName) {
+    
+    <h1>@files.size Resource Files for Track @trackName </h1>
+
+   	<div style="overflow:scroll, height:300px">
+    <table id="thetable" cellspacing="0" style="overflow:scoll, height:200px">
+	<thead>
+	  <tr><td>Resource File</td></tr>
+      </thead> 
+	  <tbody>
+        @files.map { file =>
+		  <tr><td><a href="" onclick="window.open('/editfile/@trackName/@file'); return false" target="_blank">@file</a></td></tr>
+        }
+    </tbody>
+	</table>
+ </div>
+    
+    
+}

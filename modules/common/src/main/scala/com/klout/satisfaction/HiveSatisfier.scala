@@ -46,7 +46,7 @@ case class HiveSatisfier(queryResource: String, driver: HiveDriver) extends Sati
     
     def queryTemplate : String = {
        if( queryResource.endsWith(".hql"))  { 
-          HiveSatisfier.readResource( queryResource) 
+          track.getResource( queryResource) 
        } else {
          queryResource
        }
@@ -54,9 +54,11 @@ case class HiveSatisfier(queryResource: String, driver: HiveDriver) extends Sati
     
     def loadSetup = {
       try {
-        val setupScript = HiveSatisfier.readResource("setup.hql")
-        println(s" Running setup script $setupScript")
-        executeMultiple( setupScript)
+        val setupScript = track.getResource("setup.hql")
+        if( setupScript != null) {
+          println(s" Running setup script $setupScript")
+          executeMultiple( setupScript)
+        }
         
       } catch { 
         case ill : IllegalArgumentException =>
@@ -119,25 +121,5 @@ case class HiveSatisfier(queryResource: String, driver: HiveDriver) extends Sati
 }
 
 object HiveSatisfier {
-    def readResource(fileName: String): String = {
-        val resourceLoader = resourceClassLoader
-        println(" Resource Loader is " + resourceLoader )
-        val resourceUrl = resourceLoader.getResource(fileName)
-        println(s" Resource URL is $resourceUrl")
-        if (resourceUrl == null)
-            throw new IllegalArgumentException(s"Resource $fileName not found")
-        val readLines = Source.fromURL(resourceUrl).getLines.mkString("\n")
-        println(readLines)
-
-        readLines
-    }
-    
-    def resourceClassLoader : ClassLoader = {
-      var ldr = Thread.currentThread.getContextClassLoader
-      if(ldr == null) {
-        ldr = this.getClass.getClassLoader
-      }
-      ldr
-    }
   
 }

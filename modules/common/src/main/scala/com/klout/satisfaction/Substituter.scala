@@ -20,53 +20,54 @@ object Substituter {
     def substitute(str: String, subst: Substitution): Either[Set[String], String] = {
         return substitute(new CharSequenceReader(str), subst)
     }
-    def substitute(readerBegin: CharSequenceReader, subst: Substitution): Either[Set[String], String] = {
-      try {
-        val sb: StringBuilder = new StringBuilder
-        val missingList: Buffer[String] = new collection.mutable.ArrayBuffer()
 
-        var reader = readerBegin
-        while ({ !reader.atEnd }) {
-            reader.first match {
-                case '$' =>
-                    val nextChar = reader.rest.first
-                    if (nextChar == '{') {
+  def substitute(readerBegin: CharSequenceReader, subst: Substitution): Either[Set[String], String] = {
+    try {
+      val sb: StringBuilder = new StringBuilder
+      val missingList: Buffer[String] = new collection.mutable.ArrayBuffer()
 
-                        readVar(reader.rest.rest) match {
-                            case Left(malformed) =>
-                                missingList += malformed
-                            case Right(varTuple) =>
-                                val varName = varTuple._1
-                                reader = varTuple._2
-                                println( s" VARNAME = $varName ")
-                                subst.get(Variable(varName)) match {
-                                    case Some(lookup) => 
-                                      println(s"LOOKUP is $lookup " )
-                                      sb ++= lookup
-                                    case None         => missingList += varName
-                                }
-                        }
-                    } else {
-                        sb += '$'
-                    }
+      var reader = readerBegin
+      while ({ !reader.atEnd }) {
+        reader.first match {
+          case '$' =>
+            val nextChar = reader.rest.first
+            if (nextChar == '{') {
 
-                case v =>
-                    sb += v
-
+              readVar(reader.rest.rest) match {
+                case Left(malformed) =>
+                  missingList += malformed
+                case Right(varTuple) =>
+                  val varName = varTuple._1
+                  reader = varTuple._2
+                  println(s" VARNAME = $varName ")
+                  subst.get(Variable(varName)) match {
+                    case Some(lookup) =>
+                      println(s"LOOKUP is $lookup ")
+                      sb ++= lookup
+                    case None => missingList += varName
+                  }
+              }
+            } else {
+              sb += '$'
             }
-            reader = reader.rest
+
+          case v =>
+            sb += v
+
         }
-        if (missingList.size != 0)
-            Left(missingList.toSet)
-        else
-            Right(sb.toString)
-    } catch { 
-      case unexpected : Throwable =>
+        reader = reader.rest
+      }
+      if (missingList.size != 0)
+        Left(missingList.toSet)
+      else
+        Right(sb.toString)
+    } catch {
+      case unexpected: Throwable =>
         println(" Unexpedted error in substitures " + unexpected)
         unexpected.printStackTrace()
         throw unexpected
     }
-    }
+  }
 
     def isValidCharacter(ch: Char): Boolean = {
         ch.isLetterOrDigit

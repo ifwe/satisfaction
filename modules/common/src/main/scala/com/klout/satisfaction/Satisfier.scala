@@ -38,7 +38,7 @@ case class MetricsCollection( val collectionName : String  ) {
   }
   
   
-  def mergeMetrics( other : MetricsCollection ) : Unit = {
+  def mergeMetrics( other : MetricsCollection ) : MetricsCollection = {
     other.metrics.foreach { case(k,v) => {
         metrics.put( k, v) 
        } 
@@ -52,6 +52,7 @@ case class MetricsCollection( val collectionName : String  ) {
          }
       }
     }
+    this
   }
   
 }
