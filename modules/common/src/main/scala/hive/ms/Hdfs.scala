@@ -36,31 +36,18 @@ object HdfsFactoryInit {
 }
 
   
-case class Hdfs(val fsURI: String) {
+case class Hdfs(val fsURI: String) extends satisfaction.fs.FileSystem {
   
   val init = HdfsFactoryInit
 
     lazy val fs = FileSystem.get(new URI(fsURI), Config.config)
     
-    implicit def URI2Path( value : java.net.URI) : Path = {
-    	new Path( value.toString())
-    }
     
-    implicit def /( ths : Path,  that : String) : Path= {
-       val uri = ths.toUri.toString
-       if( uri.endsWith("/") || that.startsWith("/")) {
-           new Path( uri + that)
-       } else {
-          new Path( uri + "/" + that)
-       }
-    }
-    
-    
-    def listFiles( rootPath : Path ) : Seq[FileStatus] = {
+    override def listFiles( rootPath : Path ) : Seq[FileStatus] = {
         fs.listStatus(rootPath)
     }
     
-    def listFilesRecursively( rootPath : Path ) : Seq[FileStatus] = {
+    override def listFilesRecursively( rootPath : Path ) : Seq[FileStatus] = {
       var fullList : collection.mutable.Buffer[FileStatus] = new ArrayBuffer[FileStatus]
       listFiles( rootPath).foreach( { fs : FileStatus =>
          if( fs.isFile ) {

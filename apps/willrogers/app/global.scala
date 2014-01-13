@@ -1,5 +1,8 @@
+package com.klout
+
 import play.api._
 
+import satisfaction._
 
 object Global extends GlobalSettings {
 
@@ -14,9 +17,10 @@ object Global extends GlobalSettings {
         println(" Caching the Hive MetaStore")
         ///val initMs = hive.ms.MetaStore
         println(" Starting the Akka Actors")
-        val initPe = com.klout.satisfaction.executor.actors.ProofEngine
-        println(" Loading all Tracks ")
-        val initTf = com.klout.satisfaction.executor.track.TrackFactory.getAllTracks
+        val initPe = engine.actors.ProofEngine
+        println(" Loading all Tracks "
+            /// 
+        val initTf = com.klout.satisfaction.engine.track.TrackFactory.getAllTracks
         initTf.foreach( tr => { 
           try {
            println(" Track " + tr.trackName + " User " + tr.forUser + " with variant " + tr.variant + " :: Version " + tr.version)

@@ -1,3 +1,4 @@
+package com.klout
 package controllers
 
 import play.api._
@@ -9,10 +10,10 @@ import com.klout.satisfaction.Track
 import com.klout.satisfaction.Goal
 import models.PlumbGraph
 import models._
-import com.klout.satisfaction.executor.actors.GoalStatus
+import satisfaction.engine.actors.GoalStatus
 import collection._
-import com.klout.satisfaction.executor.track._
-import com.klout.satisfaction.TrackDescriptor
+import satisfaction.engine.track._
+import satisfaction.TrackDescriptor
 
 object EditPage extends Controller {
   val trackFactory : TrackFactory = TrackFactory

@@ -1,3 +1,4 @@
+package com.klout
 package controllers
 
 import play.api._
@@ -8,7 +9,7 @@ import play.api.mvc.Results._
 import play.api.data.validation.Constraints._
 import play.api.mvc.Action
 import models.MetaDataHolder
-import hive.ms._
+import satisfaction.hadoop.hive.ms._
 import play.api.mvc.Call
 
 object MetaDataPage extends Controller {

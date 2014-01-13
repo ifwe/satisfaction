@@ -1,6 +1,6 @@
-package com.klout.satisfaction
+package com.klout
+package satisfaction
 
-import scalaxb._
 
 
 import org.specs2.mutable._

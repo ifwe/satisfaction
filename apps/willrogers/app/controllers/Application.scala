@@ -1,7 +1,10 @@
+package com.klout
 package controllers
 
 import play.api._
-import hive.ms.MetaStore
+import satisfaction.hadoop.hive.ms.MetaStore
+import satisfaction.hadoop.hive.ms._
+import satisfaction.hadoop.hdfs._
 import play.api.data._
 import play.api.data.Forms._
 
