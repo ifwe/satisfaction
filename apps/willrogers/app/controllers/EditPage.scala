@@ -1,4 +1,4 @@
-package com.klout
+package willrogers
 package controllers
 
 import play.api._
@@ -10,10 +10,10 @@ import com.klout.satisfaction.Track
 import com.klout.satisfaction.Goal
 import models.PlumbGraph
 import models._
-import satisfaction.engine.actors.GoalStatus
 import collection._
-import satisfaction.engine.track._
-import satisfaction.TrackDescriptor
+import com.klout.satisfaction.engine.actors.GoalStatus
+import com.klout.satisfaction.track._
+import com.klout.satisfaction.TrackDescriptor
 
 object EditPage extends Controller {
   val trackFactory : TrackFactory = TrackFactory
@@ -24,7 +24,8 @@ object EditPage extends Controller {
        val trackOpt : Option[Track] = trackFactory.getTrack( trackDesc)
        trackOpt match {
          case Some(track) =>
-           val files = track.listResources.map( _.getName ).toList
+           ////val files = track.listResources.map( _.getName ).toList
+           val files = track.listResources.toList
            Ok(views.html.listfiles(trackName, files )) 
          case None => 
           Ok( views.html.brokenproject( trackName))

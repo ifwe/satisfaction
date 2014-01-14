@@ -106,6 +106,7 @@ case class Track(
     * 
     */
    def getResource(   resourceFile : String ) : String  = ???
+   def listResources : Seq[String]  = ???
    /**
    {
      Hdfs.readFile( new Path( resourcePath.toUri.toString + "/" + resourceFile ))

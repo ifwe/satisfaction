@@ -1,7 +1,6 @@
 package com.klout
 package satisfaction
-package engine
-package actors
+package track
 
 import org.joda.time.Period
 import org.joda.time.PeriodType

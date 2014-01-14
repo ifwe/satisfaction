@@ -9,9 +9,9 @@ import org.joda.time._
 import fs._
 
 case class HiveTablePartition(
-    part: Partition) extends DataInstance {
+    part: Partition,
+    implicit val ms : MetaStore) extends DataInstance {
 
-    implicit val ms: MetaStore = MetaStore
 
     def size: Long = {
         ms.getPartitionSize(part)

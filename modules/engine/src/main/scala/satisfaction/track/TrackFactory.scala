@@ -33,11 +33,10 @@ import fs._
  *   
  *  
  */
-case class TrackFactory(val trackPathURI : java.net.URI, 
+case class TrackFactory(val trackFS : FileSystem, 
     val baseTrackPath : String = "/user/satisfaction",
     val scheduler : TrackScheduler = TrackScheduler) {
    ///private implicit val hdfs : FileSystem = new Hdfs(trackPathURI.toASCIIString)
-   private implicit val hdfs : FileSystem = null
    private implicit val localFS : FileSystem = null
    
    val auxJarsPathBase = new java.io.File(System.getProperty("user.dir") + "/auxJars")
@@ -53,8 +52,8 @@ case class TrackFactory(val trackPathURI : java.net.URI,
     *   Satisfaction base track path.
     */
    def getAllTracks : Seq[TrackDescriptor] = {
-      val trackRoot = new Path(  trackPathURI.toString + "/"  + this.baseTrackPath )
-      val allPaths = hdfs.listFilesRecursively(trackRoot)
+      val trackRoot = new Path(  trackFS.uri.toString + "/"  + this.baseTrackPath )
+      val allPaths = trackFS.listFilesRecursively(trackRoot)
       allPaths.filter( _.getPath.toString.startsWith("version_")).map( fs => {
           parseTrackPath( fs.getPath )       
       }) 
@@ -123,9 +122,9 @@ case class TrackFactory(val trackPathURI : java.net.URI,
         val auxJarsPath = new java.io.File( this.auxJarsPathBase.getPath() + "/" + track.descriptor.trackName)
         auxJarsPath.mkdirs
         val auxJarPath = new Path(trackPath + "/" + trackAuxJar)
-        hdfs.listFiles( auxJarPath ).foreach { fs : FileStatus => {
+        trackFS.listFiles( auxJarPath ).foreach { fs : FileStatus => {
     	    println(s" Copying  ${fs.getPath} to local aux jars path ${auxJarsPath.getPath}" )
-    	   hdfs.copyToFileSystem( localFS, fs.getPath, new Path( "file://" +  auxJarsPath.getPath ) )
+    	   trackFS.copyToFileSystem( localFS, fs.getPath, new Path( "file://" +  auxJarsPath.getPath ) )
          }}
         
         track.setAuxJarFolder( auxJarsPath)
@@ -179,15 +178,15 @@ case class TrackFactory(val trackPathURI : java.net.URI,
    def generateTrack( trackDesc : TrackDescriptor ) : Option[Track] = {
      try {
       val trackPath = getTrackPath( trackDesc)
-      if( !hdfs.exists(trackPath)) {
-        throw new RuntimeException( s"No Track found under ${trackPathURI.toString}/${baseTrackPath} for descripter ${trackDesc} ")
+      if( !trackFS.exists(trackPath)) {
+        throw new RuntimeException( s"No Track found under ${trackFS.uri}/${baseTrackPath} for descripter ${trackDesc} ")
       }
       val propPath = new Path(trackPath.toUri   + "/satisfaction.properties")
-      if( !hdfs.exists(propPath)) {
+      if( !trackFS.exists(propPath)) {
         throw new RuntimeException( s"No properties file found for Track found under ${trackPath.toUri.toString} for descripter ${trackDesc} ")
       }
       
-      val inStream = hdfs.open( propPath)
+      val inStream = trackFS.open( propPath)
       val trackProps = Substituter.readProperties( inStream)
       
       val trackClassName = trackProps.get( "satisfaction.track.class").get
@@ -214,9 +213,9 @@ case class TrackFactory(val trackPathURI : java.net.URI,
    }
    
    def jarURLS( jarPath : Path ) : Array[java.net.URL] = {
-     if( hdfs.isDirectory( jarPath) ) {
+     if( trackFS.isDirectory( jarPath) ) {
        
-       hdfs.listFiles( jarPath).filter( _.getPath.getName.endsWith(".jar")).map( _.getPath.toUri.toURL).toArray
+       trackFS.listFiles( jarPath).filter( _.getPath.toString.endsWith(".jar")).map( _.getPath.toUri.toURL).toArray
      } else {
         val hdfsUrl = jarPath.toUri.toURL
         println(" HDFS URL is " + hdfsUrl.toString)
@@ -262,7 +261,7 @@ case class TrackFactory(val trackPathURI : java.net.URI,
     */
    def getTrackPath( td : TrackDescriptor ) : Path = {
 	  val sb : StringBuilder = new StringBuilder
-	  sb ++= this.trackPathURI.toString
+	  sb ++= this.trackFS.uri.toString
 	  if(! sb.toString.endsWith( "/")) {
 	    sb += '/'
 	  }
@@ -314,6 +313,7 @@ case class TrackFactory(val trackPathURI : java.net.URI,
    }
 }
 
-object TrackFactory extends TrackFactory( new java.net.URI("hdfs://jobs-dev-hnn:8020"), "/user/satisfaction", TrackScheduler) {
+/// XXX Fix me 
+object TrackFactory extends TrackFactory( null, "/user/satisfaction", TrackScheduler) {
   
 }

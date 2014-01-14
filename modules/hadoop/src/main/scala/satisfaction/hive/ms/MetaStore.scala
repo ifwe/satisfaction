@@ -547,7 +547,8 @@ class MetaStore(hvConfig: HiveConf) extends Loggable {
 /**
  *  Companion object
  */
-object MetaStore extends MetaStore(Config.config) {
+///object MetaStore extends MetaStore(Config.config) {
+object MetaStore  {
     def apply( msURI : java.net.URI ) : MetaStore = {
       val conf = Config.initHiveConf
       conf.setVar(HiveConf.ConfVars.METASTOREURIS, msURI.toASCIIString())
@@ -580,7 +581,7 @@ object MetaStore extends MetaStore(Config.config) {
     val YYYYMMDD : DateTimeFormatter = DateTimeFormat.forPattern("YYYYMMdd")
     def main(argv: Array[String]): Unit = {
 
-        val toMs: MetaStore = MetaStore
+        val toMs: MetaStore = MetaStore( new java.net.URI( "hdfs://jobs-dev-hnn" ))
 
         /// insights
         ///fromMs.prunePartitionsByRetention("bi_insights", "agg_moment", now,  92)

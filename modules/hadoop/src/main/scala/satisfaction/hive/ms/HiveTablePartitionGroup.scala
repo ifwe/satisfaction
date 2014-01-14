@@ -15,9 +15,9 @@ import collection.JavaConversions._
 case class HiveTablePartitionGroup(
     dbName: String,
     tblName: String,
-    grouping: Variable[String]) extends DataOutput {
+    grouping: Variable[String],
+    implicit val ms : MetaStore) extends DataOutput {
 
-    private val ms : MetaStore = MetaStore
 
     def variables = {
         Set(grouping)
@@ -38,7 +38,7 @@ case class HiveTablePartitionGroup(
         println(s" PART MAP IS $partMap ")
         val hivePartSet = ms.getPartitionSetForTable(tbl, partMap)
         if (hivePartSet.size > 0) {
-            Some(new HivePartitionSet(hivePartSet.map(new HiveTablePartition(_)).toSet))
+            Some(new HivePartitionSet(hivePartSet.map(new HiveTablePartition(_, ms)).toSet))
         } else {
             None
         }

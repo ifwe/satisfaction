@@ -1,4 +1,4 @@
-package com.klout
+package willrogers
 package controllers
 
 import play.api._
@@ -10,9 +10,9 @@ import com.klout.satisfaction.Track
 import com.klout.satisfaction.Goal
 import models.PlumbGraph
 import models._
-import satisfaction.engine.actors.GoalStatus
 import collection._
-import satisfaction.engine.track._
+import com.klout.satisfaction.engine.actors.GoalStatus
+import com.klout.satisfaction.track._
 import com.klout.satisfaction.TrackDescriptor
 
 object ProjectPage extends Controller {

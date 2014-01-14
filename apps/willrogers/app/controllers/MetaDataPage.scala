@@ -1,4 +1,4 @@
-package com.klout
+package willrogers
 package controllers
 
 import play.api._
@@ -9,10 +9,12 @@ import play.api.mvc.Results._
 import play.api.data.validation.Constraints._
 import play.api.mvc.Action
 import models.MetaDataHolder
-import satisfaction.hadoop.hive.ms._
+import com.klout.satisfaction.hadoop.hive.ms._
 import play.api.mvc.Call
 
 object MetaDataPage extends Controller {
+    val ms : MetaStore = Global.metaStore
+    
     val metadataForm: Form[MetaDataHolder] = Form(
         mapping("key" -> nonEmptyText,
             "value" -> text
@@ -26,14 +28,14 @@ object MetaDataPage extends Controller {
             metadataHolder => {
 
                 println(" Adding Meta Data in holder  " + metadataHolder)
-                MetaStore.setTableMetaData(db, tblName, metadataHolder.key, metadataHolder.value)
-                Ok(views.html.metadata(db, tblName, metadataForm))
+                ms.setTableMetaData(db, tblName, metadataHolder.key, metadataHolder.value)
+                Ok(views.html.metadata(db, tblName, ms, metadataForm))
             }
         )
     }
 
     def showMetaData(db: String, tblName: String) = Action {
-        Ok(views.html.metadata(db, tblName, metadataForm))
+        Ok(views.html.metadata(db, tblName, ms, metadataForm))
     }
 
 }

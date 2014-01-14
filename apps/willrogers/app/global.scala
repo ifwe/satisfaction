@@ -1,8 +1,11 @@
-package com.klout
+package willrogers
 
 import play.api._
+import com.klout.satisfaction._
+import com.klout.satisfaction.track.TrackFactory
+import com.klout.satisfaction.hadoop.hdfs.Hdfs
+import com.klout.satisfaction.hadoop.hive.ms._
 
-import satisfaction._
 
 object Global extends GlobalSettings {
 
@@ -18,13 +21,13 @@ object Global extends GlobalSettings {
         ///val initMs = hive.ms.MetaStore
         println(" Starting the Akka Actors")
         val initPe = engine.actors.ProofEngine
-        println(" Loading all Tracks "
+        println(" Loading all Tracks ")
             /// 
-        val initTf = com.klout.satisfaction.engine.track.TrackFactory.getAllTracks
+        val initTf = trackFactory.getAllTracks
         initTf.foreach( tr => { 
           try {
            println(" Track " + tr.trackName + " User " + tr.forUser + " with variant " + tr.variant + " :: Version " + tr.version)
-           val loadTr = com.klout.satisfaction.executor.track.TrackFactory.getTrack(tr)
+           val loadTr = trackFactory.getTrack(tr)
            println(" Loaded Track " + loadTr.get)
           } catch {
             case e: Throwable =>
@@ -33,4 +36,12 @@ object Global extends GlobalSettings {
           }
         })
     }
+    
+    val hdfsFS = new Hdfs("hdfs://jobs-dev-hnn")
+    val trackPath = "/user/satisfaction"
+      
+    val trackFactory : TrackFactory = new TrackFactory( hdfsFS, trackPath)
+    
+    
+    val metaStore : MetaStore  = null
 }
