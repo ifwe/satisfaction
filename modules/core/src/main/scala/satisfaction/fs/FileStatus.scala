@@ -7,6 +7,7 @@ trait FileStatus {
   
     def getSize : Long
     def isDirectory : Boolean
+    def isFile : Boolean
     
     def getPath : Path
     

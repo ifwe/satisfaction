@@ -13,6 +13,7 @@ package satisfaction.fs
 
 trait FileSystem {
 
+   def uri : java.net.URI
    def listFiles( p : Path ) : Seq[FileStatus]
    def listFilesRecursively( p : Path ) : Seq[FileStatus]
    
@@ -22,4 +23,9 @@ trait FileSystem {
    
    def copyToFileSystem( destFS : FileSystem , srcPath : Path, destPath : Path) 
    
+   def exists( p : Path ) : Boolean
+   def isDirectory( p : Path ) : Boolean
+   def isFile( p : Path ) : Boolean
+   
+   def getStatus( p : Path ) : FileStatus
 }

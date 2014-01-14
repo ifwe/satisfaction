@@ -5,7 +5,7 @@ package hive.ms
 
 import org.apache.hadoop.hive.ql.metadata._
 import collection.JavaConversions._
-import org.apache.hadoop.fs.Path
+import fs._
 import hdfs.Hdfs
 
 case class HiveTable(
@@ -28,7 +28,7 @@ case class HiveTable(
         	val partition = partitionOpt.get
         	println(s" PARTITION = $partition")
         	println(s" PARTITION = $partition PART PATH = ${partition.getPartitionPath}")
-            val successPath = new Path(partition.getPartitionPath + "/_SUCCESS")
+            val successPath = new  Path(partition.getPartitionPath + "/_SUCCESS")
         	hdfs.exists( successPath)
         } else{
           true

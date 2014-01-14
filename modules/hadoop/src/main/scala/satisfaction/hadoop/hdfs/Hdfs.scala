@@ -3,12 +3,16 @@ package satisfaction
 package hadoop
 package hdfs
 
-import org.apache.hadoop.fs.FileSystem
 import java.net.URI
-import org.apache.hadoop.fs.Path
-import org.apache.hadoop.fs.FileStatus
+import fs._
+import org.apache.hadoop.fs.{Path => ApachePath}
+import org.apache.hadoop.fs.{FileStatus => ApacheFileStatus}
+import org.apache.hadoop.fs.{FileSystem => ApacheFileSystem}
 import scala.collection.mutable.ArrayBuffer
+import scala.collection.JavaConversions._
 import org.apache.hadoop.fs.FsUrlStreamHandlerFactory
+import org.joda.time.DateTime
+import satisfaction.hadoop.Config._
 
 /**
  *
@@ -36,38 +40,89 @@ object HdfsFactoryInit {
                   fsFactory
               }
          }
+         
+    implicit def ApachePath2Path( ap : ApachePath) : Path = {
+       new Path( ap.toUri.toString )
+    }
+    
+    implicit def Path2ApachePath( p : Path) : ApachePath = {
+      new ApachePath( p.toString ) 
+    }
 }
 
+case class HdfsFStat( apacheFileStatus : ApacheFileStatus ) extends satisfaction.fs.FileStatus {
+  
+    override def getSize : Long = {
+	  apacheFileStatus.getLen
+    }
+    
+    override def isDirectory : Boolean = {
+	  apacheFileStatus.isDirectory
+    }
+    
+    override def isFile : Boolean = {
+	  apacheFileStatus.isFile
+    }
+    
+    override def getPath : Path = {
+	  new Path(apacheFileStatus.getPath.toUri.toString)
+    }
+    
+    def lastAccessed : DateTime = {
+      new DateTime(apacheFileStatus.getAccessTime)
+    }
+    def created : DateTime = {
+      new DateTime(apacheFileStatus.getModificationTime)
+    }
+    
+  
+}
+object HdfsFStat {
+    implicit def ApacheFileStatus2HdfsFS( apacheFileStatus : ApacheFileStatus ) : HdfsFStat = {
+       new HdfsFStat( apacheFileStatus ) 
+    }
+    
+}
+
+object ApachePath {
+   implicit def ApachePath2Path( ap : ApachePath) : Path = {
+       new Path( ap.toUri.toString )
+    }
+    
+    implicit def Path2ApachePath( p : Path) : ApachePath = {
+      new ApachePath( p.toString ) 
+    }
+   
+  
+    implicit def FileSystem2ApacheFileSystem( fs : FileSystem ) : ApacheFileSystem = {
+       ApacheFileSystem.get( fs.uri , Config.config) 
+    }
+}
   
 case class Hdfs(val fsURI: String) extends satisfaction.fs.FileSystem {
   
+   import ApachePath._
+   import HdfsFStat._
+  
   val init = HdfsFactoryInit
 
-    lazy val fs = FileSystem.get(new URI(fsURI), Config.config)
+    lazy val fs = ApacheFileSystem.get(new URI(fsURI), Config.config)
     
-    implicit def URI2Path( value : java.net.URI) : Path = {
-    	new Path( value.toString())
-    }
-    
-    implicit def /( ths : Path,  that : String) : Path= {
-       val uri = ths.toUri.toString
-       if( uri.endsWith("/") || that.startsWith("/")) {
-           new Path( uri + that)
-       } else {
-          new Path( uri + "/" + that)
-       }
-    }
-    
-    
+   
+    override def uri : java.net.URI = {
+    	fs.getUri()
+   }
+   
     override def listFiles( rootPath : Path ) : Seq[FileStatus] = {
-        fs.listStatus(rootPath)
+        fs.listStatus(  rootPath ).toSeq.map( afs => { afs : FileStatus } )
     }
     
     
+    @Override
     override def listFilesRecursively( rootPath : Path ) : Seq[FileStatus] = {
       var fullList : collection.mutable.Buffer[FileStatus] = new ArrayBuffer[FileStatus]
       listFiles( rootPath).foreach( { fs : FileStatus =>
-         if( fs.isFile ) {
+         if( !fs.isDirectory ) {
            fullList += fs
          } else {
            fullList += fs
@@ -83,7 +138,7 @@ case class Hdfs(val fsURI: String) extends satisfaction.fs.FileSystem {
     
     
     def globFiles( rootPath : Path ) : Seq[FileStatus] = {
-       fs.globStatus(rootPath)
+       fs.globStatus(rootPath).toSeq.map( afs => { afs : FileStatus })
     }
     
     def globFilesRecursively( rootPath : Path ) : Seq[FileStatus] = {
@@ -103,13 +158,28 @@ case class Hdfs(val fsURI: String) extends satisfaction.fs.FileSystem {
         return fs.exists(path)
     }
     
-    def open( pth : Path) : io.BufferedSource = {
+    override def getStatus( path : Path) : FileStatus =  {
+	   return fs.getFileStatus( path)
+    }
+    
+    override def open( pth : Path) : io.BufferedSource = {
        io.Source.fromInputStream( fs.open( pth))
     }
     
     override def isDirectory( path : Path) : Boolean = {
       fs.getFileStatus(path).isDirectory()
     }
+      
+    override def isFile( path : Path) : Boolean = {
+      fs.getFileStatus(path).isFile()
+    }
+    
+     
+   def copyToFileSystem( destFS : FileSystem , srcPath : Path, destPath : Path) = {
+     val apacheDestFS : ApacheFileSystem = destFS
+     
+   }
+    
 
     def markSuccess(path: Path): Unit = {
         val successPath = new Path(path.toUri + "/_SUCCESS")

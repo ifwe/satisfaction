@@ -7,6 +7,7 @@ import java.io.FileInputStream
 import java.io.File
 import java.lang.reflect.Method
 import java.net.URLClassLoader
+import satisfaction.fs.Path
 
 /**
    *  Case class describing how a track can be deployed.
@@ -82,7 +83,6 @@ case class Track(
        _trackProperties
      }
 
-     /**
      private var _trackPath : Path = null;
      
      def trackPath : Path = {
@@ -91,8 +91,6 @@ case class Track(
      def setTrackPath( path : Path ) = {
        _trackPath = path
      }
-     * *
-     */
      
      def readProperties( pathString : String ) = {
        _trackProperties = Substitution( Substituter.readProperties(new FileInputStream( pathString )))
@@ -112,6 +110,7 @@ case class Track(
    {
      Hdfs.readFile( new Path( resourcePath.toUri.toString + "/" + resourceFile ))
    }
+   **/
    
    def resourcePath : Path = {
      val resourceDir = _trackProperties.raw.get("satisfaction.track.resource") match {
@@ -121,10 +120,6 @@ case class Track(
       new Path(_trackPath + "/" + resourceDir)
    }
    
-   def listResources : Seq[Path] = {
-      Hdfs.listFilesRecursively( resourcePath ).map( _.getPath )
-   }
-   * **/
      
      private var _auxJarFolder : File = null
      

@@ -3,6 +3,7 @@ package satisfaction
 package hadoop
 package hive.ms
 
+import hdfs.ApachePath
 import org.apache.hadoop.hive.metastore.HiveMetaStoreClient
 import org.apache.hadoop.hive.ql.metadata._
 import org.apache.hadoop.conf.Configuration
@@ -16,6 +17,9 @@ import org.apache.hadoop.hive.shims.ShimLoader
 import java.net.URI
 import java.util.HashMap
 import org.joda.time._
+import fs._
+///import org.apache.hadoop.fs.{ Path => ApachePath }
+import ApachePath._
 import org.joda.time.format.DateTimeFormatter
 import org.joda.time.format.DateTimeFormat
 import org.apache.hadoop.hive.metastore.api.FieldSchema

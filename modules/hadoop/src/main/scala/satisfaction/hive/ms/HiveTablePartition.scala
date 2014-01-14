@@ -6,6 +6,7 @@ package hive.ms
 import org.apache.hadoop.hive.ql.metadata.Partition
 import hive.ms._
 import org.joda.time._
+import fs._
 
 case class HiveTablePartition(
     part: Partition) extends DataInstance {
@@ -54,6 +55,10 @@ case class HiveTablePartition(
     def exists: Boolean = {
         /// XXX 
         true
+    }
+    
+    def path : fs.Path = {
+       return  new Path(part.getPartitionPath.toUri.toString)
     }
 
     def lastModifiedBy: String = {

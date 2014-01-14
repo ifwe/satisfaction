@@ -5,12 +5,12 @@ package hdfs
 
 import org.joda.time.DateTime
 
-import org.apache.hadoop.fs.Path
-import org.apache.hadoop.fs.FileStatus
+import fs._
 
 case class HdfsPath(val path: Path) extends DataInstance {
 
-    lazy val status: FileStatus = Hdfs.fs.getFileStatus(path)
+    lazy val status: FileStatus = Hdfs.getStatus(path)
+    
 
     lazy implicit val hdfs: Hdfs = Hdfs
 
@@ -19,16 +19,16 @@ case class HdfsPath(val path: Path) extends DataInstance {
     }
 
     def created: DateTime = {
-        new DateTime(status.getModificationTime)
+        status.created
     }
 
     def lastAccessed: DateTime = {
-        new DateTime(status.getModificationTime)
+      status.lastAccessed
     }
 
     def exists: Boolean = {
         if (hdfs.exists(path)) {
-            if (hdfs.exists(new Path(path.toUri() + "/_SUCCESS"))) {
+            if (hdfs.exists( new Path(path.toString + "/_SUCCESS"))) {
                 return true
             } else {
                 return false

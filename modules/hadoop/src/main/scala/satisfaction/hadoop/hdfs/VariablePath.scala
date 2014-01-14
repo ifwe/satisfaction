@@ -3,7 +3,7 @@ package satisfaction
 package hadoop
 package hdfs
 
-import org.apache.hadoop.fs.Path
+import fs._
 
 case class VariablePath(pathTemplate: String) extends DataOutput with TrackOriented {
 
