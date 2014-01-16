@@ -97,7 +97,7 @@ case class HiveSatisfier(queryResource: String, driver: HiveDriver) extends Sati
                     execResult.metrics.mergeMetrics( jobMetrics)
                     if( result) { execResult.markSuccess } else { execResult.markFailure }
                 } catch {
-                    case unexpected =>
+                    case unexpected : Throwable =>
                         println(s" Unexpected error $unexpected")
                         unexpected.printStackTrace()
                         val execResult = new ExecutionResult(query, startTime)

@@ -5,6 +5,7 @@ package hive.ms
 
 import org.apache.hadoop.hive.ql.metadata._
 import collection.JavaConversions._
+import satisfaction.fs.FileSystem
 
 /**
  *   Represents a group of partitions
@@ -15,8 +16,9 @@ import collection.JavaConversions._
 case class HiveTablePartitionGroup(
     dbName: String,
     tblName: String,
-    grouping: Variable[String],
-    implicit val ms : MetaStore) extends DataOutput {
+    grouping: Variable[String])
+    ( implicit val ms : MetaStore,
+      implicit val hdfs : FileSystem ) extends DataOutput {
 
 
     def variables = {
@@ -38,7 +40,7 @@ case class HiveTablePartitionGroup(
         println(s" PART MAP IS $partMap ")
         val hivePartSet = ms.getPartitionSetForTable(tbl, partMap)
         if (hivePartSet.size > 0) {
-            Some(new HivePartitionSet(hivePartSet.map(new HiveTablePartition(_, ms)).toSet))
+            Some(new HivePartitionSet(hivePartSet.map(new HiveTablePartition(_)).toSet))
         } else {
             None
         }

@@ -21,6 +21,8 @@ trait FileSystem {
    
    def open( pth : Path) : io.BufferedSource 
    
+   def create( path : Path ) : java.io.OutputStream
+   
    def copyToFileSystem( destFS : FileSystem , srcPath : Path, destPath : Path) 
    
    def exists( p : Path ) : Boolean
@@ -28,4 +30,5 @@ trait FileSystem {
    def isFile( p : Path ) : Boolean
    
    def getStatus( p : Path ) : FileStatus
+   def delete( p : Path )
 }

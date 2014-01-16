@@ -16,13 +16,14 @@ object HiveGoal {
               queryResource: String,
               table: HiveTable,
               overrides: Option[Substitution] = None,
-              depends: Set[(Witness => Witness, Goal)] = Set.empty): Goal = {
+              depends: Set[(Witness => Witness, Goal)] = Set.empty)
+         ( implicit ms : MetaStore = null ): Goal = {
 
       //// Set the jar path 
         ///val hiveSatisfier = new HiveSatisfier(query, HiveDriver("/Users/jeromebanks/NewGit/satisfaction/auxlib"))
         val hiveSatisfier = new HiveSatisfier(queryResource, new  HiveLocalDriver )
         
-        val tblVariables = MetaStore.getVariablesForTable(table.dbName, table.tblName)
+        val tblVariables = ms.getVariablesForTable(table.dbName, table.tblName)
         val tblOutputs = collection.Set(table)
 
         new Goal(name = name,

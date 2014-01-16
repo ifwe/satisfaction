@@ -7,12 +7,10 @@ import org.joda.time.DateTime
 
 import fs._
 
-case class HdfsPath(val path: Path) extends DataInstance {
+case class HdfsPath(val path: Path)(implicit val hdfs : FileSystem ) extends DataInstance {
 
-    lazy val status: FileStatus = Hdfs.getStatus(path)
-    
+    lazy val status: FileStatus = hdfs.getStatus(path)
 
-    lazy implicit val hdfs: Hdfs = Hdfs
 
     def size: Long = {
         Hdfs.getSpaceUsed(path)

@@ -25,17 +25,17 @@ object ApplicationBuild extends Build {
   val hadoop = Project(
       "satisfaction-hadoop",
       file("modules/hadoop")
-  ).settings(CommonSettings: _*).settings(libraryDependencies := hadoopDependencies ).dependsOn(core)
+  ).settings(CommonSettings: _*).settings(libraryDependencies := hadoopDependencies ).dependsOn(core).dependsOn( engine)
 
   val hive = Project(
       "satisfaction-hive",
       file("modules/hive")
-  ).settings(CommonSettings: _*).settings(libraryDependencies  := hiveDependencies ).dependsOn(core).dependsOn(hadoop)
+  ).settings(CommonSettings: _*).settings(libraryDependencies  := hiveDependencies ).dependsOn(core).dependsOn(hadoop).dependsOn( engine)
 
   val scoozie = Project(
       "satisfaction-scoozie",
       file("modules/scoozie")
-  ).settings(CommonSettings: _*).dependsOn(core).dependsOn(hadoop)
+  ).settings(CommonSettings: _*).settings(libraryDependencies := scoozieDependencies ).dependsOn(core).dependsOn(hadoop)
 
   val packaging = Project(
      "satisfaction-packaging",
@@ -86,6 +86,7 @@ object ApplicationBuild extends Build {
     ("org.specs2" %% "specs2" % "1.14" % "test"),
     ("junit" % "junit" % "4.11" % "test")
   )
+
 
   def hadoopDependencies = Seq(
 	  ("org.apache.hadoop" % "hadoop-common" % "2.0.0-cdh4.2.1"),

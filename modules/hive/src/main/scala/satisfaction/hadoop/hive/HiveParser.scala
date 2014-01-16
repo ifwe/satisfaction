@@ -12,11 +12,16 @@ import com.klout.satisfaction.DataInstance
 import com.klout.satisfaction.hadoop.hive.ms.HiveTablePartition
 import org.apache.hadoop.hive.ql.tools.LineageInfo
 import org.apache.hadoop.hive.ql.optimizer.index.RewriteParseContextGenerator
+import ms.MetaStore
+import fs.FileSystem
 
-object HiveParser {
+class  HiveParser( implicit val ms : MetaStore, implicit val hdfs : FileSystem ) {
 
     val parseDriver = new org.apache.hadoop.hive.ql.parse.ParseDriver
     val config = Config.config
+    
+    
+    
 
     def parseSyntax(query: String): Boolean = {
         try {
@@ -43,6 +48,7 @@ object HiveParser {
             val part = ent.getPartition()
             println(" Partition is " + part.getCompleteName())
             ////new HiveTablePartition(part,ms)
+            /// XXX get implicit metastore 
             new HiveTablePartition(part)
         }
         depends.toSet[DataInstance]
@@ -75,3 +81,4 @@ object HiveParser {
     }
 
 }
+

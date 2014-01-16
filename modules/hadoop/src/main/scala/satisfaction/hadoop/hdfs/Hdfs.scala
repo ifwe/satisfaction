@@ -13,6 +13,7 @@ import scala.collection.JavaConversions._
 import org.apache.hadoop.fs.FsUrlStreamHandlerFactory
 import org.joda.time.DateTime
 import satisfaction.hadoop.Config._
+import org.apache.hadoop.fs.FSDataOutputStream
 
 /**
  *
@@ -175,22 +176,43 @@ case class Hdfs(val fsURI: String) extends satisfaction.fs.FileSystem {
     }
     
      
-   def copyToFileSystem( destFS : FileSystem , srcPath : Path, destPath : Path) = {
+   override def copyToFileSystem( destFS : FileSystem , srcPath : Path, destPath : Path) = {
      val apacheDestFS : ApacheFileSystem = destFS
      
    }
+   
+   override def delete( path : Path ) = {
+     fs.delete( path, true) 
+   }
+   
+   override def create( path : Path ) : java.io.OutputStream = {
+       val hdfsStream : FSDataOutputStream = fs.create( path) 
+       
+       val closingStream = new java.io.OutputStream {
+          override def write( b : Int ) = {
+            hdfsStream.write(b) 
+          }
+          override def write( bArr : Array[Byte], off : Int, len : Int) = {
+            hdfsStream.write( bArr, off,len) 
+          }
+          override def flush() = {
+              hdfsStream.hsync
+              hdfsStream.hflush
+              hdfsStream.flush
+          }
+          
+          override def close() = {
+              hdfsStream.hsync
+              hdfsStream.flush
+              hdfsStream.hflush
+              hdfsStream.close 
+          }  
+       }
+       
+       return closingStream
+   }
+   
     
-
-    def markSuccess(path: Path): Unit = {
-        val successPath = new Path(path.toUri + "/_SUCCESS")
-        if (!fs.exists(successPath)) {
-            val writer = fs.create(successPath)
-            writer.hsync
-            writer.flush
-            writer.hflush
-            writer.close
-        }
-    }
 
     def getSpaceUsed(path: Path): Long = {
         var totalLen: Long = 0
@@ -212,8 +234,19 @@ case class Hdfs(val fsURI: String) extends satisfaction.fs.FileSystem {
     }
 
 }
+
+
 object Hdfs extends Hdfs("hdfs://jobs-dev-hnn:8020") {
   
+   def markSuccess(fs : FileSystem, path: Path): Unit = {
+        val successPath = new Path(path.toString + "/_SUCCESS")
+        if (!fs.exists(successPath)) {
+            val writer = fs.create(successPath)
+            writer.flush
+            writer.close
+        }
+    }
+
 
     def rounded(dbl: Double): String = {
         (((dbl * 100).toInt) / 100.0).toString

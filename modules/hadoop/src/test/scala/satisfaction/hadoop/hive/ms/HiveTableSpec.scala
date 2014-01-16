@@ -8,6 +8,8 @@ import com.klout.satisfaction.Witness
 import com.klout.satisfaction._
 import org.specs2.runner.JUnitRunner
 import org.junit.runner.RunWith
+import satisfaction.fs.FileSystem
+import satisfaction.hadoop.hdfs.Hdfs
 
 @RunWith(classOf[JUnitRunner])
 class HiveTableSpec extends Specification {
@@ -15,6 +17,9 @@ class HiveTableSpec extends Specification {
     val networkParam = new Variable("network_abbr", classOf[String])
     val featureGroup = new Variable[Int]("service_id", classOf[Int])
 
+    implicit  val ms : MetaStore = MetaStore(new java.net.URI("thrift://jobs-dev-sched2:9085"))
+    implicit  val hdfs : FileSystem = new Hdfs("hdfs://jobs-dev-hnn" )
+    
     "HiveTable" should {
         "provide variables" in {
             val actorAction = new HiveTable("bi_maxwell", "actor_action")

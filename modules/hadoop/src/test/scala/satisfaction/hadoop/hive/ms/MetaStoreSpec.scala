@@ -23,7 +23,6 @@ class MetaStoreSpec extends Specification {
      
 
     "getIntervals" should {
-       /**
         "getSpecified intervals" in {
             
             val randomDates =Seq(YYYYMMDD("20131015"), 
@@ -44,7 +43,7 @@ class MetaStoreSpec extends Specification {
                true
         }
         "get Buckets of partitions " in {
-        	val prodMetaStore = MetaStore( new java.net.URI("thrift://jobs-aa-sched1:9083"))
+        	val prodMetaStore = MetaStore( new java.net.URI("thrift://jobs-dev-sched1:9083"))
         	val dtNow = DateTime.now.toDateMidnight.toDateTime
         	val dtSeq = Seq( dtNow, dtNow.minusDays(3), dtNow.minusDays(7), dtNow.minusDays(30))
         	
@@ -64,8 +63,7 @@ class MetaStoreSpec extends Specification {
             } }
         	
         }
-        * 
-        */
+        
         "Clean up maxwell" in {
         	val prodMetaStore = MetaStore( new java.net.URI("thrift://jobs-dev-sched2:9083"))
         	prodMetaStore.cleanPartitionsForDb("bi_maxwell")

@@ -26,10 +26,8 @@ import org.apache.hadoop.hive.ql.processors.CommandProcessorResponse
 import java.io.BufferedReader
 import java.io.FileReader
 import scala.util.control.Breaks
+import satisfaction.hadoop.Config
 
-///import org.apache.hive.service.cli.HiveSQLException
-//import org.apache.hadoop.hive.service.HiveServer
-//import org.apache.hive.HiveServer2
 /**
  * Executes jobs locally
  */
@@ -51,9 +49,12 @@ trait HiveDriver {
 }
 
 
+/**
+ *  Executes Jobs locally, going directly through 
+ *    the internal 'SessionState' interface
+ */
 
-class HiveLocalDriver extends HiveDriver with MetricsProducing with TrackOriented {
-    lazy implicit val hiveConf = Config.config
+class HiveLocalDriver( implicit val hiveConf : HiveConf = Config.config ) extends HiveDriver with MetricsProducing with TrackOriented {
 
     lazy val driver = {
       

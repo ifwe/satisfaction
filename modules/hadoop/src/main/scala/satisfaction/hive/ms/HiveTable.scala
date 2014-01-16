@@ -10,9 +10,9 @@ import hdfs.Hdfs
 
 case class HiveTable(
     dbName: String,
-    tblName: String,
-    implicit val ms : MetaStore,
-    implicit val hdfs : FileSystem) extends DataOutput {
+    tblName: String)
+    (implicit val ms : MetaStore,
+     implicit val hdfs : FileSystem) extends DataOutput {
 
     
     val checkSuccessFile = true
@@ -41,7 +41,7 @@ case class HiveTable(
     def getDataInstance(w: Witness): Option[DataInstance] = {
         val partition = getPartition(w)
         partition match {
-          case Some(part) => Some(new HiveTablePartition(part,ms))
+          case Some(part) => Some(new HiveTablePartition(part))
           case None => None 
         }
     }

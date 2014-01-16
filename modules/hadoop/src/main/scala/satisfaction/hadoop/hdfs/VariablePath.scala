@@ -5,7 +5,7 @@ package hdfs
 
 import fs._
 
-case class VariablePath(pathTemplate: String) extends DataOutput with TrackOriented {
+case class VariablePath(pathTemplate: String)(implicit val hdfs : FileSystem) extends DataOutput with TrackOriented {
 
     def variables = {
         /// XXX interpret certain variables as dates

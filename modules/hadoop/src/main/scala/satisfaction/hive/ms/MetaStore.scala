@@ -549,6 +549,7 @@ class MetaStore(hvConfig: HiveConf) extends Loggable {
  */
 ///object MetaStore extends MetaStore(Config.config) {
 object MetaStore  {
+  
     def apply( msURI : java.net.URI ) : MetaStore = {
       val conf = Config.initHiveConf
       conf.setVar(HiveConf.ConfVars.METASTOREURIS, msURI.toASCIIString())
