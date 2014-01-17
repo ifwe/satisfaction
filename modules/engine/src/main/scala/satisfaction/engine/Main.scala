@@ -4,13 +4,13 @@ package engine
 
 import actors.ProofEngine
 import actors.GoalStatus
-
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 import scala.concurrent.duration._
 import scala.util.Success
 import scala.util.Failure
 import scala.util.Try
+import java.io.File
 
 /**
  *  Main class for running a Goal or Project
@@ -20,13 +20,33 @@ object Satisfaction {
     val engine = new ProofEngine()
 
     def satisfyGoal( goal: Goal, witness: Witness) : GoalStatus = {
-        val defaultTrackDesc = TrackDescriptor( goal.name )
-        val defaultTrack =  new Track( defaultTrackDesc, Set[Goal]( goal ) )
-        satisfyGoal( defaultTrack, goal, witness)
+        if( goal.isInstanceOf[TrackOriented]) {
+        	val trackGoal : TrackOriented = goal.asInstanceOf[TrackOriented]
+        	if( trackGoal.track != null) {
+              satisfyGoal( trackGoal.track, goal, witness)
+        	} else {
+               val defaultTrackDesc = TrackDescriptor( goal.name )
+               val defaultTrack =  new Track( defaultTrackDesc, Set[Goal]( goal ) )
+               defaultTrack.setAuxJarFolder( new File("./auxlib")) 
+               defaultTrack.readProperties( "maxwell.properties" )
+               satisfyGoal( defaultTrack, goal, witness)
+        	}
+        } else {
+          val defaultTrackDesc = TrackDescriptor( goal.name )
+          val defaultTrack =  new Track( defaultTrackDesc, Set[Goal]( goal ) )
+          defaultTrack.setAuxJarFolder( new File("./auxlib")) 
+          defaultTrack.readProperties( "maxwell.properties" )
+          satisfyGoal( defaultTrack, goal, witness)
+        }
     }
     
     def satisfyGoal(track :Track, goal: Goal, witness: Witness) : GoalStatus = {
 
+        if( goal.isInstanceOf[TrackOriented]) {
+        	val trackGoal : TrackOriented = goal.asInstanceOf[TrackOriented]
+        	trackGoal.setTrack( track)
+        }
+        
         val fStatus = engine.satisfyGoal(track, goal, witness)
 
         Iterator.continually(Await.ready(fStatus, Duration(300, SECONDS))).takeWhile(!_.isCompleted).foreach { f =>

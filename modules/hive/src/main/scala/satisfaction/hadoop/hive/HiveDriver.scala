@@ -55,7 +55,14 @@ trait HiveDriver {
  */
 
 class HiveLocalDriver( implicit val hiveConf : HiveConf = Config.config ) extends HiveDriver with MetricsProducing with TrackOriented {
+///class HiveLocalDriver extends HiveDriver with MetricsProducing with TrackOriented {
+  
+    /// XXX need to set because can't pass in with constructor
+ /** 
+    var hiveConf : HiveConf
+    def setConfig( conf : HiveConfig )
 
+    */
     lazy val driver = {
       
       
@@ -246,28 +253,41 @@ class HiveLocalDriver( implicit val hiveConf : HiveConf = Config.config ) extend
 
 object HiveDriver {
  
-   def apply( auxJarPath : String ) :HiveDriver = {
+   def apply( auxJarPath : String ) 
+     (implicit hiveConf : HiveConf ):HiveDriver = {
      
+     try {
      val parentLoader = if( Thread.currentThread.getContextClassLoader != null) { 
        Thread.currentThread.getContextClassLoader
      } else { 
         this.getClass.getClassLoader
      }
      val pathFile = new File( auxJarPath)
+     System.out.println(s" AUX JAR PATH =  $pathFile")
      val urls = pathFile.listFiles.map("file://" + _.getPath ).map( new URL(_))
+     System.out.println(" URLS = $urls ")
      val urlClassLoader = new URLClassLoader( urls, parentLoader)
      Thread.currentThread.setContextClassLoader( urlClassLoader)
      
-     val driverClass = urlClassLoader.loadClass("hive.ms.HiveLocalDriver")
+     //// XXX 
+     val driverClass = urlClassLoader.loadClass("com.klout.satisfaction.hadoop.hive.HiveLocalDriver")
      
-     val hiveDriver = driverClass.newInstance.asInstanceOf[HiveLocalDriver]
+     val constructor = driverClass.getConstructor( hiveConf.getClass() )
+     
+     val hiveDriver = constructor.newInstance( hiveConf).asInstanceOf[HiveLocalDriver]
      val method = driverClass.getMethod( "setAuxJarFolder", classOf[String] )
      method.invoke(hiveDriver, auxJarPath)
+     hiveDriver
+     } catch {
+       case e : Exception =>
+         System.out.println(" Error " + e)
+         e.printStackTrace( System.out)
+         throw e
+     }
      
     
      
      
-     hiveDriver
    }
   
   

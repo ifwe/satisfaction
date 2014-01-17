@@ -8,6 +8,7 @@ import java.io.File
 import java.lang.reflect.Method
 import java.net.URLClassLoader
 import satisfaction.fs.Path
+import scala.io.Source
 
 /**
    *  Case class describing how a track can be deployed.
@@ -105,7 +106,13 @@ case class Track(
     *  XXX Move to Engine ???
     * 
     */
-   def getResource(   resourceFile : String ) : String  = ???
+   def getResource(   resourceFile : String ) : String  = {
+     val resourceStream = this.getClass.getClassLoader.getResourceAsStream( resourceFile)
+     val res = Source.fromInputStream( resourceStream ).toString
+     System.out.println(" RESOURCE IS " + res)
+     res
+   }
+   
    def listResources : Seq[String]  = ???
    /**
    {

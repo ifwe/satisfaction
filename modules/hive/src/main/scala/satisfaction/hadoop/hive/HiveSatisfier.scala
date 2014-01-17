@@ -73,8 +73,8 @@ case class HiveSatisfier(queryResource: String, driver: HiveDriver) extends Sati
 
     @Override
     override def satisfy(params: Substitution): ExecutionResult = {
+      try {
         val timeStarted = new DateTime
-        println(" Project substitution is as follows " + params.assignments.mkString)
 
         val allProps = getTrackProperties(params)
         println(s" Track Properties is $allProps ")
@@ -106,6 +106,13 @@ case class HiveSatisfier(queryResource: String, driver: HiveDriver) extends Sati
         }
         val execResult = new ExecutionResult("BogusResult", new DateTime)
         execResult.markFailure
+      } catch { 
+        case unexpected : Throwable =>
+          System.out.println(" Unexpected !!! "+ unexpected)
+          unexpected.printStackTrace( System.out)
+          unexpected.printStackTrace( System.err)
+          throw unexpected
+      }
     }
     
    ///

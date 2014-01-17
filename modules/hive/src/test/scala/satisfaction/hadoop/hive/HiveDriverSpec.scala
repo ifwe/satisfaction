@@ -12,9 +12,13 @@ import com.klout.satisfaction.MetricsProducing
 
 @RunWith(classOf[JUnitRunner])
 class HiveDriverSpec extends Specification {
+  
+  
+   /// XXX Pass in metastore and hdfs urls
+  implicit val hiveConf = Config.config
 
-    "DriverTest" should {
       /**
+    "DriverTest" should {
         "access hive client " in {
 
             ///val log = Logger.getLogger( classOf[org.apache.hadoop.mapreduce.Cluster])
@@ -31,13 +35,14 @@ class HiveDriverSpec extends Specification {
             val output = HiveClient.executeQuery(query)
             println(" Output is " + output)
         }
-        * **
-        */
     }
-    
+        **/
+  
+   /** 
     "LocalDriverTest" should {
-     
+        println(" BOOGER ") 
         val hiveDriver = HiveDriver("/Users/jeromebanks/NewGit/satisfaction/auxlib")
+        println(" BUBBA ") 
         hiveDriver.useDatabase("bi_maxwell")
         
         val createFactContentHQL = "create external table if not exists raw_content" +
@@ -51,6 +56,53 @@ class HiveDriverSpec extends Specification {
           hiveDriver.executeQuery(createFactContentHQL)
       
     }
+  
+    "execute query" should {
+        println(" BOOGER ") 
+        val hiveDriver = HiveDriver("/Users/jeromebanks/NewGit/satisfaction/auxlib")
+        println(" BUBBA ") 
+        hiveDriver.useDatabase("bi_maxwell")
+        
+        val queryActorActionHQL = "select network_abbr, count(*) as net_count " +
+            " from actor_action " +
+            " where dt=20140116 " +
+            " group by network_abbr" ;
+
+      
+        //// XXX  add api to read rows 
+        hiveDriver.executeQuery(queryActorActionHQL)
+    }
+    * **
+    */
+  
+    "create view and table" should {
+        println(" BOOGER ") 
+        val hiveDriver = HiveDriver("/Users/jeromebanks/NewGit/satisfaction/auxlib")
+        println(" BUBBA ") 
+        hiveDriver.useDatabase("bi_maxwell")
+        
+        val dropViewHQL = "drop view if exists jdb_blah_view"
+        hiveDriver.executeQuery( dropViewHQL)  
+        
+        
+        val createViewHQL = "create view jdb_blah_view as " +
+            "select network_abbr, count(*) as net_count " +
+            " from actor_action " +
+            " where dt=20140116 " +
+            " group by network_abbr" ;
+
+        hiveDriver.executeQuery(createViewHQL)
+        
+        val dropTableHQL = "drop table if exists jdb_blah "
+        hiveDriver.executeQuery(dropTableHQL)
+        
+        val createTableHQL = " create table jdb_blah " +
+        " as select * from jdb_blah_view ";
+      
+        hiveDriver.executeQuery(createTableHQL)
+    }
+  
+    /**
     
     "error out " should {
         val hiveDriver = HiveDriver("/Users/jeromebanks/NewGit/satisfaction/auxlib")
@@ -110,16 +162,8 @@ class HiveDriverSpec extends Specification {
            println(s" Metric $metric = $value ")
           }
         }
-      
     }
-    
-    
-    
-    
-    
-    
-    
-    
+    * **/
     
 
 }

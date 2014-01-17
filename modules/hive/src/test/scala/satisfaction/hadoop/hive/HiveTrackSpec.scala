@@ -11,14 +11,25 @@ import org.junit.runner.RunWith
 import org.apache.log4j.Logger
 import org.apache.log4j.Level
 import hadoop.hive.ms._
-import satisfaction.fs.FileSystem
+import satisfaction.fs._
 import satisfaction.hadoop.hdfs.Hdfs
 import satisfaction.engine.Satisfaction
 import satisfaction.engine.actors.GoalState
 
+/**
+ *  Test that Hive Goals work with HiveGoals which have been loaded from
+ *    TrackFactory 
+ */
+
+
+object MockTrackFactory( new LocalFileSystem( System.getProperty("user.dir") + "/src/test/resources")
+    )  extends TrackFactory {
+  
+  
+}
 
 @RunWith(classOf[JUnitRunner])
-class HiveGoalSpec extends Specification {
+class HiveTrackSpec extends Specification {
     val NetworkAbbr = new Variable[String]("network_abbr", classOf[String])
     val DoDistcp = new Variable[Boolean]("doDistcp", classOf[Boolean])
     val runDate = new Variable[String]("dt", classOf[String])
