@@ -16,7 +16,7 @@ import com.klout.satisfaction.track._
 import com.klout.satisfaction.TrackDescriptor
 
 object ProjectPage extends Controller {
-  val trackFactory : TrackFactory = TrackFactory
+  val trackFactory : TrackFactory = Global.trackFactory
   
   
   

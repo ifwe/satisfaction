@@ -36,8 +36,7 @@ import fs._
 case class TrackFactory(val trackFS : FileSystem, 
     val baseTrackPath : String = "/user/satisfaction",
     val scheduler : TrackScheduler = TrackScheduler) {
-   ///private implicit val hdfs : FileSystem = new Hdfs(trackPathURI.toASCIIString)
-   private implicit val localFS : FileSystem = null
+   private implicit val localFS : FileSystem = new LocalFileSystem
    
    val auxJarsPathBase = new java.io.File(System.getProperty("user.dir") + "/auxJars")
    

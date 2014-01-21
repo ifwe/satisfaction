@@ -2,6 +2,7 @@ package willrogers
 package controllers
 
 import play.api._
+
 import com.klout.satisfaction.hadoop.hive.ms._
 import com.klout.satisfaction.hadoop.hdfs._
 import play.api.data._
@@ -9,6 +10,7 @@ import play.api.data.Forms._
 
 import play.api.mvc._
 import com.klout.satisfaction._
+
 
 object Application extends Controller {
     val ms = Global.metaStore

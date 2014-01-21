@@ -5,7 +5,9 @@ import com.klout.satisfaction._
 import com.klout.satisfaction.track.TrackFactory
 import com.klout.satisfaction.hadoop.hdfs.Hdfs
 import com.klout.satisfaction.hadoop.hive.ms._
+import com.klout.satisfaction.hadoop.Config
 
+import org.apache.hadoop.conf.{ Configuration => HadoopConfiguration }
 
 object Global extends GlobalSettings {
 
@@ -37,11 +39,25 @@ object Global extends GlobalSettings {
         })
     }
     
-    val hdfsFS = new Hdfs("hdfs://jobs-dev-hnn")
+    ///val hdfsFS = new Hdfs("hdfs://jobs-dev-hnn")
+    def hdfsConfig : HadoopConfiguration = {
+        val conf = new HadoopConfiguration
+      val testPath = System.getProperty("user.dir") + "/apps/willrogers/conf/hdfs-site.xml"
+      conf.addResource( new java.io.File(testPath).toURI().toURL())
+      
+      
+       val nameService = conf.get("dfs.nameservices")
+       if(nameService != null) {
+         conf.set("fs.defaultFS", s"hdfs://$nameService")
+       }
+      conf
+    }
+    val hdfsFS = Hdfs.fromConfig( hdfsConfig )
     val trackPath = "/user/satisfaction"
       
-    val trackFactory : TrackFactory = new TrackFactory( hdfsFS, trackPath)
+    implicit val trackFactory : TrackFactory = new TrackFactory( hdfsFS, trackPath)
     
+    implicit val hiveConf = Config.config
     
-    val metaStore : MetaStore  = null
+    implicit val metaStore : MetaStore  = new MetaStore( hiveConf)
 }
