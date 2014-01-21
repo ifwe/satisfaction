@@ -14,6 +14,8 @@ import org.apache.hadoop.fs.FsUrlStreamHandlerFactory
 import org.joda.time.DateTime
 import satisfaction.hadoop.Config._
 import org.apache.hadoop.fs.FSDataOutputStream
+import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.hive.conf.HiveConf
 
 /**
  *
@@ -100,14 +102,17 @@ object ApachePath {
     }
 }
   
-case class Hdfs(val fsURI: String) extends satisfaction.fs.FileSystem {
+case class Hdfs(val fsURI: String)
+    ( implicit hdfsConfig : Configuration = Config.config)
+     extends satisfaction.fs.FileSystem {
   
    import ApachePath._
    import HdfsFStat._
   
   val init = HdfsFactoryInit
 
-    lazy val fs = ApacheFileSystem.get(new URI(fsURI), Config.config)
+    lazy val fs = ApacheFileSystem.get(new URI(fsURI), hdfsConfig)
+    
     
    
     override def uri : java.net.URI = {
@@ -121,8 +126,9 @@ case class Hdfs(val fsURI: String) extends satisfaction.fs.FileSystem {
     
     @Override
     override def listFilesRecursively( rootPath : Path ) : Seq[FileStatus] = {
-      var fullList : collection.mutable.Buffer[FileStatus] = new ArrayBuffer[FileStatus]
+      val fullList : collection.mutable.Buffer[FileStatus] = new ArrayBuffer[FileStatus]
       listFiles( rootPath).foreach( { fs : FileStatus =>
+         println(s" Listing path $rootPath ")
          if( !fs.isDirectory ) {
            fullList += fs
          } else {
@@ -236,7 +242,38 @@ case class Hdfs(val fsURI: String) extends satisfaction.fs.FileSystem {
 }
 
 
-object Hdfs extends Hdfs("hdfs://jobs-dev-hnn:8020") {
+object Hdfs {
+   
+  implicit val hiveConf : HiveConf = Config.config
+  
+  def default : Hdfs = {
+     new Hdfs(getFileSystem(hiveConf) )( hiveConf)
+  }
+  
+  /**
+  def apply( hdfsUrl : String ) : Hdfs = {
+      new Hdfs( hdfsUrl)(hiveConf)
+  }
+  * *
+  */
+  
+  /** 
+   *  Get the implied FileSystem URI from a Configuration,
+   *   Check for fs.defaultFS first, and then fallback to 
+   *    'fs.default.name'
+   */
+  def getFileSystem( conf : Configuration ) : String = {
+     if( conf.get("fs.defaultFS") != null ) {
+       conf.get("fs.defaultFS") 
+     } else {
+       val fs = conf.get( "fs.default.name")
+       fs
+     }
+  }
+  
+  def fromConfig( conf : Configuration ) : Hdfs = {
+      new Hdfs( getFileSystem(conf)) ( conf) 
+  }
   
    def markSuccess(fs : FileSystem, path: Path): Unit = {
         val successPath = new Path(path.toString + "/_SUCCESS")

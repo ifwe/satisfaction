@@ -20,7 +20,8 @@ import fs._
  */
 class TrackFactorySpec extends Specification {
   
-   val mockFS = new LocalFileSystem( System.getProperty("user.dir") + "/src/test/resources" )
+   val mockFS = new LocalFileSystem( System.getProperty("user.dir") + "/modules/engine/src/test/resources" )
+   
    val mockTrackFactory  = new TrackFactory( mockFS)
 
     "TrackFactorySpec" should {
@@ -28,6 +29,8 @@ class TrackFactorySpec extends Specification {
         "Be able to list tracks" in {
             val allTracks = mockTrackFactory.getAllTracks 
             allTracks.foreach(  println( _ ) )
+            
+            println(" AllTracks Size = " + allTracks.size)
               
             
             

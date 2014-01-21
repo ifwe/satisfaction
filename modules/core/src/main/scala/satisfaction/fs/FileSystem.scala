@@ -29,6 +29,7 @@ trait FileSystem {
    def isDirectory( p : Path ) : Boolean
    def isFile( p : Path ) : Boolean
    
+   
    def getStatus( p : Path ) : FileStatus
    def delete( p : Path )
 }

@@ -15,7 +15,7 @@ case class VariablePath(pathTemplate: String)(implicit val hdfs : FileSystem) ex
     def exists(witness: Witness): Boolean = {
         getPathForWitness(witness) match {
             case None       => false
-            case Some(path) => Hdfs.exists(path)
+            case Some(path) => hdfs.exists(path)
         }
     }
 

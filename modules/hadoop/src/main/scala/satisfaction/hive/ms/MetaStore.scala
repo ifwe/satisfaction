@@ -28,7 +28,7 @@ import com.klout.satisfaction.DataInstance
 import com.klout.satisfaction.DataOutput
 import org.apache.hadoop.hive.metastore.api.MetaException
 import scala.collection._
-import hdfs.Hdfs
+import hdfs._
 
 /**
  *  Scala Wrapper around Hive MetaStore object
@@ -46,7 +46,7 @@ trait Loggable {
 class MetaStore(hvConfig: HiveConf) extends Loggable {
 
     private val _hive = Hive.get(hvConfig)
-    private val _hdfs = Hdfs
+    private val _hdfs = Hdfs.default
     
     val PRELOAD = false
     private var _dbList : List[String] = if( PRELOAD)  { _initDbList  } else { null }
@@ -155,7 +155,7 @@ class MetaStore(hvConfig: HiveConf) extends Loggable {
             println(" MetaData is " + pMd)
             if (!pMd.contains(MetaDataProps.SPACE_USED.toString)) {
 
-                val realPs: Long = _hdfs.getSpaceUsed(part.getPartitionPath())
+                val realPs: Long = _hdfs.getStatus(part.getPartitionPath()).getSize
                 println(" Real Part size is " + realPs)
                 setPartitionMetaData(part, MetaDataProps.SPACE_USED.toString(), realPs.toString)
                 return realPs

@@ -13,7 +13,7 @@ case class HdfsPath(val path: Path)(implicit val hdfs : FileSystem ) extends Dat
 
 
     def size: Long = {
-        Hdfs.getSpaceUsed(path)
+      status.getSize
     }
 
     def created: DateTime = {

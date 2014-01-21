@@ -39,10 +39,8 @@ object Substituter {
                 case Right(varTuple) =>
                   val varName = varTuple._1
                   reader = varTuple._2
-                  println(s" VARNAME = $varName ")
                   subst.get(Variable(varName)) match {
                     case Some(lookup) =>
-                      println(s"LOOKUP is $lookup ")
                       sb ++= lookup
                     case None => missingList += varName
                   }

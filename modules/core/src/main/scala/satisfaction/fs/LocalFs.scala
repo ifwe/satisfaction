@@ -17,22 +17,23 @@ case class LocalFileSystem( val basePath : String) extends FileSystem {
     override def getSize : Long = {
       file.getSize 
     }
-    def isDirectory : Boolean  = {
+    override def isDirectory : Boolean  = {
       file.isDirectory
     }
-    def isFile : Boolean = {
+    
+    override def isFile : Boolean = {
       file.isFile 
     }
     
-    def getPath : Path = {
+    override def getPath : Path = {
       new Path( file.getPath)
     }
     
-    def lastAccessed : DateTime = {
+    override def lastAccessed : DateTime = {
        new DateTime(file.lastModified)
     }
     
-    def created : DateTime = {
+    override def created : DateTime = {
       /// XXX not correct
        lastAccessed
     }
@@ -57,12 +58,18 @@ case class LocalFileSystem( val basePath : String) extends FileSystem {
    }
    
    def appendPath( p : Path) : Path = {
-     new Path(basePath + "/" +  p.pathString)
+     new Path( basePath + "/" +  p.toUri.getPath)
    } 
      
    override def listFiles( p : Path ) : Seq[FileStatus] = {
        val file :File = appendPath(p)
-       file.listFiles.map(f => { new LocalFStatus(f)  } ).toSeq
+       System.out.println( " File is " + file)
+       val lf = file.listFiles
+       if( lf == null ) {
+         Seq.empty 
+       } else {
+         lf.map(f => { new LocalFStatus(f)  } ).toSeq
+       }
    }
    
    

@@ -24,9 +24,10 @@ object Config {
         hc.set("mapreduce.framework.name", "classic")
         hc.set("mapreduce.jobtracker.address", "jobs-dev-hnn:8021")
         hc.set("mapred.job.tracker", "jobs-dev-hnn1:8021")
-        hc.set("fs.default.name", "hdfs://jobs-dev-hnn1:8020")
-        hc.set("dfs.nameservices", "hdfs://jobs-dev-hnn1")
+        ////hc.set("fs.default.name", "hdfs://jobs-dev-hnn1:8020")
+        ///hc.set("dfs.nameservices", "hdfs://jobs-dev-hnn1")
         hc.set("yarn.resourcemanager.address", "scr@wyoucloudera")
+        hc.set("hive.stats.autogather","false")
 
 
         return hc

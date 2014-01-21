@@ -9,13 +9,50 @@ import org.junit.runner.RunWith
 import org.apache.log4j.Logger
 import org.apache.log4j.Level
 import com.klout.satisfaction.MetricsProducing
+import org.apache.hadoop.hive.conf.HiveConf
 
 @RunWith(classOf[JUnitRunner])
 class HiveDriverSpec extends Specification {
   
   
    /// XXX Pass in metastore and hdfs urls
-  implicit val hiveConf = Config.config
+  implicit val hiveConf : HiveConf = clientConfig
+  
+  
+  def clientConfig : HiveConf = {
+      val conf = Config.config
+      val testPath = System.getProperty("user.dir") + "/modules/hadoop/src/test/resources/config/hdfs-site.xml"
+      conf.addResource( new java.io.File(testPath).toURI().toURL())
+      
+      
+       val nameService = conf.get("dfs.nameservices")
+       if(nameService != null) {
+         conf.set("fs.defaultFS", s"hdfs://$nameService")
+       }
+      conf
+  }
+  
+  /**
+  implicit val hiveConf : HiveConf = {
+      val hc =  Config.config
+      
+             //// 
+        ///hc.setVar(HiveConf.ConfVars.METASTOREURIS, "thrift://jobs-aa-sched1:9085")
+        hc.setVar(HiveConf.ConfVars.METASTOREURIS, "thrift://jobs-aa-sched1:9083")
+        
+        
+        /// XXX How to use play/scala configuration
+        hc.set("mapreduce.framework.name", "classic")
+        hc.set("mapreduce.jobtracker.address", "jobs-aa-hnn:8021")
+        hc.set("mapred.job.tracker", "jobs-aa-hnn:8021")
+        hc.set("fs.default.name", "hdfs://jobs-aa-hnn:8020")
+        hc.set("dfs.nameservices", "hdfs://jobs-aa-hnn")
+        hc.set("yarn.resourcemanager.address", "scr@wyoucloudera")
+
+        hc
+  }
+  * 
+  */
 
       /**
     "DriverTest" should {
@@ -77,7 +114,8 @@ class HiveDriverSpec extends Specification {
   
     "create view and table" should {
         println(" BOOGER ") 
-        val hiveDriver = HiveDriver("/Users/jeromebanks/NewGit/satisfaction/auxlib")
+        val hiveDriver = HiveDriver(System.getProperty("user.dir") + "/auxlib")
+            
         println(" BUBBA ") 
         hiveDriver.useDatabase("bi_maxwell")
         

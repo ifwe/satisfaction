@@ -21,7 +21,7 @@ object PathImplicits {
 
 case class Path(val  pathString : String ) {
      
-    def /(  that : String) : Path= {
+     def /(  that : String) : Path= {
        val uri = toUri.toString
        if( uri.endsWith("/") || that.startsWith("/")) {
            new Path( uri + that)
@@ -34,9 +34,15 @@ case class Path(val  pathString : String ) {
       new java.net.URI( pathString)
     }
     
+    
+    def name : String = {
+      pathString.split("/").last
+    }
+    
     override def toString : String = {
        pathString 
     }
+    
     
     
 }

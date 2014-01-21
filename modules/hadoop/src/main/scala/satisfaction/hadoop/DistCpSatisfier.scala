@@ -69,7 +69,7 @@ class DistCpSatisfier(val src: VariablePath, val dest: VariablePath, implicit va
 }
 
 object DistCpGoal {
-    implicit val hdfs : FileSystem  = Hdfs
+    implicit val hdfs : FileSystem  = Hdfs.default
    
     def apply(goalName: String, src: VariablePath, dest: VariablePath ): Goal = {
         val srcVars = src.variables

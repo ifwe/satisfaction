@@ -15,6 +15,7 @@ import satisfaction.fs._
 import satisfaction.hadoop.hdfs.Hdfs
 import satisfaction.engine.Satisfaction
 import satisfaction.engine.actors.GoalState
+import satisfaction.track._
 
 /**
  *  Test that Hive Goals work with HiveGoals which have been loaded from
@@ -22,9 +23,8 @@ import satisfaction.engine.actors.GoalState
  */
 
 
-object MockTrackFactory( new LocalFileSystem( System.getProperty("user.dir") + "/src/test/resources")
-    )  extends TrackFactory {
-  
+object MockTrackFactory   extends TrackFactory(
+   new LocalFileSystem( System.getProperty("user.dir") + "/src/test/resources") ) {
   
 }
 
@@ -38,19 +38,13 @@ class HiveTrackSpec extends Specification {
     implicit val hdfs : FileSystem = new Hdfs("hdfs://jobs-dev-hnn") 
 
     "HiveGoalSpec" should {
-       "Run a Hive goal" in {
-            val vars: Set[Variable[_]] = Set(NetworkAbbr, runDate)
-            val actorAction: Goal = HiveGoal(
-                name = "Fact Content",
-                queryResource ="fact_content.hql",
-                table = HiveTable("bi_maxwell", "actor_action"),
-                overrides = None, Set.empty);
-
-            val witness = Witness((runDate -> "20140117"), (NetworkAbbr -> "li"))
-            val goalResult = Satisfaction.satisfyGoal(actorAction, witness)
-
-            goalResult.state == GoalState.Success
-        }
+       "Get Track" in {
+           val trackFactory = new TrackFactory(hdfs)
+           val allTracks = trackFactory.getAllTracks
+           System.out.println(" Number of tracks is " + allTracks.length)
+           allTracks.foreach( td => { println(s"Track is $td ") } )
+           
+       }
 
     }
 }

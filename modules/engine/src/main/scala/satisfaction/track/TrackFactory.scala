@@ -52,9 +52,11 @@ case class TrackFactory(val trackFS : FileSystem,
     *   Satisfaction base track path.
     */
    def getAllTracks : Seq[TrackDescriptor] = {
-      val trackRoot = new Path(  trackFS.uri.toString + "/"  + this.baseTrackPath )
+      val trackRoot = new Path(  trackFS.uri.toString + "/"  + this.baseTrackPath + "/track" )
+      System.out.println( " TrackRoot is " + trackRoot)
       val allPaths = trackFS.listFilesRecursively(trackRoot)
-      allPaths.filter( _.getPath.toString.startsWith("version_")).map( fs => {
+      allPaths.filter(_.isDirectory).foreach( fs => { println(" TRACK PATH IS " + fs.getPath ) } )
+      allPaths.filter(_.isDirectory).filter( _.getPath.name.startsWith("version_")).map( fs => {
           parseTrackPath( fs.getPath )       
       }) 
    }

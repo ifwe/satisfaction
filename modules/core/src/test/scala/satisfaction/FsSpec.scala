@@ -30,4 +30,11 @@ class FsSpec extends Specification {
        println(s" PAth is $p")
        
      }
+     
+     "List local directory" should {
+       val fs : FileSystem = new LocalFileSystem(System.getProperty("user.dir") + "/modules/core/src/test/resources/localFS")
+       val allFiles = fs.listFiles( new Path("dir1"))
+       allFiles.foreach( println( _ ))
+       
+     }
 }
