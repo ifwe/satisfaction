@@ -10,7 +10,7 @@ import org.joda.time.DateTime
  *  
  *  XXX Add unit tests for local file operations 
  */
-case class LocalFileSystem( val basePath : String) extends FileSystem {
+case class LocalFileSystem( val basePath : String = "/") extends FileSystem {
   
   case class LocalFStatus( file : java.io.File ) extends FileStatus {
       
