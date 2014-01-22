@@ -24,6 +24,7 @@ class ProofEngineSpec extends Specification {
     val runDate = new Variable[String]("dt", classOf[String])
 
     "ProofEngineSpec" should {
+
       
         "get a goals status" in {
             val engine = new ProofEngine()
@@ -49,14 +50,22 @@ class ProofEngineSpec extends Specification {
             val witness = Witness((runDate -> "20130815"), (NetworkAbbr -> "tw"))
             val track =  Track( TrackDescriptor("TestTrack"),  Set(singleGoal) )
             val resultFuture : Future[GoalStatus] = engine.satisfyGoal(track, singleGoal, witness)
+            var isDone = false
             resultFuture.onComplete( { 
               case Success(status) => println(status.state);
+                 System.out.println(" COMPLETED !!!")
               	status.state must_== GoalState.Success
+              	 isDone = true
               case Failure(t) =>
                 t.printStackTrace()
+                isDone=true
                 true must_== false
             } )
-            resultFuture.wait
+            /**
+            while( !resultFuture.isCompleted) 
+            	resultFuture.wait
+            	* 
+            	*/
         }
 
         "satisfy a goal hierarchy" in {
@@ -70,6 +79,7 @@ class ProofEngineSpec extends Specification {
 
             val witness = Witness((runDate -> "20130815"), (NetworkAbbr -> "tw"))
             val track = Track( TrackDescriptor("TestTrack"), Set(singleGoal))
+            System.out.println(" Before Satisfy")
             val resultFuture = engine.satisfyGoal(track, singleGoal, witness)
               resultFuture.onComplete( { 
               case Success(status) => println(status.state);
@@ -78,7 +88,8 @@ class ProofEngineSpec extends Specification {
                 t.printStackTrace()
                 true must_== false
             } )
-            resultFuture.wait
+            System.out.println(" afterWait")
+            ///resultFuture.wait
         }
 
         "satisfy a goal deeply nested hierarchy" in {
@@ -107,7 +118,7 @@ class ProofEngineSpec extends Specification {
                 t.printStackTrace()
                 true must_== false
             } )
-            resultFuture.wait
+            ///resultFuture.wait
         }
 
         "satisfy a  three level goal hierarchy" in {
@@ -130,7 +141,7 @@ class ProofEngineSpec extends Specification {
                 t.printStackTrace()
                 true must_== false
             } )
-            resultFuture.wait
+            ///resultFuture.wait
         }
 
         "satisfy a single slow goal" in {

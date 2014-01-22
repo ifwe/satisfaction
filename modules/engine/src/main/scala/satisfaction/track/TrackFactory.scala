@@ -2,16 +2,7 @@ package com.klout
 package satisfaction
 package track
 
-import org.joda.time.LocalTime
-import org.joda.time.Period
-import engine.actors.ProofEngine
-import us.theatr.akka.quartz._
-import akka.actor.Props
-import akka.actor.Actor
-import akka.actor.ActorLogging
-import org.joda.time.DateTime
-import org.joda.time.format.DateTimeFormat
-
+import collection.JavaConversions._
 
 /// XXX abstraction of filesystem ...
 import fs._
@@ -36,8 +27,9 @@ import fs._
 case class TrackFactory(val trackFS : FileSystem, 
     val baseTrackPath : String = "/user/satisfaction",
     val scheduler : TrackScheduler = TrackScheduler) {
-   private implicit val localFS : FileSystem = new LocalFileSystem
+   private implicit val localFS : FileSystem =  LocalFileSystem(System.getProperty("user.dir"))
    
+   ///  XXX Use Local FS abstraction
    val auxJarsPathBase = new java.io.File(System.getProperty("user.dir") + "/auxJars")
    
    
@@ -51,7 +43,8 @@ case class TrackFactory(val trackFS : FileSystem,
     *   Satisfaction base track path.
     */
    def getAllTracks : Seq[TrackDescriptor] = {
-      val trackRoot = new Path(  trackFS.uri.toString + "/"  + this.baseTrackPath + "/track" )
+       /// XXX Have filesystem return path as well as uri 
+      val trackRoot = new Path(  trackFS.uri.toString)  / this.baseTrackPath / "track" 
       System.out.println( " TrackRoot is " + trackRoot)
       val allPaths = trackFS.listFilesRecursively(trackRoot)
       allPaths.filter(_.isDirectory).foreach( fs => { println(" TRACK PATH IS " + fs.getPath ) } )
@@ -218,10 +211,15 @@ case class TrackFactory(val trackFS : FileSystem,
        
        trackFS.listFiles( jarPath).filter( _.getPath.toString.endsWith(".jar")).map( _.getPath.toUri.toURL).toArray
      } else {
-        val hdfsUrl = jarPath.toUri.toURL
-        println(" HDFS URL is " + hdfsUrl.toString)
-        Array( hdfsUrl)
-       
+        val hdfsUri = jarPath.toUri
+        if( jarPath.toString.endsWith(".jar")) {
+          ///val jarUrl = new java.net.URL( s"jar:/${hdfsUri}")
+          val jarUrl = hdfsUri.toURL
+          Array( jarUrl)
+        } else {
+          val hdfsUrl = hdfsUri.toURL
+          Array( hdfsUrl)
+        }
      }
    }
    
@@ -231,9 +229,14 @@ case class TrackFactory(val trackFS : FileSystem,
       val urlClassloader = new java.net.URLClassLoader(jarURLS( jarPath), this.getClass.getClassLoader)
       Thread.currentThread.setContextClassLoader(urlClassloader)
       
+      urlClassloader.getURLs.foreach( earl => {
+         System.out.println(s" using jar URL $earl ")
+      } ) 
+      
       //// Accessing object instances 
       ///val scalaName = if (trackClassName endsWith "$") trackClassName else (trackClassName + "$")
       val scalaName = trackClassName
+      
       val scalaClass = urlClassloader.loadClass( scalaName)
       println( " Scala Class is " + scalaClass.getCanonicalName())
       
@@ -261,27 +264,21 @@ case class TrackFactory(val trackFS : FileSystem,
     *  From a track descriptor, generate the path corresponding to the deployment
     */
    def getTrackPath( td : TrackDescriptor ) : Path = {
-	  val sb : StringBuilder = new StringBuilder
-	  sb ++= this.trackFS.uri.toString
-	  if(! sb.toString.endsWith( "/")) {
-	    sb += '/'
-	  }
-	  sb ++= this.baseTrackPath
-	  sb ++= "/track/"
-	  sb ++= td.trackName
+     /// XXX get Path from fs
+      var tp = new Path( trackFS.uri.toString)
+      tp = tp / baseTrackPath
+      tp = tp /  "track" / td.trackName
 	  if(! td.forUser.equals( td.trackName)) {
-	    sb ++= "/user/"
-	    sb ++= td.forUser
+         tp = tp / "user" / td.forUser 
 	  }
 	  td.variant match {
 	    case Some(vr) =>
-	      sb ++= "/variant/"
-	      sb ++=  vr
+	      tp = tp / "variant" / vr
 	    case None =>
 	  }
-	  sb ++= s"/version_${td.version}/"
-	  
-	  new Path(sb.toString)
+	  tp = tp / s"version_${td.version}"
+      
+      tp
    }
    
    

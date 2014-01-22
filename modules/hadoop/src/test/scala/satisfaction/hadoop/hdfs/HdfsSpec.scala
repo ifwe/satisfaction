@@ -11,7 +11,6 @@ import org.junit.runner.RunWith
 import io._
 import satisfaction.fs.Path
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.fs.{Path => ApachePath}
 
 @RunWith(classOf[JUnitRunner])
 class HdfsSpec extends Specification {
@@ -43,7 +42,7 @@ class HdfsSpec extends Specification {
         
         
         "List files" in {
-          val hdfs = Hdfs("hdfs://jobs-dev-hnn")
+          val hdfs = Hdfs.fromConfig(clientConfig)
           
           val path = new Path("hdfs://jobs-dev-hnn/data/hive/maxwell/actor_action")
           

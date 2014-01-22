@@ -21,6 +21,18 @@ class FsSpec extends Specification {
        
      }
      
+     "handle multiple slash operator" in {
+       val p : Path = new Path( "hdfs://jobs-dev-hnn/")
+       
+       val slashP = p / "/data" 
+       
+       println(s" Slashed path = $slashP")
+       
+       slashP.toString  must_== "hdfs://jobs-dev-hnn/data"
+       
+     }
+     
+     
      "convert from URI's " should {
        
        val hdfsURI = new java.net.URI("hdfs://jobs-dev-hnn")

@@ -23,11 +23,17 @@ case class Path(val  pathString : String ) {
      
      def /(  that : String) : Path= {
        val uri = toUri.toString
-       if( uri.endsWith("/") || that.startsWith("/")) {
-           new Path( uri + that)
+       val prefix = if(uri.endsWith("/")) {
+         uri.substring( 0, uri.length -1) 
        } else {
-          new Path( uri + "/" + that)
+         uri
        }
+       val extension = if( that.startsWith("/")) {
+         that.substring(1)
+       } else {
+         that
+       }
+       new Path( prefix + "/" + extension)
     }
   
     def toUri : java.net.URI = {
