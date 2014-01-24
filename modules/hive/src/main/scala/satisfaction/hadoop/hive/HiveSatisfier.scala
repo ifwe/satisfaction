@@ -72,11 +72,12 @@ case class HiveSatisfier(queryResource: String, driver: HiveDriver) extends Sati
       }
       
     }
+    
 
     @Override
     override def satisfy(params: Substitution): ExecutionResult = {
+      val execResult = new ExecutionResult( queryTemplate, new DateTime)
       try {
-        val timeStarted = new DateTime
 
         val allProps = getTrackProperties(params)
         println(s" Track Properties is $allProps ")
@@ -84,10 +85,8 @@ case class HiveSatisfier(queryResource: String, driver: HiveDriver) extends Sati
             case Left(badVars) =>
                 println(" Missing variables in query Template ")
                 badVars.foreach { s => println("  ## " + s) }
-                val execResult = new ExecutionResult( queryTemplate, new DateTime)
                 execResult.markFailure
                 execResult.errorMessage = "Missing variables in queryTemplate " + badVars.mkString(",")
-                execResult
             case Right(query) =>
                 val startTime = new DateTime
                 try {
@@ -95,9 +94,8 @@ case class HiveSatisfier(queryResource: String, driver: HiveDriver) extends Sati
                     println(" Beginning executing Hive queries ..")
                     driver.useDatabase("bi_maxwell")
                     val result=  executeMultiple(query)
-                    val execResult = new ExecutionResult( query, startTime)
                     execResult.metrics.mergeMetrics( jobMetrics)
-                    if( result) { execResult.markSuccess } else { execResult.markFailure }
+                    if( result ) { execResult.markSuccess } else { execResult.markFailure }
                 } catch {
                     case unexpected : Throwable =>
                         println(s" Unexpected error $unexpected")
@@ -106,14 +104,13 @@ case class HiveSatisfier(queryResource: String, driver: HiveDriver) extends Sati
                         execResult.markUnexpected(unexpected)
                 }
         }
-        val execResult = new ExecutionResult("BogusResult", new DateTime)
-        execResult.markFailure
+        return execResult 
       } catch { 
         case unexpected : Throwable =>
           System.out.println(" Unexpected !!! "+ unexpected)
           unexpected.printStackTrace( System.out)
           unexpected.printStackTrace( System.err)
-          throw unexpected
+          execResult.markUnexpected( unexpected)
       }
     }
     

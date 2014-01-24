@@ -192,6 +192,8 @@ class HiveLocalDriver( implicit val hiveConf : HiveConf = Config.config ) extend
     }
     
     
+    /// XXX FIX ME
+    /// output is not being returned 
     def readResults( response : CommandProcessorResponse, maxRows : Int ) = {
       if(response.getSchema != null) {
         response.getSchema.getFieldSchemas.foreach( field => {
