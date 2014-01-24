@@ -53,7 +53,7 @@ object Global extends GlobalSettings {
       conf
     }
     val hdfsFS = Hdfs.fromConfig( hdfsConfig )
-    val trackPath = "/user/satisfaction"
+    val trackPath = "/user/jerome/satisfaction"
       
     implicit val trackFactory : TrackFactory = new TrackFactory( hdfsFS, trackPath)
     

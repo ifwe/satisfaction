@@ -65,9 +65,11 @@ case class Track(
         allGoals0(topLevelGoals.toList, Set.empty)
     }
 
-    lazy val internalGoals: Set[Goal] = allGoals filter (_.satisfier.isDefined)
+    //// XXX internal/external goals are broken
+    ///lazy val internalGoals: Set[Goal] = allGoals filter ((_.satisfier != null) && _.satisfier.isDefined)
 
-    lazy val externalGoals: Set[Goal] = allGoals filter (_.satisfier.isEmpty)
+    ///lazy val externalGoals: Set[Goal] = allGoals filter (_.satisfier.isEmpty)
+    val externalGoals :Set[Goal] = Set.empty
     
     
     def getWitnessVariables : Set[Variable[_]] = {
@@ -108,8 +110,8 @@ case class Track(
     */
    def getResource(   resourceFile : String ) : String  = {
      val resourceStream = this.getClass.getClassLoader.getResourceAsStream( resourceFile)
-     val res = Source.fromInputStream( resourceStream ).toString
-     System.out.println(" RESOURCE IS " + res)
+     val res = Source.fromInputStream( resourceStream ).mkString("").toString
+     System.out.println(" XXXXXXXXX RESOURCE IS " + res)
      res
    }
    

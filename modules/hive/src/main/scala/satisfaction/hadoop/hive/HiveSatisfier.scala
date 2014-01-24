@@ -38,6 +38,7 @@ case class HiveSatisfier(queryResource: String, driver: HiveDriver) extends Sati
     }
     
     
+    /// XXX Set with implicits !!!
     override def setTrack( tr : Track ) = {
       super.setTrack( tr)
       if(driver.isInstanceOf[TrackOriented]) {
@@ -47,6 +48,7 @@ case class HiveSatisfier(queryResource: String, driver: HiveDriver) extends Sati
     }
     
     def queryTemplate : String = {
+       println(" Query Template -- query Resource is " + queryResource)      
        if( queryResource.endsWith(".hql"))  { 
           track.getResource( queryResource) 
        } else {

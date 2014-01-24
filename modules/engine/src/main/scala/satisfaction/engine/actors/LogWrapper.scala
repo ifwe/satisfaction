@@ -118,8 +118,14 @@ object LogWrapper {
     }
     
    def getLogPathsForGoal( trackName : String, goalName : String )  : Set[String] = {
+     //// XXX Use FileSystem abstraction 
+     /// and paths 
      val goalPath = new File( rootDirectory + "/" +pathString( trackName) + "/" + pathString( goalName) )
      println(" Goal Path is " + goalPath.getPath)
+     if( !goalPath.exists) {
+       println(s"Creating Log directory $goalPath")
+       goalPath.mkdirs
+     }
      ///val goalTuple = get
      
      ///goalPath.listFiles.map( getGoalFromPath( _ )).map( _._2).toSet

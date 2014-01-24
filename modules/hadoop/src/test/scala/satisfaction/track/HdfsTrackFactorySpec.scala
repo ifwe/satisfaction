@@ -54,6 +54,7 @@ class HdfsTrackFactorySpec extends Specification {
           
         }
         
+        /**
         
         "Load A Track" in {
            val tf = new TrackFactory(hdfs) 
@@ -89,6 +90,8 @@ class HdfsTrackFactorySpec extends Specification {
            val track = tf.loadTrackClass(jarPath, trackClassName)
            System.out.println( " Track is " + track)
         }
+        * 
+        */
           
     }
 

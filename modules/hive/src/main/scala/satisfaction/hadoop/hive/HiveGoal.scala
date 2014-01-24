@@ -17,11 +17,14 @@ object HiveGoal {
               table: HiveTable,
               overrides: Option[Substitution] = None,
               depends: Set[(Witness => Witness, Goal)] = Set.empty)
-         ( implicit ms : MetaStore = null ): Goal = {
+         ( implicit ms : MetaStore  ) 
+             ///( implicit hiveConf : HiveConf = Config.config)
+            : Goal = {
+           ///( implicit hiveConf : HiveConfiguration = Config.config ) : Goal = {
 
       //// Set the jar path 
-        ///val hiveSatisfier = new HiveSatisfier(query, HiveDriver("/Users/jeromebanks/NewGit/satisfaction/auxlib"))
-        val hiveSatisfier = new HiveSatisfier(queryResource, new  HiveLocalDriver )
+        val hiveSatisfier = new HiveSatisfier(queryResource, HiveDriver("/Users/jeromebanks/NewGit/satisfaction/auxJars/KloutToBing")( Config.config))
+        ///val hiveSatisfier = new HiveSatisfier(queryResource, new  HiveLocalDriver )
         
         val tblVariables = ms.getVariablesForTable(table.dbName, table.tblName)
         val tblOutputs = collection.Set(table)

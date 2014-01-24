@@ -25,7 +25,7 @@ import fs._
  *  
  */
 case class TrackFactory(val trackFS : FileSystem, 
-    val baseTrackPath : String = "/user/satisfaction",
+    val baseTrackPath : String = "/user/jerome/satisfaction",
     val scheduler : TrackScheduler = TrackScheduler) {
    private implicit val localFS : FileSystem =  LocalFileSystem(System.getProperty("user.dir"))
    
@@ -235,6 +235,7 @@ case class TrackFactory(val trackFS : FileSystem,
       
       //// Accessing object instances 
       ///val scalaName = if (trackClassName endsWith "$") trackClassName else (trackClassName + "$")
+      //// XXX allow scala companion objects 
       val scalaName = trackClassName
       
       val scalaClass = urlClassloader.loadClass( scalaName)
@@ -243,7 +244,7 @@ case class TrackFactory(val trackFS : FileSystem,
       println(" Scala Parent class = " + scalaClass.getSuperclass() + " :: " + scalaClass.getSuperclass.getCanonicalName())
       
       val t1Class = classOf[Track]
-      println(" Track class = " + t1Class.getSuperclass() + " :: " + t1Class.getSuperclass.getCanonicalName())
+      println(" Track class = " + t1Class + " :: " + t1Class.getCanonicalName())
       
       val tClass = scalaClass.asSubclass( classOf[Track])
       

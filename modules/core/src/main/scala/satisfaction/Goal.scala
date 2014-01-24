@@ -7,6 +7,7 @@ case class Goal(
     val name: String,
     val satisfier: Option[Satisfier],
     val variables: Set[Variable[_]] = Set.empty,
+    /// XXX do we want to change to Vals ???
     var overrides: Option[Substitution] = None,
     var dependencies: Set[(Witness => Witness, Goal)] = Set.empty,
     evidence: Set[_ <: Evidence] = Set.empty) {
@@ -17,7 +18,7 @@ case class Goal(
     }
     
     def addDataDependency( depData : DataOutput) : Goal = {
-       dependencies += Tuple2( Goal.Identity, Goal(s"Data ${depData.toString} ", null, depData.variables))  
+       dependencies += Tuple2( Goal.Identity, Goal(s"Data ${depData.toString} ", None, depData.variables))  
        this
     }
 

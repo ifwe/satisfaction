@@ -46,7 +46,7 @@ object ApplicationBuild extends Build {
       "willrogers",
       appVersion,
       path = file("apps/willrogers")
-  ).settings(CommonSettings: _*).dependsOn(core, engine, hadoop)
+  ).settings(CommonSettings: _*).dependsOn(core, engine, hadoop, hive)
 
   def CommonSettings =  Resolvers ++ Seq(
       scalacOptions ++= Seq(

@@ -112,6 +112,7 @@ class HiveLocalDriver( implicit val hiveConf : HiveConf = Config.config ) extend
     private var _auxJarFolder : String = null
 
     def setAuxJarFolder( folder : String) = {
+      println(" Our AUX JAR FOLDER IS SET TO " + folder)
       _auxJarFolder = folder 
     }
     
@@ -162,10 +163,10 @@ class HiveLocalDriver( implicit val hiveConf : HiveConf = Config.config ) extend
                 SessionState.get.getConf.set(kv(0), kv(1))
                 return true
             }
-            if( query.trim.toLowerCase.equals("source") || query.contains("oozie-setup")) {
+            if( query.trim.toLowerCase.startsWith("source") || query.contains("oozie-setup")) {
               /// XXX TODO source the file ...
               /// for now ignore, because always oozie-setup.hql 
-              println(s" Ignoring source statement $query ")
+              println(s" Ignoring source statement $query for now ")
               
               return true
             }
@@ -265,16 +266,20 @@ object HiveDriver {
      val pathFile = new File( auxJarPath)
      System.out.println(s" AUX JAR PATH =  $pathFile")
      val urls = pathFile.listFiles.map("file://" + _.getPath ).map( new URL(_))
-     System.out.println(" URLS = $urls ")
+     System.out.println(" URLS = " + urls.mkString(";"))
      val urlClassLoader = new URLClassLoader( urls, parentLoader)
      Thread.currentThread.setContextClassLoader( urlClassLoader)
      
      //// XXX 
      val driverClass = urlClassLoader.loadClass("com.klout.satisfaction.hadoop.hive.HiveLocalDriver")
      
+     val antlrClass = urlClassLoader.loadClass("org.antlr.runtime.tree.TreeAdaptor")
+     println(" Antler class is " + antlrClass + " Class is " + antlrClass.getCanonicalName())
+     
      val constructor = driverClass.getConstructor( hiveConf.getClass() )
      
      val hiveDriver = constructor.newInstance( hiveConf).asInstanceOf[HiveLocalDriver]
+     println(" Our Hive Driver is " + hiveDriver )
      val method = driverClass.getMethod( "setAuxJarFolder", classOf[String] )
      method.invoke(hiveDriver, auxJarPath)
      hiveDriver
