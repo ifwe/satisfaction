@@ -15,20 +15,8 @@ import org.apache.hadoop.conf.Configuration
 @RunWith(classOf[JUnitRunner])
 class HdfsSpec extends Specification {
   
-    def clientConfig: Configuration = {
-      val conf = new Configuration
-      val testPath = System.getProperty("user.dir") + "/modules/hadoop/src/test/resources/config/hdfs-site.xml"
-      conf.addResource( new java.io.File(testPath).toURI().toURL())
-      
-      
-       val nameService = conf.get("dfs.nameservices")
-       if(nameService != null) {
-         conf.set("fs.defaultFS", s"hdfs://$nameService")
-       }
-      conf
-    }
-
   
+    
     "Hdfs" should {
         "create URLS starting with hdfs" in {
           //// XXX use MiniFS for unit testing ...
@@ -42,7 +30,7 @@ class HdfsSpec extends Specification {
         
         
         "List files" in {
-          val hdfs = Hdfs.fromConfig(clientConfig)
+          val hdfs = Hdfs.fromConfig(HdfsSpec.clientConfig)
           
           val path = new Path("hdfs://jobs-dev-hnn/data/hive/maxwell/actor_action")
           
@@ -62,7 +50,7 @@ class HdfsSpec extends Specification {
         
         "access nameservice1" in {
           
-          val testConf : Configuration = clientConfig
+          val testConf : Configuration = HdfsSpec.clientConfig
           testConf.writeXml(System.out)
           val haHdfs = Hdfs.fromConfig( testConf)
           
@@ -75,4 +63,20 @@ class HdfsSpec extends Specification {
 
     }
 
+}
+
+object HdfsSpec {
+    
+    def clientConfig: Configuration = {
+      val conf = new Configuration
+      val testPath = System.getProperty("user.dir") + "/modules/hadoop/src/test/resources/config/hdfs-site.xml"
+      conf.addResource( new java.io.File(testPath).toURI().toURL())
+      
+      
+       val nameService = conf.get("dfs.nameservices")
+       if(nameService != null) {
+         conf.set("fs.defaultFS", s"hdfs://$nameService")
+       }
+      conf
+    }
 }
