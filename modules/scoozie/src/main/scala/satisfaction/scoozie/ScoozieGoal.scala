@@ -1,4 +1,7 @@
-package com.klout.satisfaction
+package com.klout
+package satisfaction
+package hadoop
+package scoozie
 
 import com.klout.scoozie._
 import com.klout.scoozie.dsl._
