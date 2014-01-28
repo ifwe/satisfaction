@@ -28,6 +28,10 @@ object Config {
          /// XXX fix me ...
         ///hc.set("fs.default.name", "hdfs://jobs-dev-hnn1:8020")
         hc.set("fs.default.name", "hdfs://nameservice1")
+        
+        
+         /// Some properties we may need to set ...
+        hc.set("mapred.child.java.opts", " -Xmx2048m ")
         ///hc.set("dfs.nameservices", "hdfs://jobs-dev-hnn1")
         hc.set("yarn.resourcemanager.address", "scr@wyoucloudera")
         hc.set("hive.stats.autogather","false")
