@@ -34,7 +34,7 @@ class ProofEngine {
                 println(" Goal Was Satisfied")
                 s.goalStatus
             case f: GoalFailure =>
-                println(" Failure ")
+                println(" Received GoalFailure ")
                 f.goalStatus
         }
     }
@@ -49,7 +49,7 @@ class ProofEngine {
                     ProverFactory.releaseProver(proverFactory, goal, witness)
                     s.goalStatus
                 case f: GoalFailure =>
-                    println(" Failure ")
+                    println(" Received GoalFailure ")
                     f.goalStatus
             }
         }
@@ -162,10 +162,12 @@ object ProofEngine extends ProofEngine {
 
     def getActorName(goal: Goal, witness: Witness): String = {
         ///"akka://localhost/satisfaction/" + Goal.getPredicateString(goal, witness).replace("(", "/").replace(",", "/").replace(")", "").replace("=", "_eq_")
-        Goal.getPredicateString(goal, witness).replace("(", "_").replace(",", "___").replace(")", "").replace("=", "_eq_")
+        Goal.getPredicateString(goal, witness).replace("(", "_").replace(",", "___").replace(")", "").replace("=", "_eq_").replace("$","_dlr_").
+           replace("{","_lp_").replace("}","_rp_").replace("/","_sl_")
     }
     def getActorName(goalName: String, witness: Witness): String = {
-        Goal.getPredicateString(goalName, witness).replace("(", "_").replace(",", "___").replace(")", "").replace("=", "_eq_")
+        Goal.getPredicateString(goalName, witness).replace("(", "_").replace(",", "___").replace(")", "").replace("=", "_eq_").replace("$","_dlr_").
+           replace("{","_lp_").replace("}","_rp_").replace("/","_sl_")
     }
 
 }

@@ -39,18 +39,19 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
         /// Messages which can be sent from parents 
 
         case Satisfy =>
-            /// Check to see if 
+          try { 
             log.info(s" PredicateProver ${track.descriptor.trackName}::${goal.name} received Satisfy message witness is $witness ")
+            log.info(s" Adding $sender to listener list")
+            listenerList += sender
             if (goal.evidence != null &&
                 goal.evidence.size != 0 &&
                 goal.evidence.forall(e => e.exists(witness))) {
                 log.info(" Check Already satisfied ?? ")
                 status.state = GoalState.AlreadySatisfied
                 status.timeFinished = DateTime.now
-                sender ! GoalSuccess(status)
+                ///sender ! GoalSuccess(status)
+                publishSuccess
             } else {
-                log.info(s" Adding $sender to listener list")
-                listenerList += sender
                 if (status.state != GoalState.Unstarted) {
                   //// XXX Test dependency on running job ...
                     sender ! InvalidRequest(status, "Job has already been started")
@@ -68,6 +69,15 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
                     }
                 }
             }
+          } catch {
+            case unexpected : Throwable =>
+              unexpected.printStackTrace
+              log.error( "Unexpected exception while attempting to satisfy Goal ", unexpected) 
+              
+              status.errorMessage = unexpected.getMessage
+              ///sender ! GoalFailure( status)
+              publishFailure
+          }
 
         case WhatsYourStatus =>
             //// Do a blocking call to just return  
@@ -178,6 +188,7 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
         ///lref ! Success(status)
         ///}
         listenerList.foreach{ actor: ActorRef =>
+            log.info(s" Sending GoalSuccess to $actor ")
             actor ! GoalSuccess(status)
         }
         
