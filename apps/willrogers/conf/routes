@@ -22,6 +22,9 @@ GET     /goalstatus/:projName/:goalName                   willrogers.controllers
 GET     /schedules/                   willrogers.controllers.ScheduleTrackPage.showSchedulesAction()
 GET     /listfiles/:trackName                  willrogers.controllers.EditPage.listFiles(trackName: String)
 GET     /editfile/:trackName/:fileName          willrogers.controllers.EditPage.editFile(trackName: String, fileName: String)
+GET     /loghistory/:trackName                   willrogers.controllers.SatisfyGoalPage.logHistory(trackName: String)
+GET     /logwindow/:trackName/:goalName/:varString                   willrogers.controllers.SatisfyGoalPage.logWindow(trackName: String, goalName: String, varString : String)
+GET     /rawlog/:trackName/:goalName/:varString                   willrogers.controllers.SatisfyGoalPage.rawLog(trackName: String, goalName: String, varString : String)
 
 
 # Map static resources from the /public folder to the /assets URL path

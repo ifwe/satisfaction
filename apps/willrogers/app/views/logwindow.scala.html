@@ -1,0 +1,34 @@
+@(trackName : String,  goalName : String, witness : com.klout.satisfaction.Witness , logs : Option[String]  )
+
+@import helper._
+@import scala.collection.JavaConversions._
+@import com.klout.satisfaction._
+@import com.klout.satisfaction.engine._
+@import com.klout.satisfaction.engine.actors._
+@import models.HtmlUtil
+
+@main( s"LogWindow  $trackName Goal $goalName $witness " ) {
+    
+     <h1>Satisfaction !!! Log Window</h1>
+    <h1>Project @trackName Goal @goalName @witness </h1>
+    
+  <table>
+  <tr>
+  <td>
+	    <h3>Current Log Output</h3> 
+ <div>
+  <iframe id="logFrame" style="width:600px;height:600px;overflow:scroll" src='/rawlog/@trackName/@goalName/@HtmlUtil.witnessPath(witness)' align='bottom'>
+  </iframe>
+   </div>
+   </td>
+   
+   </tr>
+   </table>
+   	  
+   	  <script type="text/javascript">
+   	    setInterval(function(){
+   	       document.getElementById('logFrame').contentWindow.location.reload(true);
+    	},2000);
+   	  </script>
+    
+}

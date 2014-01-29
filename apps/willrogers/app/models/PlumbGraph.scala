@@ -23,7 +23,7 @@ object PlumbGraph {
     case class NodeDiv(
         val divContent: String = "",
         val divClass: String = "window",
-        val divStyle: String = "") {
+        val divStyle: String = "" ) {
 
         var id: String = "0"
         var height: Int = 0
@@ -31,10 +31,13 @@ object PlumbGraph {
         var posX: Int = 0
         var posY: Int = 0
         var color: String = null
+        var onClick: String = null
 
         def toHtml() = {
             "<div id=\"" + id + "\" class=\"" + divClass + "\" " +
-                "style=\"" + genDivStyle + "\">" + divContent + "</div>"
+                "style=\"" + genDivStyle + "\"" + 
+                { if( onClick != null) { " onClick=\"" + onClick + "\" " } else { "" } } +
+                ">" + divContent + "</div>"
         }
 
         def genDivStyle = {

@@ -78,10 +78,14 @@ class HiveLocalDriver( implicit val hiveConf : HiveConf = Config.config ) extend
         val dr = new org.apache.hadoop.hive.ql.Driver(hiveConf)
 
         dr.init
-        SessionState.start(hiveConf)
+         sessionState
         registerJars
+        
         println(" HiveDriver is " + dr)
         println(" HiveConfig is " + hiveConf)
+        
+        
+        
         val shims = ShimLoader.getHadoopShims
         println(" RPC port is " + shims.getJobLauncherRpcAddress(hiveConf))
         println(" Shims version is " + shims.getClass)
@@ -96,7 +100,6 @@ class HiveLocalDriver( implicit val hiveConf : HiveConf = Config.config ) extend
                 println(s" Register jar ${f.getAbsolutePath} ")
                 val jarUrl = "file://" + f.getAbsolutePath
                 SessionState.registerJar(jarUrl)
-                
             }
         )
     }
@@ -142,6 +145,18 @@ class HiveLocalDriver( implicit val hiveConf : HiveConf = Config.config ) extend
       
     }
     
+    
+    def sessionState : SessionState  = {
+       var ss1 : SessionState = SessionState.get  
+       if( ss1 == null) {
+           SessionState.start( hiveConf) 
+           ss1 = SessionState.get
+           ss1.out = Console.out
+           ss1.info = Console.out
+       }
+       ss1
+    }
+    
     def sourceFile( fileName : String ) : Boolean = {
        println(s" Sourcing file $fileName")
        val readFile   =scala.io.Source.fromFile( fileName ).mkString
@@ -158,16 +173,13 @@ class HiveLocalDriver( implicit val hiveConf : HiveConf = Config.config ) extend
                 val setExpr = query.trim.split(" ")(1)
                 val kv = setExpr.split("=")
                 println(s" Setting configuration ${kv(0)} to ${kv(1)} ")
-                if( SessionState.get == null)
-                  SessionState.start( hiveConf)
-                SessionState.get.getConf.set(kv(0), kv(1))
+                sessionState.getConf.set(kv(0), kv(1))
                 return true
             }
             if( query.trim.toLowerCase.startsWith("source") || query.contains("oozie-setup")) {
               /// XXX TODO source the file ...
               /// for now ignore, because always oozie-setup.hql 
               println(s" Ignoring source statement $query for now ")
-              
               return true
             }
 
@@ -200,9 +212,8 @@ class HiveLocalDriver( implicit val hiveConf : HiveConf = Config.config ) extend
             print(s"${field.getName}\t")
         })
       }
-      val session = SessionState.get
       
-      val tmpFile = session.getTmpOutputFile
+      val tmpFile = sessionState.getTmpOutputFile
       val resultReader = new BufferedReader( new FileReader(tmpFile))
       breakable { for ( i<-0 to maxRows) {
          val line = resultReader.readLine
@@ -226,7 +237,7 @@ class HiveLocalDriver( implicit val hiveConf : HiveConf = Config.config ) extend
     }
     
   def updateJobMetrics( metricsMap : collection.mutable.Map[String,Any]) : Unit = {
-    val lastMapRedStats = SessionState.get.getLastMapRedStatsList
+    val lastMapRedStats = sessionState.getLastMapRedStatsList
     if( lastMapRedStats != null) {
       val mapRedStats : List[MapRedStats] = lastMapRedStats.toList
       var totalCpuMsec : Long = 0 

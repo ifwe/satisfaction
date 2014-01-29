@@ -110,9 +110,12 @@ case class Track(
     */
    def getResource(   resourceFile : String ) : String  = {
      val resourceStream = this.getClass.getClassLoader.getResourceAsStream( resourceFile)
-     val res = Source.fromInputStream( resourceStream ).mkString("").toString
-     System.out.println(" XXXXXXXXX RESOURCE IS " + res)
-     res
+     if(resourceStream != null) {
+       val res = Source.fromInputStream( resourceStream ).mkString("").toString
+       res
+     } else {
+       null
+     }
    }
    
    def listResources : Seq[String]  = ???

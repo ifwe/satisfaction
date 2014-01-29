@@ -17,6 +17,9 @@ import scala.util.Failure
  */
 case class LogWrapper[T]( track : Track, goal : Goal, witness : Witness) {
 
+  /**
+   * XXX Use satisfaction.fs abstraction instead of files
+   */
    
   def log( functor :  () => T  ) : Try[T] = {
      val currOut = Console.out
@@ -117,7 +120,20 @@ object LogWrapper {
        }
     }
     
-   def getLogPathsForGoal( trackName : String, goalName : String )  : Set[String] = {
+   def getGoalLogMap( trackName : String ) : Map[String,List[String]] = {
+     val trackPath = new File( rootDirectory + "/"  + pathString( trackName))
+     if( trackPath.exists) {
+       trackPath.listFiles.map(  _.getName).map( gname => { 
+         ( gname, getLogPathsForGoal(trackName, gname))
+       } ) toMap
+       
+     } else {
+       Map.empty
+     }
+     
+   }
+    
+   def getLogPathsForGoal( trackName : String, goalName : String )  : List[String] = {
      //// XXX Use FileSystem abstraction 
      /// and paths 
      val goalPath = new File( rootDirectory + "/" +pathString( trackName) + "/" + pathString( goalName) )
@@ -130,7 +146,19 @@ object LogWrapper {
      
      ///goalPath.listFiles.map( getGoalFromPath( _ )).map( _._2).toSet
      
-     goalPath.listFiles.map( _.getPath ).toSet
+     goalPath.listFiles.map( _.getPath ).toList
+   }
+   
+   /**
+    *   Parse the _dt_@_20140127:_network_abbr_@_li_ 
+    *     syntax used to generate the path
+    */
+   def getWitnessFromLogPath( logPath : String ) : Witness = {
+     val kvAss = logPath.split(";") map ( _.split("@") ) map ( kvArr => 
+        { println( s" XXX FIRST = ${kvArr(0)} SECOND = ${kvArr(1)} "); VariableAssignment[String](Variable( kvArr(0).substring(1, kvArr(0).length -1)), 
+             kvArr(1).substring(1, kvArr(1).length -1) ) } ) 
+     
+     Witness( kvAss:_*)      
    }
     
 }

@@ -28,6 +28,7 @@
      <td>@gs.state</td>
      <td>@HtmlUtil.formatWitness( gs.witness )</td>
      <td>@HtmlUtil.formatDate( gs.timeStarted )</td>
+     <td> <button id="logWindowButton" onClick="window.open('/logwindow/@gs.track.trackName/@gs.goalName/@{HtmlUtil.witnessPath(gs.witness)}')">Show Log</button></td>
      </tr>
   }
    </table>
@@ -75,6 +76,7 @@
      <td>@HtmlUtil.formatDate( gs.timeStarted )</td>
      <td>@HtmlUtil.formatDate( gs.execResult.timeStarted )</td>
      <td>@HtmlUtil.formatDate( gs.timeFinished )</td>
+     <td> <button id="logWindowButton" onClick="window.open('/logwindow/@gs.track.trackName/@gs.goalName/@{HtmlUtil.witnessPath(gs.witness)}')">Show Log</button></td>
      </tr>
   }
    

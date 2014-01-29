@@ -1,0 +1,45 @@
+@( trackName : String,  goalLogMap : Map[String,List[String]] )
+
+@import helper._
+@import scala.collection.JavaConversions._
+@import com.klout.satisfaction._
+@import com.klout.satisfaction.engine.actors.LogWrapper
+@import models.HtmlUtil
+
+<meta http-equiv="refresh" content="5">
+
+@main( s"Goal History for Track $trackName " ) {
+    
+     <h1>Satisfaction !!!</h1>
+    <h1>Logs for Track  @trackName Goal </h1>
+    
+    <p> Size is @goalLogMap.size
+  <table>
+          
+   @goalLogMap.map { tup => {
+   	<tr><td>
+      <h2>Goal @tup._1 </h2>	
+    </td>
+    <td>
+     <ul>
+       @tup._2.map { line => 
+       	
+       @Html(	 { val wStr = line.split("/").last
+       	   val witness = LogWrapper.getWitnessFromLogPath( wStr )	 
+         	val logWindowUrl = s"/logwindow/$trackName/${tup._1}/${HtmlUtil.witnessPath(witness)}"
+           s"<li><a href='$logWindowUrl'>$wStr</a></li>"
+         })
+       } 
+    
+       </ul>
+    </td>
+    
+    
+    </tr>
+   } }
+ 
+   
+   </table>
+   	  
+    
+}
