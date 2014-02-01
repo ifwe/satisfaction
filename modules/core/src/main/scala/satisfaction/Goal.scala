@@ -2,15 +2,24 @@ package com.klout
 package satisfaction
 
 import collection._
+import org.joda.time.format.DateTimeFormat
+import fs._
 
 case class Goal(
     val name: String,
     val satisfier: Option[Satisfier],
     val variables: Set[Variable[_]] = Set.empty,
-    /// XXX do we want to change to Vals ???
-    var overrides: Option[Substitution] = None,
     var dependencies: Set[(Witness => Witness, Goal)] = Set.empty,
-    evidence: Set[_ <: Evidence] = Set.empty) {
+    ///var evidence: Set[_ <: Evidence] = Set.empty)
+    var evidence: Set[Evidence] = Set.empty )
+    (implicit val track : Track ) {
+  
+    locally {
+       println(" Creating a Goal !!! ") 
+       /// track.add Goal this ...
+    }
+  
+   ///implicit var track : Track = Track.trackForGoal( this)
 
     def addDependency(goal: Goal): Goal = {
         dependencies += Tuple2(Goal.Identity, goal)
@@ -18,7 +27,18 @@ case class Goal(
     }
     
     def addDataDependency( depData : DataOutput) : Goal = {
-       dependencies += Tuple2( Goal.Identity, Goal(s"Data ${depData.toString} ", None, depData.variables))  
+       addDependency( DataDependency(depData))
+       this
+    }
+    
+    ///def addEvidence[E <: Evidence]( ev : E  ) : Goal = {
+    def addEvidence( ev : Evidence  ) : Goal = {
+       ///evidence += ev
+      ///evidence = evidence + ev
+      println( "EV is " + ev + " " + ev.getClass())
+      println( "Evidence set is "+ evidence + " " + evidence.getClass())
+         
+      evidence += ev
        this
     }
 
@@ -30,7 +50,6 @@ case class Goal(
     def getPredicateString(w: Witness): String = {
         Goal.getPredicateString(this, w)
     }
-
     
 }
 
@@ -42,6 +61,43 @@ object Goal {
             val newParam = w.substitution.update(param, paramValue)
             new Witness(newParam)
     }
+    
+    
+    /**
+     *  Define a Witness mapping function which replaces
+     *    the value in the 'dt' variable with a day previous.
+     *    
+     *  This way we can say that a Goal depends upon another
+     *   Goal with yesterday's data    
+     */
+    def yesterday : ( Witness => Witness) = daysPrevious(1)
+    
+    def daysPrevious(numDays: Int ) : ( Witness => Witness) = { w: Witness => {
+         val dtVar = Variable("dt")
+         val yyyymmdd = DateTimeFormat.forPattern("YYYYMMdd")
+         if( w.substitution.contains( dtVar) ) {
+           val dtYMD = w.substitution.get( dtVar)
+           val yesterDT = yyyymmdd.print( yyyymmdd.parseDateTime(dtYMD.get).minusDays(numDays))
+           w.update( dtVar -> yesterDT )
+         } else {
+           w
+         }
+      }
+    }
+    
+    
+    /**
+     *  Replace the variable 'dtVar' with the most recent date in the given path.
+     */
+    def mostRecentPath( fs : FileSystem , path : Path, dtVar : Variable[String] ) : (Witness => Witness ) = { w: Witness => {
+        /// XXX probably want to do some error checking 
+        ///  that path exists and is of YYYYMMDD format
+        val maxDt = fs.listFiles( path).map(  _.getPath.name ).max
+        
+        w.update( dtVar -> maxDt )
+      }
+    }
+    
 
     def stripVariable(param: Variable[_]): (Witness => Witness) = {
         w: Witness =>

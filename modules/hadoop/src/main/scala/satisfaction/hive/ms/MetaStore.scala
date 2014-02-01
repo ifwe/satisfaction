@@ -43,10 +43,13 @@ trait Loggable {
    def error( m : String )  { System.err.println(m) }
 }
 
-class MetaStore(hvConfig: HiveConf) extends Loggable {
+case class MetaStore(val hvConfig: HiveConf) extends Loggable {
 
     private val _hive = Hive.get(hvConfig)
     private val _hdfs = Hdfs.default
+    
+    
+    def config : HiveConf = { hvConfig}
     
     val PRELOAD = false
     private var _dbList : List[String] = if( PRELOAD)  { _initDbList  } else { null }

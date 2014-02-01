@@ -5,7 +5,8 @@ package hdfs
 
 import fs._
 
-case class VariablePath(pathTemplate: String)(implicit val hdfs : FileSystem) extends DataOutput with TrackOriented {
+case class VariablePath(pathTemplate: String)(implicit val hdfs : FileSystem, track : Track)
+      extends DataOutput {
 
     def variables = {
         /// XXX interpret certain variables as dates
@@ -28,7 +29,7 @@ case class VariablePath(pathTemplate: String)(implicit val hdfs : FileSystem) ex
 
     def getPathForWitness(witness: Witness): Option[Path] = {
         /// XXX Who is going to set the Track ????
-        val fullSubstituter = getTrackProperties(witness.substitution)
+        val fullSubstituter = track.getTrackProperties(witness.substitution)
         var substPath = Substituter.substitute(pathTemplate, fullSubstituter)
         substPath match {
             case Left(missingVars) =>

@@ -39,10 +39,6 @@ class JobRunner(
             log.info(s"Asked to satisfy for params: ${params}")
 
             if (satisfierFuture == null) {
-                if(satisfier.isInstanceOf[TrackOriented]) {
-                  val trackCast : TrackOriented = satisfier.asInstanceOf[TrackOriented]
-                  trackCast.setTrack(track)
-                }
                 satisfierFuture = future {
                     logger.log( { () => satisfier.satisfy(params) } ) match {
                       case Success(execResult) =>

@@ -19,35 +19,9 @@ import java.io.File
 object Satisfaction {
     val engine = new ProofEngine()
 
-    def satisfyGoal( goal: Goal, witness: Witness) : GoalStatus = {
-        if( goal.isInstanceOf[TrackOriented]) {
-        	val trackGoal : TrackOriented = goal.asInstanceOf[TrackOriented]
-        	if( trackGoal.track != null) {
-              satisfyGoal( trackGoal.track, goal, witness)
-        	} else {
-               val defaultTrackDesc = TrackDescriptor( goal.name )
-               val defaultTrack =  new Track( defaultTrackDesc, Set[Goal]( goal ) )
-               defaultTrack.setAuxJarFolder( new File("./auxlib")) 
-               defaultTrack.readProperties( "maxwell.properties" )
-               satisfyGoal( defaultTrack, goal, witness)
-        	}
-        } else {
-          val defaultTrackDesc = TrackDescriptor( goal.name )
-          val defaultTrack =  new Track( defaultTrackDesc, Set[Goal]( goal ) )
-          defaultTrack.setAuxJarFolder( new File("./auxlib")) 
-          defaultTrack.readProperties( "maxwell.properties" )
-          satisfyGoal( defaultTrack, goal, witness)
-        }
-    }
-    
-    def satisfyGoal(track :Track, goal: Goal, witness: Witness) : GoalStatus = {
+    def satisfyGoal(goal: Goal, witness: Witness) : GoalStatus = {
 
-        if( goal.isInstanceOf[TrackOriented]) {
-        	val trackGoal : TrackOriented = goal.asInstanceOf[TrackOriented]
-        	trackGoal.setTrack( track)
-        }
-        
-        val fStatus = engine.satisfyGoal(track, goal, witness)
+        val fStatus = engine.satisfyGoal( goal, witness)
 
         Iterator.continually(Await.ready(fStatus, Duration(300, SECONDS))).takeWhile(!_.isCompleted).foreach { f =>
             println("Waiting on Future" + f)

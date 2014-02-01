@@ -10,7 +10,7 @@ import com.klout.scoozie.jobs._
 import util.{ Left, Right }
 import org.joda.time.DateTime
 
-class ScoozieSatisfier(workflow: Workflow) extends Satisfier with TrackOriented {
+class ScoozieSatisfier(workflow: Workflow) (implicit track : Track) extends Satisfier {
 
     val appPathParam: Variable[String] = Variable("scoozie.wf.application.path")
     val ScoozieUrlParam: Variable[String] = Variable("scoozie.oozie.url")
@@ -20,7 +20,7 @@ class ScoozieSatisfier(workflow: Workflow) extends Satisfier with TrackOriented 
     override def satisfy(params: Substitution): ExecutionResult = {
         val timeStarted  = new DateTime
         try {
-            val allParams = params ++ getTrackProperties( params)
+            val allParams = params ++ track.getTrackProperties( params)
 
             if (!allParams.contains(appPathParam)) {
                 throw new IllegalArgumentException("Must specify application path ")

@@ -18,12 +18,17 @@ trait DataOutput extends Evidence {
 
 object DataDependency {
   
+   ///implicit val track : Track  = null
    /**
     *   Create a DataDependency Goal,   
     *     given a DataOutput
     */
-   def apply( depData : DataOutput )  : Goal = {
-     Goal(s"Data ${depData.toString} ", None, depData.variables)
+   def apply( depData : DataOutput )( implicit track : Track)  : Goal = {
+     Goal(name= s"Data Dependency ${depData.toString} ", 
+          satisfier=None,
+          variables=depData.variables,
+          dependencies=Set.empty,
+          evidence = Set(depData))
    }
 }
 

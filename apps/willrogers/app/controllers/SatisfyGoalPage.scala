@@ -110,7 +110,6 @@ object SatisfyGoalPage extends Controller {
         val witStr = HtmlUtil.witnessPath( status.witness )
         topNodeDiv.onClick = s"window.open('/logwindow/${status.track.trackName}/${status.goalName}/${witStr}')"
         pg.addNodeDiv(topNodeDiv)
-        status.track.trackName
 
         plumbGraphForStatusRecursive(pg, status, topNodeDiv, nodeMap)
 
@@ -257,8 +256,8 @@ object SatisfyGoalPage extends Controller {
         //// instead of holding onto the Future, 
         //// just ask again to get current status,
         //// and bring up project status page
-        ProofEngine.satisfyGoal(track, goal, witness)
-        ProofEngine.getStatus(track, goal, witness)
+        ProofEngine.satisfyGoal( goal, witness)
+        ProofEngine.getStatus( goal, witness)
     }
 
     def getTrackByName(trackName: String): Track = {

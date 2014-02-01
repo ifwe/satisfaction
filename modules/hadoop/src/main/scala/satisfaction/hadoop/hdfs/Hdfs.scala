@@ -43,7 +43,9 @@ object HdfsFactoryInit {
                   fsFactory
               }
          }
+}
          
+object HdfsImplicits {
     implicit def ApachePath2Path( ap : ApachePath) : Path = {
        new Path( ap.toUri.toString )
     }
@@ -81,7 +83,7 @@ case class HdfsFStat( apacheFileStatus : ApacheFileStatus ) extends satisfaction
   
 }
 object HdfsFStat {
-    implicit def ApacheFileStatus2HdfsFS( apacheFileStatus : ApacheFileStatus ) : HdfsFStat = {
+    implicit def ApacheFileStatus2HdfsFStat( apacheFileStatus : ApacheFileStatus ) : HdfsFStat = {
        new HdfsFStat( apacheFileStatus ) 
     }
     

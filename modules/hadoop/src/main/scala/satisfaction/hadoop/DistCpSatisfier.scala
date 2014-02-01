@@ -9,7 +9,7 @@ import org.joda.time.DateTime
 import hdfs._
 import fs._
 
-class DistCpSatisfier(val src: VariablePath, val dest: VariablePath, implicit val hdfs : FileSystem ) extends Satisfier with TrackOriented {
+class DistCpSatisfier(val src: VariablePath, val dest: VariablePath)( implicit val hdfs : FileSystem , implicit val track: Track) extends Satisfier  {
 
     var execResult : ExecutionResult = null
 
@@ -69,9 +69,11 @@ class DistCpSatisfier(val src: VariablePath, val dest: VariablePath, implicit va
 }
 
 object DistCpGoal {
+    /// XXX Is this the correct implicit scope???
     implicit val hdfs : FileSystem  = Hdfs.default
    
-    def apply(goalName: String, src: VariablePath, dest: VariablePath ): Goal = {
+    def apply(goalName: String, src: VariablePath, dest: VariablePath )
+        (implicit  track: Track): Goal = {
         val srcVars = src.variables
         val destVars = dest.variables
         ////  Add check  that  vars are the same 
@@ -80,8 +82,9 @@ object DistCpGoal {
         }
         new Goal(
             name = goalName,
-            satisfier = Some(new DistCpSatisfier(src, dest, hdfs)),
+            satisfier = Some(new DistCpSatisfier(src, dest)),
             variables = srcVars,
+            dependencies = Set.empty,
             evidence = Set(dest)
         )
     }

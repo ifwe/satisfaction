@@ -26,8 +26,8 @@ class ProofEngine {
     /**
      *  Blocking call to satisfy Goal
      */
-    def satisfyGoalBlocking(track : Track, goal: Goal, witness: Witness, duration: Duration): GoalStatus = {
-        val f = getProver(track,goal, witness) ? Satisfy
+    def satisfyGoalBlocking( goal: Goal, witness: Witness, duration: Duration): GoalStatus = {
+        val f = getProver(goal, witness) ? Satisfy
         val response = Await.result(f, duration)
         response match {
             case s: GoalSuccess =>
@@ -39,9 +39,9 @@ class ProofEngine {
         }
     }
 
-    def satisfyGoal(track : Track, goal: Goal, witness: Witness): Future[GoalStatus] = {
+    def satisfyGoal( goal: Goal, witness: Witness): Future[GoalStatus] = {
         future {
-            val f = getProver(track, goal, witness) ? Satisfy
+            val f = getProver(goal, witness) ? Satisfy
             val response = Await.result(f, Duration(6, HOURS))
             response match {
                 case s: GoalSuccess =>
@@ -55,9 +55,9 @@ class ProofEngine {
         }
     }
     
-    def restartGoal( track : Track, goal : Goal, witness: Witness ) : Future[GoalStatus] = {
+    def restartGoal( goal : Goal, witness: Witness ) : Future[GoalStatus] = {
        future {
-            val f = getProver(track, goal, witness) ? RestartJob
+            val f = getProver( goal, witness) ? RestartJob
             val response = Await.result(f, Duration(6, HOURS))
             response match {
                 case s: GoalSuccess =>
@@ -71,42 +71,22 @@ class ProofEngine {
         }
     }
 
-
-    /**
-     * def satisfyProject(project: Project, witness: Witness): Boolean = {
-     *
-     * val props = Props(new ProjectOwner(project))
-     * val actorRef = akkaSystem.actorOf(props, project.name)
-     *
-     * val future = actorRef ? new NewWitnessGenerated(witness)
-     *
-     * val result = Await.result(future, timeout.duration).asInstanceOf[Boolean]
-     *
-     * result
-     * }
-     *
-     */
-
-    def isSatisfied(track: Track, goal: Goal, witness: Witness): Boolean = {
-        getStatus(track, goal, witness).state == GoalState.AlreadySatisfied
+    def isSatisfied( goal: Goal, witness: Witness): Boolean = {
+        getStatus( goal, witness).state == GoalState.AlreadySatisfied
     }
 
     /**
      *  Status should return immediately
      */
-    def getStatus(track : Track, goal: Goal, witness: Witness): GoalStatus = {
-        val f = getProver(track, goal, witness) ? WhatsYourStatus
+    def getStatus( goal: Goal, witness: Witness): GoalStatus = {
+        val f = getProver(goal, witness) ? WhatsYourStatus
 
         val response = Await.result(f, timeout.duration).asInstanceOf[StatusResponse]
         response.goalStatus
     }
 
-    def getProver(track : Track, goal: Goal, witness: Witness): ActorRef = {
-        if( goal.isInstanceOf[TrackOriented]) {
-          val to = goal.asInstanceOf[TrackOriented]
-          to.setTrack( track)
-        }
-        ProverFactory.getProver(proverFactory, track, goal, witness)
+    def getProver(goal: Goal, witness: Witness): ActorRef = {
+        ProverFactory.getProver(proverFactory, goal.track, goal, witness)
     }
 
     def getGoalsInProgress: Set[GoalStatus] = {
@@ -137,9 +117,6 @@ class ProofEngine {
     }
     
     
-    def getGoalStatus( trackName : String, goalName : String ) : Option[GoalStatus] = {
-      null  
-    }
 
     /// sic ....
     //// Want to be able to access by actorFor

@@ -27,7 +27,10 @@ import fs._
 case class TrackFactory(val trackFS : FileSystem, 
     val baseTrackPath : String = "/user/jerome/satisfaction",
     val scheduler : TrackScheduler = TrackScheduler) {
-   private implicit val localFS : FileSystem =  LocalFileSystem(System.getProperty("user.dir"))
+  
+   implicit val localFS : FileSystem =  LocalFileSystem(System.getProperty("user.dir"))
+   implicit val hdfs = trackFS
+   
    
    ///  XXX Use Local FS abstraction
    val auxJarsPathBase = new java.io.File(System.getProperty("user.dir") + "/auxJars")
@@ -35,9 +38,6 @@ case class TrackFactory(val trackFS : FileSystem,
    
    private var trackMap : collection.mutable.Map[TrackDescriptor,Track] = collection.mutable.HashMap[TrackDescriptor,Track]()
    
-   
-   
-
    /** 
     *  Get all the tracks which have been deployed to HDFS under the
     *   Satisfaction base track path.
@@ -45,16 +45,11 @@ case class TrackFactory(val trackFS : FileSystem,
    def getAllTracks : Seq[TrackDescriptor] = {
        /// XXX Have filesystem return path as well as uri 
       val trackRoot = new Path(  trackFS.uri.toString)  / this.baseTrackPath / "track" 
-      System.out.println( " TrackRoot is " + trackRoot)
       val allPaths = trackFS.listFilesRecursively(trackRoot)
-      allPaths.filter(_.isDirectory).foreach( fs => { println(" TRACK PATH IS " + fs.getPath ) } )
       allPaths.filter(_.isDirectory).filter( _.getPath.name.startsWith("version_")).map( fs => {
           parseTrackPath( fs.getPath )       
       }) 
    }
-   
-   
-  
    
    /**
     *  Parse the path of a deployed Track on HDFS
@@ -62,7 +57,6 @@ case class TrackFactory(val trackFS : FileSystem,
     */
    def parseTrackPath( path : Path) : TrackDescriptor = {
      val pathStr  = path.toUri.toString 
-     println(" ParseTrackPath " + pathStr)
      val tailStr = pathStr.substring( pathStr.indexOf( this.baseTrackPath) + baseTrackPath.length + 1) 
      
      val parts = tailStr.split( "/") 
@@ -85,7 +79,6 @@ case class TrackFactory(val trackFS : FileSystem,
        variant = parts(idx)
        idx = idx + 1
      }
-     println(" PARTS IDX = " + parts(idx))
      version = parts(idx).substring("version_".length)
      
      new TrackDescriptor( trackName, user, version,  if (variant != null)  Some(variant) else None) 
@@ -113,6 +106,8 @@ case class TrackFactory(val trackFS : FileSystem,
      
      trackProps.get( "satisfaction.track.auxjar") match {
      case Some(trackAuxJar) =>
+       //// XXX remove reference to files ... 
+       ////  use fs.FileSystem
         val auxJarsPath = new java.io.File( this.auxJarsPathBase.getPath() + "/" + track.descriptor.trackName)
         auxJarsPath.mkdirs
         val auxJarPath = new Path(trackPath + "/" + trackAuxJar)
@@ -136,23 +131,6 @@ case class TrackFactory(val trackFS : FileSystem,
      }
      
      track.setTrackPath( getTrackPath( track.descriptor))
-     
-     //// Now that has been initialized, go through all the Track's Goals, 
-     //// and  inject the Track value ...
-     track.allGoals.foreach { goal  : Goal => {
-    	 if( goal.isInstanceOf[TrackOriented]) {
-    		 val trackGoal : TrackOriented = goal.asInstanceOf[TrackOriented]
-    		 trackGoal.setTrack(track)
-    		 /// Inject the DataOutputs ???
-    		 goal.evidence.foreach { outp => {
-    			 if( outp.isInstanceOf[TrackOriented]) {
-    			   val trackOutp = outp.asInstanceOf[TrackOriented]
-    			   trackOutp.setTrack(track)
-    			 }
-    		 }}
-    	 }
-      }
-     }
      
    }
    
@@ -296,6 +274,7 @@ case class TrackFactory(val trackFS : FileSystem,
     				 Some(track)
     	 } else {
     		 val trackOpt = generateTrack( trackDesc)
+    		 println(" GENERATING TRACK AGAIN !!!")
     		 trackOpt match {
     		   case Some(track) =>
     		     trackMap.put( trackDesc, track)

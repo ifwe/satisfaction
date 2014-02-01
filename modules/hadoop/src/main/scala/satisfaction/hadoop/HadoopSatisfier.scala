@@ -22,7 +22,7 @@ object HadoopGoal {
       reducer : Option[Class[_<:Reducer[MapKeyOut,MapValOut,KeyOut,ValOut]]],
       partitionerOptions : String,
       inputs : Set[DataOutput],
-      output : DataOutput ) : Goal = {
+      output : DataOutput )(implicit track : Track) : Goal = {
    
     
     val satisfier = new HadoopSatisfier[KeyIn,ValIn,MapKeyOut,MapValOut,KeyOut,ValOut](
@@ -30,7 +30,7 @@ object HadoopGoal {
     
      val variables = output.variables
             
-      new Goal( name, Some(satisfier), variables, overrides = None, dependencies = Set.empty, Set(output) ) 
+      new Goal( name, Some(satisfier), variables, dependencies = Set.empty, Set(output) ) 
   }
   
 }

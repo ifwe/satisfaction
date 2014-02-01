@@ -4,15 +4,19 @@ package hadoop
 package hive.ms
 
 import org.apache.hadoop.hive.ql.metadata._
+import org.apache.hadoop.fs.{Path => ApachePath}
 import collection.JavaConversions._
 import fs._
 import hdfs.Hdfs
+import hdfs.HdfsPath
+import hdfs.HdfsFactoryInit
+import hdfs.HdfsImplicits._
 
-case class HiveTable(
+case class HiveTable (
     dbName: String,
     tblName: String)
     (implicit val ms : MetaStore,
-     implicit val hdfs : FileSystem) extends DataOutput {
+     implicit val hdfs : FileSystem) extends DataOutput  {
 
     
     val checkSuccessFile = true
@@ -27,9 +31,13 @@ case class HiveTable(
         if( checkSuccessFile) {
         	val partition = partitionOpt.get
         	println(s" PARTITION = $partition")
-        	println(s" PARTITION = $partition PART PATH = ${partition.getPartitionPath}")
-            val successPath = new  Path(partition.getPartitionPath + "/_SUCCESS")
-        	hdfs.exists( successPath)
+        	val partPath : Path = partition.getPartitionPath
+        	if( hdfs.exists( partPath)) {
+        	  /// Check metadata to see if table has a min partition size 
+        	   true 
+        	} else {
+        	  false
+        	}
         } else{
           true
         } 

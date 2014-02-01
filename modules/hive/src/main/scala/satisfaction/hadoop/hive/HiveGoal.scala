@@ -6,43 +6,34 @@ package hive
 import ms.MetaStore
 import ms.HiveTable
 import scala.io.Source
+import org.apache.hadoop.hive.conf.HiveConf
 
 /**
  */
 object HiveGoal {
 
-
     def apply(name: String,
               queryResource: String,
               table: HiveTable,
-              overrides: Option[Substitution] = None,
-              depends: Set[(Witness => Witness, Goal)] = Set.empty)
-         ( implicit ms : MetaStore  ) 
-             ///( implicit hiveConf : HiveConf = Config.config)
+              depends: Set[(Witness => Witness, Goal)] = Set.empty )
+        (implicit track : Track )
             : Goal = {
-           ///( implicit hiveConf : HiveConfiguration = Config.config ) : Goal = {
 
       //// Set the jar path 
-        val hiveSatisfier = new HiveSatisfier(queryResource, HiveDriver("/Users/jeromebanks/NewGit/satisfaction/auxJars/KloutToBing")( Config.config))
+        implicit val hiveConf : HiveConf =  table.ms.config
+        val hiveSatisfier = new HiveSatisfier(queryResource, HiveDriver(
+            track.auxJarFolder.getPath) )
+            ///"/Users/jeromebanks/NewGit/satisfaction/auxJars/KloutToBing")( Config.config))
         ///val hiveSatisfier = new HiveSatisfier(queryResource, new  HiveLocalDriver )
         
-        val tblVariables = ms.getVariablesForTable(table.dbName, table.tblName)
-        val tblOutputs = collection.Set(table)
+        val tblVariables = table.ms.getVariablesForTable(table.dbName, table.tblName)
+        val tblOutputs = collection.Set(table.asInstanceOf[Evidence])
 
         new Goal(name = name,
             satisfier = Some(hiveSatisfier),
             variables = tblVariables,
-            overrides,
             depends,
-            evidence = tblOutputs
-        ) with TrackOriented {
-           override def setTrack( track : Track ) {
-              super.setTrack(track) 
-              println(" HiveGoal setTrack")
-              val toSatisfier = satisfier.get.asInstanceOf[TrackOriented]
-              toSatisfier.setTrack(track)
-           }
-        }
+            evidence = tblOutputs)
     }
 
 }

@@ -7,20 +7,9 @@ import org.joda.time.format.DateTimeFormat
 import org.joda.time.Days
 import org.joda.time.DateTime
 import scala.io.Source
+import org.apache.hadoop.hive.ql.metadata.HiveException
 
-// class HiveSatisfier(ms: MetaStore) extends Satisfier with DataProducing {
-
-//     override def satisfy(goal: Goal, witness: Witness) {
-//         if (!goal.isInstanceOf[HiveGoal])
-//             throw new IllegalArgumentException("Only HiveGoals are supported")
-//     }
-
-// }
-
-// object HiveSatisfier extends HiveSatisfier(MetaStore)
-
-///case class HiveSatisfier(queryTemplate: String, driver: HiveClient) extends Satisfier {
-case class HiveSatisfier(queryResource: String, driver: HiveDriver) extends Satisfier with TrackOriented with MetricsProducing {
+case class HiveSatisfier(queryResource: String, driver: HiveDriver)( implicit val track : Track) extends Satisfier with MetricsProducing {
 
     def executeMultiple(hql: String): Boolean = {
         val multipleQueries = hql.split(";")
@@ -38,15 +27,6 @@ case class HiveSatisfier(queryResource: String, driver: HiveDriver) extends Sati
     }
     
     
-    /// XXX Set with implicits !!!
-    override def setTrack( tr : Track ) = {
-      super.setTrack( tr)
-      if(driver.isInstanceOf[TrackOriented]) {
-         val trackCast = driver.asInstanceOf[TrackOriented]
-         trackCast.setTrack(tr)
-      }
-    }
-    
     def queryTemplate : String = {
        println(" Query Template -- query Resource is " + queryResource)      
        if( queryResource.endsWith(".hql"))  { 
@@ -61,7 +41,9 @@ case class HiveSatisfier(queryResource: String, driver: HiveDriver) extends Sati
         val setupScript = track.getResource("setup.hql")
         if( setupScript != null) {
           println(s" Running setup script $setupScript")
-          executeMultiple( setupScript)
+          if ( !executeMultiple( setupScript) ) {
+            throw new HiveException("Trouble loading setup.hql")
+          }
         }
         
       } catch { 
@@ -79,7 +61,7 @@ case class HiveSatisfier(queryResource: String, driver: HiveDriver) extends Sati
       val execResult = new ExecutionResult( queryTemplate, new DateTime)
       try {
 
-        val allProps = getTrackProperties(params)
+        val allProps = track.getTrackProperties(params)
         println(s" Track Properties is $allProps ")
         val queryMatch = Substituter.substitute(queryTemplate, allProps) match {
             case Left(badVars) =>
@@ -128,6 +110,3 @@ case class HiveSatisfier(queryResource: String, driver: HiveDriver) extends Sati
    
 }
 
-object HiveSatisfier {
-  
-}

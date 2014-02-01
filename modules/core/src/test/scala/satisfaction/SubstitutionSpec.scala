@@ -79,7 +79,7 @@ class SubstitutionSpec extends Specification {
         }
 
         "Read Property file" in {
-            val goodProps = Substituter.readProperties("modules/common/src/test/resources/goodset.properties")
+            val goodProps = Substituter.readProperties("modules/core/src/test/resources/goodset.properties")
 
             goodProps.keySet must contain("myProp")
             goodProps.keySet must contain("theBigProp")
@@ -90,7 +90,7 @@ class SubstitutionSpec extends Specification {
         }
 
         "Subst vars in Property file" in {
-            val goodProps = Substituter.readProperties("modules/common/src/test/resources/subst_var.properties")
+            val goodProps = Substituter.readProperties("modules/core/src/test/resources/subst_var.properties")
 
             goodProps.keySet must contain("nameNode")
             goodProps.keySet must contain("dataRoot")

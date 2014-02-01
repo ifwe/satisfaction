@@ -12,7 +12,8 @@ object ScoozieGoal {
     def apply(name: String,
               workflow: Workflow,
               overrides: Option[Substitution] = None,
-              outputs: Set[DataOutput]): Goal = {
+              outputs: Set[DataOutput])
+    	(implicit  track : Track): Goal = {
 
         val evidence: Set[Evidence] = outputs.toSet[Evidence]
         val satisfier = new ScoozieSatisfier(workflow)
@@ -23,14 +24,14 @@ object ScoozieGoal {
         new Goal(name,
             Some(satisfier),
             variables,
-            overrides, /// overrides
             Set.empty, /// dependencies
             evidence
         )
     }
 
     def apply(workflow: Workflow,
-              outputs: Set[DataOutput]): Goal = {
+              outputs: Set[DataOutput])
+      (implicit track : Track): Goal = {
         apply( workflow.name, workflow, null, outputs)
 
     }

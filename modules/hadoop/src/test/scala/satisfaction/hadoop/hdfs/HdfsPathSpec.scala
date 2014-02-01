@@ -9,9 +9,11 @@ import satisfaction.fs._
 class HdfsPathSpec extends Specification {
     val dtParam = new Variable("dateString", classOf[String])
     val networkParam = new Variable("networkAbbr", classOf[String])
+    
 
     //// XXX TODO use localfilesystem for unit tests
-    implicit var hdfs : FileSystem = Hdfs.fromConfig(HdfsSpec.clientConfig)
+    implicit val hdfs : FileSystem = Hdfs.fromConfig(HdfsSpec.clientConfig)
+    implicit val track : Track = new Track( TrackDescriptor("Test Track"), Set.empty)
     
     "VariablePath" should {
         "check if path exists " in {

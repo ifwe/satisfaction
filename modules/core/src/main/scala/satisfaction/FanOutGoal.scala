@@ -3,17 +3,23 @@ package com.klout.satisfaction
 import com.klout.satisfaction._
 
 object FanOutGoal {
+  /**
+   *  XXX 
+   *   XXXX Think if we want to have distinct 
+   *      goals for this, or a custom witness mapper function
+   */ 
 
     def apply(subGoal: Goal, saturateVar: Variable[String], substSeq: Set[String]): Goal = {
         val vars = subGoal.variables - saturateVar
+        implicit val track = subGoal.track
         val deps = substSeq.map(Goal.qualifyWitness(saturateVar, _)).map(Tuple2(_, subGoal))
         new Goal(
             name = "FanOut " + subGoal.name,
             satisfier = None,
             variables = vars,
             dependencies = deps,
-            evidence = Set.empty
-        )
+            evidence = Set.empty)
+        ///( subGoal.track)
     }
 
     /**
@@ -23,6 +29,8 @@ object FanOutGoal {
               saturateVar2: Variable[String], substSeq2: List[String]): Goal = {
         val vars = subGoal.variables - saturateVar - saturateVar2
 
+        implicit val track = subGoal.track
+        
         if (substSeq.size != substSeq.size) {
             throw new IllegalArgumentException(" Fan out values must be same size for multiple variables ")
         }
@@ -42,8 +50,8 @@ object FanOutGoal {
             satisfier = None,
             variables = vars,
             dependencies = deps,
-            evidence = Set.empty
-        )
+            evidence = Set.empty)
+            ///(subGoal.track)
     }
 
 }

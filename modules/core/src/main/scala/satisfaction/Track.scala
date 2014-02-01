@@ -9,6 +9,8 @@ import java.lang.reflect.Method
 import java.net.URLClassLoader
 import satisfaction.fs.Path
 import scala.io.Source
+import satisfaction.fs.FileSystem
+import satisfaction.fs.LocalFileSystem
 
 /**
    *  Case class describing how a track can be deployed.
@@ -47,6 +49,11 @@ case class Track(
     def apply( trackName : String, topLevelGoal : Goal) : Track = {
        Track( TrackDescriptor(trackName), Set(topLevelGoal)) 
     }
+    
+    /// Define filesystems which Tracks can read and write to
+    /// Define as local, to avoid unnecessary dependencies
+    implicit val hdfs : FileSystem = LocalFileSystem
+    implicit val localFS : FileSystem = LocalFileSystem
     
     
     lazy val allGoals: Set[Goal] = {
@@ -108,6 +115,7 @@ case class Track(
     *  XXX Move to Engine ???
     * 
     */
+     /**
    def getResource(   resourceFile : String ) : String  = {
      val resourceStream = this.getClass.getClassLoader.getResourceAsStream( resourceFile)
      if(resourceStream != null) {
@@ -117,13 +125,15 @@ case class Track(
        null
      }
    }
-   
-   def listResources : Seq[String]  = ???
-   /**
-   {
-     Hdfs.readFile( new Path( resourcePath.toUri.toString + "/" + resourceFile ))
+   * 
+   */
+   def getResource(   resourceFile : String ) : String  = {
+      hdfs.readFile( resourcePath / resourceFile )
    }
-   **/
+   
+   def listResources : Seq[String]  = {
+      hdfs.listFiles(  resourcePath ).map( _.getPath.name )
+   }
    
    def resourcePath : Path = {
      val resourceDir = _trackProperties.raw.get("satisfaction.track.resource") match {
@@ -178,10 +188,57 @@ case class Track(
         
 
     }
+    
+    
+    def getTrackProperties(witness: Substitution): Substitution = {
+      
+         val YYYYMMDD = DateTimeFormat.forPattern("YYYYMMdd")
+    
+        var projProperties : Substitution =  trackProperties
+
+        ///// Some munging logic to translate between camel case 
+        //// and  underscores
+        ////   and to do some simple date logic
+
+        if (witness.contains(Variable("dt"))) {
+            //// convert to Date typed variables... 
+            //// not just strings 
+            var jodaDate = YYYYMMDD.parseDateTime(witness.get(Variable("dt")).get)
+            ////val assign : VariableAssignment[String] = ("dateString" -> YYYYMMDD.print(jodaDate))
+            val dateVars = Substitution((Variable("dateString") -> YYYYMMDD.print(jodaDate)),
+                (Variable("yesterdayString") -> YYYYMMDD.print(jodaDate.minusDays(1))),
+                (Variable("prevdayString") -> YYYYMMDD.print(jodaDate.minusDays(2))),
+                (Variable("weekAgoString") -> YYYYMMDD.print(jodaDate.minusDays(7))),
+                (Variable("monthAgoString") -> YYYYMMDD.print(jodaDate.minusDays(30))));
+
+            println(s" Adding Date variables ${dateVars.raw.mkString}")
+            projProperties = projProperties ++ dateVars
+            projProperties = projProperties.update(VariableAssignment("dateString", witness.get(Variable("dt")).get))
+        }
+
+        /// XXX Other domains won't have social networks ...
+        if (witness.contains(Variable("network_abbr"))) {
+            projProperties = projProperties + (Variable("networkAbbr") -> witness.get(Variable("network_abbr")).get)
+            //// needs to be handled outside of satisfier ???
+            /// XXX need way to munge track properties
+            projProperties = projProperties + (Variable("featureGroup") -> "3")
+            ///projProperties = projProperties.update(VariableAssignment("networkAbbr", witness.get(Variable("network_abbr"))))
+        }
+
+        projProperties ++ witness
+
+    }
 
 
 }
 
+object Track {
+  
+   def trackForGoal(  goal : Goal) : Track = {
+     new Track( TrackDescriptor( goal.name), Set( goal)) 
+   }
+   
+}
 
 trait TemporalVariable {
   
@@ -189,7 +246,7 @@ trait TemporalVariable {
 }
 
 
-trait TrackOriented {
+trait TrackOrientedXXX {
 
     val YYYYMMDD = DateTimeFormat.forPattern("YYYYMMdd")
     

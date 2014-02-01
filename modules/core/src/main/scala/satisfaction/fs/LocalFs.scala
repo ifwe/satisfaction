@@ -131,3 +131,7 @@ case class LocalFileSystem( val basePath : String = "/") extends FileSystem {
    }
 
 }
+
+object LocalFileSystem extends LocalFileSystem(System.getProperty("user.dir")) {
+  
+}

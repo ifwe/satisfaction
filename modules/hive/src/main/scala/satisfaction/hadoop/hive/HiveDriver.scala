@@ -21,7 +21,6 @@ import java.io.File
 import java.net.URL
 import org.apache.hadoop.hive.ql.exec.Utilities
 import java.lang.reflect.Method
-import com.klout.satisfaction.TrackOriented
 import org.apache.hadoop.hive.ql.processors.CommandProcessorResponse
 import java.io.BufferedReader
 import java.io.FileReader
@@ -42,9 +41,9 @@ import satisfaction.hadoop.Config
  */
 trait HiveDriver {
 
-    def useDatabase(dbName: String);
+    def useDatabase(dbName: String)
 
-    def executeQuery(query: String): Boolean;
+    def executeQuery(query: String): Boolean
 
 }
 
@@ -54,15 +53,9 @@ trait HiveDriver {
  *    the internal 'SessionState' interface
  */
 
-class HiveLocalDriver( implicit val hiveConf : HiveConf = Config.config ) extends HiveDriver with MetricsProducing with TrackOriented {
-///class HiveLocalDriver extends HiveDriver with MetricsProducing with TrackOriented {
+class HiveLocalDriver( implicit val hiveConf : HiveConf = Config.config , implicit val track : Track) extends HiveDriver with MetricsProducing {
   
     /// XXX need to set because can't pass in with constructor
- /** 
-    var hiveConf : HiveConf
-    def setConfig( conf : HiveConfig )
-
-    */
     lazy val driver = {
       
       
