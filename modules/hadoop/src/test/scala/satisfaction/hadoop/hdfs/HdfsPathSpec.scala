@@ -5,6 +5,7 @@ package hdfs
 
 import org.specs2.mutable._
 import satisfaction.fs._
+import java.util.Properties
 
 class HdfsPathSpec extends Specification {
     val dtParam = new Variable("dateString", classOf[String])
@@ -13,11 +14,16 @@ class HdfsPathSpec extends Specification {
 
     //// XXX TODO use localfilesystem for unit tests
     implicit val hdfs : FileSystem = Hdfs.fromConfig(HdfsSpec.clientConfig)
-    implicit val track : Track = new Track( TrackDescriptor("Test Track"), Set.empty)
+    implicit val track : Track = {
+      
+      val tr = new Track( TrackDescriptor("Test Track"), Set.empty)
+      tr.setTrackProperties(new Substitution( Set(Variable( "Bogis") -> "blah")))
+      tr
+    }
     
     "VariablePath" should {
         "check if path exists " in {
-            val pathTempl = "hdfs://jobs-dev-hnn/data/hive/maxwell/actor_action/${dateString}/${networkAbbr}"
+            val pathTempl = "hdfs://nameservice1/data/hive/maxwell/actor_action/${dateString}/${networkAbbr}"
 
             val varPath = new VariablePath(pathTempl)
 
@@ -28,7 +34,7 @@ class HdfsPathSpec extends Specification {
         }
 
         "check if path doesnt exists " in {
-            val pathTempl = "hdfs://jobs-dev-hnn/data/hive/maxwell/actor_action/${dateString}/${networkAbbr}"
+            val pathTempl = "hdfs://nameservice1/data/hive/maxwell/actor_action/${dateString}/${networkAbbr}"
 
             val varPath = new VariablePath(pathTempl)
 
@@ -39,7 +45,7 @@ class HdfsPathSpec extends Specification {
         }
 
         "check get DataInstance " in {
-            val pathTempl = "hdfs://jobs-dev-hnn/data/hive/maxwell/actor_action/${dateString}/${networkAbbr}"
+            val pathTempl = "hdfs://nameservice1/data/hive/maxwell/actor_action/${dateString}/${networkAbbr}"
 
             val varPath = new VariablePath(pathTempl)
 
@@ -57,7 +63,7 @@ class HdfsPathSpec extends Specification {
         }
 
         "check cant get bogus DataInstance " in {
-            val pathTempl = "hdfs://jobs-dev-hnn/data/hive/maxwell/actor_action/${dateString}/${networkAbbr}"
+            val pathTempl = "hdfs://nameservice1/data/hive/maxwell/actor_action/${dateString}/${networkAbbr}"
 
             val varPath = new VariablePath(pathTempl)
 

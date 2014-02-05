@@ -4,6 +4,7 @@ package track
 
 import collection.JavaConversions._
 
+
 /// XXX abstraction of filesystem ...
 import fs._
 
@@ -25,15 +26,16 @@ import fs._
  *  
  */
 case class TrackFactory(val trackFS : FileSystem, 
-    val baseTrackPath : String = "/user/jerome/satisfaction",
-    val scheduler : TrackScheduler = TrackScheduler) {
+    val baseTrackPath : Path = Path("/user/jerome/satisfaction"),
+    val schedulerOpt : Option[TrackScheduler] = None) {
   
-   implicit val localFS : FileSystem =  LocalFileSystem(System.getProperty("user.dir"))
+   implicit val localFS : FileSystem =  LocalFileSystem
    implicit val hdfs = trackFS
    
    
    ///  XXX Use Local FS abstraction
-   val auxJarsPathBase = new java.io.File(System.getProperty("user.dir") + "/auxJars")
+   ///val auxJarsPathBase = new java.io.File(System.getProperty("user.dir") + "/auxJars")
+   val auxJarsPathBase : Path = LocalFileSystem.currentDirectory / "auxJars" ;
    
    
    private var trackMap : collection.mutable.Map[TrackDescriptor,Track] = collection.mutable.HashMap[TrackDescriptor,Track]()
@@ -44,7 +46,8 @@ case class TrackFactory(val trackFS : FileSystem,
     */
    def getAllTracks : Seq[TrackDescriptor] = {
        /// XXX Have filesystem return path as well as uri 
-      val trackRoot = new Path(  trackFS.uri.toString)  / this.baseTrackPath / "track" 
+      val trackRoot : Path =  baseTrackPath / "track" 
+      
       val allPaths = trackFS.listFilesRecursively(trackRoot)
       allPaths.filter(_.isDirectory).filter( _.getPath.name.startsWith("version_")).map( fs => {
           parseTrackPath( fs.getPath )       
@@ -56,8 +59,9 @@ case class TrackFactory(val trackFS : FileSystem,
     *    to the implied track descriptor 
     */
    def parseTrackPath( path : Path) : TrackDescriptor = {
+     println(s" PARSE TRACK PATH $path")
      val pathStr  = path.toUri.toString 
-     val tailStr = pathStr.substring( pathStr.indexOf( this.baseTrackPath) + baseTrackPath.length + 1) 
+     val tailStr = pathStr.substring( pathStr.indexOf( this.baseTrackPath.pathString) + baseTrackPath.pathString.length + 1) 
      
      val parts = tailStr.split( "/") 
      /// Assert part[0] = "track"
@@ -108,26 +112,30 @@ case class TrackFactory(val trackFS : FileSystem,
      case Some(trackAuxJar) =>
        //// XXX remove reference to files ... 
        ////  use fs.FileSystem
-        val auxJarsPath = new java.io.File( this.auxJarsPathBase.getPath() + "/" + track.descriptor.trackName)
-        auxJarsPath.mkdirs
-        val auxJarPath = new Path(trackPath + "/" + trackAuxJar)
-        trackFS.listFiles( auxJarPath ).foreach { fs : FileStatus => {
-    	    println(s" Copying  ${fs.getPath} to local aux jars path ${auxJarsPath.getPath}" )
-    	   trackFS.copyToFileSystem( localFS, fs.getPath, new Path( "file://" +  auxJarsPath.getPath ) )
+        val localAuxJarsPath : Path = ( auxJarsPathBase /  track.descriptor.trackName)
+        localFS.mkdirs( localAuxJarsPath)
+        val hdfsAuxJarPath = new Path(trackPath + "/" + trackAuxJar)
+        trackFS.listFiles( hdfsAuxJarPath ).foreach { fs : FileStatus => {
+    	    println(s" Copying  ${fs.getPath} to local aux jars path ${localAuxJarsPath}" )
+    	   trackFS.copyToFileSystem( localFS, fs.getPath, localAuxJarsPath  )
          }}
         
-        track.setAuxJarFolder( auxJarsPath)
-        track.registerJars( auxJarsPath.getPath)
+        track.setAuxJarFolder( new java.io.File(localAuxJarsPath.toString))
+        track.registerJars( localAuxJarsPath.toString)
      case None =>
      }
        
-     trackProps.get("satisfaction.track.schedule") match {
-      case Some(schedStr) =>
-           println( "Scheduling "+ track.descriptor.trackName + " at " + schedStr)
-          val sched = TrackSchedule(schedStr)
-          scheduler.scheduleTrack(track.descriptor ,sched)
-      case None =>
-           println(" No schedule defined for track " + track.descriptor.trackName )
+     schedulerOpt match {
+       case Some(scheduler) =>
+       	   trackProps.get("satisfaction.track.schedule") match {
+             case Some(schedStr) =>
+               println( "Scheduling "+ track.descriptor.trackName + " at " + schedStr)
+               val sched = TrackSchedule(schedStr)
+               scheduler.scheduleTrack(track.descriptor ,sched)
+             case None =>
+               println(" No schedule defined for track " + track.descriptor.trackName )
+           }
+        case None =>
      }
      
      track.setTrackPath( getTrackPath( track.descriptor))
@@ -169,7 +177,10 @@ case class TrackFactory(val trackFS : FileSystem,
       val trackClazzOpt = loadTrackClass( new Path(trackPath  + "/" + trackJar) , trackClassName )
       trackClazzOpt match {
         case Some(trackClazz)  =>
-         val track = trackClazz.newInstance 
+         ///val track = trackClazz.newInstance 
+          
+         val track : Track =  trackClazz.getField("MODULE$").get(null).asInstanceOf[Track]
+          
          track.descriptor = trackDesc
          initializeTrack( track,  trackProps)
       	 Some(track)
@@ -225,6 +236,8 @@ case class TrackFactory(val trackFS : FileSystem,
       println(" Track class = " + t1Class + " :: " + t1Class.getCanonicalName())
       
       val tClass = scalaClass.asSubclass( classOf[Track])
+      val cons = tClass.getDeclaredConstructors(); 
+      cons.foreach( _.setAccessible(true) );
       
       println( " Track Scala Class is " + tClass + " :: " + tClass.getCanonicalName())
       Some(tClass)
@@ -292,6 +305,6 @@ case class TrackFactory(val trackFS : FileSystem,
 }
 
 /// XXX Fix me 
-object TrackFactory extends TrackFactory( null, "/user/satisfaction", TrackScheduler) {
+///object TrackFactory extends TrackFactory( null, "/user/satisfaction", TrackScheduler) {
   
-}
+//}

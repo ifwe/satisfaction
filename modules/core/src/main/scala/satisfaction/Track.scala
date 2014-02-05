@@ -39,15 +39,29 @@ import satisfaction.fs.LocalFileSystem
    * A Track 
    */
 
-case class Track(
-    var descriptor : TrackDescriptor,
-    topLevelGoals: Set[Goal] ) {
+case class Track( 
+    var descriptor : TrackDescriptor )  {
 
+  
+  /**
+    def apply( trackName : String) : Track = {
+       Track( TrackDescriptor(trackName), Set.empty) 
+    }
+    
     def apply( trackName : String, topLevelGoals : Set[Goal]) : Track = {
        Track( TrackDescriptor(trackName), topLevelGoals) 
     }
+    
     def apply( trackName : String, topLevelGoal : Goal) : Track = {
        Track( TrackDescriptor(trackName), Set(topLevelGoal)) 
+    }
+    * 
+    */
+    val topLevelGoals : collection.mutable.Set[Goal] = collection.mutable.Set.empty
+    
+    def addTopLevelGoal( goal : Goal ) : Track = {
+      topLevelGoals.add( goal)
+      this
     }
     
     /// Define filesystems which Tracks can read and write to
@@ -144,6 +158,7 @@ case class Track(
    }
    
      
+   /// XXX File to LocalFileSystm ???
      private var _auxJarFolder : File = null
      
      
@@ -235,64 +250,25 @@ case class Track(
 object Track {
   
    def trackForGoal(  goal : Goal) : Track = {
-     new Track( TrackDescriptor( goal.name), Set( goal)) 
+     new Track( TrackDescriptor( goal.name) ).addTopLevelGoal(goal)
    }
    
+    def apply( trackName : String) : Track = {
+       new Track( TrackDescriptor(trackName) )
+    }
+    
+    def apply( trackName : String, topLevelGoals : Set[Goal]) : Track = {
+       val tr = new Track( TrackDescriptor(trackName)) 
+       topLevelGoals.foreach( tr.topLevelGoals.add( _ ))
+       tr
+    }
+    
+    def apply( trackName : String, topLevelGoal : Goal) : Track = {
+       new Track( TrackDescriptor(trackName) ).addTopLevelGoal(topLevelGoal) 
+    }
 }
 
 trait TemporalVariable {
   
     def getObjectForTime( dt : DateTime) : Any
-}
-
-
-trait TrackOrientedXXX {
-
-    val YYYYMMDD = DateTimeFormat.forPattern("YYYYMMdd")
-    
-    var track : Track = null
-
-    def trackName =  { track.descriptor.trackName }
-      
-      
-      
-    def setTrack( track : Track ) = {
-    	this.track = track
-    }
-
-    def getTrackProperties(witness: Substitution): Substitution = {
-        var projProperties : Substitution =  track.trackProperties
-
-        ///// Some munging logic to translate between camel case 
-        //// and  underscores
-        ////   and to do some simple date logic
-
-        if (witness.contains(Variable("dt"))) {
-            //// convert to Date typed variables... 
-            //// not just strings 
-            var jodaDate = YYYYMMDD.parseDateTime(witness.get(Variable("dt")).get)
-            ////val assign : VariableAssignment[String] = ("dateString" -> YYYYMMDD.print(jodaDate))
-            val dateVars = Substitution((Variable("dateString") -> YYYYMMDD.print(jodaDate)),
-                (Variable("yesterdayString") -> YYYYMMDD.print(jodaDate.minusDays(1))),
-                (Variable("prevdayString") -> YYYYMMDD.print(jodaDate.minusDays(2))),
-                (Variable("weekAgoString") -> YYYYMMDD.print(jodaDate.minusDays(7))),
-                (Variable("monthAgoString") -> YYYYMMDD.print(jodaDate.minusDays(30))));
-
-            println(s" Adding Date variables ${dateVars.raw.mkString}")
-            projProperties = projProperties ++ dateVars
-            projProperties = projProperties.update(VariableAssignment("dateString", witness.get(Variable("dt")).get))
-        }
-
-        /// XXX Other domains won't have social networks ...
-        if (witness.contains(Variable("network_abbr"))) {
-            projProperties = projProperties + (Variable("networkAbbr") -> witness.get(Variable("network_abbr")).get)
-            //// needs to be handled outside of satisfier ???
-            /// XXX need way to munge track properties
-            projProperties = projProperties + (Variable("featureGroup") -> "3")
-            ///projProperties = projProperties.update(VariableAssignment("networkAbbr", witness.get(Variable("network_abbr"))))
-        }
-
-        projProperties ++ witness
-
-    }
 }

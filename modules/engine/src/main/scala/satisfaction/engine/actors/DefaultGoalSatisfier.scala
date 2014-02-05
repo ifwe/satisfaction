@@ -81,7 +81,7 @@ class DefaultGoalSatisfier(
           remainingEvidence foreach { evidenceToCheck =>
              if (evidenceToCheck.exists(witness)) {
                 log.info(s" Evidence is Now  there !!! ${evidenceToCheck} ")
-                 remainingEvidence - evidenceToCheck
+                 remainingEvidence = remainingEvidence - evidenceToCheck
               } else {
                 log.info(s" Evidence not there yet ${evidenceToCheck} ")
               }

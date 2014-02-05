@@ -63,6 +63,12 @@ case class HiveSatisfier(queryResource: String, driver: HiveDriver)( implicit va
 
         val allProps = track.getTrackProperties(params)
         println(s" Track Properties is $allProps ")
+        /// XXX need to set Auxjars later 
+        if( driver.isInstanceOf[HiveLocalDriver]) {
+          val lDriver = driver.asInstanceOf[HiveLocalDriver]
+          ///lDriver.setAuxJarFolder( track.auxJarFolder )
+          
+        }
         val queryMatch = Substituter.substitute(queryTemplate, allProps) match {
             case Left(badVars) =>
                 println(" Missing variables in query Template ")

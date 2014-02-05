@@ -137,7 +137,7 @@ object LogWrapper {
      //// XXX Use FileSystem abstraction 
      /// and paths 
      val goalPath = new File( rootDirectory + "/" +pathString( trackName) + "/" + pathString( goalName) )
-     println(" Goal Path is " + goalPath.getPath)
+     ///println(" Goal Path is " + goalPath.getPath)
      if( !goalPath.exists) {
        println(s"Creating Log directory $goalPath")
        goalPath.mkdirs
@@ -155,7 +155,7 @@ object LogWrapper {
     */
    def getWitnessFromLogPath( logPath : String ) : Witness = {
      val kvAss = logPath.split(";") map ( _.split("@") ) map ( kvArr => 
-        { println( s" XXX FIRST = ${kvArr(0)} SECOND = ${kvArr(1)} "); VariableAssignment[String](Variable( kvArr(0).substring(1, kvArr(0).length -1)), 
+        {  VariableAssignment[String](Variable( kvArr(0).substring(1, kvArr(0).length -1)), 
              kvArr(1).substring(1, kvArr(1).length -1) ) } ) 
      
      Witness( kvAss:_*)      

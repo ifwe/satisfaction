@@ -17,6 +17,8 @@ trait FileSystem {
    def listFiles( p : Path ) : Seq[FileStatus]
    def listFilesRecursively( p : Path ) : Seq[FileStatus]
    
+   def mkdirs( p : Path ) : Boolean
+   
    def readFile( path : Path ) : String 
    
    def open( pth : Path) : io.BufferedSource 

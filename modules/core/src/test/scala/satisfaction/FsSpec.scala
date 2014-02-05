@@ -11,6 +11,7 @@ import PathImplicits._
 class FsSpec extends Specification {
 
     
+  "FsSpec" should { 
      
      "handle slash operator" in {
        val p : Path = new Path( "hdfs://jobs-dev-hnn")
@@ -33,7 +34,7 @@ class FsSpec extends Specification {
      }
      
      
-     "convert from URI's " should {
+     "convert from URI's " in {
        
        val hdfsURI = new java.net.URI("hdfs://jobs-dev-hnn")
        
@@ -43,10 +44,12 @@ class FsSpec extends Specification {
        
      }
      
-     "List local directory" should {
-       val fs : FileSystem = new LocalFileSystem(System.getProperty("user.dir") + "/modules/core/src/test/resources/localFS")
-       val allFiles = fs.listFiles( new Path("dir1"))
+     "List local directory" in {
+       val fs : FileSystem = LocalFileSystem
+       val p = new Path( System.getProperty("user.dir") + "/modules/core/src/test/resources/localFS")
+       val allFiles = fs.listFiles( p / "dir1")
        allFiles.foreach( println( _ ))
        
      }
+  }
 }

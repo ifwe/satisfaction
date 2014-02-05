@@ -141,6 +141,11 @@ case class Hdfs(val fsURI: String)
       fullList
     }
     
+    @Override 
+    override def mkdirs( p : Path ): Boolean = {
+      fs.mkdirs( p)
+    }
+    
     override def readFile( path : Path ) : String = {
       io.Source.fromInputStream( fs.open( path) ).getLines.mkString("\n")
     }

@@ -17,8 +17,8 @@ class HiveTableSpec extends Specification {
     val networkParam = new Variable("network_abbr", classOf[String])
     val featureGroup = new Variable[Int]("service_id", classOf[Int])
 
-    implicit  val ms : MetaStore = MetaStore(new java.net.URI("thrift://jobs-dev-sched2:9085"))
-    implicit  val hdfs : FileSystem = new Hdfs("hdfs://jobs-dev-hnn" )
+    implicit  val ms : MetaStore = MetaStore(new java.net.URI("thrift://jobs-dev-sched2:9083"))
+    implicit  val hdfs : FileSystem = new Hdfs("hdfs://nameservice1" )
     
     "HiveTable" should {
         "provide variables" in {

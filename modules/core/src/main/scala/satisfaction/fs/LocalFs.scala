@@ -1,3 +1,4 @@
+
 package com.klout
 package satisfaction.fs
 
@@ -10,7 +11,7 @@ import org.joda.time.DateTime
  *  
  *  XXX Add unit tests for local file operations 
  */
-case class LocalFileSystem( val basePath : String = "/") extends FileSystem {
+case class LocalFileSystem() extends FileSystem {
   
   case class LocalFStatus( file : java.io.File ) extends FileStatus {
       
@@ -54,15 +55,19 @@ case class LocalFileSystem( val basePath : String = "/") extends FileSystem {
    
   
    override def uri : java.net.URI = {
-     return new java.net.URI( s"file://$basePath")
+     /// 
+     return new java.net.URI( s"file:///")
    }
    
+   /**
    def appendPath( p : Path) : Path = {
      new Path( basePath + "/" +  p.toUri.getPath)
    } 
+   * 
+   */
      
    override def listFiles( p : Path ) : Seq[FileStatus] = {
-       val file :File = appendPath(p)
+       val file :File = (p)
        System.out.println( " File is " + file)
        val lf = file.listFiles
        if( lf == null ) {
@@ -74,7 +79,7 @@ case class LocalFileSystem( val basePath : String = "/") extends FileSystem {
    
    
    override def listFilesRecursively( p : Path ) : Seq[FileStatus] = {
-     listFiles( appendPath(p) ).map( fs =>  { 
+     listFiles( (p) ).map( fs =>  { 
          if( fs.isFile ) {
            Seq( fs)
          } else if( fs.isDirectory ) {
@@ -85,16 +90,20 @@ case class LocalFileSystem( val basePath : String = "/") extends FileSystem {
        } ).flatten
    }
    
+   override def mkdirs( p : Path ) : Boolean = {
+     (p).mkdirs
+   }
+   
    override def readFile( path : Path ) : String = {
-     scala.io.Source.fromFile( appendPath(path)).toString
+     scala.io.Source.fromFile( (path)).toString
    }
    
    override def open( path : Path) : io.BufferedSource = {
-      scala.io.Source.fromFile(appendPath(path)) 
+      scala.io.Source.fromFile((path)) 
    }
    
    override def create( path : Path ) : java.io.OutputStream = {
-      new FileOutputStream(appendPath(path))
+      new FileOutputStream((path))
    }
    
    /**
@@ -108,30 +117,33 @@ case class LocalFileSystem( val basePath : String = "/") extends FileSystem {
    }  
    
    override def exists( p : Path ) : Boolean = {
-     appendPath(p).exists 
+     (p).exists 
    }
    
    override def isDirectory( p : Path ) : Boolean = {
-     appendPath(p).isDirectory
+     println( s" IS DIRECTORY $p")
+     (p).isDirectory
    }
    
    
    override def isFile( p : Path ) : Boolean = {
-     appendPath(p).isFile
+     (p).isFile
    }
    
    override def getStatus( p : Path ) : FileStatus = {
-     val f : File = appendPath(p)
+     val f : File = (p)
       f 
    }
    
    override def delete( p : Path ) =  {
      /// XXX handle return value
-     appendPath(p).delete 
+     (p).delete 
    }
 
 }
 
-object LocalFileSystem extends LocalFileSystem(System.getProperty("user.dir")) {
-  
+object LocalFileSystem extends LocalFileSystem  {
+   def currentDirectory : Path = {
+      new Path( System.getProperty("user.dir"))
+   } 
 }

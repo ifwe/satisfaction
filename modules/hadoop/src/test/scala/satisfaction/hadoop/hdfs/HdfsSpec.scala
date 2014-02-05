@@ -20,7 +20,9 @@ class HdfsSpec extends Specification {
     "Hdfs" should {
         "create URLS starting with hdfs" in {
           //// XXX use MiniFS for unit testing ...
-          val hdfsUrl = new java.net.URL("hdfs://jobs-dev-hnn/user/satisfaction/track/Sample/version_2.1/satisfaction.properties")
+          ///val hdfsUrl = new java.net.URL("hdfs://jobs-dev-hnn/user/satisfaction/track/Sample/version_2.1/satisfaction.properties")
+          /// Externalize configuration 
+          val hdfsUrl = new java.net.URL("hdfs://nameservice1/user/satisfaction/track/Sample/version_2.1/satisfaction.properties")
          
           val stream = hdfsUrl.openStream
           val props  = Substituter.readProperties( stream)
@@ -32,7 +34,7 @@ class HdfsSpec extends Specification {
         "List files" in {
           val hdfs = Hdfs.fromConfig(HdfsSpec.clientConfig)
           
-          val path = new Path("hdfs://jobs-dev-hnn/data/hive/maxwell/actor_action")
+          val path = new Path("hdfs://nameservice1/data/hive/maxwell/actor_action")
           
           
           hdfs.listFiles( path ).foreach( fs => {

@@ -35,6 +35,9 @@ case class Path(val  pathString : String ) {
        }
        new Path( prefix + "/" + extension)
     }
+     def /(  that : Path) : Path= {
+       /( that.pathString)
+     }
   
     def toUri : java.net.URI = {
       new java.net.URI( pathString)

@@ -3,11 +3,12 @@ package willrogers
 import play.api._
 import com.klout.satisfaction._
 import com.klout.satisfaction.track.TrackFactory
+import com.klout.satisfaction.track.TrackScheduler
 import com.klout.satisfaction.hadoop.hdfs.Hdfs
 import com.klout.satisfaction.hadoop.hive.ms._
 import com.klout.satisfaction.hadoop.Config
-
 import org.apache.hadoop.conf.{ Configuration => HadoopConfiguration }
+import com.klout.satisfaction.fs.Path
 
 object Global extends GlobalSettings {
 
@@ -53,9 +54,14 @@ object Global extends GlobalSettings {
       conf
     }
     val hdfsFS = Hdfs.fromConfig( hdfsConfig )
-    val trackPath = "/user/jerome/satisfaction"
+    val trackPath : Path = new Path("/user/jerome/satisfaction")
+    val trackScheduler = new TrackScheduler( engine.actors.ProofEngine)
       
-    implicit val trackFactory : TrackFactory = new TrackFactory( hdfsFS, trackPath)
+    implicit val trackFactory : TrackFactory = {
+      var tf = new TrackFactory( hdfsFS, trackPath, Some(trackScheduler))
+      trackScheduler.trackFactory = tf
+      tf
+    }
     
     implicit val hiveConf = Config.config
     

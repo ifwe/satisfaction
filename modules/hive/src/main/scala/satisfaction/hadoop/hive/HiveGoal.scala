@@ -21,8 +21,11 @@ object HiveGoal {
 
       //// Set the jar path 
         implicit val hiveConf : HiveConf =  table.ms.config
-        val hiveSatisfier = new HiveSatisfier(queryResource, HiveDriver(
-            track.auxJarFolder.getPath) )
+        ///val driver =  HiveDriver(track.auxJarFolder.getPath) 
+        val driver = new HiveLocalDriver()
+        val hiveSatisfier = new HiveSatisfier(queryResource,
+            driver)
+            ///HiveDriver(track.auxJarFolder.getPath) )
             ///"/Users/jeromebanks/NewGit/satisfaction/auxJars/KloutToBing")( Config.config))
         ///val hiveSatisfier = new HiveSatisfier(queryResource, new  HiveLocalDriver )
         

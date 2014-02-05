@@ -51,6 +51,11 @@ case class Goal(
         Goal.getPredicateString(this, w)
     }
     
+    def declareTopLevel() : Goal = {
+      track.addTopLevelGoal(this) 
+      this
+    }
+    
 }
 
 object Goal {

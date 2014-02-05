@@ -12,7 +12,7 @@ object TestGoal {
         val evidence = Set[Evidence](satisfier)
         val dependencies = Set[(Witness => Witness, Goal)]()
 
-        val goal = new Goal(name, Some(satisfier), variables, dependencies, evidence, track)
+        val goal = new Goal(name, Some(satisfier), variables, dependencies, evidence)
 
         goal
 
@@ -25,7 +25,7 @@ object TestGoal {
         val evidence = Set[Evidence](satisfier)
         val dependencies = Set[(Witness => Witness, Goal)]()
 
-        val goal = new Goal(name, Some(satisfier), variables,  dependencies, evidence, track)
+        val goal = new Goal(name, Some(satisfier), variables,  dependencies, evidence)
 
         goal
 
@@ -38,7 +38,7 @@ object TestGoal {
         val evidence = Set[Evidence](satisfier)
         val dependencies = Set[(Witness => Witness, Goal)]()
 
-        val goal = new Goal(name, Some(satisfier), variables, dependencies, evidence, track)
+        val goal = new Goal(name, Some(satisfier), variables, dependencies, evidence)
 
         goal
 
@@ -52,7 +52,7 @@ object TestGoal {
         val evidence = Set[Evidence](satisfier)
         val dependencies = Set[(Witness => Witness, Goal)]()
 
-        val goal = new Goal(name, Some(satisfier), variables, dependencies, evidence, track)
+        val goal = new Goal(name, Some(satisfier), variables, dependencies, evidence)
 
         goal
     }
