@@ -10,6 +10,7 @@ import scala.io.Source
 import org.apache.hadoop.hive.ql.metadata.HiveException
 
 case class HiveSatisfier(queryResource: String, driver: HiveDriver)( implicit val track : Track) extends Satisfier with MetricsProducing {
+   val execResult = new ExecutionResult( queryTemplate, new DateTime)
 
     def executeMultiple(hql: String): Boolean = {
         val multipleQueries = hql.split(";")
@@ -58,7 +59,6 @@ case class HiveSatisfier(queryResource: String, driver: HiveDriver)( implicit va
 
     @Override
     override def satisfy(params: Substitution): ExecutionResult = {
-      val execResult = new ExecutionResult( queryTemplate, new DateTime)
       try {
 
         val allProps = track.getTrackProperties(params)
@@ -101,6 +101,14 @@ case class HiveSatisfier(queryResource: String, driver: HiveDriver)( implicit va
           execResult.markUnexpected( unexpected)
       }
     }
+    
+    @Override 
+    override def abort() : ExecutionResult =  {
+      
+      driver.abort
+      execResult.markFailure 
+    }
+      
     
    ///
     def jobMetrics : MetricsCollection =  {

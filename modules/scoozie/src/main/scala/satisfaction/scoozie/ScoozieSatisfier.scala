@@ -8,13 +8,16 @@ import com.klout.scoozie.dsl._
 import com.klout.scoozie.runner._
 import com.klout.scoozie.jobs._
 import util.{ Left, Right }
+import collection.JavaConversions._
 import org.joda.time.DateTime
+import org.apache.oozie.client.OozieClient
 
 class ScoozieSatisfier(workflow: Workflow) (implicit track : Track) extends Satisfier {
 
     val appPathParam: Variable[String] = Variable("scoozie.wf.application.path")
     val ScoozieUrlParam: Variable[String] = Variable("scoozie.oozie.url")
     val appRootParam: Variable[String] = Variable("applicationRoot")
+    var scoozieUrl : String = null
 
     @Override
     override def satisfy(params: Substitution): ExecutionResult = {
@@ -45,10 +48,10 @@ class ScoozieSatisfier(workflow: Workflow) (implicit track : Track) extends Sati
                     val execResult = new ExecutionResult(oozieFail.jobId , timeStarted)
                     
                     execResult.errorMessage = oozieFail.jobLog
-                      execResult
+                    execResult.markFailure
                 case Right(oozieSuccess) =>
                     println(s" Huzzah !!! Oozie job ${oozieSuccess.jobId} has completed with great success!!!")
-                    val execResult = new ExecutionResult( oozieSuccess.jobId, timeStarted)
+                    val execResult = new ExecutionResult( workflow.name, timeStarted)
                     execResult.markSuccess
             }
         } catch {
@@ -58,6 +61,25 @@ class ScoozieSatisfier(workflow: Workflow) (implicit track : Track) extends Sati
                 val execResult = new ExecutionResult( "Job Failed " + workflow.name, timeStarted )
                 execResult.markUnexpected( unexpected)
         }
+    }
+    
+    override def abort() : ExecutionResult = {
+      /// Can we abort the process ???
+      /// Should be part of scoozie, but 
+      ///   not currently accessible 
+      if(scoozieUrl != null) {
+      	val oozieClient = new OozieClient( scoozieUrl)
+      	/// Somehow get the Job Id from the scoozie client ...
+      	//// For now try killing jobs with that name 
+      	//// Might not work with multiple oozies
+      	oozieClient.getJobsInfo(s"NAME=${workflow.name}") foreach( wfj => {
+           println(s" Killing Oozie WF ${wfj.getAppName} ${wfj.getId} ")
+           oozieClient.kill( wfj.getId )
+        })
+      } 
+      val execResult = new ExecutionResult( workflow.name, DateTime.now)
+      execResult.markFailure
+      
     }
 
     

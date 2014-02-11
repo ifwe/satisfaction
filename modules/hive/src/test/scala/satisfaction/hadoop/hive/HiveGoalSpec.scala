@@ -28,12 +28,13 @@ class HiveGoalSpec extends Specification {
 
     "HiveGoalSpec" should {
        "Run a Hive goal" in {
+            implicit val track : Track = new Track(TrackDescriptor("HiveTrack"))
             val vars: Set[Variable[_]] = Set(NetworkAbbr, runDate)
             val actorAction: Goal = HiveGoal(
                 name = "Fact Content",
                 queryResource ="fact_content.hql",
                 table = HiveTable("bi_maxwell", "actor_action"),
-                overrides = None, Set.empty);
+                 Set.empty);
 
             val witness = Witness((runDate -> "20140117"), (NetworkAbbr -> "li"))
             val goalResult = Satisfaction.satisfyGoal(actorAction, witness)

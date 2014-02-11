@@ -56,6 +56,8 @@ case class HadoopSatisfier[KeyIn,ValIn,MapKeyOut,MapValOut,KeyOut,ValOut]( name 
   override def progressCounter = _hadoopProgress
   
   private var _hadoopMetrics : MetricsCollection = null
+  private var _jobClient : JobClient = null
+  private var _runningJob : RunningJob = null
   
   override def jobMetrics : MetricsCollection  = {
     _hadoopMetrics
@@ -87,14 +89,14 @@ case class HadoopSatisfier[KeyIn,ValIn,MapKeyOut,MapValOut,KeyOut,ValOut]( name 
     jobConf.setKeyFieldPartitionerOptions( partitionerOptions)
     
     
-    val jobClient = new JobClient( jobConf)
-    val runningJob = jobClient.submitJob(jobConf)
+    _jobClient = new JobClient( jobConf)
+    _runningJob = _jobClient.submitJob(jobConf)
     
-    _hadoopProgress = new HadoopJobProgress( runningJob)   
+    _hadoopProgress = new HadoopJobProgress( _runningJob)   
    
-    runningJob.waitForCompletion()
-    _hadoopMetrics = getMetricsFromCounters( runningJob.getCounters)
-    getExecResultFromJob(runningJob)
+    _runningJob.waitForCompletion()
+    _hadoopMetrics = getMetricsFromCounters( _runningJob.getCounters)
+    getExecResultFromJob(_runningJob)
   }
   
   
@@ -114,6 +116,11 @@ case class HadoopSatisfier[KeyIn,ValIn,MapKeyOut,MapValOut,KeyOut,ValOut]( name 
      execResult.metrics.mergeMetrics( getMetricsFromCounters( job.getCounters ))
      
      execResult
+  }
+  
+  override def abort() : ExecutionResult = {
+    _runningJob.killJob();
+    getExecResultFromJob(_runningJob)
   }
   
   

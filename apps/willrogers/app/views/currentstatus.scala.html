@@ -29,6 +29,7 @@
      <td>@HtmlUtil.formatWitness( gs.witness )</td>
      <td>@HtmlUtil.formatDate( gs.timeStarted )</td>
      <td> <button id="logWindowButton" onClick="window.open('/logwindow/@gs.track.trackName/@gs.goalName/@{HtmlUtil.witnessPath(gs.witness)}')">Show Log</button></td>
+     <td> <button id="abortButton" onClick="window.location.href='/abort/@gs.track.trackName/@gs.goalName/@{HtmlUtil.witnessPath(gs.witness)}'">Abort</button></td>
      </tr>
   }
    </table>
@@ -43,7 +44,7 @@
    <td>Witness</td>
    <td>Started</td>
    </theads>
-  @gsList.filter( _.state == GoalState.WaitingOnDependencies ).map { gs => 
+  @gsList.filter(gst => { gst.state == GoalState.WaitingOnDependencies || gst.state == GoalState.DependencyFailed } ).map { gs => 
      <tr>
      <td>@gs.track.trackName</td>
      <td>@gs.goalName</td>
@@ -77,6 +78,9 @@
      <td>@HtmlUtil.formatDate( gs.execResult.timeStarted )</td>
      <td>@HtmlUtil.formatDate( gs.timeFinished )</td>
      <td> <button id="logWindowButton" onClick="window.open('/logwindow/@gs.track.trackName/@gs.goalName/@{HtmlUtil.witnessPath(gs.witness)}')">Show Log</button></td>
+      @if( gs.state == GoalState.Failed) {
+          <td> <button id="restartButton" onClick="window.location.href='/restart/@gs.track.trackName/@gs.goalName/@{HtmlUtil.witnessPath(gs.witness)}'">Restart</button></td>
+       }
      </tr>
   }
    

@@ -8,10 +8,14 @@ import org.apache.hadoop.util.ToolRunner
 import org.joda.time.DateTime
 import hdfs._
 import fs._
+import org.apache.hadoop.mapred.JobClient
+import org.apache.hadoop.mapred.JobStatus
+import org.apache.hadoop.mapred.RunningJob
 
 class DistCpSatisfier(val src: VariablePath, val dest: VariablePath)( implicit val hdfs : FileSystem , implicit val track: Track) extends Satisfier  {
 
     var execResult : ExecutionResult = null
+    var _distCp : DistCp = null
 
     @Override
     override def satisfy(projParams: Substitution): ExecutionResult = {
@@ -58,12 +62,42 @@ class DistCpSatisfier(val src: VariablePath, val dest: VariablePath)( implicit v
         }
     }
     
+    /**
+     * Determine if the job is our DistCp job
+     */
+    def isDistCpJob( js: JobStatus , jc: JobClient) : Boolean = {
+      /// XXX 
+       val checkJob: RunningJob =  jc.getJob( js.getJobID)
+       //// Figure out proper Job name
+       checkJob.getJobName.toLowerCase.contains("distcp")
+    }
+    
+    @Override 
+    override def abort() : ExecutionResult = {
+      if(_distCp != null) {
+         val jobClient = new JobClient(_distCp.getConf() )
+         val allJobs = jobClient.getAllJobs
+        allJobs.filter( isDistCpJob( _, jobClient )) foreach( js => {
+            if( js.getRunState() == JobStatus.RUNNING) {
+               println(s"Killing job ${js.getJobId}  ")
+               val checkJob: RunningJob =  jobClient.getJob( js.getJobID)
+               checkJob.killJob
+               return execResult.markFailure 
+            }
+        } )
+        ///TODO XXX Fix DistCp abort
+      
+      }
+      
+       execResult.markFailure
+    }
+    
     
 
     def distcp(args: Array[String]): Int = {
         val job = new JobConf();
-        val distcp = new DistCp(job);
-        ToolRunner.run(distcp, args);
+        _distCp = new DistCp(job);
+        ToolRunner.run(_distCp, args);
     }
 
 }

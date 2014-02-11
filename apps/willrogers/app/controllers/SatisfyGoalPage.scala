@@ -58,6 +58,7 @@ object SatisfyGoalPage extends Controller {
         println(" Number of Goals in Progress are " + statList.size)
         Ok(views.html.currentstatus( statList))
     }
+    
 
     def showSatisfyForm(trackName: String, goalName: String) = Action {
         val goal = getTrackGoalByName(trackName, goalName)
@@ -213,6 +214,36 @@ object SatisfyGoalPage extends Controller {
        } 
     }
     
+    /**
+     *  Abort a running job 
+     */
+    def abortJob( trackName: String, goalName : String , varString : String  ) = Action {
+       val witness = parseWitness( varString)
+       val goalOpt = getTrackGoalByName( trackName, goalName)
+       goalOpt match {
+            case Some(abortGoal) =>
+             ProofEngine.abortGoal(abortGoal._2, witness)
+             ///currentStatusActiono       
+             ///val statList = ProofEngine.getGoalsInProgress
+             ///Ok(views.html.currentstatus( statList))
+             Redirect( routes.SatisfyGoalPage.currentStatusAction)
+            case None =>
+              NotFound(s" No Goal found for $trackName $goalName $witness")
+       }
+    }
+    
+    def restartJob( trackName: String, goalName : String , varString : String  ) = Action {
+       val witness = parseWitness( varString)
+       val goalOpt = getTrackGoalByName( trackName, goalName)
+       goalOpt match {
+          case Some(abortGoal) =>
+             ProofEngine.restartGoal(abortGoal._2, witness)
+             ///currentStatusActiono       
+             Redirect( routes.SatisfyGoalPage.currentStatusAction)
+          case None =>
+              NotFound(s" No Goal found for $trackName $goalName $witness")
+       }
+    }
    
     /**
      *  Display a list of available log files for a given track

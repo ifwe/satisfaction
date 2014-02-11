@@ -23,7 +23,7 @@ class DistCpGoalSpec extends Specification {
     implicit  val ms : MetaStore = MetaStore(new java.net.URI("thrift://jobs-dev-sched2:9093"))
     implicit  val hdfs : FileSystem = new Hdfs("hdfs://jobs-dev-hnn" )
     
-    implicit val track : Track = new Track(TrackDescriptor("TestTrack"), Set.empty)
+    implicit val track : Track = new Track(TrackDescriptor("TestTrack"))
    
 
     "DistCpSpec" should {

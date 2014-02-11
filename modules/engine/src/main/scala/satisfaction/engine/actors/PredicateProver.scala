@@ -90,19 +90,6 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
                 case (pred, actorRef) =>
                     (actorRef ask WhatsYourStatus).mapTo[StatusResponse]
             }
-            /**
-             * futureSet.foreach(f => {
-             * f onSuccess {
-             * }
-             *
-             * case Success(resp) =>
-             * currentStatus.addChildStatus(resp.goalStatus)
-             * }
-             * currentStatus.addChildStatus(f.goalStatus)
-             * ///currentStatus.addChildStatus(f.apTo[StatusResponse].goalStatus)
-             * })
-             *
-             */
             Future.sequence(futureSet).map { statusList =>
                 statusList.foreach { resp =>
                     status.addChildStatus(resp.goalStatus)
@@ -136,9 +123,27 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
             case _ =>
               sender ! InvalidRequest(status,"Job needs to have failed in order to be restarted")
           }
-
         case Abort =>
-           //// If our job is running ... kill it 
+          status.state match {
+            case GoalState.Unstarted |
+                 GoalState.AlreadySatisfied |
+                 GoalState.Success |
+            	 GoalState.Failed =>
+              sender ! GoalSuccess( status)
+            case GoalState.Running =>
+              /// If our job is running ... kill it 
+              //// XXX Handle return messages ?
+               jobRunner ! Abort
+              sender ! GoalSuccess( status)
+              //// check the status after attempting to abort the job
+            case GoalState.DependencyFailed  |
+            	 GoalState.WaitingOnDependencies =>
+                  dependencies.foreach {
+                    case (pred, actor) =>
+                    actor ! Abort
+                  }
+              sender ! GoalSuccess( status)
+          }
 
         /// Messages which can be sent from children
         case GoalFailure(failedStatus) =>

@@ -36,7 +36,11 @@ object HiveGoal {
             satisfier = Some(hiveSatisfier),
             variables = tblVariables,
             depends,
-            evidence = tblOutputs)
+            evidence = tblOutputs) {
+          
+           ///// XXX override satify to 
+            
+        }
     }
 
 }

@@ -74,12 +74,10 @@ class HiveClient(val jdbcDriverUrl: String) extends HiveDriver {
 
         }
     }
-
-}
-//// Use the embedded HiveClient by default
-////object HiveClient extends HiveClient("jdbc:hive2://") {
-object HiveClient extends HiveClient("jdbc:hive2://jobs-dev-sched2:11113") {
-
-    ///object HiveClient extends HiveClient("jdbc:hive2://localhost:1111") {
+    
+    def abort() {
+       /// How to abort ???
+       connection.rollback
+    }
 
 }

@@ -6,7 +6,11 @@ import collection.mutable.{ HashMap => MutableHashMap }
 trait Satisfier {
 
     def satisfy(subst: Substitution): ExecutionResult
-
+    
+    /**
+     *  If possible, abort the job
+     */
+    def abort() : ExecutionResult
 }
 
 

@@ -26,6 +26,7 @@ import java.io.BufferedReader
 import java.io.FileReader
 import scala.util.control.Breaks
 import satisfaction.hadoop.Config
+import org.apache.hadoop.hive.ql.exec.HadoopJobExecHelper
 
 /**
  * Executes jobs locally
@@ -44,6 +45,8 @@ trait HiveDriver {
     def useDatabase(dbName: String)
 
     def executeQuery(query: String): Boolean
+    
+    def abort() 
 
 }
 
@@ -156,6 +159,16 @@ class HiveLocalDriver( implicit val hiveConf : HiveConf = Config.config , implic
        println(s" Text is $readFile")
        //// XXX do proper escaping, and parse out comments ...
        readFile.split(";").filter( _.startsWith("---")).forall( executeQuery(_) )
+    }
+    
+    
+    def abort() = {
+      
+       /// Not sure this works with multiple Hive Goals ...
+       /// Hive Driver is somewhat opaque
+       println(" Aborting all jobs for Hive Query ")
+       HadoopJobExecHelper.killRunningJobs()
+      
     }
 
     override def executeQuery(query: String): Boolean = {

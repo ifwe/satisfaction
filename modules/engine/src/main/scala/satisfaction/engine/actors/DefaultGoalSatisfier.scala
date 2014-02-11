@@ -21,6 +21,7 @@ import org.joda.time.DateTime
  * rather than to call Thread.sleep(), hogging the thread.
  */
 
+/**
 case class WaitingSatisfier(val evidence : Set[Evidence]) extends Satisfier {
   
     var remainingEvidence : Set[Evidence]  = evidence
@@ -42,9 +43,13 @@ case class WaitingSatisfier(val evidence : Set[Evidence]) extends Satisfier {
 
   
 }
+* **
+*/
 class DefaultGoalSatisfier(
      evidence: Set[Evidence],
     witness: Witness) extends Actor with ActorLogging {
+  
+   /// XXX Use LogWrapper to preserve time logs ???
 
     implicit val executionContext : ExecutionContext = ExecutionContext.global
     
@@ -101,7 +106,7 @@ class DefaultGoalSatisfier(
     def checkAgainLater() {
         ///context.system.scheduler.scheduleOnce(1.minute, self, CheckEvidence)
         log.info(" Check again LATER !!!")
-        context.system.scheduler.scheduleOnce(10 second, self, CheckEvidence)
+        context.system.scheduler.scheduleOnce(30 second, self, CheckEvidence)
       
     }
 

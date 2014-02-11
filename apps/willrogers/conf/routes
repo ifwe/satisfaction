@@ -25,6 +25,9 @@ GET     /editfile/:trackName/:fileName          willrogers.controllers.EditPage.
 GET     /loghistory/:trackName                   willrogers.controllers.SatisfyGoalPage.logHistory(trackName: String)
 GET     /logwindow/:trackName/:goalName/:varString                   willrogers.controllers.SatisfyGoalPage.logWindow(trackName: String, goalName: String, varString : String)
 GET     /rawlog/:trackName/:goalName/:varString                   willrogers.controllers.SatisfyGoalPage.rawLog(trackName: String, goalName: String, varString : String)
+GET     /restart/:trackName/:goalName/:varString                   willrogers.controllers.SatisfyGoalPage.restartJob(trackName: String, goalName: String, varString : String)
+GET     /abort/:trackName/:goalName/:varString                   willrogers.controllers.SatisfyGoalPage.abortJob(trackName: String, goalName: String, varString : String)
+
 
 
 # Map static resources from the /public folder to the /assets URL path

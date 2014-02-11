@@ -23,8 +23,8 @@ import satisfaction.track._
  */
 
 
-object MockTrackFactory   extends TrackFactory(
-   new LocalFileSystem( System.getProperty("user.dir") + "/src/test/resources") ) {
+object MockTrackFactory   extends TrackFactory( LocalFileSystem, 
+      LocalFileSystem.currentDirectory / "modules/hadoop/test/resource/user/satisfaction/track") {
   
 }
 
@@ -34,17 +34,27 @@ class HiveTrackSpec extends Specification {
     val DoDistcp = new Variable[Boolean]("doDistcp", classOf[Boolean])
     val runDate = new Variable[String]("dt", classOf[String])
     
-    implicit val ms : MetaStore = MetaStore( new java.net.URI("thrift://jobs-dev-sched2:9085") )
     implicit val hdfs : FileSystem = new Hdfs("hdfs://jobs-dev-hnn") 
 
-    "HiveGoalSpec" should {
-       "Get Track" in {
+    "HiveTrackSpec" should {
+       "Get AllTracks" in {
            val trackFactory = new TrackFactory(hdfs)
            val allTracks = trackFactory.getAllTracks
            System.out.println(" Number of tracks is " + allTracks.length)
            allTracks.foreach( td => { println(s"Track is $td ") } )
            
        }
+       
+       "Get Simple" in {
+           val trackFactory = new TrackFactory(hdfs)
+           
+           val track = trackFactory.getTrack(TrackDescriptor("Sample"))
+           
+           println(" Simple Track = " + track)
+          
+           
+       }
+       
 
     }
 }

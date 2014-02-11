@@ -16,7 +16,7 @@ class HdfsPathSpec extends Specification {
     implicit val hdfs : FileSystem = Hdfs.fromConfig(HdfsSpec.clientConfig)
     implicit val track : Track = {
       
-      val tr = new Track( TrackDescriptor("Test Track"), Set.empty)
+      val tr = new Track( TrackDescriptor("Test Track"))
       tr.setTrackProperties(new Substitution( Set(Variable( "Bogis") -> "blah")))
       tr
     }

@@ -61,14 +61,31 @@ class ProofEngine {
             val response = Await.result(f, Duration(6, HOURS))
             response match {
                 case s: GoalSuccess =>
-                    println(" Goal Was Satisfied")
+                    println(" Restart Goal Was Successfull" )
                     ProverFactory.releaseProver(proverFactory, goal, witness)
                     s.goalStatus
                 case f: GoalFailure =>
-                    println(" Failure ")
+                    println(" Restart Failure ")
                     f.goalStatus
             }
         }
+    }
+    
+    def abortGoal( goal : Goal, witness: Witness) : Future[GoalStatus] = {
+      future {
+         val f = getProver( goal, witness ) ? Abort
+         val response = Await.result( f, Duration( 6, HOURS))
+         response match {
+            case s: GoalSuccess =>
+               println(" Abort was successful ")
+               ProverFactory.releaseProver(proverFactory, goal, witness)
+               s.goalStatus
+            case f: GoalFailure =>
+               println(" Failure to Abort -- releasing anyway  ")
+               ProverFactory.releaseProver(proverFactory, goal, witness)
+               f.goalStatus
+         }
+      }
     }
 
     def isSatisfied( goal: Goal, witness: Witness): Boolean = {

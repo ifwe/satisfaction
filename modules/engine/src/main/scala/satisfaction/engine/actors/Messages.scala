@@ -21,7 +21,7 @@ case class Satisfy(forceSatisfy: Boolean)
 ///   has actually been completed
 case class IsSatisfied(doRecursive: Boolean)
 ///   Abort the current execution 
-case class Abort()
+case class Abort( killChildren: Boolean=true)
 /// Query the current status of all witnesses 
 case class WhatsYourStatus()
 

@@ -32,11 +32,13 @@ class JobRunner(
     
     var satisfierFuture: Future[ExecutionResult] = null
     var messageSender: ActorRef = null
+    var startTime : DateTime = null;
     val logger = new LogWrapper[ExecutionResult]( track, goal, witness)
 
     def receive = {
         case Satisfy =>
             log.info(s"Asked to satisfy for params: ${params}")
+            startTime = DateTime.now
 
             if (satisfierFuture == null) {
                 satisfierFuture = future {
@@ -46,8 +48,8 @@ class JobRunner(
                         execResult
                       case Failure(throwable) =>
                         //// Error occurred somehow because of logging,
-                        ///   or from satisfier
-                        val execResult = new ExecutionResult(goal.name, new DateTime )
+                        ///   or from satisfier throwing unexpected exception
+                        val execResult = new ExecutionResult(goal.name, startTime )
                         execResult.hdfsLogPath = logger.getHdfsLogPath 
                         execResult.markUnexpected( throwable)
                       
@@ -58,6 +60,15 @@ class JobRunner(
                     checkResults(_)
                 }
             }
+        case Abort =>
+          log.warning(" Aborting Job !!!")
+          try {
+             val abortResult : ExecutionResult = satisfier.abort()
+              checkResults( Success(abortResult))
+          } catch {
+            case unexpected : Throwable =>
+              checkResults( Failure(unexpected))
+          }
           
     }
 

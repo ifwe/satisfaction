@@ -23,7 +23,7 @@ class ProofEngineSpec extends Specification {
     val DoDistcp = new Variable[Boolean]("doDistcp", classOf[Boolean])
     val runDate = new Variable[String]("dt", classOf[String])
 
-    implicit val track : Track = new Track( TrackDescriptor("TestTrack"), Set.empty)
+    implicit val track : Track = new Track( TrackDescriptor("TestTrack"))
     "ProofEngineSpec" should {
 
       

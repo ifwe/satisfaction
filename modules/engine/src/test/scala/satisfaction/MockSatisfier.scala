@@ -15,18 +15,29 @@ class MockSatisfier extends Satisfier with Evidence {
     var varMap = Set[String]()
 
     var retCode = true
+    var startTime : DateTime = null
 
     @Override 
     def satisfy(params: Substitution): ExecutionResult = {
         println(" Satisfy for params " + params.raw.mkString(","))
+        startTime = DateTime.now
         varMap ++= params.raw.keySet
         println("  Returning code " + retCode)
-        val execResult = new ExecutionResult("MockSatisfier", new DateTime )
+        val execResult = new ExecutionResult("MockSatisfier", startTime )
         execResult.isSuccess = retCode
         execResult.timeEnded  = new DateTime
         
         
         execResult
+    }
+    
+    @Override 
+    override def abort() : ExecutionResult = {
+      
+      val abortResult = new ExecutionResult("MockSatisfier", startTime);
+      abortResult.isSuccess = false;
+      abortResult.timeEnded = DateTime.now
+      abortResult
     }
 
     def exists(w: Witness): Boolean = {

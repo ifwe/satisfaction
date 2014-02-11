@@ -23,7 +23,7 @@ class GoalSpec extends Specification {
   }
      
      "Add Evidence" in {
-       implicit val track : Track = new Track(TrackDescriptor("TestTrack"), Set.empty)
+       implicit val track : Track = new Track(TrackDescriptor("TestTrack"))
        val goal : Goal = new Goal(name="TestGoal",satisfier=None)
        
        
