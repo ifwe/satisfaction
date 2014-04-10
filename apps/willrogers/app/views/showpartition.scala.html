@@ -1,9 +1,9 @@
-@(dbName : String , tblName : String, part: org.apache.hadoop.hive.ql.metadata.Partition )
+@(dbName : String , tblName : String, ms : com.klout.satisfaction.hadoop.hive.ms.MetaStore, part: org.apache.hadoop.hive.ql.metadata.Partition )
 
 @import helper._
-@import org.apache.hadoop.hive.metastore._
 @import org.apache.hadoop.hive.ql.metadata._
 @import scala.collection.JavaConversions._
+@import com.klout.satisfaction.hadoop.hive.ms._
 
 
 
@@ -12,7 +12,7 @@
     <h1>Database @dbName Table @tblName Partition @part.getName </h1>
      <h2>@part.getCompleteName</h2> 
      <h2>Location @part.getDataLocation.toASCIIString</h2>
-     <h2>Total Space Used : @hive.ms.MetaStore.getSpaceUsedPartition( part ) </h2>
+     <h2>Total Space Used : @ms.getSpaceUsedPartition( part ) </h2>
      <h2>Last Accesed : @part.getLastAccessTime </h2>
  <table>
  <tr>
@@ -21,7 +21,7 @@
   <h3>MetaData</h3>
  <table>
   <thead><td>Property</td><td>Value</dt></thead>
-  @hive.ms.MetaStore.getTableMetaData( dbName, tblName).foreach { case(k,v) =>
+  @ms.getTableMetaData( dbName, tblName).foreach { case(k,v) =>
   	<tr><td>@k</td><td>@v</td></tr>
   	}
 </div> 

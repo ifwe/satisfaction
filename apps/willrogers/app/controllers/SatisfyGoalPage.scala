@@ -1,3 +1,4 @@
+package willrogers
 package controllers
 
 import play.api._
@@ -8,19 +9,17 @@ import play.api.mvc.Results._
 import play.api.data.validation.Constraints._
 import play.api.mvc.Action
 import models.VariableHolder
-import hive.ms._
 import play.api.mvc.Call
 import com.klout.satisfaction._
-import com.klout.satisfaction.executor._
-import com.klout.satisfaction.executor.actors.ProofEngine
-import com.klout.satisfaction.executor.actors._
-import com.klout.satisfaction.executor.actors.GoalState
+import com.klout.satisfaction.engine._
+import com.klout.satisfaction.engine.actors._
 import java.io.FileInputStream
 import java.io.File
 import models.PlumbGraph
 import models.VariableFormHandler
 import collection._
 import play.mvc.Results
+import models.HtmlUtil
 
 object SatisfyGoalPage extends Controller {
 
@@ -59,6 +58,7 @@ object SatisfyGoalPage extends Controller {
         println(" Number of Goals in Progress are " + statList.size)
         Ok(views.html.currentstatus( statList))
     }
+    
 
     def showSatisfyForm(trackName: String, goalName: String) = Action {
         val goal = getTrackGoalByName(trackName, goalName)
@@ -77,14 +77,8 @@ object SatisfyGoalPage extends Controller {
         getStatusForGoal(trackName, goalName) match {
             case Some(status) =>
                 val plumb = plumbGraphForStatus(status)
-                if (status.state == GoalState.Running) {
-                    /// Read log files 
                     println(s" Running Job for status $status")
-                    val logs = readLogFile(status.track, status.goalName, status.witness)
-                    Ok(views.html.goalstatus(trackName, goalName, status, Some(logs), Some(plumb)))
-                } else {
-                    Ok(views.html.goalstatus(trackName, goalName, status, None, Some(plumb)))
-                }
+                 Ok(views.html.goalstatus(trackName, goalName, status.witness, status, Some(plumb)))
             case None =>
               println( " NO STATUS FOUND -- DISPlaying history ")
               goalHistory( trackName, goalName)
@@ -114,6 +108,8 @@ object SatisfyGoalPage extends Controller {
         topNodeDiv.posX = 25
         topNodeDiv.posY = 2
         topNodeDiv.color = getColorForState(status.state)
+        val witStr = HtmlUtil.witnessPath( status.witness )
+        topNodeDiv.onClick = s"window.open('/logwindow/${status.track.trackName}/${status.goalName}/${witStr}')"
         pg.addNodeDiv(topNodeDiv)
 
         plumbGraphForStatusRecursive(pg, status, topNodeDiv, nodeMap)
@@ -155,6 +151,8 @@ object SatisfyGoalPage extends Controller {
             depNode.posY = currentNode.posY + currentNode.height + 3
             depNode.posX = startX + depNode.width + 3
             depNode.color = getColorForState(depGoalStatus.state)
+            val witStr = HtmlUtil.witnessPath( depGoalStatus.witness )
+            depNode.onClick = s"window.open('/logwindow/${depGoalStatus.track.trackName}/${depGoalStatus.goalName}/${witStr}')"
             startX = depNode.posX
             pg.addConnection(depNode, currentNode)
 
@@ -163,14 +161,97 @@ object SatisfyGoalPage extends Controller {
 
     }
 
-    def readLogFile(track : TrackDescriptor, goalName: String, witness: Witness): String = {
+    def readLogFile(track : TrackDescriptor, goalName: String, witness: Witness): Option[String] = {
         val logFile = LogWrapper.logPathForGoalWitness(track, goalName, witness)
 
         if (logFile.exists()) {
-            io.Source.fromFile(logFile).getLines.mkString("<br>\n")
+            Some( io.Source.fromFile(logFile).getLines.mkString("<br>\n"))
         } else {
-            ""
+            None
         }
+    }
+    
+    def parseWitness( varString : String ) : Witness = {
+      val vaSeq : Seq[VariableAssignment[String]] = varString.split(";").map( _.split("=") ).map( kvArr  => 
+           { VariableAssignment[String](Variable( kvArr(0)), kvArr(1) ) } )
+      
+       Witness( vaSeq:_*)
+    }
+    
+    /** 
+     *   Convert a witness to a String which can be passed as a string in an URL
+     */
+    def witnessPath( witness : Witness ) : String = {
+      witness.substitution.assignments.map( ass => {
+           s"${ass.variable.name}=${ass.value}"
+      } ).mkString(";")
+    }
+    
+    /**
+     * For a particular witness, display  a log window
+     */
+    def logWindow( trackName: String, goalName : String , varString : String  ) = Action {
+       val witness = parseWitness( varString)
+       
+       val logFileOpt = readLogFile( TrackDescriptor( trackName), goalName, witness) 
+        Ok(views.html.logwindow(trackName, goalName , witness, logFileOpt ))
+       
+    }
+    
+    /**
+     *  Just output the logs as raw text ...
+     */
+    def rawLog( trackName: String, goalName : String , varString : String  ) = Action {
+       val witness = parseWitness( varString)
+       
+       val logFileOpt = readLogFile( TrackDescriptor( trackName), goalName, witness) 
+       logFileOpt match {
+         case Some(logFile) =>
+           Ok( logFile)
+         
+         case None =>
+           NotFound(s" No Log File for $trackName $goalName $witness")
+       } 
+    }
+    
+    /**
+     *  Abort a running job 
+     */
+    def abortJob( trackName: String, goalName : String , varString : String  ) = Action {
+       val witness = parseWitness( varString)
+       val goalOpt = getTrackGoalByName( trackName, goalName)
+       goalOpt match {
+            case Some(abortGoal) =>
+             ProofEngine.abortGoal(abortGoal._2, witness)
+             ///currentStatusActiono       
+             ///val statList = ProofEngine.getGoalsInProgress
+             ///Ok(views.html.currentstatus( statList))
+             Redirect( routes.SatisfyGoalPage.currentStatusAction)
+            case None =>
+              NotFound(s" No Goal found for $trackName $goalName $witness")
+       }
+    }
+    
+    def restartJob( trackName: String, goalName : String , varString : String  ) = Action {
+       val witness = parseWitness( varString)
+       val goalOpt = getTrackGoalByName( trackName, goalName)
+       goalOpt match {
+          case Some(abortGoal) =>
+             ProofEngine.restartGoal(abortGoal._2, witness)
+             ///currentStatusActiono       
+             Redirect( routes.SatisfyGoalPage.currentStatusAction)
+          case None =>
+              NotFound(s" No Goal found for $trackName $goalName $witness")
+       }
+    }
+   
+    /**
+     *  Display a list of available log files for a given track
+     */
+    def logHistory( trackName : String ) = Action {
+      val goalLogMap = LogWrapper.getGoalLogMap( trackName)
+      
+      Ok(views.html.loghistory(trackName, goalLogMap))
     }
 
     def getStatusForGoal(trackName: String, goalName: String): Option[GoalStatus] = {
@@ -206,8 +287,8 @@ object SatisfyGoalPage extends Controller {
         //// instead of holding onto the Future, 
         //// just ask again to get current status,
         //// and bring up project status page
-        ProofEngine.satisfyGoal(track, goal, witness)
-        ProofEngine.getStatus(track, goal, witness)
+        ProofEngine.satisfyGoal( goal, witness)
+        ProofEngine.getStatus( goal, witness)
     }
 
     def getTrackByName(trackName: String): Track = {
