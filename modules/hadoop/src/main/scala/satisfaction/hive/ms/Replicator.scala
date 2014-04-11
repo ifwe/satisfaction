@@ -111,7 +111,6 @@ object Replicator {
             ///oldTbl = toMs.getTable( fromTable.getDbName(), fromTable.getTableName())
             
         } else {
-            toMs.setCurrentDatabase(fromTable.getDbName()) /// sic ..
             fromTable.setDataLocation( movedLocation( fromTable.getDataLocation , JOBS_DEV))
             toMs.alterTable(fromTable.getTableName(), fromTable)
         }
@@ -138,7 +137,6 @@ object Replicator {
                         val newPart = toMs.getPartition(fromTable, getPartitionSpecFromName(partName), true, oldPart.getPartitionPath().toString(), true)
                         println(" New Part is " + newPart)
                         ///val newPart = toMs.createPartition(oldTbl, partSpec )
-                        toMs.setCurrentDatabase(fromTable.getDbName())
                         toMs.alterPartition(fromTable.getTableName(), oldPart)
                     } else {
                         println(" Skipping old partition " + partName);

@@ -6,11 +6,17 @@ import org.apache.hadoop.mapred.JobConf
 import org.apache.hadoop.tools.DistCp
 import org.apache.hadoop.util.ToolRunner
 import org.joda.time.DateTime
-import hdfs._
-import fs._
+import hdfs.Hdfs
+import hdfs.HdfsImplicits
+import hdfs.HdfsPath
+import hdfs.VariablePath
+import fs.FileSystem
+import fs.Path
 import org.apache.hadoop.mapred.JobClient
 import org.apache.hadoop.mapred.JobStatus
 import org.apache.hadoop.mapred.RunningJob
+import org.apache.hadoop.tools.DistCpOptions
+import org.apache.hadoop.fs.{Path => ApachePath}
 
 class DistCpSatisfier(val src: VariablePath, val dest: VariablePath)( implicit val hdfs : FileSystem , implicit val track: Track) extends Satisfier  {
 
@@ -44,8 +50,7 @@ class DistCpSatisfier(val src: VariablePath, val dest: VariablePath)( implicit v
             }
             println(s"Distcp'ing ${srcPath} to ${destPath.path.toUri} ")
 
-            val args: Array[String] = Array[String](srcPath.toString, destPath.toString)
-            val result = distcp(args);
+            val result = distcp(srcPath.path, destPath.path);
             //// Does DistCp have return codes ??
             println(s" Result of DistCp is $result")
             if (result == 0) {
@@ -94,9 +99,20 @@ class DistCpSatisfier(val src: VariablePath, val dest: VariablePath)( implicit v
     
     
 
-    def distcp(args: Array[String]): Int = {
+    def distcp(src : Path, dest : Path): Int = {
         val job = new JobConf();
-        _distCp = new DistCp(job);
+
+
+        /// Why won't my implicits get invoked ???
+        val apacheSrc : ApachePath = HdfsImplicits.Path2ApachePath(src);
+        val apacheDest : ApachePath = HdfsImplicits.Path2ApachePath(dest);
+        ///val apacheDest : ApachePath = dest;
+
+        val opts = new DistCpOptions(apacheSrc,apacheDest)
+        
+        _distCp = new DistCp(job, opts);
+        val args = new Array[String](0)
+
         ToolRunner.run(_distCp, args);
     }
 

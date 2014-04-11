@@ -4,7 +4,9 @@ package hadoop
 package hdfs
 
 import java.net.URI
-import fs._
+import fs.Path
+import fs.FileSystem
+import fs.FileStatus
 import org.apache.hadoop.fs.{Path => ApachePath}
 import org.apache.hadoop.fs.{FileStatus => ApacheFileStatus}
 import org.apache.hadoop.fs.{FileSystem => ApacheFileSystem}
@@ -53,7 +55,17 @@ object HdfsImplicits {
     implicit def Path2ApachePath( p : Path) : ApachePath = {
       new ApachePath( p.toString ) 
     }
+
+    implicit def FileSystem2ApacheFileSystem( fs : FileSystem ) : ApacheFileSystem = {
+       ApacheFileSystem.get( fs.uri , Config.config) 
+    }
+
+    implicit def ApacheFileStatus2HdfsFStat( apacheFileStatus : ApacheFileStatus ) : HdfsFStat = {
+       new HdfsFStat( apacheFileStatus ) 
+    }
 }
+
+  
 
 case class HdfsFStat( apacheFileStatus : ApacheFileStatus ) extends satisfaction.fs.FileStatus {
   
@@ -82,33 +94,14 @@ case class HdfsFStat( apacheFileStatus : ApacheFileStatus ) extends satisfaction
     
   
 }
-object HdfsFStat {
-    implicit def ApacheFileStatus2HdfsFStat( apacheFileStatus : ApacheFileStatus ) : HdfsFStat = {
-       new HdfsFStat( apacheFileStatus ) 
-    }
-    
-}
 
-object ApachePath {
-   implicit def ApachePath2Path( ap : ApachePath) : Path = {
-       new Path( ap.toUri.toString )
-    }
-    
-    implicit def Path2ApachePath( p : Path) : ApachePath = {
-      new ApachePath( p.toString ) 
-    }
-   
   
-    implicit def FileSystem2ApacheFileSystem( fs : FileSystem ) : ApacheFileSystem = {
-       ApacheFileSystem.get( fs.uri , Config.config) 
-    }
-}
   
 case class Hdfs(val fsURI: String)
     ( implicit hdfsConfig : Configuration = Config.config)
      extends satisfaction.fs.FileSystem {
   
-   import ApachePath._
+   import HdfsImplicits._
    import HdfsFStat._
   
   val init = HdfsFactoryInit

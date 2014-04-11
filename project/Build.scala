@@ -6,11 +6,9 @@ import play.Project._
 
 object ApplicationBuild extends Build {
 
-  val appVersion = "0.3.2"
+  val appVersion = "2.0.1"
 
-  ///val hiveVersion = "0.10.0-cdh4.3.2"
-  val hiveVersion = "0.10.0-cdh4.2.1-p98.51"
-  ///val hiveVersion = "0.11.0"
+  val hiveVersion = "0.12.0"
 
   val core = Project(
       "satisfaction-core",
@@ -31,11 +29,6 @@ object ApplicationBuild extends Build {
       "satisfaction-hive",
       file("modules/hive")
   ).settings(CommonSettings: _*).settings(libraryDependencies  := hiveDependencies ).dependsOn(core).dependsOn(hadoop).dependsOn( engine)
-
-  val scoozie = Project(
-      "satisfaction-scoozie",
-      file("modules/scoozie")
-  ).settings(CommonSettings: _*).settings(libraryDependencies := scoozieDependencies ).dependsOn(core).dependsOn(hadoop)
 
   val packaging = Project(
      "satisfaction-packaging",
@@ -83,19 +76,22 @@ object ApplicationBuild extends Build {
 
  
   def testDependencies = Seq(
-    ("org.specs2" %% "specs2" % "1.14" % "test"),
-    ("junit" % "junit" % "4.11" % "test")
+    ///("junit" % "junit" % "4.11" % "test"),
+    ("org.specs2" %% "specs2" % "1.14" % "test")
   )
 
 
   def hadoopDependencies = Seq(
-	  ("org.apache.hadoop" % "hadoop-common" % "2.0.0-cdh4.2.1"),
-	  ("org.apache.hadoop" % "hadoop-client" % "2.0.0-mr1-cdh4.2.1"),
-	  ("org.apache.hadoop" % "hadoop-hdfs" % "2.0.0-cdh4.2.1"),
-	  ("org.apache.hadoop" % "hadoop-tools" % "2.0.0-mr1-cdh4.2.1"),
-	  ("org.apache.hadoop" % "hadoop-mapreduce-client-core" % "2.0.0-cdh4.2.1"),
-	  ("org.apache.hadoop" % "hadoop-core" % "2.0.0-mr1-cdh4.2.1"),
-	  ("org.apache.hadoop" % "hadoop-lzo" % "0.4.10") 
+	  ("org.apache.hadoop" % "hadoop-common" % "2.3.0"),
+	  ("org.apache.hadoop" % "hadoop-hdfs" % "2.3.0"),
+	  ("org.apache.hadoop" % "hadoop-nfs" % "2.3.0"),
+	  ("org.apache.hadoop" % "hadoop-hdfs-nfs" % "2.3.0"),
+	  ("org.apache.hadoop" % "hadoop-mapreduce-client-app" % "2.3.0"),
+	  ("org.apache.hadoop" % "hadoop-mapreduce-client-common" % "2.3.0"),
+	  ("org.apache.hadoop" % "hadoop-mapreduce-client-core" % "2.3.0"),
+	  ("org.apache.hadoop" % "hadoop-mapreduce-client-jobclient" % "2.3.0"),
+	  ("org.apache.hadoop" % "hadoop-distcp" % "2.3.0"),
+	  ("org.hamcrest" % "hamcrest-core" % "1.3") 
   ).excluding("commons-daemon", "commons-daemon" ) ++ testDependencies ++ metastoreDependencies
 
   def coreDependencies = Seq(
@@ -107,7 +103,6 @@ object ApplicationBuild extends Build {
 	  ("org.apache.hive" % "hive-shims" % hiveVersion),
 	  ("org.apache.hive" % "hive-metastore" % hiveVersion),
 	  ("org.apache.hive" % "hive-exec" % hiveVersion),
-	  ("org.apache.hive" % "hive-builtins" % hiveVersion),
 	  ("org.apache.thrift" % "libfb303" % "0.7.0" )
   )
 
@@ -125,10 +120,6 @@ object ApplicationBuild extends Build {
 	  ("org.antlr" % "antlr-runtime" % "3.4" ),
 	  ("org.antlr" % "antlr" % "3.0.1" )
   ) ++ metastoreDependencies ++ testDependencies
-
-  def scoozieDependencies = Seq(
-     ("com.klout" %% "scoozie" % "0.5.3" ).exclude("org.apache.hive","*")
-  )
 
 
   def engineDependencies = Seq(
@@ -163,14 +154,10 @@ object ApplicationBuild extends Build {
   def Resolvers = resolvers ++= Seq(
       "snapshots" at "http://oss.sonatype.org/content/repositories/snapshots",
       "releases"  at "http://oss.sonatype.org/content/repositories/releases",
-	  /// XXX Remove klout dependencies
-      "Klout Maven libs Repository" at "http://maven-repo:8081/artifactory/libs-release",
-      "Klout Remote Repositories" at "http://maven-repo:8081/artifactory/remote-repos",
-      "Klout Maven external libs Repository" at "http://maven-repo:8081/artifactory/ext-release-local",
-      "Klout Maven external snapshots Repository" at "http://maven-repo:8081/artifactory/ext-snapshot-local",
-      "local-maven-repo-releases" at "http://maven-repo:8081/artifactory/libs-release-local",
-      "local-maven-repo-snapshots" at "http://maven-repo:8081/artifactory/libs-snapshot-local/",
-      "theatr" at "http://repo.theatr.us"
+      ////"theatr" at "http://repo.theatr.us"
+      "Maven Central" at "http://repo1.maven.org/maven2",
+      "Apache Maven Repository" at "http://people.apache.org/repo/m2-snapshot-repository/"
+
   )
 
 }

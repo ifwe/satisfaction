@@ -3,7 +3,6 @@ package satisfaction
 package hadoop
 package hive.ms
 
-import hdfs.ApachePath
 import org.apache.hadoop.hive.metastore.HiveMetaStoreClient
 import org.apache.hadoop.hive.ql.metadata._
 import org.apache.hadoop.conf.Configuration
@@ -18,8 +17,6 @@ import java.net.URI
 import java.util.HashMap
 import org.joda.time._
 import fs._
-///import org.apache.hadoop.fs.{ Path => ApachePath }
-import ApachePath._
 import org.joda.time.format.DateTimeFormatter
 import org.joda.time.format.DateTimeFormat
 import org.apache.hadoop.hive.metastore.api.FieldSchema
@@ -28,7 +25,7 @@ import com.klout.satisfaction.DataInstance
 import com.klout.satisfaction.DataOutput
 import org.apache.hadoop.hive.metastore.api.MetaException
 import scala.collection._
-import hdfs._
+import hdfs.Hdfs
 
 /**
  *  Scala Wrapper around Hive MetaStore object
@@ -44,6 +41,8 @@ trait Loggable {
 }
 
 case class MetaStore(val hvConfig: HiveConf) extends Loggable {
+   import hdfs.HdfsImplicits
+   import hdfs.HdfsImplicits._
 
     private val _hive = Hive.get(hvConfig)
     private val _hdfs = Hdfs.default
@@ -186,7 +185,7 @@ case class MetaStore(val hvConfig: HiveConf) extends Loggable {
                     _hive.getPartitions(tbl).toList.map { part =>
                         if (_hdfs.exists(part.getPartitionPath)) {
                             if (_hdfs.getSpaceUsed(part.getPartitionPath()) == 0) {
-                                println("Dropping empty partition " + part.getValues + " for table " + tblName)
+                               println("Dropping empty partition " + part.getValues + " for table " + tblName)
                                 _hive.dropPartition(db, tblName, part.getValues(), true)
                                 _hdfs.fs.delete(part.getPartitionPath())
                             } else {
@@ -430,7 +429,6 @@ case class MetaStore(val hvConfig: HiveConf) extends Loggable {
             val tbl = _hive.getTable(db, tblName)
             val map = tbl.getParameters()
             map.put(key, md)
-            _hive.setCurrentDatabase(db)
             _hive.alterTable(tblName, tbl)
             println(" Set Table MetaData " + key + " :: " + md)
         })
@@ -459,7 +457,6 @@ case class MetaStore(val hvConfig: HiveConf) extends Loggable {
             val map = part.getParameters
             map.put(key, md)
             val tblName: String = part.getTable().getTableName()
-            _hive.setCurrentDatabase(part.getTable().getDbName())
             _hive.alterPartition(tblName, part)
         })
     }

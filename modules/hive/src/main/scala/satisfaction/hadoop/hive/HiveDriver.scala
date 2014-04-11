@@ -26,7 +26,7 @@ import java.io.BufferedReader
 import java.io.FileReader
 import scala.util.control.Breaks
 import satisfaction.hadoop.Config
-import org.apache.hadoop.hive.ql.exec.HadoopJobExecHelper
+///import org.apache.hadoop.hive.ql.exec.HadoopJobExecHelper
 
 /**
  * Executes jobs locally
@@ -167,7 +167,7 @@ class HiveLocalDriver( implicit val hiveConf : HiveConf = Config.config , implic
        /// Not sure this works with multiple Hive Goals ...
        /// Hive Driver is somewhat opaque
        println(" Aborting all jobs for Hive Query ")
-       HadoopJobExecHelper.killRunningJobs()
+       ////HadoopJobExecHelper.killRunningJobs()
       
     }
 
