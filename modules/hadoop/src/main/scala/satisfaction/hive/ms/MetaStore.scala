@@ -50,7 +50,8 @@ case class MetaStore(val hvConfig: HiveConf) extends Loggable {
     
     def config : HiveConf = { hvConfig}
     
-    val PRELOAD = false
+    ///val PRELOAD = false
+    val PRELOAD = true
     private var _dbList : List[String] = if( PRELOAD)  { _initDbList  } else { null }
     private var _tableMap : collection.immutable.Map[String,List[String]] = if( PRELOAD) { _initTableMap  } else { null }
     private var _viewMap : collection.immutable.Map[String,List[String]] = if( PRELOAD ) { _initViewMap } else { null }
@@ -65,7 +66,18 @@ case class MetaStore(val hvConfig: HiveConf) extends Loggable {
 
     private def _initDbList = {
         this.synchronized({
-            _hive.getAllDatabases().toList
+          try {
+           System.out.println(" Init DB LIST !! hive =  " + _hive)
+            val list = _hive.getAllDatabases().toList
+           System.out.println(" list  =  " + list)
+            list.foreach( System.out.println(_))
+            list
+          } catch {
+            case exc: Exception => {
+                exc.printStackTrace(System.out) 
+                throw exc
+            }
+          }
         })
     }
     
@@ -98,6 +110,7 @@ case class MetaStore(val hvConfig: HiveConf) extends Loggable {
 
     private def _initTableMap :  collection.immutable.Map[String,List[String]] = {
       this.synchronized({
+         System.out.println(" INIT TABLE MAP")
        	 var buildMap : immutable.Map[String,List[String]]= Map.empty
            getDbs.foreach( db => {
         	buildMap = buildMap + ( db ->
