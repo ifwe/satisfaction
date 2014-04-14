@@ -1,10 +1,10 @@
-@(dbName : String , tblName : String, tab: org.apache.hadoop.hive.ql.metadata.Table, 
+@(dbName : String , tblName : String, ms : com.klout.satisfaction.hadoop.hive.ms.MetaStore,  tab: org.apache.hadoop.hive.ql.metadata.Table, 
 	  partNames : List[String])
 
 @import helper._
-@import org.apache.hadoop.hive.metastore._
 @import org.apache.hadoop.hive.ql.metadata._
 @import scala.collection.JavaConversions._
+@import com.klout.satisfaction.hadoop.hive.ms.MetaStore
 
 
 
@@ -14,7 +14,7 @@
     <h1>Database @dbName Table @tblName of Type @tab.getTableType </h1>
      <h2>@tab.getCompleteName</h2> 
      <h2>Location @tab.getDataLocation.toASCIIString</h2>
-     <h2>Total Space Used : @hive.ms.MetaStore.getSpaceUsed( dbName, tblName ) </h2>
+     <h2>Total Space Used : @ms.getSpaceUsed( dbName, tblName ) </h2>
      <h2>Partitioned by</h2>
     <ul>
       @tab.getPartCols.toList.map { part =>
@@ -47,7 +47,7 @@
  <table style="overflow-y:scroll; height:300px">
   <thead><td>Property</td><td>Value</dt></thead>
   <tbody>
-  @hive.ms.MetaStore.getTableMetaData( dbName, tblName).map { case(k,v) =>
+  @ms.getTableMetaData( dbName, tblName).map { case(k,v) =>
   	<tr><td>@k</td><td>@v</td></tr>
   	}
   	</tbody>

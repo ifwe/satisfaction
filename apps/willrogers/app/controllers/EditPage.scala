@@ -1,3 +1,4 @@
+package willrogers
 package controllers
 
 import play.api._
@@ -9,13 +10,13 @@ import com.klout.satisfaction.Track
 import com.klout.satisfaction.Goal
 import models.PlumbGraph
 import models._
-import com.klout.satisfaction.executor.actors.GoalStatus
 import collection._
-import com.klout.satisfaction.executor.track._
+import com.klout.satisfaction.engine.actors.GoalStatus
+import com.klout.satisfaction.track._
 import com.klout.satisfaction.TrackDescriptor
 
 object EditPage extends Controller {
-  val trackFactory : TrackFactory = TrackFactory
+  val trackFactory : TrackFactory = Global.trackFactory
 
   
     def listFiles( trackName : String ) = Action {
@@ -23,12 +24,22 @@ object EditPage extends Controller {
        val trackOpt : Option[Track] = trackFactory.getTrack( trackDesc)
        trackOpt match {
          case Some(track) =>
-           val files = track.listResources.map( _.getName ).toList
+           ////val files = track.listResources.map( _.getName ).toList
+           ///val files = track.listResources.toList
+           val files = getResources(track)
+           
+           
            Ok(views.html.listfiles(trackName, files )) 
          case None => 
           Ok( views.html.brokenproject( trackName))
        }
     
+    }
+  
+  
+    def getResources( track : Track) : List[String] = {
+      trackFactory.trackFS.listFiles( track.trackPath / "resource" ).map( _.getPath.toUri.getPath.split("/").last).toList
+      
     }
   
     def editFile(trackName: String, resourceName : String) = Action {

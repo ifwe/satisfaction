@@ -1,3 +1,4 @@
+package willrogers
 package controllers
 
 import play.api._
@@ -7,15 +8,14 @@ import play.mvc.Controller
 import play.api.mvc.Results._
 import play.api.data.validation.Constraints._
 import play.api.mvc.Action
+import play.api.Configuration
 import models.VariableHolder
-import hive.ms._
 import play.api.mvc.Call
 import com.klout.satisfaction._
-import com.klout.satisfaction.executor._
-import com.klout.satisfaction.executor.actors.ProofEngine
-import com.klout.satisfaction.executor.actors._
-import com.klout.satisfaction.executor.track._
-import com.klout.satisfaction.executor.actors.GoalState
+import com.klout.satisfaction.engine._
+import com.klout.satisfaction.engine.actors.ProofEngine
+import com.klout.satisfaction.engine.actors._
+import com.klout.satisfaction.track._
 import java.io.FileInputStream
 import java.io.File
 import models.PlumbGraph
@@ -29,8 +29,7 @@ import play.mvc.Results
  *   
  */
 object ScheduleTrackPage extends Controller {
-   lazy val trackFactory = new TrackFactory( new java.net.URI("hdfs://jobs-dev-hnn"),
-		   	"/user/satisfaction")
+   lazy val trackFactory =  Global.trackFactory 
 
   
    def showSchedulesAction( ) = Action { 
