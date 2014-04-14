@@ -45,13 +45,23 @@ case class TrackFactory(val trackFS : FileSystem,
     *   Satisfaction base track path.
     */
    def getAllTracks : Seq[TrackDescriptor] = {
+     try {
        /// XXX Have filesystem return path as well as uri 
       val trackRoot : Path =  baseTrackPath / "track" 
+      System.out.println(" GET ALL TRACKS --- TRACK ROOT = " + trackRoot)
       
       val allPaths = trackFS.listFilesRecursively(trackRoot)
+      System.out.println(" NUM LIST FILES ARE " + allPaths.size)
+      System.out.println(" LIST FILES ARE " + allPaths)
       allPaths.filter(_.isDirectory).filter( _.getPath.name.startsWith("version_")).map( fs => {
           parseTrackPath( fs.getPath )       
       }) 
+     } catch {
+       case exc: Exception => {
+         exc.printStackTrace()
+         throw exc;
+       }
+     }
    }
    
    /**
@@ -177,9 +187,11 @@ case class TrackFactory(val trackFS : FileSystem,
       val trackClazzOpt = loadTrackClass( new Path(trackPath  + "/" + trackJar) , trackClassName )
       trackClazzOpt match {
         case Some(trackClazz)  =>
-         ///val track = trackClazz.newInstance 
+         val track = trackClazz.newInstance 
           
-         val track : Track =  trackClazz.getField("MODULE$").get(null).asInstanceOf[Track]
+          //// XXX   Right way to do scala instantiation...
+          //// FIXME ???
+         ////val track : Track =  trackClazz.getField("MODULE$").get(null).asInstanceOf[Track]
           
          track.descriptor = trackDesc
          initializeTrack( track,  trackProps)
@@ -212,7 +224,8 @@ case class TrackFactory(val trackFS : FileSystem,
      }
    }
    
-   def loadTrackClass( jarPath : Path , trackClassName : String ) : Option[Class[_ <: Track]]  = {
+  def loadTrackClass( jarPath : Path , trackClassName : String ) : Option[Class[_ <: Track]]  = {
+  ////def loadTrackClass( jarPath : Path , trackClassName : String ) : Option[Class[_]]  = {
      try {
       
       val urlClassloader = new java.net.URLClassLoader(jarURLS( jarPath), this.getClass.getClassLoader)
@@ -303,8 +316,3 @@ case class TrackFactory(val trackFS : FileSystem,
      }
    }
 }
-
-/// XXX Fix me 
-///object TrackFactory extends TrackFactory( null, "/user/satisfaction", TrackScheduler) {
-  
-//}

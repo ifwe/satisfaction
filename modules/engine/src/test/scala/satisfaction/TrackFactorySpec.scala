@@ -33,29 +33,35 @@ class TrackFactorySpec extends Specification {
       
         "Be able to list tracks" in {
             mockFS.listFiles( resourcePath / "/user/satisfaction/track").foreach( println(_))
-            println(s" Resoure Path is $resourcePath" )
+            println(s" Resource Path is $resourcePath" )
             val allTracks = mockTrackFactory.getAllTracks 
             allTracks.foreach(  println( _ ) )
             
             println(" AllTracks Size = " + allTracks.size)
             
             
-            ! (allTracks must haveSize(0))
+             (allTracks must haveSize(1))
         }
-        /**
 
         "Be able to load Track object " in {
             val tf = mockTrackFactory
-            val td = TrackDescriptor("Simple")
+            val td = TrackDescriptor("Sample")
           
             val track = tf.getTrack( td)
           
-            true
+            //// Make sure track descriptor was updated
+            track must_!= None
+            val loadedTrack = track.get
+            System.out.println(" Track is " + loadedTrack)
+            
+            
+            loadedTrack.descriptor.version must_==("2.5")
         }
         
+        /**
         "Be able to inialize TrackClass" in {
             val tf = mockTrackFactory
-            val jarPath = new Path("simple/lib")
+            val jarPath = new Path("lib")
             val trackClassName= "com.klout.satisfy.track.simple"
             val trackClass =tf.loadTrackClass(jarPath, trackClassName)
             
@@ -66,7 +72,7 @@ class TrackFactorySpec extends Specification {
             
             trackClass must_!= None
         }
-        * **
+        * 
         */
 
      }

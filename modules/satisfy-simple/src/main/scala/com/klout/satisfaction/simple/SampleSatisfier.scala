@@ -15,12 +15,13 @@ class SampleSatisfier(progressCount: Int, sleepTime: Long) extends Satisfier wit
     var varMap = Set[String]()
 
     var retCode = true
+    var startTime : DateTime = null
     
     
 
     @Override
     override def satisfy(params: Substitution): ExecutionResult = {
-        val startTime = new DateTime
+        startTime = new DateTime
         println(" Satisfy for params " + params.raw.mkString(","))
         varMap ++= params.raw.keySet
 
@@ -42,5 +43,14 @@ class SampleSatisfier(progressCount: Int, sleepTime: Long) extends Satisfier wit
         println(" Does the evidence exist for witness " + w.variables.mkString + " ???? " + xist)
         xist
     }
+
+
+    @Override
+    override def abort() : ExecutionResult = {
+      val execResult = new ExecutionResult("Simple Satisfier", startTime )
+      execResult.markFailure
+      execResult.errorMessage = "Aborted by User"
+      execResult
+   }
 
 }

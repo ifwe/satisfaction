@@ -40,7 +40,6 @@ object Global extends GlobalSettings {
         })
     }
     
-    ///val hdfsFS = new Hdfs("hdfs://jobs-dev-hnn")
     def hdfsConfig : HadoopConfiguration = {
         val conf = new HadoopConfiguration
       val testPath = System.getProperty("user.dir") + "/apps/willrogers/conf/hdfs-site.xml"

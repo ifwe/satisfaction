@@ -9,7 +9,7 @@ object SatisfySimpleBuild extends Build {
   val main = Project(
       "satisfy-simple", file(".")
   ).settings(LibrarySettings: _*).settings(
-      version := "2.4"
+      version := "2.5"
   )
 
   def excludeFromAll(items: Seq[ModuleID], group: String, artifact: String) =
@@ -25,7 +25,7 @@ object SatisfySimpleBuild extends Build {
 
 
   def commonDependencies = Seq(
-   ("com.klout.satisfaction" %% "satisfaction-core" % "0.3.1"),
+   ("com.klout.satisfaction" %% "satisfaction-core" % "2.0.1"),
     "org.specs2" %% "specs2" % "1.14" % "test"
    )
 
@@ -33,12 +33,6 @@ object SatisfySimpleBuild extends Build {
    def commonResolvers = Seq(
      "snapshots" at "http://oss.sonatype.org/content/repositories/snapshots",
      "releases"  at "http://oss.sonatype.org/content/repositories/releases",
-     "Klout Maven libs Repository" at "http://maven-repo:8081/artifactory/libs-release",
-     "Klout Remote Repositories" at "http://maven-repo:8081/artifactory/remote-repos",
-     "Klout Maven external libs Repository" at "http://maven-repo:8081/artifactory/ext-release-local",
-     "Klout Maven external snapshots Repository" at "http://maven-repo:8081/artifactory/ext-snapshot-local",
-     "local-maven-repo-releases" at "http://maven-repo:8081/artifactory/libs-release-local",
-     "local-maven-repo-snapshots" at "http://maven-repo:8081/artifactory/libs-snapshot-local/",
      "theatr" at "http://repo.theatr.us"
   )
 
@@ -65,11 +59,6 @@ object SatisfySimpleBuild extends Build {
 
          libraryDependencies ++= commonDependencies,
 
-         publishTo := Some("kloutLibraryReleases" at "http://maven-repo:8081/artifactory/libs-release-local"),
-
-         credentials := Credentials(Path.userHome / ".ivy2" / ".credentials") :: Nil,
-
-         publishTo := Some("kloutLibraryReleases" at "http://maven-repo:8081/artifactory/libs-release-local"),
 
          credentials := Credentials(Path.userHome / ".ivy2" / ".credentials") :: Nil,
 

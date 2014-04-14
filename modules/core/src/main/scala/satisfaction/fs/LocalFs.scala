@@ -80,10 +80,11 @@ case class LocalFileSystem() extends FileSystem {
    
    override def listFilesRecursively( p : Path ) : Seq[FileStatus] = {
      listFiles( (p) ).map( fs =>  { 
+       System.out.println( " Recursive file is " + fs );
          if( fs.isFile ) {
            Seq( fs)
          } else if( fs.isDirectory ) {
-           listFilesRecursively( fs.getPath )
+           listFilesRecursively( fs.getPath ) ++ Seq(fs)
          } else {
            Seq.empty
          }
