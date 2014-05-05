@@ -16,6 +16,9 @@ class MockSatisfier extends Satisfier with Evidence {
 
     var retCode = true
     var startTime : DateTime = null
+    
+    
+    override def name = "MockSatisfier"
 
     @Override 
     def satisfy(params: Substitution): ExecutionResult = {

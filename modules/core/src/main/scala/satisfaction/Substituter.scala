@@ -1,4 +1,5 @@
-package com.klout.satisfaction
+package com.klout
+package satisfaction
 
 import scala.util.parsing.input.Reader
 import scala.util.parsing.input.CharSequenceReader
@@ -128,7 +129,7 @@ object Substituter {
     private def parseLine(propertyString: String): Tuple2[String, String] = {
         val property: Array[String] = propertyString.split("=")
         if (property.length != 2)
-            throw new RuntimeException("error: property file not correctly formatted")
+            throw new RuntimeException(s"error: property file not correctly formatted :: $propertyString ")
 
         property(0).trim -> property(1).trim
     }

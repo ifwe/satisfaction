@@ -20,52 +20,47 @@ import org.apache.hadoop.fs.{Path => ApachePath}
 
 class DistCpSatisfier(val src: VariablePath, val dest: VariablePath)( implicit val hdfs : FileSystem , implicit val track: Track) extends Satisfier  {
 
+    override def name = s"DistCp $src to $dest "
+
     var execResult : ExecutionResult = null
     var _distCp : DistCp = null
 
     @Override
-    override def satisfy(projParams: Substitution): ExecutionResult = {
-        try {
+    override def satisfy(projParams: Substitution): ExecutionResult =  robustly {
+      true
+    }
+
+    def XXXsatisfy(projParams: Substitution) :ExecutionResult =  robustly {
           
             val srcPath: HdfsPath = src.getDataInstance(new Witness(projParams)).get.asInstanceOf[HdfsPath]
             val destPath: HdfsPath = dest.getDataInstance(new Witness(projParams)).get.asInstanceOf[HdfsPath]
            
-            val execName = s"DistCp $srcPath to $destPath"
-            execResult = new ExecutionResult( execName, DateTime.now)
 
             if (destPath.exists) {
                 if (srcPath.path.equals(destPath)) {
-                    //// If the src path is actually the same as the destpath for some reason,
-                    ////  Like the src cluster being the same as the dest cluster...
-                    ////  Don't bother copying
-                    execResult.isSuccess = true
-                    execResult.timeEnded = DateTime.now
-                    return execResult
+                    true
                 } else {
                     //// Otherwise, it seems like someone wanted the path to be overwritten
                     //// Delete it first
                     println(s" Deleting existing Path ${destPath.path.toUri.toString}")
                     hdfs.delete(destPath.path)
+                    println(s"Distcp'ing ${srcPath} to ${destPath.path.toUri} ")
+
+            		val result = distcp(srcPath.path, destPath.path);
+                   	//// Does DistCp have return codes ??
+                    println(s" Result of DistCp is $result")
+                    result == 0
                 }
-            }
+            } else {
             println(s"Distcp'ing ${srcPath} to ${destPath.path.toUri} ")
 
             val result = distcp(srcPath.path, destPath.path);
             //// Does DistCp have return codes ??
             println(s" Result of DistCp is $result")
-            if (result == 0) {
-                Hdfs.markSuccess(hdfs, destPath.path)
-                execResult.markSuccess
-            } else {
-                execResult.markFailure
+            result == 0
             }
-        } catch {
-            case unexpected: Throwable =>
-                println(s" Received unexpected error while performing DistCp $unexpected")
-                unexpected.printStackTrace(System.out)
-                execResult.markUnexpected( unexpected)
-        }
-    }
+    } 
+
     
     /**
      * Determine if the job is our DistCp job

@@ -10,6 +10,9 @@ import scala.io.Source
 import org.apache.hadoop.hive.ql.metadata.HiveException
 
 case class HiveSatisfier(queryResource: String, driver: HiveDriver)( implicit val track : Track) extends Satisfier with MetricsProducing {
+
+   override def name = s"Hive( $queryResource )" 
+  
    val execResult = new ExecutionResult( queryTemplate, new DateTime)
 
     def executeMultiple(hql: String): Boolean = {

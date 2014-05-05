@@ -2,15 +2,70 @@ package com.klout
 package satisfaction
 
 import collection.mutable.{ HashMap => MutableHashMap }
+import org.joda.time.DateTime
 
 trait Satisfier {
+  
+    /**
+     *  Some unique identifier to describe the process being run
+     */
+    def name : String
 
+    /**
+     *  Given a s
+     */
     def satisfy(subst: Substitution): ExecutionResult
     
     /**
      *  If possible, abort the job
      */
     def abort() : ExecutionResult
+    
+    /**
+      *  Provide a simple template for Satisfiers to return and ExecutionResult
+      * 
+      *  Satisfier implementations can simply say
+      *   def satisfy( subst : Substitition ) = robustly {
+      *       if(doTheThing() == success) {
+      *         true
+      *       } else {
+      *         false
+      *       }
+      *   }
+      *  
+      **/
+    
+    def robustly ( f: => Boolean ) : ExecutionResult = {
+           RobustRun( name , f)
+    }
+}
+
+/**
+ *  Create a Function as an object, 
+ *   to handle "Running robustly", 
+ *    catching errors , and building up the 
+ *    ExecutionResult object correctly.
+ */
+object RobustRun {
+  
+  
+      def apply ( name: String,  func : =>  Boolean ) : ExecutionResult =   {
+            val execResult  = new ExecutionResult(name, DateTime.now)
+            try {
+               val result = func
+               if( result) {
+                 execResult.markSuccess
+               } else {
+                 execResult.markFailure
+               }
+            } catch {
+              case unexpected : Throwable => {
+               /// XXX TODO which logger ???
+                 unexpected.printStackTrace(); 
+                 execResult.markUnexpected(unexpected)
+            } 
+          }
+        }
 }
 
 

@@ -57,6 +57,8 @@ class Substitution(
     def ++(other: Substitution): Substitution = {
         (this /: other.assignments)(_ + _)
     }
+    
+    
 
     /**
      * def ++(overrides: ParamOverrides): Substitution =
@@ -103,6 +105,15 @@ object Substitution {
 
     val empty = new Substitution(Set.empty)
 
+    implicit def Substitution2Properties( subst : Substitution ) : java.util.Properties = {
+       val props = new java.util.Properties      
+       subst.raw.foreach { case (k, v) => {
+           props.setProperty( k, v.toString) 
+         } 
+       }
+       props
+    }
+    
 }
 
 trait Paramable[T] {

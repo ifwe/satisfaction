@@ -20,7 +20,8 @@ object Config {
         ///hc.setVar(HiveConf.ConfVars.METASTOREURIS, "thrift://jobs-dev-sched2:9085")
         ///hc.setVar(HiveConf.ConfVars.METASTOREURIS, "thrift://jobs-dev-sched2:9083")
         ///hc.setVar(HiveConf.ConfVars.METASTOREURIS, "thrift://jobs-aa-sched1:9083")
-        hc.setVar(HiveConf.ConfVars.METASTOREURIS, "thrift://localhost:9083")
+        ///hc.setVar(HiveConf.ConfVars.METASTOREURIS, "thrift://localhost:9083")
+        hc.setVar(HiveConf.ConfVars.METASTOREURIS, "thrift://dhdp2jump01:9083")
         
         
         /// XXX How to use play/scala configuration

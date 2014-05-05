@@ -46,6 +46,11 @@ case class Goal(
         dependencies += Tuple2(rule, goal)
         return this
     }
+    
+    
+    def addYesterdayGoal( goal : Goal) : Goal = {
+        addWitnessRule( Goal.yesterday , goal)      
+    }
 
     def getPredicateString(w: Witness): String = {
         Goal.getPredicateString(this, w)

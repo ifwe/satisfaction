@@ -8,7 +8,6 @@ import collection.JavaConversions._
 /// XXX abstraction of filesystem ...
 import fs._
 
-/// XXX FIXME dependency inject the Filesystem
 
 /**
  *  Class for Executor to access deployed Tracks (i.e Projects)

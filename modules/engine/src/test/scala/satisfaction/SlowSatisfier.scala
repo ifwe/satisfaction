@@ -11,6 +11,8 @@ import org.joda.time.DateTime
  *
  */
 class SlowSatisfier(progressCount: Int, sleepTime: Long) extends MockSatisfier with Evidence {
+  
+    override def name = "Slow Satisfier"
 
     @Override
     override def satisfy(params: Substitution) : ExecutionResult = {

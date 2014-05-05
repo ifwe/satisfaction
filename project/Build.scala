@@ -13,7 +13,7 @@ object ApplicationBuild extends Build {
   val core = Project(
       "satisfaction-core",
       file("modules/core")
-  ).settings(CommonSettings: _* ).settings(libraryDependencies := coreDependencies)
+  ).settings(CommonSettings: _* ).settings(libraryDependencies := coreDependencies ++ testDependencies )
 
   val engine = Project(
       "satisfaction-engine",
@@ -76,8 +76,8 @@ object ApplicationBuild extends Build {
 
  
   def testDependencies = Seq(
-    ///("junit" % "junit" % "4.11" % "test"),
-    ("org.specs2" %% "specs2" % "1.14" % "test")
+    ("junit" % "junit" % "4.10" % "test" intransitive() ),
+    ("org.specs2" %% "specs2" % "1.14" % "test"  )
   )
 
 
@@ -91,8 +91,8 @@ object ApplicationBuild extends Build {
 	  ("org.apache.hadoop" % "hadoop-mapreduce-client-core" % "2.3.0"),
 	  ("org.apache.hadoop" % "hadoop-mapreduce-client-jobclient" % "2.3.0"),
 	  ("org.apache.hadoop" % "hadoop-distcp" % "2.3.0"),
-	  ("org.hamcrest" % "hamcrest-core" % "1.3") 
-  ).excluding("commons-daemon", "commons-daemon" ) ++ testDependencies ++ metastoreDependencies
+	  ("org.hamcrest" % "hamcrest-core" % "1.3"  ) 
+  ).excluding("commons-daemon", "commons-daemon" ).excluding("junit","junit") ++ testDependencies ++ metastoreDependencies
 
   def coreDependencies = Seq(
     ("com.github.nscala-time" %% "nscala-time" % "0.4.2")

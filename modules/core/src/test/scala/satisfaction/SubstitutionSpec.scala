@@ -103,6 +103,22 @@ class SubstitutionSpec extends Specification {
             //goodProps.get("theBigProp").get mustEqual "12244"
 
         }
+        
+        "implicitly convert to java.util.Properties" in {
+            val goodProps = Substituter.readProperties("modules/core/src/test/resources/goodset.properties")
+            val subst = Substitution( goodProps)
+            
+            val javaProps : java.util.Properties = subst
+            
+            subst.raw foreach { case(k,v) => {
+                  val lookup = javaProps.getProperty( k)
+                  println(s"  Lookup for key $k is $lookup ")  
+                   ( lookup must not beNull )
+                  lookup must be(v)
+              }
+            } 
+          
+        }
 
     }
 

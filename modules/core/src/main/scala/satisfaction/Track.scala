@@ -117,6 +117,7 @@ case class Track(
      }
      
      def readProperties( pathString : String ) = {
+       //// XXX FIXME -- Reading from fileinputstream
        _trackProperties = Substitution( Substituter.readProperties(new FileInputStream( pathString )))
      }
      

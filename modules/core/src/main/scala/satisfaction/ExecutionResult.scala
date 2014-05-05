@@ -13,12 +13,17 @@ case class ExecutionResult(
     val executionName : String,
     val timeStarted: DateTime) {
   
-   var timeEnded : DateTime = null
-   var isSuccess : Boolean = false
+   var timeEnded : DateTime = null //// XXX make stateless 
+   var isSuccess : Boolean = false /// XXX make stateless .. Add is running ???
    
    val metrics = new MetricsCollection( executionName)
    
    
+   @Override
+   override def toString() = {
+     s"ExecResult( $executionName, SUCCESS=$isSuccess, START=$timeStarted, END =$timeEnded"
+     ///XXX add stack trace or metrics
+   }
    
    def markSuccess() :ExecutionResult = {
       isSuccess = true

@@ -385,6 +385,13 @@ case class MetaStore(val hvConfig: HiveConf) extends Loggable {
             _hive.getPartition(tbl, partMap, false)
         })
     }
+    
+    def addPartition(db: String, tblName: String, partMap: Map[String, String]): Partition = {
+        this.synchronized({
+          val tbl = _hive.getTable( db, tblName)
+          _hive.createPartition( tbl, partMap)
+        })
+    }
 
     def getPartition(db: String, tblName: String, partSpec: List[String]): Partition = {
         this.synchronized({
