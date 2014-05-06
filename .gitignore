@@ -2,6 +2,8 @@
 *.log
 .project
 .classpath
+.settings
+.cache
 
 # sbt specific
 dist/*
