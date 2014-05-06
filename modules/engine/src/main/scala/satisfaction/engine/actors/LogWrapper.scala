@@ -91,7 +91,7 @@ object LogWrapper {
     def rootedPathForGoalWitness(root: String, track: TrackDescriptor, goalName : String, witness : Witness ) : String = {
         val goalFile = new File( root + "/" + pathString(track.trackName) + "/" + pathString(goalName) )
         goalFile.mkdirs
-        goalFile.getPath() +  "/" + pathString(witness.substitution.toString ) 
+        goalFile.getPath() +  "/" + pathString(witness.toString ) 
     }
     
     

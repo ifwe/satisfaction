@@ -15,7 +15,7 @@ class SlowSatisfier(progressCount: Int, sleepTime: Long) extends MockSatisfier w
     override def name = "Slow Satisfier"
 
     @Override
-    override def satisfy(params: Substitution) : ExecutionResult = {
+    override def satisfy(params: Witness) : ExecutionResult = {
         startTime = DateTime.now
         for (i <- Range(0, progressCount)) {
             println("Doing the thing ;; Progress Count = " + i)
@@ -25,7 +25,7 @@ class SlowSatisfier(progressCount: Int, sleepTime: Long) extends MockSatisfier w
     }
     
     
-      @Override 
+    @Override 
     override def abort() : ExecutionResult = {
       val abortResult = new ExecutionResult("MockSatisfier", startTime);
       abortResult.isSuccess = false;

@@ -108,7 +108,7 @@ case class TrackScheduler( val proofEngine : ProofEngine ) {
    }
    
    def generateWitness( track : Track, nowDt : DateTime ) : Witness = {
-     var subst = Substitution()
+     var subst = Witness()
      track.getWitnessVariables.foreach( { v : Variable[_] =>
      	if(isTemporalVariable(v)) {
      		val temporal = getValueForTemporal( v, nowDt)
@@ -129,7 +129,7 @@ case class TrackScheduler( val proofEngine : ProofEngine ) {
      	}
      })
      println(" Temporal witness is " + subst)
-     new Witness( subst)
+     subst
    }
      /**
     *   XXX Add TemporalVariable trait, 

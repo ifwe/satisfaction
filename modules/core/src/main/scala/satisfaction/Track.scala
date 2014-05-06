@@ -102,8 +102,8 @@ case class Track(
      *   of properties along with the Track
      * 
      */
-     private var _trackProperties : Substitution = null
-     def trackProperties : Substitution = {
+     private var _trackProperties : Witness = null
+     def trackProperties : Witness = {
        _trackProperties
      }
 
@@ -118,10 +118,10 @@ case class Track(
      
      def readProperties( pathString : String ) = {
        //// XXX FIXME -- Reading from fileinputstream
-       _trackProperties = Substitution( Substituter.readProperties(new FileInputStream( pathString )))
+       _trackProperties = Witness( Substituter.readProperties(new FileInputStream( pathString )))
      }
      
-     def setTrackProperties( props : Substitution) = {
+     def setTrackProperties( props : Witness) = {
     	  _trackProperties = props
      }
      
@@ -206,11 +206,11 @@ case class Track(
     }
     
     
-    def getTrackProperties(witness: Substitution): Substitution = {
+    def getTrackProperties(witness: Witness): Witness = {
       
          val YYYYMMDD = DateTimeFormat.forPattern("YYYYMMdd")
     
-        var projProperties : Substitution =  trackProperties
+        var projProperties : Witness =  trackProperties
 
         ///// Some munging logic to translate between camel case 
         //// and  underscores
@@ -221,7 +221,7 @@ case class Track(
             //// not just strings 
             var jodaDate = YYYYMMDD.parseDateTime(witness.get(Variable("dt")).get)
             ////val assign : VariableAssignment[String] = ("dateString" -> YYYYMMDD.print(jodaDate))
-            val dateVars = Substitution((Variable("dateString") -> YYYYMMDD.print(jodaDate)),
+            val dateVars = Witness((Variable("dateString") -> YYYYMMDD.print(jodaDate)),
                 (Variable("yesterdayString") -> YYYYMMDD.print(jodaDate.minusDays(1))),
                 (Variable("prevdayString") -> YYYYMMDD.print(jodaDate.minusDays(2))),
                 (Variable("weekAgoString") -> YYYYMMDD.print(jodaDate.minusDays(7))),

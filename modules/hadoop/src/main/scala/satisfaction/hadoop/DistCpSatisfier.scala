@@ -26,14 +26,14 @@ class DistCpSatisfier(val src: VariablePath, val dest: VariablePath)( implicit v
     var _distCp : DistCp = null
 
     @Override
-    override def satisfy(projParams: Substitution): ExecutionResult =  robustly {
+    override def satisfy(projParams: Witness): ExecutionResult =  robustly {
       true
     }
 
-    def XXXsatisfy(projParams: Substitution) :ExecutionResult =  robustly {
+    def XXXsatisfy(projParams: Witness) :ExecutionResult =  robustly {
           
-            val srcPath: HdfsPath = src.getDataInstance(new Witness(projParams)).get.asInstanceOf[HdfsPath]
-            val destPath: HdfsPath = dest.getDataInstance(new Witness(projParams)).get.asInstanceOf[HdfsPath]
+            val srcPath: HdfsPath = src.getDataInstance(projParams).get.asInstanceOf[HdfsPath]
+            val destPath: HdfsPath = dest.getDataInstance(projParams).get.asInstanceOf[HdfsPath]
            
 
             if (destPath.exists) {

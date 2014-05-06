@@ -20,7 +20,7 @@ case class PartitionExists(
     override def name = "PartitionExists"
       
     
-    def satisfy(subst: Substitution): ExecutionResult = robustly {
+    def satisfy(subst: Witness): ExecutionResult = robustly {
         val part = ms.addPartition( table.dbName, table.tblName , subst.raw  )    
         true
     }

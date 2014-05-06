@@ -14,7 +14,7 @@ trait Satisfier {
     /**
      *  Given a s
      */
-    def satisfy(subst: Substitution): ExecutionResult
+    def satisfy(witness: Witness): ExecutionResult
     
     /**
      *  If possible, abort the job
@@ -25,7 +25,7 @@ trait Satisfier {
       *  Provide a simple template for Satisfiers to return and ExecutionResult
       * 
       *  Satisfier implementations can simply say
-      *   def satisfy( subst : Substitition ) = robustly {
+      *   def satisfy( witness : Substitition ) = robustly {
       *       if(doTheThing() == success) {
       *         true
       *       } else {

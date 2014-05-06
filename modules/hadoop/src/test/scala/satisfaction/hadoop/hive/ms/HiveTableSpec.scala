@@ -35,8 +35,8 @@ class HiveTableSpec extends Specification {
         }
         "implements exists" in {
             val actorAction = new HiveTable("bi_maxwell", "actor_action")
-            val witness = new Witness(new Substitution(Set((dtParam -> "20130812"),
-                (networkParam -> "tw"))))
+            val witness = new Witness(Set((dtParam -> "20130812"),
+                (networkParam -> "tw")))
 
             val xist = actorAction.exists(witness)
             if (xist) {
@@ -49,13 +49,13 @@ class HiveTableSpec extends Specification {
         }
         "ksuid_mapping exists" in {
             val ksuid_mapping = new HiveTable("bi_maxwell", "ksuid_mapping")
-            val witness = new Witness(new Substitution(Set((dtParam -> "20130821"), (featureGroup -> 1))))
+            val witness = new Witness(Set((dtParam -> "20130821"), (featureGroup -> 1)))
 
             val dataInstance = ksuid_mapping.getDataInstance(witness)
         }
         "ksuid_mapping doesnt exists" in {
             val ksuid_mapping = new HiveTable("bi_maxwell", "ksuid_mapping")
-            val witness = new Witness(new Substitution(Set((dtParam -> "20190821"), (featureGroup -> 1))))
+            val witness = new Witness(Set((dtParam -> "20190821"), (featureGroup -> 1)))
 
             val doesNotExist = ksuid_mapping.exists(witness)
 

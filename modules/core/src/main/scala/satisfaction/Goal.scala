@@ -68,8 +68,7 @@ object Goal {
 
     def qualifyWitness(param: Variable[String], paramValue: String): (Witness => Witness) = {
         w: Witness =>
-            val newParam = w.substitution.update(param, paramValue)
-            new Witness(newParam)
+            w.update(param, paramValue)
     }
     
     
@@ -85,8 +84,8 @@ object Goal {
     def daysPrevious(numDays: Int ) : ( Witness => Witness) = { w: Witness => {
          val dtVar = Variable("dt")
          val yyyymmdd = DateTimeFormat.forPattern("YYYYMMdd")
-         if( w.substitution.contains( dtVar) ) {
-           val dtYMD = w.substitution.get( dtVar)
+         if( w.contains( dtVar) ) {
+           val dtYMD = w.get( dtVar)
            val yesterDT = yyyymmdd.print( yyyymmdd.parseDateTime(dtYMD.get).minusDays(numDays))
            w.update( dtVar -> yesterDT )
          } else {
@@ -111,8 +110,7 @@ object Goal {
 
     def stripVariable(param: Variable[_]): (Witness => Witness) = {
         w: Witness =>
-            val withoutParam = w.substitution.assignments.filter(!_.variable.equals(param))
-            new Witness(new Substitution(withoutParam))
+        new Witness( w.assignments.filter(!_.variable.equals(param)))
     }
 
     def getPredicateString(goal: Goal, w: Witness): String = {
@@ -120,6 +118,6 @@ object Goal {
     }
     
     def getPredicateString(goalName: String, w: Witness): String = {
-        (goalName + "(" + w.substitution.raw.mkString(",") + ")").replace(" ", "").replace("->", "=")
+        (goalName + "(" + w.raw.mkString(",") + ")").replace(" ", "").replace("->", "=")
     }
 }

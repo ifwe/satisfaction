@@ -36,7 +36,7 @@ case class HiveTablePartitionGroup(
         val tbl = ms.getTableByName(dbName, tblName)
         if (!w.variables.contains(grouping))
             None
-        val partMap: Map[String, String] = Map(grouping.name -> w.substitution.get(grouping).get)
+        val partMap: Map[String, String] = Map(grouping.name -> w.get(grouping).get)
         println(s" PART MAP IS $partMap ")
         val hivePartSet = ms.getPartitionSetForTable(tbl, partMap)
         if (hivePartSet.size > 0) {

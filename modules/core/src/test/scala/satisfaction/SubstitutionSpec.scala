@@ -6,9 +6,9 @@ import org.specs2.runner.JUnitRunner
 import org.junit.runner.RunWith
 
 @RunWith(classOf[JUnitRunner])
-class SubstitutionSpec extends Specification {
+class WitnessSpec extends Specification {
 
-    "SubstitutionUtils" should {
+    "WitnessUtils" should {
         "find variables in string " in {
             val str = " select * from my_view_${networkAbbr} where dt= ${dateString}  "
 
@@ -23,7 +23,7 @@ class SubstitutionSpec extends Specification {
 
             val varMap = Map(("networkAbbr" -> "tw"), ("dateString" -> "20130813"))
 
-            val str = Substituter.substitute(new CharSequenceReader(tempStr), Substitution(varMap))
+            val str = Substituter.substitute(new CharSequenceReader(tempStr), Witness(varMap))
             str.isRight must be
 
             println(" Substr string is " + str)
@@ -37,7 +37,7 @@ class SubstitutionSpec extends Specification {
 
             val varMap = Map(("networkAbbr" -> "tw"), ("dateString" -> "20130813"))
 
-            val str = Substituter.substitute(new CharSequenceReader(tempStr), Substitution(varMap))
+            val str = Substituter.substitute(new CharSequenceReader(tempStr), Witness(varMap))
             str.isLeft must be
 
             str match {
@@ -52,7 +52,7 @@ class SubstitutionSpec extends Specification {
 
             val varMap = Map(("networkAbbr" -> "tw"), ("dateString" -> "20130813"))
 
-            val str = Substituter.substitute(new CharSequenceReader(tempStr), Substitution(varMap))
+            val str = Substituter.substitute(new CharSequenceReader(tempStr), Witness(varMap))
             str.isRight must be
 
             println(" Substr string is " + str)
@@ -66,7 +66,7 @@ class SubstitutionSpec extends Specification {
                 " and ks_uid = ${ksUid} and actor_id = ${actorId}  "
 
             val varMap = Map(("networkAbbr" -> "tw"), ("dateString" -> "20130813"))
-            val str = Substituter.substitute(new CharSequenceReader(tempStr), Substitution(varMap))
+            val str = Substituter.substitute(new CharSequenceReader(tempStr), Witness(varMap))
             str.isLeft must be
 
             str match {
@@ -106,7 +106,7 @@ class SubstitutionSpec extends Specification {
         
         "implicitly convert to java.util.Properties" in {
             val goodProps = Substituter.readProperties("modules/core/src/test/resources/goodset.properties")
-            val subst = Substitution( goodProps)
+            val subst = Witness( goodProps)
             
             val javaProps : java.util.Properties = subst
             
@@ -157,7 +157,7 @@ class SubstitutionSpec extends Specification {
         }
 
         "Substituion should get and update" in {
-            val subst1 = Substitution(VariableAssignment("FirstProp", "FirstVal"),
+            val subst1 = Witness(VariableAssignment("FirstProp", "FirstVal"),
                 VariableAssignment("NumericVal", 3.14159)
             )
             val checkLookup = subst1.get(Variable("FirstProp")).get
@@ -165,28 +165,29 @@ class SubstitutionSpec extends Specification {
             checkLookup mustEqual "FirstVal"
         }
 
+        /// XXX JDB  FIX ME
         "Qualify witness function" in {
-            val subst1 = Substitution(VariableAssignment("dt", "20130917"))
+            val subst1 = Witness(VariableAssignment("dt", "20130917"))
             val mapFunc = Goal.qualifyWitness(Variable("tableAlias"), "friends")
 
-            val subst2 = mapFunc(Witness(subst1))
+            val subst2 = mapFunc(subst1)
             println(" qualified witness is " + subst2)
-            subst2.substitution.assignments.foreach(println)
+            subst2.assignments.foreach(println)
 
-            subst2.substitution.assignments.size mustEqual 2
+            subst2.assignments.size mustEqual 2
         }
 
         "compose Qualify witness function" in {
-            val subst1 = Substitution(VariableAssignment("dt", "20130917"))
+            val subst1 = Witness(VariableAssignment("dt", "20130917"))
             val mapFunc1 = Goal.qualifyWitness(Variable("tableAlias"), "friends")
             val mapFunc2 = Goal.qualifyWitness(Variable("graphType"), "TWITTER_FRIENDS")
             val mapFunc = mapFunc1 compose mapFunc2
 
-            val subst2 = mapFunc(Witness(subst1))
+            val subst2 = mapFunc(subst1)
             println(" qualified witness is " + subst2)
-            subst2.substitution.assignments.foreach{ ass => println("COMPOSED " + ass) }
+            subst2.assignments.foreach{ ass => println("COMPOSED " + ass) }
 
-            subst2.substitution.assignments.size mustEqual 3
+            subst2.assignments.size mustEqual 3
         }
 
     }

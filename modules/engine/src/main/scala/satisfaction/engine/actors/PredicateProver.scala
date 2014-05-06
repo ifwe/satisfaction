@@ -211,14 +211,14 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
             status.state = GoalState.Running
             goal.satisfier match {
                 case Some(satisfier) =>
-                    val jobRunActor = Props(new JobRunner(satisfier, track ,goal, witness, getSubstitution))
+                    val jobRunActor = Props(new JobRunner(satisfier, track ,goal, witness, getWitness))
                     this.jobRunner = context.system.actorOf((jobRunActor), "Satisfier_" + ProofEngine.getActorName(goal, witness))
                     jobRunner ! Satisfy
                 case None =>
                     //// XXX Refactor names 
                   /**
                     val jobRunActor = Props(new JobRunner(new WaitingSatisfier( immutable.Set(goal.evidence.toSeq: _*)),
-                         track ,goal, witness, getSubstitution))
+                         track ,goal, witness, getWitness))
                     this.jobRunner = context.system.actorOf((jobRunActor), "Satisfier_" + ProofEngine.getActorName(goal, witness))
                     jobRunner ! Satisfy
                     * 
@@ -231,8 +231,8 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
         }
     }
 
-    def getSubstitution: Substitution = {
-        witness.substitution
+    def getWitness: Witness = {
+        witness
     }
 
     override def preStart() = {

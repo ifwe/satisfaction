@@ -60,7 +60,7 @@ case class HiveTable (
             val tblWitness = witness.filter( variables)
             println( "variables for table is " + variables  +  " ; Witness variables = " + witness.variables)
             println(s" TableWitness = $tblWitness == regular witness = $witness")
-            val part = ms.getPartition(dbName, tblName, tblWitness.substitution.raw)
+            val part = ms.getPartition(dbName, tblName, tblWitness.raw)
             if( part != null) {
               Some(part)
             } else {

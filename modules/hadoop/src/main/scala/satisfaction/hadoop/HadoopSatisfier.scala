@@ -65,7 +65,7 @@ case class HadoopSatisfier[KeyIn,ValIn,MapKeyOut,MapValOut,KeyOut,ValOut]( name 
   
   var startTime : DateTime = null
   
-  override def satisfy(subst: Substitution): ExecutionResult = {
+  override def satisfy(subst: Witness): ExecutionResult = {
     
     
     

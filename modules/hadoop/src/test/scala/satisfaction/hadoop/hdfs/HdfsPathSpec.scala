@@ -17,7 +17,7 @@ class HdfsPathSpec extends Specification {
     implicit val track : Track = {
       
       val tr = new Track( TrackDescriptor("Test Track"))
-      tr.setTrackProperties(new Substitution( Set(Variable( "Bogis") -> "blah")))
+      tr.setTrackProperties(new Witness( Set(Variable( "Bogis") -> "blah")))
       tr
     }
     
@@ -27,8 +27,8 @@ class HdfsPathSpec extends Specification {
 
             val varPath = new VariablePath(pathTempl)
 
-            val witness = Witness(Substitution((dtParam -> "20130821"),
-                (networkParam -> "tw")))
+            val witness = Witness((dtParam -> "20130821"),
+                (networkParam -> "tw"))
             val pathExists = varPath.exists(witness)
             pathExists must be
         }
@@ -38,8 +38,8 @@ class HdfsPathSpec extends Specification {
 
             val varPath = new VariablePath(pathTempl)
 
-            val witness = new Witness(Substitution((dtParam -> "20150813"),
-                (networkParam -> "horsehead")))
+            val witness = Witness((dtParam -> "20150813"),
+                (networkParam -> "horsehead"))
             val pathExists = varPath.exists(witness)
             pathExists must be.not
         }
@@ -49,8 +49,8 @@ class HdfsPathSpec extends Specification {
 
             val varPath = new VariablePath(pathTempl)
 
-            val witness = new Witness(Substitution((dtParam -> "20130813"),
-                (networkParam -> "tw")))
+            val witness = Witness((dtParam -> "20130813"),
+                (networkParam -> "tw"))
 
             val pathInstance = varPath.getDataInstance(witness)
 
@@ -67,8 +67,8 @@ class HdfsPathSpec extends Specification {
 
             val varPath = new VariablePath(pathTempl)
 
-            val witness = new Witness(Substitution((dtParam -> "20030813"),
-                (networkParam -> "booger")))
+            val witness = Witness((dtParam -> "20030813"),
+                (networkParam -> "booger"))
 
             val pathInstance = varPath.getDataInstance(witness)
 

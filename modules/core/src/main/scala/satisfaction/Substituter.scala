@@ -12,17 +12,17 @@ import java.io.InputStream
 object Substituter {
 
     def findVariablesInString(templateStr: String): Set[String] = {
-        substitute(templateStr, Substitution()) match {
+        substitute(templateStr, Witness()) match {
             case Left(vars)    => vars
             case Right(noVars) => Set.empty
         }
     }
 
-    def substitute(str: String, subst: Substitution): Either[Set[String], String] = {
+    def substitute(str: String, subst: Witness): Either[Set[String], String] = {
         return substitute(new CharSequenceReader(str), subst)
     }
 
-  def substitute(readerBegin: CharSequenceReader, subst: Substitution): Either[Set[String], String] = {
+  def substitute(readerBegin: CharSequenceReader, subst: Witness): Either[Set[String], String] = {
     try {
       val sb: StringBuilder = new StringBuilder
       val missingList: Buffer[String] = new collection.mutable.ArrayBuffer()
@@ -97,7 +97,7 @@ object Substituter {
     def substituteVarsInMap(varMap: Map[String, String]): Map[String, String] = {
         varMap.collect {
             case (k, v) =>
-                substitute(new CharSequenceReader(v), Substitution(varMap)) match {
+                substitute(new CharSequenceReader(v), Witness(varMap)) match {
 
                     case Left(extraVars) =>
                         /// There are some missing variables which need to be defined elsewhere ...

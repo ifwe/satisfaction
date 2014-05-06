@@ -16,9 +16,9 @@ class SatisfierSpec extends Specification {
         def name = "Robustly"
       
         @Override
-        override def satisfy( subst:Substitution) : ExecutionResult = robustly  {
+        override def satisfy( witness:Witness) : ExecutionResult = robustly  {
              println(" Calling a Boolean ")
-             println( " Substitution is "  + subst)
+             println( " Witness is "  + witness)
               true
         }
         
@@ -32,9 +32,9 @@ class SatisfierSpec extends Specification {
         def name = "Barfing" 
 
         @Override
-        override def satisfy( subst:Substitution) : ExecutionResult = robustly  {
+        override def satisfy( witness:Witness) : ExecutionResult = robustly  {
       
-          println( " Substitution is "  + subst)
+          println( " Witness is "  + witness)
           println(" I think I'm going to barf !!!!")
           throw new RuntimeException(" Get me a bucket" )
         }
@@ -56,8 +56,8 @@ class SatisfierSpec extends Specification {
      "robustly qualifer" in {
         val robustSatisfier = new RobustSatisfier();
         
-        val subst = Substitution( VariableAssignment[Int]("A" , 2), VariableAssignment[Int]("B" ,5))
-        val execResult = robustSatisfier.satisfy( subst)
+        val witness = Witness( VariableAssignment[Int]("A" , 2), VariableAssignment[Int]("B" ,5))
+        val execResult = robustSatisfier.satisfy( witness)
         
         println( execResult)
        
@@ -66,8 +66,8 @@ class SatisfierSpec extends Specification {
      "barf result" in {
         val barfSatisfier = new BarfingSatisfier();
         
-        val subst = Substitution( VariableAssignment[Int]("A" , 2), VariableAssignment[Int]("B" ,5))
-        val execResult = barfSatisfier.satisfy( subst)
+        val witness = Witness( VariableAssignment[Int]("A" , 2), VariableAssignment[Int]("B" ,5))
+        val execResult = barfSatisfier.satisfy( witness)
         
         println( execResult)
        

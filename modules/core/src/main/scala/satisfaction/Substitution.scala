@@ -49,19 +49,29 @@ object VariableAssignment {
     }
 }
 
-class Substitution(
+case class Witness(
     val assignments: Set[VariableAssignment[_]]) {
 
     lazy val raw: immutable.Map[String, String] = assignments map (_.raw) toMap
+    
+    lazy val variables: Set[Variable[_]] = assignments.map(_.variable).toSet
 
-    def ++(other: Substitution): Substitution = {
+
+
+    def ++(other: Witness): Witness = {
         (this /: other.assignments)(_ + _)
     }
     
     
+    
+    def filter( vars : Set[Variable[_]]) : Witness = {
+       new Witness( assignments filter( ass => { vars.contains( ass.variable) } ) )
+    }
+
+
 
     /**
-     * def ++(overrides: ParamOverrides): Substitution =
+     * def ++(overrides: ParamOverrides): Witness =
      * withOverrides(overrides)
      *
      */
@@ -69,22 +79,22 @@ class Substitution(
     def get[T](param: Variable[T]): Option[T] =
         assignments find (_.variable == param) map (_.value.asInstanceOf[T])
 
-    def update[T](param: Variable[T], value: T): Substitution = {
+    def update[T](param: Variable[T], value: T): Witness = {
         val filtered = assignments filterNot (_.variable == param)
-        new Substitution(filtered + (param -> value))
+        new Witness(filtered + (param -> value))
     }
 
     def contains[T](variable: Variable[T]): Boolean = {
         assignments.map(_.variable).contains(variable)
     }
 
-    def +[T](param: Variable[T], value: T): Substitution =
+    def +[T](param: Variable[T], value: T): Witness =
         update(param, value)
 
-    def +[T](pair: VariableAssignment[T]): Substitution =
+    def +[T](pair: VariableAssignment[T]): Witness =
         update(pair.variable, pair.value)
 
-    def update[T](pair: VariableAssignment[T]): Substitution = update(pair.variable, pair.value)
+    def update[T](pair: VariableAssignment[T]): Witness = update(pair.variable, pair.value)
 
     override def toString : String = {
        assignments.mkString(";")
@@ -95,17 +105,17 @@ class Substitution(
     }
 }
 
-object Substitution {
-    def apply(pairs: VariableAssignment[_]*): Substitution = new Substitution(pairs.toSet)
+object Witness {
+    def apply(pairs: VariableAssignment[_]*): Witness = new Witness(pairs.toSet)
 
-    def apply(properties: Map[String, String]): Substitution = {
+    def apply(properties: Map[String, String]): Witness = {
         val assignSet = properties collect { case (k, v) => new VariableAssignment[String](Variable[String](k, classOf[String]), v) }
-        new Substitution(assignSet.toSet)
+        new Witness(assignSet.toSet)
     }
 
-    val empty = new Substitution(Set.empty)
+    val empty = new Witness(Set.empty)
 
-    implicit def Substitution2Properties( subst : Substitution ) : java.util.Properties = {
+    implicit def Witness2Properties( subst : Witness ) : java.util.Properties = {
        val props = new java.util.Properties      
        subst.raw.foreach { case (k, v) => {
            props.setProperty( k, v.toString) 

@@ -29,7 +29,7 @@ case class VariablePath(pathTemplate: String)(implicit val hdfs : FileSystem, tr
 
     def getPathForWitness(witness: Witness): Option[Path] = {
         /// XXX Who is going to set the Track ????
-        val fullSubstituter = track.getTrackProperties(witness.substitution)
+        val fullSubstituter = track.getTrackProperties(witness)
         var substPath = Substituter.substitute(pathTemplate, fullSubstituter)
         substPath match {
             case Left(missingVars) =>

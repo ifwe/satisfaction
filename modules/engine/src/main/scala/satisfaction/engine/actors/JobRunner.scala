@@ -25,7 +25,7 @@ class JobRunner(
     track : Track,
     goal : Goal, 
     witness : Witness,
-    params: Substitution ) extends Actor with ActorLogging {
+    params: Witness ) extends Actor with ActorLogging {
 
   
     implicit val executionContext : ExecutionContext = ExecutionContext.global

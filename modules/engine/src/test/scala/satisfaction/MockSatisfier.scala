@@ -21,7 +21,7 @@ class MockSatisfier extends Satisfier with Evidence {
     override def name = "MockSatisfier"
 
     @Override 
-    def satisfy(params: Substitution): ExecutionResult = {
+    def satisfy(params: Witness): ExecutionResult = {
         println(" Satisfy for params " + params.raw.mkString(","))
         startTime = DateTime.now
         varMap ++= params.raw.keySet
@@ -44,7 +44,7 @@ class MockSatisfier extends Satisfier with Evidence {
     }
 
     def exists(w: Witness): Boolean = {
-        val xist = w.substitution.raw.keys.forall(v => varMap.contains(v))
+        val xist = w.raw.keys.forall(v => varMap.contains(v))
         println(" Does the evidence exist for witness " + w.variables.mkString + " ???? " + xist)
         xist
     }

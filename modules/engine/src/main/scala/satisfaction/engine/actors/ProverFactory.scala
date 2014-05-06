@@ -50,7 +50,7 @@ class ProverFactory extends Actor with ActorLogging {
      */
     def checkVariables( goal : Goal, wit : Witness ) : Boolean = {
        goal.variables.foreach( v => {
-          if(!wit.substitution.contains(v)) {
+          if(!wit.contains(v)) {
               log.warning(s" Witness $wit doesn't have variable ${v.name} to satisfy goal ${goal.name} ")
               return false
           }

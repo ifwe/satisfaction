@@ -113,7 +113,7 @@ case class TrackFactory(val trackFS : FileSystem,
     */
    def initializeTrack( track: Track , trackProps : Map[String,String] ) = {
      println(s" Initializing Track ${track.descriptor.trackName}")
-     track.setTrackProperties(Substitution(trackProps ))
+     track.setTrackProperties(Witness(trackProps ))
                 
      val trackPath = getTrackPath( track.descriptor )
      
