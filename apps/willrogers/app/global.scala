@@ -42,18 +42,24 @@ object Global extends GlobalSettings {
     
     def hdfsConfig : HadoopConfiguration = {
         val conf = new HadoopConfiguration
+        /// XXX 
+        /// XXX JDB FIXME
+        /// Avoid Hacks to point to correct filesystem
       val testPath = System.getProperty("user.dir") + "/apps/willrogers/conf/hdfs-site.xml"
       conf.addResource( new java.io.File(testPath).toURI().toURL())
       
       
+        /**
        val nameService = conf.get("dfs.nameservices")
        if(nameService != null) {
          conf.set("fs.defaultFS", s"hdfs://$nameService")
        }
+       * 
+       */
       conf
     }
     val hdfsFS = Hdfs.fromConfig( hdfsConfig )
-    val trackPath : Path = new Path("/user/jerome/satisfaction")
+    val trackPath : Path = new Path("/user/satisfaction")
     val trackScheduler = new TrackScheduler( engine.actors.ProofEngine)
       
     implicit val trackFactory : TrackFactory = {

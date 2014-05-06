@@ -18,7 +18,6 @@ trait DataOutput extends Evidence {
 
 object DataDependency {
   
-   ///implicit val track : Track  = null
    /**
     *   Create a DataDependency Goal,   
     *     given a DataOutput

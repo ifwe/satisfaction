@@ -20,8 +20,6 @@ class  HiveParser( implicit val ms : MetaStore, implicit val hdfs : FileSystem )
     val parseDriver = new org.apache.hadoop.hive.ql.parse.ParseDriver
     val config = Config.config
     
-    
-    
 
     def parseSyntax(query: String): Boolean = {
         try {
@@ -47,8 +45,6 @@ class  HiveParser( implicit val ms : MetaStore, implicit val hdfs : FileSystem )
         val depends = for (ent <- readEntities) yield {
             val part = ent.getPartition()
             println(" Partition is " + part.getCompleteName())
-            ////new HiveTablePartition(part,ms)
-            /// XXX get implicit metastore 
             new HiveTablePartition(part)
         }
         depends.toSet[DataInstance]

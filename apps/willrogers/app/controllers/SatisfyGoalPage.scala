@@ -34,8 +34,7 @@ object SatisfyGoalPage extends Controller {
             case Some(goalTuple) =>
                 val variableFormHandler = new VariableFormHandler(goalTuple._2.variables)
                 variableFormHandler.processRequest(request) match {
-                    case Right(subst) =>
-                        val witness = Witness(subst)
+                    case Right(witness) =>
                         val status: GoalStatus = this.satisfyGoal(goalTuple._1, goalTuple._2, witness)
                         println(" Got Goal Stqtus = " + status.state)
 
@@ -182,7 +181,7 @@ object SatisfyGoalPage extends Controller {
      *   Convert a witness to a String which can be passed as a string in an URL
      */
     def witnessPath( witness : Witness ) : String = {
-      witness.substitution.assignments.map( ass => {
+      witness.assignments.map( ass => {
            s"${ass.variable.name}=${ass.value}"
       } ).mkString(";")
     }

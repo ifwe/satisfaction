@@ -5,10 +5,6 @@ import org.joda.time.DateTime
 
 object ProjectUtil {
 
-    /// place utility code here ..
-    def blah = {
-
-    }
 }
 
 
@@ -38,7 +34,7 @@ object HtmlUtil {
      *   Convert a witness to a String which can be passed as a string in an URL
      */
     def witnessPath( witness : Witness ) : String = {
-      witness.substitution.assignments.map( ass => {
+      witness.assignments.map( ass => {
            s"${ass.variable.name}=${ass.value}"
       } ).mkString(";")
     }

@@ -15,9 +15,9 @@ case class VariableHolder(val dt: String, val network_abbr: String, val service_
  */
 class VariableFormHandler(val variables: Set[Variable[_]]) {
 
-    def processRequest(req: Request[AnyContent]): Either[Set[String], Substitution] = {
+    def processRequest(req: Request[AnyContent]): Either[Set[String], Witness] = {
         val formVars = req.body.asFormUrlEncoded.get
-        var subst = Substitution()
+        var subst = Witness()
         var errorMessages = Set[String]()
         variables.foreach (variable => {
             formVars.get(variable.name) match {

@@ -18,9 +18,12 @@ class SampleSatisfier(progressCount: Int, sleepTime: Long) extends Satisfier wit
     var startTime : DateTime = null
     
     
+    override def name = "SampleSatisfier"
+    
+    
 
     @Override
-    override def satisfy(params: Substitution): ExecutionResult = {
+    override def satisfy(params: Witness): ExecutionResult = {
         startTime = new DateTime
         println(" Satisfy for params " + params.raw.mkString(","))
         varMap ++= params.raw.keySet
@@ -39,9 +42,7 @@ class SampleSatisfier(progressCount: Int, sleepTime: Long) extends Satisfier wit
     }
 
     def exists(w: Witness): Boolean = {
-        val xist = w.substitution.raw.keys.forall(v => varMap.contains(v))
-        println(" Does the evidence exist for witness " + w.variables.mkString + " ???? " + xist)
-        xist
+        w.raw.keys.forall(v => varMap.contains(v))
     }
 
 

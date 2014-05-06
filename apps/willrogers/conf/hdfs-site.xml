@@ -18,10 +18,24 @@
 
 <configuration>
 
- <property>
-  <name>fs.defaultFS</name>
-  <value>hdfs://localhost:8020</value>
- </property>
+  <property>
+    <name>fs.defaultFS</name>
+    <value>hdfs://dhdp2</value>
+  </property>
+
+  <property>
+    <name>fs.default.name</name>
+    <value>hdfs://dhdp2</value>
+  </property>
+
+
+  <property>
+    <name>mapreduce.framework.name</name>
+    <value>yarn</value>
+  </property>
+
+
+
 
 
 

@@ -61,7 +61,7 @@ case class HiveSatisfier(queryResource: String, driver: HiveDriver)( implicit va
     
 
     @Override
-    override def satisfy(params: Substitution): ExecutionResult = {
+    override def satisfy(params: Witness): ExecutionResult = {
       try {
 
         val allProps = track.getTrackProperties(params)
