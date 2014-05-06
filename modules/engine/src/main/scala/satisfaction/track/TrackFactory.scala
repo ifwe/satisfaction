@@ -25,7 +25,7 @@ import fs._
  *  
  */
 case class TrackFactory(val trackFS : FileSystem, 
-    val baseTrackPath : Path = Path("/user/jerome/satisfaction"),
+    val baseTrackPath : Path = Path("/user/satisfaction"),
     val schedulerOpt : Option[TrackScheduler] = None) {
   
    implicit val localFS : FileSystem =  LocalFileSystem
@@ -37,7 +37,7 @@ case class TrackFactory(val trackFS : FileSystem,
    val auxJarsPathBase : Path = LocalFileSystem.currentDirectory / "auxJars" ;
    
    
-   private var trackMap : collection.mutable.Map[TrackDescriptor,Track] = collection.mutable.HashMap[TrackDescriptor,Track]()
+   private val trackMap : collection.mutable.Map[TrackDescriptor,Track] = collection.mutable.HashMap[TrackDescriptor,Track]()
    
    /** 
     *  Get all the tracks which have been deployed to HDFS under the
@@ -148,7 +148,9 @@ case class TrackFactory(val trackFS : FileSystem,
      }
      
      track.setTrackPath( getTrackPath( track.descriptor))
-     
+     /// XXX JDB FIXME
+     /// XXX Allow implicit to be set on object creation ...
+     track.hdfs = hdfs 
    }
    
    

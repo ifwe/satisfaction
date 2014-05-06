@@ -38,18 +38,14 @@ object EditPage extends Controller {
   
   
     def getResources( track : Track) : List[String] = {
-      trackFactory.trackFS.listFiles( track.trackPath / "resource" ).map( _.getPath.toUri.getPath.split("/").last).toList
+      ///trackFactory.trackFS.listFiles( track.trackPath / "resource" ).map( _.getPath.toUri.getPath.split("/").last).toList
+      track.listResources.map( _.split("/").last).toList
       
     }
   
     def editFile(trackName: String, resourceName : String) = Action {
-        ///val project = SyncApi.getProject(projName)
-       //// Display only major projects 
         val trackDesc = TrackDescriptor( trackName)
         val trackOpt : Option[Track] = trackFactory.getTrack( trackDesc)
-        //val internalGoals = project.project.get.internalGoals.toList
-        //val externalGoals = project.project.get.externalGoals.toList
-        ///val internalGoals = project.topLevelGoals.toList
         trackOpt match {
           case Some(track) =>
             val resourceContents = track.getResource( resourceName)

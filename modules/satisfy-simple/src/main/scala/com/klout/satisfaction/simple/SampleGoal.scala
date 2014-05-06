@@ -27,9 +27,10 @@ class  SampleProject extends Track(TrackDescriptor("SampleTrack")) {
     val networkAbbrVar = Variable[String]("network_abbr", classOf[String])
     val serviceIdVar = Variable[Int]("service_id", classOf[Int])
     
-    {
-       addTopLevelGoal( topLevelGoal )
-    }
+    ///{
+       ///println(" Top level goal is " + topLevelGoal)
+       ///addTopLevelGoal( topLevelGoal )
+    ///}
     implicit val track : Track = this;
 
     val featureNetworks: Set[Network] =

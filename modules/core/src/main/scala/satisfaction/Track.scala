@@ -66,7 +66,8 @@ case class Track(
     
     /// Define filesystems which Tracks can read and write to
     /// Define as local, to avoid unnecessary dependencies
-    implicit val hdfs : FileSystem = LocalFileSystem
+    //// XXX FIXME -- Allow implicit HDFS to be in scope on object creation
+    implicit var hdfs : FileSystem = LocalFileSystem
     implicit val localFS : FileSystem = LocalFileSystem
     
     
@@ -143,10 +144,12 @@ case class Track(
    * 
    */
    def getResource(   resourceFile : String ) : String  = {
+      println(" GET HDFS is " + hdfs)
       hdfs.readFile( resourcePath / resourceFile )
    }
    
    def listResources : Seq[String]  = {
+      println(" LIST  HDFS is " + hdfs)
       hdfs.listFiles(  resourcePath ).map( _.getPath.name )
    }
    

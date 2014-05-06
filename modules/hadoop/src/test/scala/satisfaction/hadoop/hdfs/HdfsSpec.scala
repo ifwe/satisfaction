@@ -20,9 +20,8 @@ class HdfsSpec extends Specification {
     "Hdfs" should {
         "create URLS starting with hdfs" in {
           //// XXX use MiniFS for unit testing ...
-          ///val hdfsUrl = new java.net.URL("hdfs://jobs-dev-hnn/user/satisfaction/track/Sample/version_2.1/satisfaction.properties")
           /// Externalize configuration 
-          val hdfsUrl = new java.net.URL("hdfs://nameservice1/user/satisfaction/track/Sample/version_2.1/satisfaction.properties")
+          val hdfsUrl = new java.net.URL("hdfs://dhdp2/user/satisfaction/track/Sample/version_2.1/satisfaction.properties")
          
           val stream = hdfsUrl.openStream
           val props  = Substituter.readProperties( stream)
@@ -34,15 +33,19 @@ class HdfsSpec extends Specification {
         "List files" in {
           val hdfs = Hdfs.fromConfig(HdfsSpec.clientConfig)
           
-          val path = new Path("hdfs://nameservice1/data/hive/maxwell/actor_action")
+          val path = new Path("hdfs:///data/ramblas/event_log")
           
           
           hdfs.listFiles( path ).foreach( fs => {
             System.out.println(s" Path is ${fs.getPath} ${fs.getSize} ${fs.lastAccessed}  ")
           } )
           
-          val pathToday =  path / "20140116"
+          val pathToday =  path / "20140429"
           hdfs.listFilesRecursively( pathToday ).foreach( fs => {
+            System.out.println(s" Recursive Path is ${fs.getPath} ${fs.getSize} ${fs.lastAccessed}  ")
+          } )
+
+          hdfs.listFilesRecursively( path ).foreach( fs => {
             System.out.println(s" Path is ${fs.getPath} ${fs.getSize} ${fs.lastAccessed}  ")
           } )
           
@@ -56,7 +59,7 @@ class HdfsSpec extends Specification {
           testConf.writeXml(System.out)
           val haHdfs = Hdfs.fromConfig( testConf)
           
-          val nsPath = new Path("hdfs://nameservice1/user/hive/warehouse/bi_maxwell.db")
+          val nsPath = new Path("hdfs://dhdp2/user/ramblas/lib")
           haHdfs.listFiles( nsPath ).foreach( fs => {
             System.out.println(s" Path is ${fs.getPath} ${fs.getSize} ${fs.lastAccessed}  ")
           } )

@@ -49,17 +49,18 @@ object Global extends GlobalSettings {
       conf.addResource( new java.io.File(testPath).toURI().toURL())
       
       
-        /**
        val nameService = conf.get("dfs.nameservices")
        if(nameService != null) {
          conf.set("fs.defaultFS", s"hdfs://$nameService")
        }
-       * 
-       */
       conf
     }
     val hdfsFS = Hdfs.fromConfig( hdfsConfig )
     val trackPath : Path = new Path("/user/satisfaction")
+    
+    println(" HDFS DFS = " + hdfsFS)
+    
+    
     val trackScheduler = new TrackScheduler( engine.actors.ProofEngine)
       
     implicit val trackFactory : TrackFactory = {
