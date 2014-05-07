@@ -185,6 +185,10 @@ case class MetaStore(val hvConfig: HiveConf) extends Loggable {
     def getTableByName(db: String, tblName: String): Table = {
         this.synchronized({ _hive.getTable(db, tblName) })
     }
+    
+    def tableExists( db: String, tblName: String) : Boolean = {
+       this.synchronized( _hive.getTable(db,tblName, false) == null)
+    }
 
     /**
      *  For a table, clean up partitions which are either empty,

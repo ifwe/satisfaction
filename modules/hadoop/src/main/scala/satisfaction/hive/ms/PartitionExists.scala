@@ -13,24 +13,25 @@ import scala.collection.JavaConversions._
  *  PartitionExists is similar to HiveTable DataDependency,
  *    but creates the necessary partitions if they don't exist.
  */
-case class PartitionExists(
+case class PartitionCreator(
     table : HiveTable 
-    )( implicit val ms : MetaStore)  extends Satisfier with Evidence {
+    ) extends Satisfier with Evidence {
   
     override def name = "PartitionExists"
       
     
     def satisfy(subst: Witness): ExecutionResult = robustly {
-        val part = ms.addPartition( table.dbName, table.tblName , subst.raw  )    
+        val part = table.ms.addPartition( table.dbName, table.tblName , subst.raw  )    
         true
     }
     
     
-    def abort() : ExecutionResult = {
-      null 
+    def abort() : ExecutionResult = robustly {
+        /// XXX FIXME 
+        ///  Drop partition on abort create partition ????
+        ///ms.dropPartition( table.dbName, table.tblName )
+        true 
     }
-    
-    
     
     /**
      *  
@@ -39,4 +40,18 @@ case class PartitionExists(
         table.exists(w)
     }
 
+}
+
+object PartitionExists {
+  
+      def apply( hiveTable : HiveTable )
+               (implicit  track : Track) : Goal
+                =  {
+         val partitionCreator = new PartitionCreator(hiveTable)
+         new Goal( name= s" ${hiveTable.tblName} Partition exists",
+               satisfier=Some(partitionCreator)
+           ).addEvidence(partitionCreator)
+      }
+  
+  
 }

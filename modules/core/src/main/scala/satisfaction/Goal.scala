@@ -35,8 +35,6 @@ case class Goal(
     def addEvidence( ev : Evidence  ) : Goal = {
        ///evidence += ev
       ///evidence = evidence + ev
-      println( "EV is " + ev + " " + ev.getClass())
-      println( "Evidence set is "+ evidence + " " + evidence.getClass())
          
       evidence += ev
        this

@@ -12,7 +12,9 @@ trait Satisfier {
     def name : String
 
     /**
-     *  Given a s
+     *  Make sure the Goal is satisfied for the specified Witness
+     *  
+     *  @returns Result of execution
      */
     def satisfy(witness: Witness): ExecutionResult
     

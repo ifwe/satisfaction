@@ -28,14 +28,12 @@ object ProjectPage extends Controller {
     }
 
     def showProject(projName: String) = Action {
+       //// Display only major projects 
         val trackDesc = TrackDescriptor( projName)
         val trackOpt : Option[Track] = trackFactory.getTrack( trackDesc)
-        //val internalGoals = project.project.get.internalGoals.toList
-        //val externalGoals = project.project.get.externalGoals.toList
-        ///val internalGoals = project.topLevelGoals.toList
         trackOpt match {
           case Some(track) =>
-          val internalGoals = track.allGoals.toList
+          val internalGoals = track.topLevelGoals.toList
           val externalGoals = track.externalGoals.toList
 
           Ok(views.html.showproject(projName, internalGoals map (_.name), externalGoals map (_.name)))

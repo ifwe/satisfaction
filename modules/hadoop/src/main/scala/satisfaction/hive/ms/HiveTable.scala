@@ -12,9 +12,13 @@ import hdfs.HdfsPath
 import hdfs.HdfsFactoryInit
 import hdfs.HdfsImplicits._
 
+/**
+ *  Implies a table with Partitions
+ */
 case class HiveTable (
     dbName: String,
-    tblName: String)
+    tblName: String,
+    isPartitioned: Boolean = true)
     (implicit val ms : MetaStore,
      implicit val hdfs : FileSystem) extends DataOutput  {
 
@@ -22,10 +26,22 @@ case class HiveTable (
     val checkSuccessFile = true
 
     def variables = {
+      if(isPartitioned)
         ms.getVariablesForTable(dbName, tblName)
+      else 
+        Set.empty
     }
 
-    def exists(w: Witness): Boolean = {
+    override def exists(w: Witness): Boolean = {
+       if(isPartitioned) {
+           partitionExists( w)
+       } else {
+         /// XXX Unit test this ..
+          ms.getTableByName(dbName, tblName) != null
+       }
+    }
+    
+    def partitionExists(w: Witness): Boolean = {
       val partitionOpt = getPartition( w)
       if(partitionOpt.isDefined ) {
         if( checkSuccessFile) {
@@ -47,11 +63,15 @@ case class HiveTable (
     }
 
     def getDataInstance(w: Witness): Option[DataInstance] = {
+      if( isPartitioned ) {
         val partition = getPartition(w)
         partition match {
           case Some(part) => Some(new HiveTablePartition(part))
           case None => None 
         }
+      } else {
+         Some(new NonPartitionedTable( this))   
+       }
     }
 
     def getPartition(witness: Witness): Option[Partition] = {
