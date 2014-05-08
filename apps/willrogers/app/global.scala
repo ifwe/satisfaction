@@ -10,6 +10,8 @@ import com.klout.satisfaction.hadoop.Config
 import org.apache.hadoop.conf.{ Configuration => HadoopConfiguration }
 import com.klout.satisfaction.fs.Path
 
+import com.klout.satisfaction.hadoop.Config
+
 object Global extends GlobalSettings {
 
 
@@ -45,6 +47,7 @@ object Global extends GlobalSettings {
         /// XXX 
         /// XXX JDB FIXME
         /// Avoid Hacks to point to correct filesystem
+        /// XXX Clean up app  configuration 
       val testPath = System.getProperty("user.dir") + "/apps/willrogers/conf/hdfs-site.xml"
       conf.addResource( new java.io.File(testPath).toURI().toURL())
       
@@ -64,7 +67,9 @@ object Global extends GlobalSettings {
     val trackScheduler = new TrackScheduler( engine.actors.ProofEngine)
       
     implicit val trackFactory : TrackFactory = {
-      var tf = new TrackFactory( hdfsFS, trackPath, Some(trackScheduler))
+      ///// XXX Why doesn't implicits automatically convert???
+      val hadoopWitness : Witness = Config.Configuration2Witness( hdfsConfig.asInstanceOf[HadoopConfiguration])
+      var tf = new TrackFactory( hdfsFS, trackPath, Some(trackScheduler), Some(hadoopWitness))
       trackScheduler.trackFactory = tf
       tf
     }

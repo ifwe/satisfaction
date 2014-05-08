@@ -3,10 +3,8 @@ package satisfaction
 package track
 
 import collection.JavaConversions._
-
-
-/// XXX abstraction of filesystem ...
 import fs._
+import java.util.Properties
 
 
 /**
@@ -26,7 +24,8 @@ import fs._
  */
 case class TrackFactory(val trackFS : FileSystem, 
     val baseTrackPath : Path = Path("/user/satisfaction"),
-    val schedulerOpt : Option[TrackScheduler] = None) {
+    val schedulerOpt : Option[TrackScheduler] = None,
+    val defaultConfig : Option[Witness] =  None) {
   
    implicit val localFS : FileSystem =  LocalFileSystem
    implicit val hdfs = trackFS
@@ -111,16 +110,21 @@ case class TrackFactory(val trackFS : FileSystem,
     * Once a track has been loaded, 
     *   make sure that it has setup everything it needs to run ..
     */
-   def initializeTrack( track: Track , trackProps : Map[String,String] ) = {
+   def initializeTrack( track: Track , trackMap : Map[String,String] ) = {
      println(s" Initializing Track ${track.descriptor.trackName}")
-     track.setTrackProperties(Witness(trackProps ))
+
+     val trackProps : Witness =  {
+         defaultConfig match {
+           case Some(hadoopConfig)  => hadoopConfig ++ Witness(trackMap)
+           case None => Witness(trackMap)
+        }
+     }
+     track.setTrackProperties(trackProps)
                 
      val trackPath = getTrackPath( track.descriptor )
      
-     trackProps.get( "satisfaction.track.auxjar") match {
+     trackProps.get(Variable( "satisfaction.track.auxjar")) match {
      case Some(trackAuxJar) =>
-       //// XXX remove reference to files ... 
-       ////  use fs.FileSystem
         val localAuxJarsPath : Path = ( auxJarsPathBase /  track.descriptor.trackName)
         localFS.mkdirs( localAuxJarsPath)
         val hdfsAuxJarPath = new Path(trackPath + "/" + trackAuxJar)
@@ -136,7 +140,7 @@ case class TrackFactory(val trackFS : FileSystem,
        
      schedulerOpt match {
        case Some(scheduler) =>
-       	   trackProps.get("satisfaction.track.schedule") match {
+       	   trackProps.get(Variable("satisfaction.track.schedule")) match {
              case Some(schedStr) =>
                println( "Scheduling "+ track.descriptor.trackName + " at " + schedStr)
                val sched = TrackSchedule(schedStr)

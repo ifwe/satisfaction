@@ -2,7 +2,16 @@ package com.klout
 package satisfaction
 
 import collection._
+import collection.JavaConversions._
 
+
+/**
+ *  A Witness represents a set of Variable Assignments.
+ *  
+ *  A Variable consists of a Variable name, and a type.
+ *  A VariableAssignment consists of a Variable, 
+ *    and an Object of that type.
+ */
 case class Variable[T](val name: String, val clazz: Class[T], val description: Option[String] = None) {
     def ->(t: T): VariableAssignment[T] = VariableAssignment(this, t)
 
@@ -84,8 +93,13 @@ case class Witness(
         new Witness(filtered + (param -> value))
     }
 
+    /// XXX Unit test all this logic 
     def contains[T](variable: Variable[T]): Boolean = {
         assignments.map(_.variable).contains(variable)
+    }
+    
+    def contains( variable : String ) : Boolean = {
+        assignments.map(_.variable).contains(Variable(variable))
     }
 
     def +[T](param: Variable[T], value: T): Witness =
@@ -122,6 +136,13 @@ object Witness {
          } 
        }
        props
+    }
+    
+    implicit def Properties2Witness( props : java.util.Properties ) : Witness = {
+        new Witness( props.entrySet.map( entry =>  {
+          val keyVar : Variable[String] = Variable( entry.getKey.toString )
+           new VariableAssignment[String]( keyVar, entry.getValue.toString )
+        } ) )
     }
     
 }

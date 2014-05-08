@@ -35,28 +35,18 @@ import satisfaction.fs.LocalFileSystem
      }
   }
   
-  /**
-   * A Track 
-   */
-
+/**
+  * A Track defines a cohesive DataFlow,
+  *    a set of related 
+  *   Goals and their corresponding 
+  *     dependencies
+  */
 case class Track( 
     var descriptor : TrackDescriptor )  {
 
   
-  /**
-    def apply( trackName : String) : Track = {
-       Track( TrackDescriptor(trackName), Set.empty) 
-    }
-    
-    def apply( trackName : String, topLevelGoals : Set[Goal]) : Track = {
-       Track( TrackDescriptor(trackName), topLevelGoals) 
-    }
-    
-    def apply( trackName : String, topLevelGoal : Goal) : Track = {
-       Track( TrackDescriptor(trackName), Set(topLevelGoal)) 
-    }
-    * 
-    */
+  
+  
     val topLevelGoals : collection.mutable.Set[Goal] = collection.mutable.Set.empty
     
     def addTopLevelGoal( goal : Goal ) : Track = {
