@@ -27,8 +27,8 @@ case class TrackFactory(val trackFS : FileSystem,
     val schedulerOpt : Option[TrackScheduler] = None,
     val defaultConfig : Option[Witness] =  None) {
   
-   implicit val localFS : FileSystem =  LocalFileSystem
-   implicit val hdfs = trackFS
+  implicit val hdfs = trackFS
+  val localFS = LocalFileSystem
    
    
    ///  XXX Use Local FS abstraction
@@ -155,6 +155,8 @@ case class TrackFactory(val trackFS : FileSystem,
      /// XXX JDB FIXME
      /// XXX Allow implicit to be set on object creation ...
      track.hdfs = hdfs 
+     
+     track.init
    }
    
    

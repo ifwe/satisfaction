@@ -29,6 +29,8 @@ case class Variable[T](val name: String, val clazz: Class[T], val description: O
     }
     
 }
+
+
 object Variable {
     //// Assume it is a string type if not defined
     def apply(name: String, description: String): Variable[String] = {
@@ -41,13 +43,14 @@ object Variable {
     
 }
 
-case class VariableAssignment[T](variable: Variable[T], value: T) {
+case class VariableAssignment[T](val variable: Variable[T], val value: T) {
     lazy val raw: (String, String) = variable.name -> value.toString
 
     override def toString : String = {
         s"(${variable.name} => $value)" 
     }
 }
+
 object VariableAssignment {
     def apply[T](name: String, value: T)(implicit m: Manifest[T]): VariableAssignment[T] = {
         new VariableAssignment(new Variable[T](name, m.runtimeClass.asInstanceOf[Class[T]]), value)
@@ -66,24 +69,13 @@ case class Witness(
     lazy val variables: Set[Variable[_]] = assignments.map(_.variable).toSet
 
 
-
     def ++(other: Witness): Witness = {
         (this /: other.assignments)(_ + _)
     }
     
-    
-    
     def filter( vars : Set[Variable[_]]) : Witness = {
        new Witness( assignments filter( ass => { vars.contains( ass.variable) } ) )
     }
-
-
-
-    /**
-     * def ++(overrides: ParamOverrides): Witness =
-     * withOverrides(overrides)
-     *
-     */
 
     def get[T](param: Variable[T]): Option[T] =
         assignments find (_.variable == param) map (_.value.asInstanceOf[T])
@@ -145,24 +137,5 @@ object Witness {
         } ) )
     }
     
-}
-
-trait Paramable[T] {
-    def toParam(t: T): String
-}
-
-object Paramable {
-    def toParam[T: Paramable](t: T): String = implicitly[Paramable[T]] toParam t
-
-    def apply[T](f: T => String): Paramable[T] = new Paramable[T] {
-        override def toParam(t: T): String = f(t)
-    }
-
-    implicit val StringParamable = Paramable[String](_.toString)
-    implicit val IntParamable = Paramable[Int](_.toString)
-    implicit val BooleanParamable = Paramable[Boolean](_.toString)
-
-    import org.joda.time._
-    implicit val LocalDateParamable = Paramable[LocalDate](_ toString "yyyyMMdd")
 }
 

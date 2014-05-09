@@ -45,6 +45,8 @@ case class Track(
     var descriptor : TrackDescriptor )  {
 
   
+    /// XXX Track initialization
+    def init : Unit = { }
   
   
     val topLevelGoals : collection.mutable.Set[Goal] = collection.mutable.Set.empty
@@ -58,7 +60,7 @@ case class Track(
     /// Define as local, to avoid unnecessary dependencies
     //// XXX FIXME -- Allow implicit HDFS to be in scope on object creation
     implicit var hdfs : FileSystem = LocalFileSystem
-    implicit val localFS : FileSystem = LocalFileSystem
+    implicit val track : Track = this
     
     
     lazy val allGoals: Set[Goal] = {

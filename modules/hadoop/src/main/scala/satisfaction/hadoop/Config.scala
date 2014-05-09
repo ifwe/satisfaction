@@ -6,6 +6,9 @@ import org.apache.hadoop.hive.conf.HiveConf
 import org.apache.hadoop.hive.shims.ShimLoader
 import org.apache.hadoop.conf.Configuration
 
+import collection.JavaConversions._
+import collection.JavaConverters._
+
 /**
  *  Scala Object to handle initial configuration
  *   to be used
@@ -47,9 +50,22 @@ object Config {
 
         return hc
     }
-    
-    
 
     val config = initHiveConf
+    
+    /**
+     *  Provide an implicit conversion from Hadoop Configuration
+     *    to our Witness class, to avoid dependencies on Hadoop library
+     */
+    implicit def Configuration2Witness( hadoopConf : Configuration ) : Witness = {
+       new Witness(hadoopConf.iterator.map( entry => { 
+             VariableAssignment[String]( Variable( entry.getKey ), entry.getValue )
+       } ).toSet )
+    }
+    
+    implicit def Witness2Configuration( witness : Witness ) : Configuration = {
+      /// XXX TODO
+       null 
+    }
 
 }
