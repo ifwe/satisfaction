@@ -137,5 +137,21 @@ object Witness {
         } ) )
     }
     
+    
+   /**
+    *   Define a function which maps one variable to another.
+    *   Useful for Goal dependencies, if one table refers to 
+    *    a variable by a different name.
+    */ 
+    def mapVariables[T]( vfrom : Variable[T], vto : Variable[T] )( fromWitness : Witness) : Witness = {
+      val oldValCheck = fromWitness.get( vfrom)
+      oldValCheck match {
+        case Some(oldVal) => {
+          fromWitness.filter( Set(vfrom)) + ( vto, oldVal)
+        } 
+        case None => fromWitness
+      }
+   }
+    
 }
 

@@ -33,16 +33,23 @@ case class HiveTable (
     }
 
     override def exists(w: Witness): Boolean = {
-       if(isPartitioned) {
+       if(variables.forall( w.contains( _ ))) {
+         if(isPartitioned) {
            partitionExists( w)
+         } else {
+           /// XXX Unit test this ..
+            ms.getTableByName(dbName, tblName) != null
+         }
        } else {
-         /// XXX Unit test this ..
-          ms.getTableByName(dbName, tblName) != null
+         //// XXX What to check exactly ???
+         //// 
+         false 
        }
     }
     
     def partitionExists(w: Witness): Boolean = {
       val partitionOpt = getPartition( w)
+      
       if(partitionOpt.isDefined ) {
         if( checkSuccessFile) {
         	val partition = partitionOpt.get
@@ -64,10 +71,18 @@ case class HiveTable (
 
     def getDataInstance(w: Witness): Option[DataInstance] = {
       if( isPartitioned ) {
-        val partition = getPartition(w)
-        partition match {
-          case Some(part) => Some(new HiveTablePartition(part))
-          case None => None 
+        if(variables.forall( w.contains(_))) {
+          val partition = getPartition(w)
+          partition match {
+            case Some(part) => Some(new HiveTablePartition(part))
+            case None => None 
+          }
+        } else {
+          /// Data instance is 
+          val partialVars = w.raw.filterKeys( variables.map( _.name).contains(_))
+          val parts = ms.getPartitionSetForTable(ms.getTableByName(dbName, this.tblName), partialVars).toSet
+          val hivePartSet = new HivePartitionSet( parts.map( new HiveTablePartition(_))) 
+          Some(hivePartSet)
         }
       } else {
          Some(new NonPartitionedTable( this))   
