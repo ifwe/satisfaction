@@ -12,24 +12,26 @@ import satisfaction.fs.FileSystem
  *   on a table, which might be
  *   partitioned further by a different
  *     column
+ *   If at least one partition exists    
  */
 case class HiveTablePartitionGroup(
-    dbName: String,
-    tblName: String,
-    grouping: Variable[String])
+    val dbName: String,
+    val tblName: String,
+    val grouping: Set[Variable[_]],
+    val requiredPartitions :Option[Set[VariableAssignment[_]]] = None)
     ( implicit val ms : MetaStore,
       implicit val hdfs : FileSystem ) extends DataOutput {
 
 
-    def variables = {
-        Set(grouping)
+    override def variables = {
+        grouping
     }
 
     def exists(w: Witness): Boolean = {
         getDataInstance(w).isDefined
         
-        //// XXX
-         ///true
+        val partSetPossible = getDataInstance(w)
+        
     }
 
     def getDataInstance(w: Witness): Option[DataInstance] = {

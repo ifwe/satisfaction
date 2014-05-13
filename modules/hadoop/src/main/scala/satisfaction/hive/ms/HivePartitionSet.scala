@@ -36,8 +36,7 @@ case class HivePartitionSet(
     }
 
     def exists: Boolean = {
-        /// XXX 
-        true
+        partitionSet.forall( _.exists)
     }
 
     def lastModifiedBy: String = {

@@ -30,7 +30,12 @@ import org.joda.time.format.ISOPeriodFormat
       sb += ' '
       sb ++= startTime.getMinuteOfHour.toString
       sb += ' '
-      sb ++= startTime.getHourOfDay.toString
+        /// XXX JDB Hack to get either hourly or Daily freq ..
+      if( freq.getDays == 0 ) {
+        sb += '*'
+      } else {
+        sb ++= startTime.getHourOfDay.toString
+      }
       sb ++= " * * ? *"
       
       sb.toString  
@@ -46,6 +51,11 @@ import org.joda.time.format.ISOPeriodFormat
       val per = ISOPeriodFormat.standard.parsePeriod( splitArr(1))
      
       new TrackSchedule( stTime, per)
+    }
+    
+    val DAILY : TrackSchedule =  {
+      
+      
     }
     
   }

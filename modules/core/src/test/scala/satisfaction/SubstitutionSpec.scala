@@ -189,6 +189,24 @@ class WitnessSpec extends Specification {
 
             subst2.assignments.size mustEqual 3
         }
+        
+        "mapVariables function" in {
+           val subst1 = new Witness(Set( VariableAssignment("dt" , "20140512"),
+                                     VariableAssignment("hour" , "03" ),
+                                     VariableAssignment("minute" , "43" )))
+           
+           val mapVarFunc = Witness.mapVariables( Variable("dt"), Variable("date"))_
+           val subst2 = mapVarFunc(subst1)
+          
+           println(s" Witness with mapped variable is $subst2")
+           
+           subst2.assignments.size mustEqual 3
+           
+           subst2.variables must contain( Variable("date") )
+           subst2.variables must not contain( Variable("dt") )
+           subst2.variables must contain( Variable("hour") )
+           subst2.variables must contain( Variable("minute") )
+        }
 
     }
 

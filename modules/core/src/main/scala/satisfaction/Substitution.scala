@@ -76,6 +76,10 @@ case class Witness(
     def filter( vars : Set[Variable[_]]) : Witness = {
        new Witness( assignments filter( ass => { vars.contains( ass.variable) } ) )
     }
+    
+    def exclude( vars : Set[Variable[_]]) : Witness = {
+       new Witness( assignments filter( ass => { ! vars.contains( ass.variable) } ) )
+    }
 
     def get[T](param: Variable[T]): Option[T] =
         assignments find (_.variable == param) map (_.value.asInstanceOf[T])
@@ -147,7 +151,7 @@ object Witness {
       val oldValCheck = fromWitness.get( vfrom)
       oldValCheck match {
         case Some(oldVal) => {
-          fromWitness.filter( Set(vfrom)) + ( vto, oldVal)
+          fromWitness.exclude( Set(vfrom)) + ( vto, oldVal)
         } 
         case None => fromWitness
       }

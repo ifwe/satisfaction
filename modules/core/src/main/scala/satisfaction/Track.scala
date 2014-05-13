@@ -264,7 +264,3 @@ object Track {
     }
 }
 
-trait TemporalVariable {
-  
-    def getObjectForTime( dt : DateTime) : Any
-}

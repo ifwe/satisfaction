@@ -43,6 +43,8 @@ case class HiveTable (
        } else {
          //// XXX What to check exactly ???
          //// 
+         println(" Not all variables are saturated ; Use HivePartitionGroup instead of HiveTable")
+
          false 
        }
     }

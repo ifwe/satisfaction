@@ -113,10 +113,9 @@ case class TrackScheduler( val proofEngine : ProofEngine ) {
      	if(isTemporalVariable(v)) {
      		val temporal = getValueForTemporal( v, nowDt)
      		subst = subst + VariableAssignment( v.name , temporal)
-     		subst = subst + VariableAssignment( "dateString" , temporal)
      		println(s" Adding Temporal value $temporal for temporal variable $v.name ")
      	} else {
-     	  /// XXX Fixme  ???? Allow the substitution to be parially specified
+     	  /// XXX Fixme  ???? Allow the substitution to be partially specified
      	  println(s" Getting non temporal variable $v.name from track properties ")
      	  val varValMatch = track.trackProperties.raw.get( v.name)
      	  
@@ -132,18 +131,23 @@ case class TrackScheduler( val proofEngine : ProofEngine ) {
      subst
    }
      /**
-    *   XXX Add TemporalVariable trait, 
+    *   Add TemporalVariable trait, 
     *     and push to common...
     *    for now, just check if "dt"
+    *    
     */
    def isTemporalVariable( variable : Variable[_] ) : Boolean = {
-     variable.name.equals("dt") || variable.name.equals( "dateString")
+      variable match {
+        case temporal : TemporalVariable => true
+        case _ => false
+      }
    }
    
-   def getValueForTemporal( variable : Variable[_], dt : DateTime ) : Any = {
-       val YYYYMMDD = DateTimeFormat.forPattern("YYYYMMdd")
-
-       YYYYMMDD.print( dt) 
+   def getValueForTemporal( variable : Variable[_], dt : DateTime ) : String = {
+       variable match  {
+         case temporal : TemporalVariable => temporal.formatted( dt)
+         case _ => ""
+       }
    }
    
   
