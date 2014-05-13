@@ -5,6 +5,7 @@ package track
 import collection.JavaConversions._
 import fs._
 import java.util.Properties
+import com.klout.satisfaction.Recurring
 
 
 /**
@@ -140,6 +141,7 @@ case class TrackFactory(val trackFS : FileSystem,
        
      schedulerOpt match {
        case Some(scheduler) =>
+         /**
        	   trackProps.get(Variable("satisfaction.track.schedule")) match {
              case Some(schedStr) =>
                println( "Scheduling "+ track.descriptor.trackName + " at " + schedStr)
@@ -148,7 +150,15 @@ case class TrackFactory(val trackFS : FileSystem,
              case None =>
                println(" No schedule defined for track " + track.descriptor.trackName )
            }
+           * 
+           */
+         track match {
+           case recurring : Recurring => {
+             
+           } 
+         }
         case None =>
+          
      }
      
      track.setTrackPath( getTrackPath( track.descriptor))
