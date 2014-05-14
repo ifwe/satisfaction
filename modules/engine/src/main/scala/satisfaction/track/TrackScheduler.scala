@@ -6,7 +6,7 @@ package track
 import org.joda.time.LocalTime
 import org.joda.time.Period
 import engine.actors.ProofEngine
-import us.theatr.akka.quartz._
+////import us.theatr.akka.quartz._
 import akka.actor.Props
 import akka.actor.Actor
 import akka.actor.ActorLogging
@@ -31,7 +31,7 @@ case class TrackScheduler( val proofEngine : ProofEngine ) {
    private lazy val startGoalActor = ProofEngine.akkaSystem.actorOf(Props[StartGoalActor])
    implicit val timeout = Timeout(24 hours)
   
-   private val scheduleMap : collection.mutable.Map[TrackDescriptor,Tuple2[TrackSchedule,Cancellable]] = new collection.mutable.HashMap[TrackDescriptor,Tuple2[TrackSchedule,Cancellable]]
+   private val scheduleMap : collection.mutable.Map[TrackDescriptor,Tuple2[String,Cancellable]] = new collection.mutable.HashMap[TrackDescriptor,Tuple2[String,Cancellable]]
    
    
    /**
@@ -39,21 +39,41 @@ case class TrackScheduler( val proofEngine : ProofEngine ) {
     *  
     *  returns true if the track was successfully scheduled
     */
-   def scheduleTrack( trackDesc : TrackDescriptor, sched : TrackSchedule  ) : Boolean = {
-     val cronPhrase = sched.getCronString
-     val mess = new StartGoalMessage( trackDesc)
-     val addResultF =  quartzActor ? AddCronSchedule( startGoalActor,  cronPhrase, mess, true)
-     val resultMess = Await.result( addResultF, 30 seconds )
-     resultMess match {
-       case yeah : AddCronScheduleSuccess =>
-          scheduleMap.put( trackDesc, Tuple2(sched ,yeah.cancel ))
-          println(" Successfully scheduled job " + trackDesc.trackName)
-          true
-       case boo : AddCronScheduleFailure =>
-         /// XXX better logging 
-       	  println(" Problem trying to schedule cron " + boo.reason)
-       	  boo.reason.printStackTrace()
-       	  false
+   def scheduleTrack( track : Track ) : Boolean = {
+     val trackDesc = track.descriptor
+     val mess = new StartGoalMessage( track.descriptor)
+     var schedString : String  = null
+     val schedMess : Option[Any] =  {
+        track match {
+          case  cronable :  Cronable =>
+             schedString = cronable.scheduleString
+             Some(AddCronSchedule( startGoalActor,  cronable.cronString, mess, true))
+          case recurring : Recurring =>
+             schedString = recurring.scheduleString
+             Some(AddPeriodSchedule( startGoalActor, recurring.frequency, DateTime.now , mess, true))
+          case _  => None
+        }
+     }
+     if(schedMess.isDefined) 
+       sendScheduleMessage( trackDesc, schedMess.get, schedString )
+     else 
+       false
+   }
+
+   
+   private def sendScheduleMessage( trackDesc : TrackDescriptor, schedMess : Any, schedString : String) : Boolean = {
+         val addResultF =  quartzActor ? schedMess 
+         val resultMess = Await.result( addResultF, 30 seconds )
+         resultMess match {
+            case yeah : AddScheduleSuccess =>
+              scheduleMap.put( trackDesc, Tuple2(schedString ,yeah.cancel ))
+              println(" Successfully scheduled job " + trackDesc.trackName)
+              true
+           case boo : AddScheduleFailure =>
+              /// XXX better logging 
+       	     println(" Problem trying to schedule cron " + boo.reason)
+       	     boo.reason.printStackTrace()
+       	     false
      }
    }
    
@@ -72,23 +92,18 @@ case class TrackScheduler( val proofEngine : ProofEngine ) {
     *  List out all the current Tracks which have been scheduled,
     *    
     */
-   def getScheduledTracks : collection.Set[Tuple2[TrackDescriptor,TrackSchedule]] = {
+   def getScheduledTracks : collection.Set[Tuple2[TrackDescriptor,String]] = {
        scheduleMap.keySet.map( td => { Tuple2(td,scheduleMap.get(td).get._1) } )
    }
    
 //}
 
-/// Companion object
-///object TrackScheduler  {
     
-   case class StartGoalMessage( val trackDesc : TrackDescriptor )
+case class StartGoalMessage( val trackDesc : TrackDescriptor )
    
    class StartGoalActor( trackFactory : TrackFactory, proofEngine : ProofEngine ) extends Actor with ActorLogging {
        def receive = {
          case mess : StartGoalMessage =>
-           
-           //// XXX Think about generating top-level witnesses ...
-           ////  Have available in Track Properties ???
            log.info(" Starting Track " + mess.trackDesc +  " TrackFactory = " + TrackFactory)
            val trckOpt =  trackFactory.getTrack( mess.trackDesc )
            trckOpt match {

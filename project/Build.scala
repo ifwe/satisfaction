@@ -124,7 +124,8 @@ object ApplicationBuild extends Build {
 
   def engineDependencies = Seq(
     ("com.typesafe.akka" %% "akka-actor" % "2.1.0"),
-    ("us.theatr" %% "akka-quartz" % "0.2.0")
+    ("org.quartz-scheduler" % "quartz" % "2.2.1")
+    ////("us.theatr" %% "akka-quartz" % "0.2.0")
   ) ++ testDependencies
 
 

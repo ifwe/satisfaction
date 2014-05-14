@@ -141,22 +141,7 @@ case class TrackFactory(val trackFS : FileSystem,
        
      schedulerOpt match {
        case Some(scheduler) =>
-         /**
-       	   trackProps.get(Variable("satisfaction.track.schedule")) match {
-             case Some(schedStr) =>
-               println( "Scheduling "+ track.descriptor.trackName + " at " + schedStr)
-               val sched = TrackSchedule(schedStr)
-               scheduler.scheduleTrack(track.descriptor ,sched)
-             case None =>
-               println(" No schedule defined for track " + track.descriptor.trackName )
-           }
-           * 
-           */
-         track match {
-           case recurring : Recurring => {
-             
-           } 
-         }
+          scheduler.scheduleTrack( track)
         case None =>
           
      }

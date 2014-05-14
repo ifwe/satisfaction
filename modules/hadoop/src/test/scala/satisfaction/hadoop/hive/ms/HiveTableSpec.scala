@@ -14,16 +14,19 @@ import satisfaction.hadoop.hdfs.Hdfs
 @RunWith(classOf[JUnitRunner])
 class HiveTableSpec extends Specification {
     val dtParam = new Variable("dt", classOf[String])
+    val hourParam = new Variable("hour", classOf[String])
     val networkParam = new Variable("network_abbr", classOf[String])
     val featureGroup = new Variable[Int]("service_id", classOf[Int])
 
-    implicit  val ms : MetaStore = MetaStore(new java.net.URI("thrift://jobs-dev-sched2:9083"))
-    implicit  val hdfs : FileSystem = new Hdfs("hdfs://nameservice1" )
+    //// XXX Externalize  ---
+    //// Remove references to Klout ( or Tagged)
+    implicit  val ms : MetaStore = MetaStore(new java.net.URI("thrift://dhdp2jump01:9083"))
+    implicit  val hdfs : FileSystem = Hdfs.default
     
     "HiveTable" should {
         "provide variables" in {
-            val actorAction = new HiveTable("bi_maxwell", "actor_action")
-            val params = actorAction.variables
+            val dauByPlatform = new HiveTable("ramblas", "dau_by_platform")
+            val params = dauByPlatform.variables
             val dtVar = Variable[String]("dt", classOf[String])
             params.foreach(p =>
                 println (" Parameter is " + p.name)
@@ -31,35 +34,29 @@ class HiveTableSpec extends Specification {
 
             params.size must_== 2
             params must contain(Variable[String]("dt", classOf[String]))
-            params must contain(Variable[String]("network_abbr", classOf[String]))
+            params must contain(Variable[String]("hour", classOf[String]))
         }
         "implements exists" in {
-            val actorAction = new HiveTable("bi_maxwell", "actor_action")
-            val witness = new Witness(Set((dtParam -> "20130812"),
-                (networkParam -> "tw")))
+            val dauByPlatform = new HiveTable("ramblas", "dau_by_platform")
+            val witness = new Witness(Set((dtParam -> "20140512"),
+                (hourParam -> "03")))
 
-            val xist = actorAction.exists(witness)
+            val xist = dauByPlatform.exists(witness)
             if (xist) {
                 println("  Witness exists ")
             } else {
                 println(" Witness doesn't exist")
             }
 
-            xist must be
+            xist must_== true
         }
-        "ksuid_mapping exists" in {
-            val ksuid_mapping = new HiveTable("bi_maxwell", "ksuid_mapping")
-            val witness = new Witness(Set((dtParam -> "20130821"), (featureGroup -> 1)))
+        "partitiion doesnt exists" in {
+            val dauByPlatform = new HiveTable("ramblas", "dau_by_platform")
+            val witness = new Witness(Set((dtParam -> "20190821"), (hourParam -> "05")))
 
-            val dataInstance = ksuid_mapping.getDataInstance(witness)
-        }
-        "ksuid_mapping doesnt exists" in {
-            val ksuid_mapping = new HiveTable("bi_maxwell", "ksuid_mapping")
-            val witness = new Witness(Set((dtParam -> "20190821"), (featureGroup -> 1)))
+            val doesNotExist = dauByPlatform.exists(witness)
 
-            val doesNotExist = ksuid_mapping.exists(witness)
-
-            (!doesNotExist) must be
+            doesNotExist must_== false
         }
 
     }
