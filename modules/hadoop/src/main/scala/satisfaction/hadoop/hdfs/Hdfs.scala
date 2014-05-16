@@ -182,11 +182,6 @@ case class Hdfs(val fsURI: String)
     }
     
      
-   override def copyToFileSystem( destFS : FileSystem , srcPath : Path, destPath : Path) = {
-     val apacheDestFS : ApacheFileSystem = destFS
-     
-   }
-   
    override def delete( path : Path ) = {
      fs.delete( path, true) 
    }

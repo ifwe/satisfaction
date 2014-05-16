@@ -30,7 +30,12 @@ case class HiveTablePartitionGroup(
     def exists(w: Witness): Boolean = {
         getDataInstance(w).isDefined
         
+
         val partSetPossible = getDataInstance(w)
+       
+        /// XXX 
+        
+        true
         
     }
 
@@ -38,7 +43,7 @@ case class HiveTablePartitionGroup(
         val tbl = ms.getTableByName(dbName, tblName)
         if (!w.variables.contains(grouping))
             None
-        val partMap: Map[String, String] = Map(grouping.name -> w.get(grouping).get)
+        val partMap: Map[String, String] = grouping.map( { v => { v.name -> w.get(v).get.toString } } ).toMap
         println(s" PART MAP IS $partMap ")
         val hivePartSet = ms.getPartitionSetForTable(tbl, partMap)
         if (hivePartSet.size > 0) {
