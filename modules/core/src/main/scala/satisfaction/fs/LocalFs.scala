@@ -96,7 +96,7 @@ case class LocalFileSystem() extends FileSystem {
    }
    
    override def readFile( path : Path ) : String = {
-     scala.io.Source.fromFile( (path)).toString
+     scala.io.Source.fromFile( (path)).mkString
    }
    
    override def open( path : Path) : io.BufferedSource = {
@@ -107,22 +107,11 @@ case class LocalFileSystem() extends FileSystem {
       new FileOutputStream((path))
    }
    
-   /**
-    *  XXX Do we need this ????
-    *   Needed to copy to from HDFS from localHDFS 
-    */
-   override def copyToFileSystem( destFS : FileSystem , srcPath : Path, destPath : Path) = {
-      val str = readFile(srcPath)
-      val outStream = destFS.create( destPath)
-      outStream.write( str.getBytes)
-   }  
-   
    override def exists( p : Path ) : Boolean = {
      (p).exists 
    }
    
    override def isDirectory( p : Path ) : Boolean = {
-     println( s" IS DIRECTORY $p")
      (p).isDirectory
    }
    
@@ -139,6 +128,11 @@ case class LocalFileSystem() extends FileSystem {
    override def delete( p : Path ) =  {
      /// XXX handle return value
      (p).delete 
+   }
+   
+   
+   def setExecutable( p: Path, flag: Boolean = true ) = {
+     (p).setExecutable( flag)
    }
 
 }

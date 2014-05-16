@@ -20,6 +20,8 @@ object PathImplicits {
 }
 
 case class Path(val  pathString : String ) {
+  
+     val Separator = '/'
      
      def /(  that : String) : Path= {
        val uri = toUri.toString
@@ -33,7 +35,7 @@ case class Path(val  pathString : String ) {
        } else {
          that
        }
-       new Path( prefix + "/" + extension)
+       new Path( prefix + Separator  + extension)
     }
      def /(  that : Path) : Path= {
        /( that.pathString)
@@ -45,7 +47,7 @@ case class Path(val  pathString : String ) {
     
     
     def name : String = {
-      pathString.split("/").last
+      pathString.split(Separator).last
     }
     
     override def toString : String = {
@@ -53,5 +55,10 @@ case class Path(val  pathString : String ) {
     }
     
     
+    def parent : Path = {
+       val pathArr  = pathString.split(Separator)
+       new Path(pathArr.take( pathArr.length -1 ).mkString( Separator + "" ))
+    }
     
 }
+

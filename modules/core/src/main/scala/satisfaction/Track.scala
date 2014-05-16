@@ -56,6 +56,8 @@ case class Track(
       this
     }
     
+    
+    //// XXX Split out tracks and TrackContext ...
     /// Define filesystems which Tracks can read and write to
     /// Define as local, to avoid unnecessary dependencies
     //// XXX FIXME -- Allow implicit HDFS to be in scope on object creation
@@ -137,7 +139,7 @@ case class Track(
    */
    def getResource(   resourceFile : String ) : String  = {
       println(" GET HDFS is " + hdfs)
-      hdfs.readFile( resourcePath / resourceFile )
+      hdfs.readFile( resourcePath / resourceFile ).mkString
    }
    
    def listResources : Seq[String]  = {
@@ -150,7 +152,7 @@ case class Track(
        case Some(path) => path
        case None => "resource" 
      }
-      new Path(_trackPath + "/" + resourceDir)
+      _trackPath /  resourceDir
    }
    
      

@@ -25,7 +25,16 @@ trait FileSystem {
    
    def create( path : Path ) : java.io.OutputStream
    
-   def copyToFileSystem( destFS : FileSystem , srcPath : Path, destPath : Path) 
+   def copyToFileSystem( destFS : FileSystem , srcPath : Path, destPath : Path)  = {
+      println(s" Copyting from $srcPath to $destPath ")
+      val str = readFile(srcPath)
+      println(" STRI = " + str)
+      if(! destFS.exists( destPath.parent)) {
+        destFS.mkdirs( destPath.parent) 
+      }
+      val outStream = destFS.create( destPath)
+      outStream.write( str.getBytes)
+   }
    
    def exists( p : Path ) : Boolean
    def isDirectory( p : Path ) : Boolean

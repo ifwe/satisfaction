@@ -33,6 +33,15 @@ class FsSpec extends Specification {
        
      }
      
+     "Get ParentPath" in {
+       val p = new Path("/my/really/long/path/name")
+       val parent = p.parent
+       
+       println(s" parent = $parent")
+       
+       parent.toString must_== "/my/really/long/path" 
+     }
+     
      
      "convert from URI's " in {
        

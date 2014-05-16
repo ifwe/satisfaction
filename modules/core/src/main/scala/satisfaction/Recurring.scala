@@ -38,6 +38,9 @@ trait Recurring  extends Schedulable {
       *     to run 3 hours and fifteen minutes after midnight
       */
      def timeOffset : Option[ReadablePartial] = None
+     
+     
+     def scheduleString =  { ISOPeriodFormat.standard.print( frequency ) }
 
 }
 
@@ -49,6 +52,7 @@ object Recurring {
      def period(periodStr : String) : Period = {
          ISOPeriodFormat.standard.parsePeriod(periodStr) 
      }
+     
   
 }
 
@@ -60,5 +64,6 @@ trait Cronable extends Schedulable {
  
     def cronString : String
   
+    def scheduleString  : String = { cronString }
 }
   
