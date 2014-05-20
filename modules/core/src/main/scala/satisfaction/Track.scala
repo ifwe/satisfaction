@@ -125,18 +125,6 @@ case class Track(
     *  XXX Move to Engine ???
     * 
     */
-     /**
-   def getResource(   resourceFile : String ) : String  = {
-     val resourceStream = this.getClass.getClassLoader.getResourceAsStream( resourceFile)
-     if(resourceStream != null) {
-       val res = Source.fromInputStream( resourceStream ).mkString("").toString
-       res
-     } else {
-       null
-     }
-   }
-   * 
-   */
    def getResource(   resourceFile : String ) : String  = {
       println(" GET HDFS is " + hdfs)
       hdfs.readFile( resourcePath / resourceFile ).mkString
@@ -148,11 +136,15 @@ case class Track(
    }
    
    def resourcePath : Path = {
-     val resourceDir = _trackProperties.raw.get("satisfaction.track.resource") match {
-       case Some(path) => path
-       case None => "resource" 
+     if( _trackProperties != null) {
+       val resourceDir = _trackProperties.raw.get("satisfaction.track.resource") match {
+         case Some(path) => path
+         case None => "resource" 
+       } 
+       _trackPath /  resourceDir
+     } else {
+       _trackPath /  "resource"
      }
-      _trackPath /  resourceDir
    }
    
      

@@ -92,6 +92,19 @@ object Goal {
       }
     }
     
+   
+    /**
+     *  Return a Function 
+     */
+    def incrementVariable( incrVar : Variable[String],  numIncr : Int ) : ( Witness => Witness) = { w: Witness => {
+         if( w.contains( incrVar)) {
+           val currVal : Int = Integer.parseInt( w.get( incrVar).get)
+           w.update( incrVar -> (currVal + numIncr).toString )
+         } else {
+           w
+         }
+      }
+    }
     
     /**
      *  Replace the variable 'dtVar' with the most recent date in the given path.

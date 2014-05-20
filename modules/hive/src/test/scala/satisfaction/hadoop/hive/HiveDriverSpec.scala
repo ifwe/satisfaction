@@ -91,6 +91,24 @@ class HiveDriverSpec extends Specification {
     }
     * **
     */
+   /**
+
+    " HADOOP_HOME env var works " should {
+     
+      val hc = Config.config
+      hc.logVars(System.out)
+      val hiveMS = hc.getVar( ConfVars.METASTOREURIS)
+      
+      println(s" Hive MetaStore = $hiveMS")
+      
+      
+      hiveMS must_!= null
+      
+   }
+   * 
+   */
+   
+   
   
     " Implicitly load configuration from Test Track " should {
      
@@ -105,6 +123,7 @@ class HiveDriverSpec extends Specification {
       
    }
    
+    /**
    
     "create view and table" should {
         
@@ -186,6 +205,8 @@ class HiveDriverSpec extends Specification {
     
     
        }  
+       *  
+       */
     /** +
     
     "error out " should {

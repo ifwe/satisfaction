@@ -8,7 +8,7 @@ object ApplicationBuild extends Build {
 
   val appVersion = "2.0.1"
 
-  val hiveVersion = "0.12.0"
+  val hiveVersion = "0.13.0"
 
   val core = Project(
       "satisfaction-core",

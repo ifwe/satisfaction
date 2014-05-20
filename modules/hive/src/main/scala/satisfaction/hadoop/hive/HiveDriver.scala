@@ -76,7 +76,7 @@ class HiveLocalDriver( implicit val hiveConf : HiveConf = Config.config , implic
         val dr = new org.apache.hadoop.hive.ql.Driver(hiveConf)
 
         dr.init
-         sessionState
+        sessionState
 
         registerJars
         
