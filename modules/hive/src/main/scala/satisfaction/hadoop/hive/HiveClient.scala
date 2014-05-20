@@ -27,7 +27,7 @@ class HiveClient(val jdbcDriverUrl: String) extends HiveDriver {
         DriverManager.getConnection(jdbcDriverUrl, "maxwell", "")
     }
 
-    override def useDatabase(dbName: String) {
+    override def useDatabase(dbName: String) : Boolean = {
         println(" Using database " + dbName)
         val statement = connection.createStatement()
         statement.execute("use " + dbName)

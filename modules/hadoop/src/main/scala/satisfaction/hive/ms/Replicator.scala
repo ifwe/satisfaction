@@ -16,6 +16,13 @@ import org.apache.hadoop.hive.ql.metadata.HiveException
 import org.joda.time.DateTime
 import org.joda.time.format.DateTimeFormatter
 import org.joda.time.format.DateTimeFormat
+import fs._
+import hdfs.HdfsImplicits._
+import org.apache.hadoop.fs.{Path => ApachePath}
+import org.apache.hadoop.fs.{FileStatus => ApacheFileStatus}
+import org.apache.hadoop.fs.{FileSystem => ApacheFileSystem}
+
+
 //import org.apache.hadoop.hive.metastore.api.Partition
 
 /**
@@ -47,12 +54,12 @@ object Replicator {
         val fromDb = fromMs.getDatabase(dbName)
         if (toDb == null) {
             System.out.println(" Creating Database " + dbName)
-            fromDb.setLocationUri( movedLocation( new java.net.URI(fromDb.getLocationUri()), JOBS_DEV).toASCIIString() )
+            fromDb.setLocationUri( movedLocation( new Path(fromDb.getLocationUri), JOBS_DEV).toString )
             toMs.createDatabase(fromDb)
             toDb = toMs.getDatabase(dbName)
         } else {
             System.out.println(" Altering Database " + dbName)
-            fromDb.setLocationUri( movedLocation( new java.net.URI(fromDb.getLocationUri()), JOBS_DEV).toASCIIString() )
+            fromDb.setLocationUri( movedLocation( new Path(fromDb.getLocationUri()), JOBS_DEV).toString )
             toMs.alterDatabase(dbName, fromDb)
         }
 
@@ -82,21 +89,23 @@ object Replicator {
         tbl.getInputFormatClass().getName().equals("org.apache.hadoop.hive.hbase.HiveHBaseTableInputFormat")
     }
     
-    def movedLocation( oldLoc : java.net.URI , destURI : java.net.URI) : java.net.URI = {
+    def movedLocation( oldLoc : ApachePath , dest : Path) : Path = {
+      val oldLocURI = oldLoc.toUri
+      val destURI = dest.toUri
       val newLoc = new java.net.URI( destURI.getScheme(),
           destURI.getUserInfo(),
           destURI.getHost(),
           destURI.getPort(),
-          oldLoc.getPath(),
-          oldLoc.getQuery(),
-          oldLoc.getFragment() )
+          oldLocURI.getPath(),
+          oldLocURI.getQuery(),
+          oldLocURI.getFragment() )
     		  		
      
-      newLoc
+      new ApachePath(newLoc)
     }
     
     /// XXX set dest path as value on Replicator object
-    val JOBS_DEV = new java.net.URI("hdfs://jobs-dev-hnn:8020")
+    val JOBS_DEV = new Path("hdfs://jobs-dev-hnn:8020")
 
     /**
      *  Replicate a table from one database to another data
@@ -131,10 +140,10 @@ object Replicator {
                         val oldPart = fromMs.getPartition(fromTable, partSpec, false)
                         
                         println(" Old part is  " + partSpec)
-                        println(" Old part path  is  " + oldPart.getPartitionPath())
-                         oldPart.setLocation( movedLocation( oldPart.getDataLocation(), JOBS_DEV).toASCIIString() )
+                        println(" Old part path  is  " + oldPart.getDataLocation)
+                         oldPart.setLocation( movedLocation( oldPart.getDataLocation, JOBS_DEV).toString() )
 
-                        val newPart = toMs.getPartition(fromTable, getPartitionSpecFromName(partName), true, oldPart.getPartitionPath().toString(), true)
+                        val newPart = toMs.getPartition(fromTable, getPartitionSpecFromName(partName), true, oldPart.getDataLocation.toString(), true)
                         println(" New Part is " + newPart)
                         ///val newPart = toMs.createPartition(oldTbl, partSpec )
                         toMs.alterPartition(fromTable.getTableName(), oldPart)

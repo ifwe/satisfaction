@@ -1,0 +1,111 @@
+<configuration>
+<!-- NON-HA SETTINGS -->
+<!--   <property>
+    <name>fs.defaultFS</name>
+    <value>hdfs://dhdp2nn01.tag-dev.com</value>
+  </property> -->
+<!-- END NON-HA SETTINGS -->
+<!-- HA SETTINGS -->
+<!--
+  <property>
+    <name>fs.defaultFS</name>
+    <value>hdfs://dhdp2nn01.tag-dev.com</value>
+  </property>
+
+  <property>
+    <name>fs.default.name</name>
+    <value>hdfs://dhdp2nn01.tag-dev.com</value>
+  </property>
+-->
+  <property>
+    <name>fs.defaultFS</name>
+    <value>hdfs://dhdp2</value>
+  </property>
+
+  <property>
+    <name>fs.default.name</name>
+    <value>hdfs://dhdp2</value>
+  </property>
+ 
+  <property>
+    <name>hadoop.profile</name>
+    <value>2.0</value>
+  </property>
+
+  <property>
+    <name>fs.permissions.umask-mode</name>
+    <value>0022</value>
+  </property>
+
+  <property>
+    <name>dfs.umask</name>
+    <value>0022</value>
+  </property>
+
+  <property>
+    <name>dfs.permissions</name>
+    <value>false</value>
+  </property>
+
+
+  <property>
+    <name>mapreduce.framework.name</name>
+    <value>yarn</value>
+  </property>
+
+
+
+  <property>
+    <name>dfs.journalnode.edits.dir</name>
+    <value>/hadoop01/journal_edits</value>
+  </property>
+  <property>
+    <name>ha.zookeeper.quorum</name>
+    <value>dhdp2nn01.tag-dev.com:2181,dhdp2snn01.tag-dev.com:2181,dhdp2rm01.tag-dev.com:2181</value>
+  </property>
+<!-- END HA SETTINGS -->
+ <property>
+    <name>io.compression.codecs</name>
+    <value>org.apache.hadoop.io.compress.GzipCodec,org.apache.hadoop.io.compress.DefaultCodec,org.apache.hadoop.io.compress.SnappyCodec</value>
+  </property>
+  <property>
+    <name>io.serializations</name>
+    <value>org.apache.hadoop.io.serializer.WritableSerialization</value>
+  </property>
+  <property>
+    <name>fs.trash.interval</name>
+    <value>360</value>
+  </property>
+  <property>
+    <name>fs.checkpoint.size</name>
+    <value>0.5</value>
+  </property>
+  <property>
+    <name>io.file.buffer.size</name>
+    <value>131072</value>
+  </property>
+  <property>
+    <name>hadoop.security.authorization</name>
+    <value>false</value>
+  </property>
+  <property>
+    <name>hadoop.security.authentication</name>
+    <value>simple</value>
+  </property>
+  <property>
+    <name>hadoop.proxyuser.hive.groups</name>
+    <value>users</value>
+  </property>
+  <property>
+    <name>ipc.client.connect.max.retries</name>
+    <value>50</value>
+  </property>
+  <property>
+    <name>ipc.client.connection.maxidletime</name>
+    <value>30000</value>
+  </property>
+  <property>
+    <name>ipc.client.idlethreshold</name>
+    <value>8000</value>
+  </property>
+</configuration>

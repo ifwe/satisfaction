@@ -9,7 +9,7 @@ object SatisfySimpleBuild extends Build {
   val main = Project(
       "satisfy-simple", file(".")
   ).settings(LibrarySettings: _*).settings(
-      version := "2.5"
+      version := "2.6"
   )
 
   def excludeFromAll(items: Seq[ModuleID], group: String, artifact: String) =

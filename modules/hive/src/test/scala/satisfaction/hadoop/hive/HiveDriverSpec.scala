@@ -10,49 +10,29 @@ import org.apache.log4j.Logger
 import org.apache.log4j.Level
 import com.klout.satisfaction.MetricsProducing
 import org.apache.hadoop.hive.conf.HiveConf
+import java.io.File
+import satisfaction.fs.Path
+import org.apache.hadoop.hive.conf.HiveConf.ConfVars
 
 @RunWith(classOf[JUnitRunner])
 class HiveDriverSpec extends Specification {
   
   
    /// XXX Pass in metastore and hdfs urls
-  implicit val hiveConf : HiveConf = clientConfig
-  
-  
-  def clientConfig : HiveConf = {
-      val conf = Config.config
-      val testPath = System.getProperty("user.dir") + "/modules/hadoop/src/test/resources/config/hdfs-site.xml"
-      conf.addResource( new java.io.File(testPath).toURI().toURL())
+   implicit val track : Track =  {
+      val tr = new Track(TrackDescriptor("HiveLocalDriver"))
+      tr.setAuxJarFolder( new File("./auxlib")) /// XXX Ref to File, not Path
+      
+      tr.setTrackPath( new Path( System.getProperty("user.dir") + "/modules/hive/src/test"))
       
       
-       val nameService = conf.get("dfs.nameservices")
-       if(nameService != null) {
-         conf.set("fs.defaultFS", s"hdfs://$nameService")
-       }
-      conf
-  }
+      tr
+   }
+   
+   implicit val hiveConf : HiveConf = Config( track)
   
-  /**
-  implicit val hiveConf : HiveConf = {
-      val hc =  Config.config
-      
-             //// 
-        ///hc.setVar(HiveConf.ConfVars.METASTOREURIS, "thrift://jobs-aa-sched1:9085")
-        hc.setVar(HiveConf.ConfVars.METASTOREURIS, "thrift://jobs-aa-sched1:9083")
-        
-        
-        /// XXX How to use play/scala configuration
-        hc.set("mapreduce.framework.name", "classic")
-        hc.set("mapreduce.jobtracker.address", "jobs-aa-hnn:8021")
-        hc.set("mapred.job.tracker", "jobs-aa-hnn:8021")
-        hc.set("fs.default.name", "hdfs://jobs-aa-hnn:8020")
-        hc.set("dfs.nameservices", "hdfs://jobs-aa-hnn")
-        hc.set("yarn.resourcemanager.address", "scr@wyoucloudera")
-
-        hc
-  }
-  * 
-  */
+  
+  
 
       /**
     "DriverTest" should {
@@ -112,35 +92,101 @@ class HiveDriverSpec extends Specification {
     * **
     */
   
+    " Implicitly load configuration from Test Track " should {
+     
+      val hc = hiveConf
+      hc.logVars(System.out)
+      val hiveMS = hc.getVar( ConfVars.METASTOREURIS)
+      
+      println(s" Hive MetaStore = $hiveMS")
+      
+      
+      hiveMS must_!= null
+      
+   }
+   
+   
     "create view and table" should {
+        
+        
         println(" BOOGER ") 
-        val hiveDriver = HiveDriver(System.getProperty("user.dir") + "/auxlib")
+        val hiveDriver = new HiveLocalDriver
             
         println(" BUBBA ") 
-        hiveDriver.useDatabase("bi_maxwell")
+        val res1 = hiveDriver.useDatabase("sqoop_test")
+        println(s" RES1 = $res1")
+        res1 must_== true
         
-        val dropViewHQL = "drop view if exists jdb_blah_view"
-        hiveDriver.executeQuery( dropViewHQL)  
+        val dropViewHQL = "drop view if exists dau_platform_view"
+        hiveDriver.executeQuery( dropViewHQL)  must_== true
         
         
-        val createViewHQL = "create view jdb_blah_view as " +
-            "select network_abbr, count(*) as net_count " +
-            " from actor_action " +
-            " where dt=20140116 " +
-            " group by network_abbr" ;
+        val createViewHQL = " CREATE VIEW dau_platform_view( " +  "\n" +
+     "   user_id," + "\n" +
+     "   platform," + "\n" +
+     "   source)" + "\n" +
+     "AS" + "\n" +
+     "  SELECT user_id," + "\n" +
+     "    'Android' as platform," + "\n" +
+     "    1 as source" + "\n" +
+     "  FROM login_detail_log" + "\n" +
+     "  WHERE" + "\n" +
+     "    user_id >0" + "\n" +
+     "  AND date = '20140421'" + "\n" +
+     "  AND hour = '23'" + "\n" +
+     "  AND (lower(ua) like 'dalvik%'" + "\n" +
+     "  OR  lower(ua) like 'tagged/%/an%'" + "\n" +
+     "  OR lower(ua) like 'hi5/%/an%')" + "\n" +
+     "UNION ALL" + "\n" +
+     "  SELECT  user_id," + "\n" +
+     "    if(lower(domain) in ('tagged.com', 'hi5.com'), 'Web', 'MobileWeb') as platform," + "\n" +
+     "    2 as source" + "\n" +
+     "  FROM page_view_log" + "\n" +
+     "  WHERE user_id >0" + "\n" +
+     "  AND date = '20140421'" + "\n" +
+     "  AND hour = '23'" + "\n" +
+     "  AND is_redir!='t'" + "\n" +
+     "  AND lower(domain) in ('tagged.com', 'hi5.com', 'm.tagged.com', 'm.hi5.com')" + "\n" +
+     "UNION ALL" + "\n" +
+     "  SELECT user_id," + "\n" +
+     "   if(lower(mobile_type) LIKE 'tagged/%/an+%'" + "\n" +
+     "     OR  lower(mobile_type) like 'hi5/%/an+%'" + "\n" +
+     "     OR lower(mobile_type) = 'tagged/2.0+cfnetwork/459 darwin/10.0.0d3'" + "\n" +
+     "     OR lower(mobile_type) like 'dalvik%'" + "\n" +
+     "     OR lower(mobile_type) = '' ,'Android','iPhone') as platform," + "\n" +
+     "   3 as source" + "\n" +
+     "  FROM mobile_api_log_summary" + "\n" +
+     "  WHERE user_id >0" + "\n" +
+     "  AND date = '20140421'" + "\n" +
+     "  AND hour = '23'" + "\n" +
+     "UNION ALL" + "\n" +
+     "  SELECT user_id," + "\n" +
+     "    if(lower(ua) LIKE 'tagged/%/an+%'" + "\n" +
+     "       OR lower(ua) LIKE 'hi5/%/an+%'" + "\n" +
+     "  OR lower(ua) = 'tagged/2.0+cfnetwork/459 darwin/10.0.0d3'" + "\n" +
+     "  OR lower(ua) like 'dalvik%' OR lower(ua) = '' OR lower(ua) like 'mozilla%', 'Android','iPhone') as platform, " + "\n" +
+     " 4 as source " + "\n" +
+     " FROM mobile_app_event_log " + "\n" +
+     " WHERE user_id > 0 " + "\n" +
+     " AND date = '20140421' " + "\n" +
+     " AND hour = '23' " + "\n" +
+     " and type in ('autologin', 'login', 'open') " 
 
-        hiveDriver.executeQuery(createViewHQL)
+        hiveDriver.executeQuery(createViewHQL)   must_== true
         
-        val dropTableHQL = "drop table if exists jdb_blah "
-        hiveDriver.executeQuery(dropTableHQL)
-        
-        val createTableHQL = " create table jdb_blah " +
-        " as select * from jdb_blah_view ";
-      
-        hiveDriver.executeQuery(createTableHQL)
-    }
-  
-    /**
+       val insertQuery = " INSERT OVERWRITE TABLE  dau_by_platform PARTITION(dt='20140421',hour='23') " + "\n" +
+    " SELECT" + "\n" +
+    "   platform_id," + "\n" +
+    "   count(*) as user_count" + "\n" +
+    "  FROM dau_user_platform_view" + "\n" +
+    "  GROUP BY platform_id" 
+    
+          
+     hiveDriver.executeQuery(insertQuery) must_== true
+    
+    
+       }  
+    /** +
     
     "error out " should {
         val hiveDriver = HiveDriver("/Users/jeromebanks/NewGit/satisfaction/auxlib")

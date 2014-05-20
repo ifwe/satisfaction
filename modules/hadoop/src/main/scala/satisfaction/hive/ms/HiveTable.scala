@@ -56,7 +56,7 @@ case class HiveTable (
         if( checkSuccessFile) {
         	val partition = partitionOpt.get
         	println(s" PARTITION = $partition")
-        	val partPath : Path = partition.getPartitionPath
+        	val partPath : Path = partition.getDataLocation
         	if( hdfs.exists( partPath)) {
         	  /// Check metadata to see if table has a min partition size 
         	   true 

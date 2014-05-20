@@ -83,7 +83,6 @@ case class HiveSatisfier(queryResource: String, driver: HiveDriver)( implicit va
                 try {
                     loadSetup
                     println(" Beginning executing Hive queries ..")
-                    driver.useDatabase("bi_maxwell")
                     val result=  executeMultiple(query)
                     execResult.metrics.mergeMetrics( jobMetrics)
                     if( result ) { execResult.markSuccess } else { execResult.markFailure }

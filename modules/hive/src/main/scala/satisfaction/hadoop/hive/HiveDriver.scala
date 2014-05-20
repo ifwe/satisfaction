@@ -26,7 +26,9 @@ import java.io.BufferedReader
 import java.io.FileReader
 import scala.util.control.Breaks
 import satisfaction.hadoop.Config
-///import org.apache.hadoop.hive.ql.exec.HadoopJobExecHelper
+import org.apache.hadoop.hive.ql.HiveDriverRunHook
+import org.apache.hadoop.hive.ql.hooks.ExecuteWithHookContext
+import org.apache.hadoop.hive.ql.hooks.HookContext
 
 /**
  * Executes jobs locally
@@ -42,7 +44,7 @@ import satisfaction.hadoop.Config
  */
 trait HiveDriver {
 
-    def useDatabase(dbName: String)
+    def useDatabase(dbName: String) : Boolean 
 
     def executeQuery(query: String): Boolean
     
@@ -75,11 +77,13 @@ class HiveLocalDriver( implicit val hiveConf : HiveConf = Config.config , implic
 
         dr.init
          sessionState
+
         registerJars
         
-        println(" HiveDriver is " + dr)
-        println(" HiveConfig is " + hiveConf)
+        ///hiveConf.setVar(HiveConf.ConfVars.ONFAILUREHOOKS,"com.klout.satisfaction.hadoop.hive.FailureHook")
         
+        ///println(" HiveDriver is " + dr)
+        ///println(" HiveConfig is " + hiveConf)
         
         
         val shims = ShimLoader.getHadoopShims
@@ -125,11 +129,9 @@ class HiveLocalDriver( implicit val hiveConf : HiveConf = Config.config , implic
         ).mkString(",")
     }
 
-    override def useDatabase(dbName: String) = {
-        ///val client = new HiveServer.HiveServerHandler
+    override def useDatabase(dbName: String) : Boolean = {
         println(" Using database " + dbName)
         executeQuery("use " + dbName)
-        ///val client2 = new HiveServer2.HiveServerHandler
     }
     
     def getQueryPlan( query: String ) : QueryPlan = {
@@ -145,8 +147,7 @@ class HiveLocalDriver( implicit val hiveConf : HiveConf = Config.config , implic
     def sessionState : SessionState  = {
        var ss1 : SessionState = SessionState.get  
        if( ss1 == null) {
-           SessionState.start( hiveConf) 
-           ss1 = SessionState.get
+           ss1 = SessionState.start( hiveConf) 
            ss1.out = Console.out
            ss1.info = Console.out
        }
@@ -189,10 +190,19 @@ class HiveLocalDriver( implicit val hiveConf : HiveConf = Config.config , implic
               return true
             }
 
+            sessionState.setIsVerbose(true)
             val response = driver.run(query)
             println(s"Response Code ${response.getResponseCode} :: SQLState ${response.getSQLState} ")
             if (response.getResponseCode() != 0) {
+                println(" STACK TRACES = " + sessionState.getStackTraces())
+                println("  CMD = " + sessionState.getCmd)
                 println("Error while processing statement: " + response.getErrorMessage(), response.getSQLState(), response.getResponseCode());
+                if(sessionState.getStackTraces != null)
+                   sessionState.getStackTraces.foreach( { case( stackName , stackTrace) => {
+                     println( s"## Stack $stackName ")
+                     stackTrace.foreach { ln => println(s"      ##${ln}")  }
+                    }
+                  })
                 return false
             } else {
             	readResults( response, 500)
@@ -204,6 +214,8 @@ class HiveLocalDriver( implicit val hiveConf : HiveConf = Config.config , implic
             case sqlExc: Exception =>
                 println("Dammit !!! Caught Hive SQLException " + sqlExc.getMessage())
                 sqlExc.printStackTrace
+                sqlExc.printStackTrace(System.out)
+                sqlExc.printStackTrace(System.err)
                 return false
 
         }
@@ -275,6 +287,7 @@ object HiveDriver {
  
    def apply( auxJarPath : String ) 
      (implicit hiveConf : HiveConf ):HiveDriver = {
+     /**
      
      try {
      val parentLoader = if( Thread.currentThread.getContextClassLoader != null) { 
@@ -309,8 +322,9 @@ object HiveDriver {
          throw e
      }
      
+     **/
     
-     
+     null 
      
    }
   

@@ -59,7 +59,7 @@ case class HiveTablePartition(
     }
     
     def path : fs.Path = {
-       return  new Path(part.getPartitionPath.toUri.toString)
+       return  new Path(part.getDataLocation.toUri.toString)
     }
 
     def lastModifiedBy: String = {

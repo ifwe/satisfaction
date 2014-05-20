@@ -170,7 +170,7 @@ case class MetaStore(val hvConfig: HiveConf) extends Loggable {
             println(" MetaData is " + pMd)
             if (!pMd.contains(MetaDataProps.SPACE_USED.toString)) {
 
-                val realPs: Long = _hdfs.getStatus(part.getPartitionPath()).getSize
+                val realPs: Long = _hdfs.getStatus(part.getDataLocation).getSize
                 println(" Real Part size is " + realPs)
                 setPartitionMetaData(part, MetaDataProps.SPACE_USED.toString(), realPs.toString)
                 return realPs
@@ -200,11 +200,11 @@ case class MetaStore(val hvConfig: HiveConf) extends Loggable {
                 val tbl = _hive.getTable(db, tblName)
                 if (!tbl.isView && tbl.isPartitioned()) {
                     _hive.getPartitions(tbl).toList.map { part =>
-                        if (_hdfs.exists(part.getPartitionPath)) {
-                            if (_hdfs.getSpaceUsed(part.getPartitionPath()) == 0) {
+                        if (_hdfs.exists(part.getDataLocation)) {
+                            if (_hdfs.getSpaceUsed(part.getDataLocation) == 0) {
                                println("Dropping empty partition " + part.getValues + " for table " + tblName)
                                 _hive.dropPartition(db, tblName, part.getValues(), true)
-                                _hdfs.fs.delete(part.getPartitionPath())
+                                _hdfs.fs.delete(part.getDataLocation)
                             } else {
                                 println(" Keeping partition " + part.getValues + " for table " + tblName)
                             }
@@ -250,10 +250,10 @@ case class MetaStore(val hvConfig: HiveConf) extends Loggable {
                         val numDays = Days.daysBetween(partDate, now).getDays()
                         println(" Number of days between " + partDate + " and  " + now + " = " + numDays)
                         if (numDays > reten) {
-                            if (_hdfs.exists(part.getPartitionPath)) {
-                                info("Deleting obsolete dated path " + part.getPartitionPath())
-                                println("Deleting obsolete dated path " + part.getPartitionPath())
-                                _hdfs.fs.delete(part.getPartitionPath())
+                            if (_hdfs.exists(part.getDataLocation)) {
+                                info("Deleting obsolete dated path " + part.getDataLocation)
+                                println("Deleting obsolete dated path " + part.getDataLocation)
+                                _hdfs.fs.delete(part.getDataLocation)
                             }
                             info("Dropping obsolete partition " + part.getValues + " for table " + tblName)
                             println("Dropping obsolete partition " + part.getValues + " for table " + tblName)
