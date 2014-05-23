@@ -1,6 +1,12 @@
 
 import sbt._
 import Keys._
+import com.typesafe.sbt.packager.linux.{LinuxPackageMapping, LinuxSymlink}
+import com.typesafe.sbt.packager.rpm.RpmDependencies
+
+import com.typesafe.sbt.packager.Keys._
+import com.typesafe.sbt.SbtNativePackager._
+import NativePackagerKeys._
 
 import play.Project._
 
@@ -30,16 +36,11 @@ object ApplicationBuild extends Build {
       file("modules/hive")
   ).settings(CommonSettings: _*).settings(libraryDependencies  := hiveDependencies ).dependsOn(core).dependsOn(hadoop).dependsOn( engine)
 
-  val packaging = Project(
-     "satisfaction-packaging",
-     file("modules/packaging")
-  ).settings(CommonSettings: _*).settings(sbtPlugin := true)
-
   val willrogers = play.Project(
       "willrogers",
       appVersion,
       path = file("apps/willrogers")
-  ).settings(CommonSettings: _*).dependsOn(core, engine, hadoop, hive)
+  ).settings(AppSettings: _*).dependsOn(core, engine, hadoop, hive)
 
   def CommonSettings =  Resolvers ++ Seq(
       scalacOptions ++= Seq(
@@ -54,12 +55,26 @@ object ApplicationBuild extends Build {
 
       scalaVersion := "2.10.2",
 
-	  organization := "com.klout.satisfaction",
+      organization := "com.klout.satisfaction",
 
-	  version := appVersion,
+      version := appVersion,
      
       libraryDependencies ++= testDependencies
 
+  ) 
+
+  def AppSettings = CommonSettings ++ RpmSettings ++ playScalaSettings
+
+  def RpmSettings = packagerSettings ++ deploymentSettings ++ Seq(
+    name in Rpm := "satisfaction-scheduler",
+    version in Rpm := appVersion,
+    rpmRelease in Rpm:= "1",
+    packageSummary in Rpm:= "lowenstein",
+    rpmVendor in Rpm:= "Tagged.com",
+    rpmUrl in Rpm:= Some("http:/github.com/tagged/satisfaction"),
+    rpmLicense in Rpm:= Some("Apache License Version 2"),
+    packageDescription in Rpm:= "Next Generation Hadoop Scheduler",
+    rpmGroup in Rpm:= Some("satisfaction")
   )
 
   def excludeFromAll(items: Seq[ModuleID], group: String, artifact: String) = 
@@ -133,13 +148,13 @@ object ApplicationBuild extends Build {
       jdbc,
       anorm,
 	  ("javax.jdo" % "jdo-api" % "3.0.1"),
-	  ("mysql" % "mysql-connector-java" % "5.1.18" ),
-    ("com.github.nscala-time" %% "nscala-time" % "0.4.2"),
+	 ("mysql" % "mysql-connector-java" % "5.1.18" ),
+         ("com.github.nscala-time" %% "nscala-time" % "0.4.2"),
 	("com.googlecode.protobuf-java-format" % "protobuf-java-format" % "1.2"),
 
 	  ("com.googlecode.protobuf-java-format" % "protobuf-java-format" % "1.2"),
 	  ("org.specs2" %% "specs2" % "1.14" % "test"),
-    ("us.theatr" %% "akka-quartz" % "0.2.0"),
+          ("us.theatr" %% "akka-quartz" % "0.2.0"),
 	  ("org.apache.thrift" % "libfb303" % "0.7.0" ),
 	  ("org.antlr" % "antlr-runtime" % "3.4" ),
 	  ("org.antlr" % "antlr" % "3.0.1" ),
