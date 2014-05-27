@@ -67,9 +67,25 @@ object ApplicationBuild extends Build {
 
   def AppSettings = CommonSettings ++ playScalaSettings
 
-  def RpmSettings = packagerSettings ++ deploymentSettings ++ Seq(
+
+  val destDir = "/usr/local/satisfaction"
+
+  def RpmSettings = packagerSettings ++ deploymentSettings ++ mapGenericFilesToLinux ++  Seq(
     maintainer in Linux := "Jerome Banks jbanks@tagged.com",
     packageDescription in Linux := "Next Generation Hadoop Scheduler",
+
+    linuxPackageMappings <++= (projectDependencyArtifacts) map { artifactSeq : Seq[Attributed[File]] =>
+          artifactSeq map ( a => { packageMapping ( a.data -> s"${destDir}/lib/${a.data.name}" )  } )
+
+    },
+
+    ///linuxPackageMappings <++= (managedResourceDirectories in compile) map { artifactSeq : Seq[File] =>
+         //artifactSeq map ( a => { packageMapping ( a -> s"${destDir}/resource/${a.name}" )  } )
+    //},
+
+    linuxPackageMappings <+= (baseDirectory) map { bd => 
+       packageMapping( (bd/ "bin/willrogers") -> s"${destDir}/bin/willrogers" ) 
+     },
 
     name in Rpm := "satisfaction-scheduler",
     version in Rpm := appVersion,
