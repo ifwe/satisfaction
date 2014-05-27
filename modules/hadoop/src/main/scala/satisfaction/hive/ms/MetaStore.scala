@@ -27,20 +27,16 @@ import org.apache.hadoop.hive.metastore.api.MetaException
 import scala.collection._
 import hdfs.Hdfs
 
+
 /**
  *  Scala Wrapper around Hive MetaStore object
 
  *
  */
 
-/// XXX 
-/// Push Loggable to externalizable trait 
-trait Loggable {
-   def info( m : String )  { System.out.println(m) }
-   def error( m : String )  { System.err.println(m) }
-}
 
-case class MetaStore(val hvConfig: HiveConf) extends Loggable {
+///case class MetaStore(val hvConfig: HiveConf) extends Logging {
+case class MetaStore(val hvConfig: HiveConf)  {
    import hdfs.HdfsImplicits
    import hdfs.HdfsImplicits._
 
@@ -251,15 +247,15 @@ case class MetaStore(val hvConfig: HiveConf) extends Loggable {
                         println(" Number of days between " + partDate + " and  " + now + " = " + numDays)
                         if (numDays > reten) {
                             if (_hdfs.exists(part.getDataLocation)) {
-                                info("Deleting obsolete dated path " + part.getDataLocation)
+                                //info("Deleting obsolete dated path " + part.getDataLocation)
                                 println("Deleting obsolete dated path " + part.getDataLocation)
                                 _hdfs.fs.delete(part.getDataLocation)
                             }
-                            info("Dropping obsolete partition " + part.getValues + " for table " + tblName)
+                            ///info("Dropping obsolete partition " + part.getValues + " for table " + tblName)
                             println("Dropping obsolete partition " + part.getValues + " for table " + tblName)
                             _hive.dropPartition(db, tblName, part.getValues(), true)
                         } else {
-                            info("Keeping recent partition " + part.getValues + " for table " + tblName)
+                            ///info("Keeping recent partition " + part.getValues + " for table " + tblName)
                             println("Keeping recent partition " + part.getValues + " for table " + tblName)
 
                         }
@@ -276,7 +272,7 @@ case class MetaStore(val hvConfig: HiveConf) extends Loggable {
             val tblList = _hive.getTablesForDb(db, "*").toList
             tblList.map { tblName =>
               if( tblName.compareTo( "ksuid_mapping") > 0) {
-                info(" Cleaning table " + db + "@" + tblName)
+                ///info(" Cleaning table " + db + "@" + tblName)
                 println(" Cleaning table " + db + "@" + tblName)
                 cleanPartitions(db, tblName)
               }

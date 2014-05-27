@@ -4,12 +4,10 @@ import com.klout.satisfaction._
 
 object FanOutGoal {
   /**
-   *  XXX 
-   *   XXXX Think if we want to have distinct 
-   *      goals for this, or a custom witness mapper function
+   *   Return a Goal which depends upon multiple subGoals,
+   *   which a mapping function applied
    */ 
-
-    def apply(subGoal: Goal, saturateVar: Variable[String], substSeq: Set[String]): Goal = {
+    def apply[T](subGoal: Goal, saturateVar: Variable[T], substSeq:Iterable[T]): Goal = {
         val vars = subGoal.variables - saturateVar
         implicit val track = subGoal.track
         val deps = substSeq.map(Goal.qualifyWitness(saturateVar, _)).map(Tuple2(_, subGoal))
@@ -17,10 +15,10 @@ object FanOutGoal {
             name = "FanOut " + subGoal.name,
             satisfier = None,
             variables = vars,
-            dependencies = deps,
+            dependencies = deps.toSet,
             evidence = Set.empty)
-        ///( subGoal.track)
     }
+
 
     /**
      *   Allow two sets of variable values to be fanned out.

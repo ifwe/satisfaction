@@ -40,7 +40,7 @@ object ApplicationBuild extends Build {
       "willrogers",
       appVersion,
       path = file("apps/willrogers")
-  ).settings(AppSettings: _*).dependsOn(core, engine, hadoop, hive)
+  ).settings(AppSettings: _*).settings(RpmSettings: _* )dependsOn(core, engine, hadoop, hive)
 
   def CommonSettings =  Resolvers ++ Seq(
       scalacOptions ++= Seq(
@@ -58,23 +58,30 @@ object ApplicationBuild extends Build {
       organization := "com.klout.satisfaction",
 
       version := appVersion,
+
+      packageSummary := "lowenstein",
      
       libraryDependencies ++= testDependencies
 
   ) 
 
-  def AppSettings = CommonSettings ++ RpmSettings ++ playScalaSettings
+  def AppSettings = CommonSettings ++ playScalaSettings
 
   def RpmSettings = packagerSettings ++ deploymentSettings ++ Seq(
+    maintainer in Linux := "Jerome Banks jbanks@tagged.com",
+    packageDescription in Linux := "Next Generation Hadoop Scheduler",
+
     name in Rpm := "satisfaction-scheduler",
     version in Rpm := appVersion,
     rpmRelease in Rpm:= "1",
-    packageSummary in Rpm:= "lowenstein",
-    rpmVendor in Rpm:= "Tagged.com",
+    packageSummary in Rpm := "lowenstein",
+    packageSummary in Linux := "lowenstein",
+    rpmVendor in Rpm := "Tagged.com",
     rpmUrl in Rpm:= Some("http:/github.com/tagged/satisfaction"),
     rpmLicense in Rpm:= Some("Apache License Version 2"),
-    packageDescription in Rpm:= "Next Generation Hadoop Scheduler",
+    packageDescription in Rpm := "Next Generation Hadoop Scheduler",
     rpmGroup in Rpm:= Some("satisfaction")
+
   )
 
   def excludeFromAll(items: Seq[ModuleID], group: String, artifact: String) = 
@@ -159,6 +166,7 @@ object ApplicationBuild extends Build {
 	  ("org.antlr" % "antlr-runtime" % "3.4" ),
 	  ("org.antlr" % "antlr" % "3.0.1" ),
 
+          ( "com.typesafe.scala-logging" %% "scala-logging-slf4j" % "2.1.2" ),
 	  ( "org.scala-lang" % "scala-reflect" % "2.10.2" )
 
 

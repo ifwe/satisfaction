@@ -69,6 +69,10 @@ object Goal {
             w.update(param, paramValue)
     }
     
+    def qualifyWitness[T](param: Variable[T], paramValue : T): (Witness => Witness) = {
+        w: Witness =>
+            w.update  (param, paramValue)
+    }
     
     /**
      *  Define a Witness mapping function which replaces
@@ -94,7 +98,8 @@ object Goal {
     
    
     /**
-     *  Return a Function 
+     *  Return a Witness mapping function 
+     *    which increments a variable 
      */
     def incrementVariable( incrVar : Variable[String],  numIncr : Int ) : ( Witness => Witness) = { w: Witness => {
          if( w.contains( incrVar)) {
@@ -105,6 +110,8 @@ object Goal {
          }
       }
     }
+    
+    
     
     /**
      *  Replace the variable 'dtVar' with the most recent date in the given path.
