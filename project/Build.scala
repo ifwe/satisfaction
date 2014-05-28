@@ -8,6 +8,8 @@ import com.typesafe.sbt.packager.Keys._
 import com.typesafe.sbt.SbtNativePackager._
 import NativePackagerKeys._
 
+import com.typesafe.sbt.packager.universal.Keys.stagingDirectory
+
 import play.Project._
 
 object ApplicationBuild extends Build {
@@ -70,7 +72,7 @@ object ApplicationBuild extends Build {
 
   val destDir = "/usr/local/satisfaction"
 
-  def RpmSettings = packagerSettings ++ deploymentSettings ++ mapGenericFilesToLinux ++  Seq(
+  def RpmSettings = packagerSettings ++ deploymentSettings ++  playScalaSettings ++  Seq(
     maintainer in Linux := "Jerome Banks jbanks@tagged.com",
     packageDescription in Linux := "Next Generation Hadoop Scheduler",
 
@@ -79,13 +81,11 @@ object ApplicationBuild extends Build {
 
     },
 
-    ///linuxPackageMappings <++= (managedResourceDirectories in compile) map { artifactSeq : Seq[File] =>
-         //artifactSeq map ( a => { packageMapping ( a -> s"${destDir}/resource/${a.name}" )  } )
-    //},
 
-    linuxPackageMappings <+= (baseDirectory) map { bd => 
-       packageMapping( (bd/ "bin/willrogers") -> s"${destDir}/bin/willrogers" ) 
-     },
+    linuxPackageMappings <++= (mappings in Universal) map { universalDir => 
+        universalDir.filter( {  _._2.toString.startsWith("/usr/share") } ).map { packageMapping( _ ) } 
+    },
+
 
     name in Rpm := "satisfaction-scheduler",
     version in Rpm := appVersion,
