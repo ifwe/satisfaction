@@ -27,7 +27,7 @@ limitations under the License.
 // YY look up original source for reference
 // purpose: schedule by frequency (ex// every 8 hours).
 
-mport akka.actor.{Cancellable, ActorRef, Actor}
+import akka.actor.{Cancellable, ActorRef, Actor}
 import akka.event.Logging
 import org.quartz.impl.StdSchedulerFactory
 import java.util.Properties
