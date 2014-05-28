@@ -27,7 +27,7 @@ trait Recurring  extends Schedulable {
      *    that this track will be attempted to run
      *   e.g Period.days(1) 
      */
-     def frequency : Period 
+     def frequency : Period // frequency = p 1h look up ISOPeriod format (look at joda library for formatting) 
      
 
      /**
@@ -35,9 +35,9 @@ trait Recurring  extends Schedulable {
       *   when this track should be started.
       *   
       *   e.g. new LocalTime( 3, 15 ) for daily frequencies
-      *     to run 3 hours and fifteen minutes after midnight
+      *     to run 3 hours and fifteen minutes after midnight (offset from base hour)
       */
-     def timeOffset : Option[ReadablePartial] = None
+     def timeOffset : Option[ReadablePartial] = None // this can get ugly. Work carefully.
      
      
      def scheduleString =  { ISOPeriodFormat.standard.print( frequency ) }
@@ -52,8 +52,6 @@ object Recurring {
      def period(periodStr : String) : Period = {
          ISOPeriodFormat.standard.parsePeriod(periodStr) 
      }
-     
-  
 }
 
 /**

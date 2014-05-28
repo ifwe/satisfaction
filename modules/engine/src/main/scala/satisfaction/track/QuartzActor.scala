@@ -23,7 +23,11 @@ limitations under the License.
  *  
  */
 
-import akka.actor.{Cancellable, ActorRef, Actor}
+
+// YY look up original source for reference
+// purpose: schedule by frequency (ex// every 8 hours).
+
+mport akka.actor.{Cancellable, ActorRef, Actor}
 import akka.event.Logging
 import org.quartz.impl.StdSchedulerFactory
 import java.util.Properties
@@ -97,7 +101,7 @@ object OpenSpigot extends Spigot {
  * The base quartz scheduling actor. Handles a single quartz scheduler
  * and processes Add and Remove messages.
  */
-class QuartzActor extends Actor {
+class QuartzActor extends Actor { // receives msg from TrackScheduler
 	val log = Logging(context.system, this)
 
 	// Create a sane default quartz scheduler
@@ -161,7 +165,7 @@ class QuartzActor extends Actor {
 			       scheduler.scheduleJob( job, triggerBuilder.startAt(offsetTime.toDate).build)
 			    }
 
-				if (reply)
+				if (reply) // success case
 					context.sender ! AddScheduleSuccess(new CancelSchedule(jobkey, trigkey))
 
 			} catch { // Quartz will drop a throwable if you give it an invalid cron expression - pass that info on
@@ -198,7 +202,7 @@ class QuartzActor extends Actor {
 	}
 
 	// Largely imperative glue code to make quartz work :)
-	def receive = {
+	def receive = { // YY ? received here
 		case RemoveJob(cancel) => cancel match {
 			case cs: CancelSchedule => scheduler.deleteJob(cs.job); cs.cancelled = true
 			case _ => log.error("Incorrect cancelable sent")
@@ -209,7 +213,7 @@ class QuartzActor extends Actor {
 			
 		case AddPeriodSchedule(to, period, offsetTime, message, reply, spigot) =>
 		    val schedBuilder : ScheduleBuilder[_ <: Trigger] = builderForPeriod( period)
-		    scheduleJob(to,schedBuilder,message,reply,spigot)
+		    scheduleJob(to,schedBuilder,message,reply,spigot) 
 		case _ => //
 		   /// XXX
 	}

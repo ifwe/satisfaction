@@ -139,8 +139,8 @@ case class TrackFactory(val trackFS : FileSystem,
      case None =>
      }
        
-     schedulerOpt match {
-       case Some(scheduler) =>
+     schedulerOpt match { // YY on init: if there is a scheduler, load track on it. May want to un/re schedule.
+       case Some(scheduler) => 
           scheduler.scheduleTrack( track)
         case None =>
           

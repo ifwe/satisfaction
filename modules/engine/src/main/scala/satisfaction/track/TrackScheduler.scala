@@ -44,12 +44,12 @@ case class TrackScheduler( val proofEngine : ProofEngine ) {
      val mess = new StartGoalMessage( track.descriptor)
      var schedString : String  = null
      val schedMess : Option[Any] =  {
-        track match {
+        track match { // track can have two traits
           case  cronable :  Cronable =>
              schedString = cronable.scheduleString
              Some(AddCronSchedule( startGoalActor,  cronable.cronString, mess, true))
-          case recurring : Recurring =>
-             schedString = recurring.scheduleString
+          case recurring : Recurring => // in core
+             schedString = recurring.scheduleString 
              Some(AddPeriodSchedule( startGoalActor, recurring.frequency, DateTime.now , mess, true))
           case _  => None
         }
@@ -62,10 +62,10 @@ case class TrackScheduler( val proofEngine : ProofEngine ) {
 
    
    private def sendScheduleMessage( trackDesc : TrackDescriptor, schedMess : Any, schedString : String) : Boolean = {
-         val addResultF =  quartzActor ? schedMess 
+         val addResultF =  quartzActor ? schedMess  //future
          val resultMess = Await.result( addResultF, 30 seconds )
-         resultMess match {
-            case yeah : AddScheduleSuccess =>
+         resultMess match { //able to schedule
+            case yeah : AddScheduleSuccess => // these responses are from QuartzActor::scheduleJob
               scheduleMap.put( trackDesc, Tuple2(schedString ,yeah.cancel ))
               println(" Successfully scheduled job " + trackDesc.trackName)
               true
