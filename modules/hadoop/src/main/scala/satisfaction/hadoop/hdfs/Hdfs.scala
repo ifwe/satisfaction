@@ -266,8 +266,24 @@ object Hdfs {
      }
   }
   
-  def fromConfig( conf : Configuration ) : Hdfs = {
-      new Hdfs( getFileSystem(conf)) ( conf) 
+  def logError( f : Any => Any ) : Any = {
+    try {
+      f 
+    } catch {
+      case unexpected : Throwable => {
+        System.out.println(unexpected.getMessage())
+        System.err.println(unexpected.getMessage())
+        unexpected.printStackTrace(System.out)
+
+        println(unexpected.getMessage())
+        throw unexpected
+      }
+    }
+    
+  }
+  
+  def fromConfig( conf : Configuration ) : Hdfs =  { 
+     new Hdfs( getFileSystem(conf)) 
   }
   
    def markSuccess(fs : FileSystem, path: Path): Unit = {

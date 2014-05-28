@@ -161,9 +161,8 @@ object ApplicationBuild extends Build {
 
 
   def engineDependencies = Seq(
-    ("com.typesafe.akka" %% "akka-actor" % "2.1.0"),
+    ("com.typesafe.akka" %% "akka-actor" % "2.2.0"),
     ("org.quartz-scheduler" % "quartz" % "2.2.1")
-    ////("us.theatr" %% "akka-quartz" % "0.2.0")
   ) ++ testDependencies
 
 
@@ -177,7 +176,6 @@ object ApplicationBuild extends Build {
 
 	  ("com.googlecode.protobuf-java-format" % "protobuf-java-format" % "1.2"),
 	  ("org.specs2" %% "specs2" % "1.14" % "test"),
-          ("us.theatr" %% "akka-quartz" % "0.2.0"),
 	  ("org.apache.thrift" % "libfb303" % "0.7.0" ),
 	  ("org.antlr" % "antlr-runtime" % "3.4" ),
 	  ("org.antlr" % "antlr" % "3.0.1" ),
