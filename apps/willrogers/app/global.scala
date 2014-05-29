@@ -14,6 +14,13 @@ import com.klout.satisfaction.hadoop.Config
 
 object Global extends GlobalSettings {
 
+    implicit val hiveConf = Config.config
+    implicit val metaStore : MetaStore  = new MetaStore( hiveConf)
+
+    lazy val hdfsFS = Hdfs.fromConfig( hiveConf )
+    lazy val trackPath : Path = new Path("/user/satisfaction") /// XXX Get From appconfig
+    
+
 
     override def onStart(app: Application) {
         /// XXX initialize name-node, job-tracker, and metastore 
@@ -21,9 +28,6 @@ object Global extends GlobalSettings {
         
         println(" Starting up Will Rogers;  I never metastore I didn't like ...")
         
-        /// XXX todo -- dependency inject companion objects ????
-        println(" Caching the Hive MetaStore")
-        ///val initMs = hive.ms.MetaStore
         println(" Starting the Akka Actors")
         val initPe = engine.actors.ProofEngine
         println(" Loading all Tracks ")
@@ -42,39 +46,22 @@ object Global extends GlobalSettings {
         })
     }
     
-    def hdfsConfig : HadoopConfiguration = {
-        val conf = new HadoopConfiguration
-        /// XXX 
-        /// XXX JDB FIXME
-        /// Avoid Hacks to point to correct filesystem
-        /// XXX Clean up app  configuration 
-      val testPath = System.getProperty("user.dir") + "/apps/willrogers/conf/hdfs-site.xml"
-      conf.addResource( new java.io.File(testPath).toURI().toURL())
-      
-      
-       val nameService = conf.get("dfs.nameservices")
-       if(nameService != null) {
-         conf.set("fs.defaultFS", s"hdfs://$nameService")
-       }
-      conf
-    }
-    val hdfsFS = Hdfs.fromConfig( hdfsConfig )
-    val trackPath : Path = new Path("/user/satisfaction")
-    
-    println(" HDFS DFS = " + hdfsFS)
-    
     
     val trackScheduler = new TrackScheduler( engine.actors.ProofEngine)
       
     implicit val trackFactory : TrackFactory = {
       ///// XXX Why doesn't implicits automatically convert???
-      val hadoopWitness : Witness = Config.Configuration2Witness( hdfsConfig.asInstanceOf[HadoopConfiguration])
+      try {
+      val hadoopWitness : Witness = Config.Configuration2Witness( hiveConf)
       var tf = new TrackFactory( hdfsFS, trackPath, Some(trackScheduler), Some(hadoopWitness))
       trackScheduler.trackFactory = tf
       tf
+      } catch {
+        case unexpected : Throwable => 
+           unexpected.printStackTrace(System.out) 
+           throw unexpected
+      }
     }
     
-    implicit val hiveConf = Config.config
-    
-    implicit val metaStore : MetaStore  = new MetaStore( hiveConf)
+
 }

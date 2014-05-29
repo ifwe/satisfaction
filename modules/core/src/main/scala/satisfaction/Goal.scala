@@ -8,7 +8,7 @@ import fs._
 case class Goal(
     val name: String,
     val satisfier: Option[Satisfier],
-    val variables: Set[Variable[_]] = Set.empty,
+    val variables: List[Variable[_]] = List.empty,
     var dependencies: Set[(Witness => Witness, Goal)] = Set.empty,
     ///var evidence: Set[_ <: Evidence] = Set.empty)
     var evidence: Set[Evidence] = Set.empty )

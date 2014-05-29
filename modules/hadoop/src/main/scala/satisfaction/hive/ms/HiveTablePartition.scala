@@ -7,6 +7,7 @@ import org.apache.hadoop.hive.ql.metadata.Partition
 import hive.ms._
 import org.joda.time._
 import fs._
+import hdfs.HdfsImplicits._
 
 case class HiveTablePartition(
     part: Partition)
@@ -48,18 +49,19 @@ case class HiveTablePartition(
         println(" MS LONG = " + msLong)
         new DateTime(msLong * 1000)
     }
+    
 
     def lastAccessed: DateTime = {
         msDateTime(part.getLastAccessTime)
     }
 
     def exists: Boolean = {
-        /// XXX 
+      ///  XXX check metastore to make sure
         true
     }
     
     def path : fs.Path = {
-       return  new Path(part.getDataLocation.toUri.toString)
+       part.getDataLocation
     }
 
     def lastModifiedBy: String = {
@@ -68,6 +70,11 @@ case class HiveTablePartition(
 
     def getMetaData(key: String): Option[String] = {
         ms.getPartitionMetaData(part).get(key)
+    }
+    
+    def drop : Unit = {
+      /// XXX expose on metastore
+      
     }
 
 }

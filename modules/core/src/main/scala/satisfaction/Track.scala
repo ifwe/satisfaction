@@ -65,6 +65,9 @@ case class Track(
     implicit val track : Track = this
     
     
+    /**
+     *  Ay yah ... XXX FIXME
+     */
     lazy val allGoals: Set[Goal] = {
         def allGoals0(toCheck: List[Goal], accum: Set[Goal]): Set[Goal] = {
             toCheck match {
@@ -111,10 +114,13 @@ case class Track(
        _trackPath = path
      }
      
+     /**
      def readProperties( pathString : String ) = {
        //// XXX FIXME -- Reading from fileinputstream
        _trackProperties = Witness( Substituter.readProperties(new FileInputStream( pathString )))
      }
+     * *
+     */
      
      def setTrackProperties( props : Witness) = {
     	  _trackProperties = props
@@ -245,6 +251,20 @@ object Track {
    
     def apply( trackName : String) : Track = {
        new Track( TrackDescriptor(trackName) )
+    }
+    
+    def localTrack( td : String,  path : Path ) : Track = {
+       trackForPath( td, LocalFileSystem, path) 
+    }
+    
+    def trackForPath( tname : String, fs : FileSystem, path : Path ) : Track = {
+      val tr = new Track(TrackDescriptor( tname) )
+      tr.hdfs = fs
+      tr.setTrackPath( path)
+      val props = Substituter.readProperties( fs.open( path / "satisfaction.properties") )
+      tr.setTrackProperties( Witness(props))
+       
+      tr
     }
     
     def apply( trackName : String, topLevelGoals : Set[Goal]) : Track = {

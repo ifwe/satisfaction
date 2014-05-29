@@ -7,7 +7,7 @@ package satisfaction
  */
 trait DataOutput extends Evidence {
 
-    def variables: Set[Variable[_]]
+    def variables: List[Variable[_]]
     
     def exists(witness: Witness): Boolean
     

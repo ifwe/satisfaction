@@ -13,32 +13,39 @@ import scala.collection.JavaConversions._
  *  PartitionExists is similar to HiveTable DataDependency,
  *    but creates the necessary partitions if they don't exist.
  */
-case class PartitionCreator(
-    table : HiveTable 
-    ) extends Satisfier with Evidence {
+case class PartitionExistsSatisfier (
+    val table : HiveTable
+    )( implicit val track : Track )
+      extends Satisfier  with Evidence {
+    var w : Witness = null
   
-    override def name = "PartitionExists"
+    override def name = "PartitionExists " + table.toString
       
-    
-    def satisfy(subst: Witness): ExecutionResult = robustly {
-        val part = table.ms.addPartition( table.dbName, table.tblName , subst.raw  )    
+    override def satisfy(subst: Witness): ExecutionResult = robustly {
+        w = subst
+        val part = table.addPartition(subst)
+        println(" Added Partition " + part )
         true
     }
     
-    
-    def abort() : ExecutionResult = robustly {
-        /// XXX FIXME 
-        ///  Drop partition on abort create partition ????
-        ///ms.dropPartition( table.dbName, table.tblName )
-        true 
+    override def abort() : ExecutionResult = robustly {
+      if(w != null) {
+       table.getPartition(w) match {
+        case Some(p) => 
+          p.drop
+        case None =>
+       }
+      }
+      true
     }
     
-    /**
-     *  
-     */
-    def exists(w: Witness): Boolean = {
-        table.exists(w)
+    override def exists(w: Witness): Boolean = {
+      table.getPartition(w) match {
+        case Some(p) => true
+        case None => false
+      }
     }
+    
 
 }
 
@@ -47,10 +54,13 @@ object PartitionExists {
       def apply( hiveTable : HiveTable )
                (implicit  track : Track) : Goal
                 =  {
-         val partitionCreator = new PartitionCreator(hiveTable)
-         new Goal( name= s" ${hiveTable.tblName} Partition exists",
-               satisfier=Some(partitionCreator)
-           ).addEvidence(partitionCreator)
+         val partitionCreator = new PartitionExistsSatisfier(hiveTable)
+         val dataPath = hiveTable.partitionPath
+         val goal = new Goal( name= s" ${hiveTable.tblName} Partition exists",
+               satisfier=Some(partitionCreator),
+               variables=hiveTable.variables
+           ).addEvidence( partitionCreator).addDataDependency(dataPath)
+         goal
       }
   
   
