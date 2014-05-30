@@ -52,7 +52,7 @@ class TrackSchedulerSpec extends Specification {// val mockFS = new LocalFileSys
         
         
         implicit val track : Track = new Track ( TrackDescriptor("scheduleRecurringTrack") ) with Recurring {  // might have bug; be careful (track properties might not be set; but we don't need it right now) 
-         override def frequency = Recurring.period("P0Y0M0W0DT0H1M0S")
+         override def frequency = Recurring.period("PT1M")
         }
       	
       	

@@ -28,10 +28,31 @@ case class TrackScheduler( val proofEngine : ProofEngine ) {
    var trackFactory :  TrackFactory = null
    
    private lazy val quartzActor = ProofEngine.akkaSystem.actorOf(Props[QuartzActor])
-   private lazy val startGoalActor = ProofEngine.akkaSystem.actorOf(Props[StartGoalActor])
+   private lazy val startGoalActor = ProofEngine.akkaSystem.actorOf(Props( new StartGoalActor( trackFactory, proofEngine)) )
    implicit val timeout = Timeout(24 hours)
   
    private val scheduleMap : collection.mutable.Map[TrackDescriptor,Tuple2[String,Cancellable]] = new collection.mutable.HashMap[TrackDescriptor,Tuple2[String,Cancellable]]
+   
+      class StartGoalActor( trackFactory : TrackFactory, proofEngine : ProofEngine ) extends Actor with ActorLogging {
+       def receive = {
+         case mess : StartGoalMessage =>
+           log.info(" Starting Track " + mess.trackDesc +  " TrackFactory = " + TrackFactory)
+           val trckOpt =  trackFactory.getTrack( mess.trackDesc )
+           trckOpt match {
+             case Some(trck) =>
+        	   val witness = generateWitness(trck, DateTime.now)
+        	   
+        	   trck.topLevelGoals.foreach( goal => { 
+        	      log.info(s" Satisfying Goal $goal.name with witness $witness ")
+        	      goal.variables.foreach( v => println( s"  Goal $goal.name has variable " + v))
+                  proofEngine.satisfyGoal( goal, witness)
+              } )
+             case None =>
+              println(" Track " + mess.trackDesc.trackName + " not found ")
+           }
+         
+       } 
+   }
    
    
    /**
@@ -99,28 +120,9 @@ case class TrackScheduler( val proofEngine : ProofEngine ) {
 
 
     
-case class StartGoalMessage( val trackDesc : TrackDescriptor )
+   case class StartGoalMessage( val trackDesc : TrackDescriptor )
    
-   class StartGoalActor( trackFactory : TrackFactory, proofEngine : ProofEngine ) extends Actor with ActorLogging {
-       def receive = {
-         case mess : StartGoalMessage =>
-           log.info(" Starting Track " + mess.trackDesc +  " TrackFactory = " + TrackFactory)
-           val trckOpt =  trackFactory.getTrack( mess.trackDesc )
-           trckOpt match {
-             case Some(trck) =>
-        	   val witness = generateWitness(trck, DateTime.now)
-        	   
-        	   trck.topLevelGoals.foreach( goal => { 
-        	      log.info(s" Satisfying Goal $goal.name with witness $witness ")
-        	      goal.variables.foreach( v => println( s"  Goal $goal.name has variable " + v))
-                  proofEngine.satisfyGoal( goal, witness)
-              } )
-             case None =>
-              println(" Track " + mess.trackDesc.trackName + " not found ")
-           }
-         
-       } 
-   }
+  
    
    def generateWitness( track : Track, nowDt : DateTime ) : Witness = {
      var subst = Witness()
