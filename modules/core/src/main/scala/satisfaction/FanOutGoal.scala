@@ -8,7 +8,7 @@ object FanOutGoal {
    *   which a mapping function applied
    */ 
     def apply[T](subGoal: Goal, saturateVar: Variable[T], substSeq:Iterable[T]): Goal = {
-        val vars = subGoal.variables - saturateVar
+        val vars = subGoal.variables.filter( _ != saturateVar )
         implicit val track = subGoal.track
         val deps = substSeq.map(Goal.qualifyWitness(saturateVar, _)).map(Tuple2(_, subGoal))
         new Goal(
@@ -25,7 +25,7 @@ object FanOutGoal {
      */
     def apply(subGoal: Goal, saturateVar: Variable[String], substSeq: List[String],
               saturateVar2: Variable[String], substSeq2: List[String]): Goal = {
-        val vars = subGoal.variables - saturateVar - saturateVar2
+        val vars = subGoal.variables.filter( v => { v != saturateVar && v != saturateVar2  })
 
         implicit val track = subGoal.track
         
@@ -49,7 +49,6 @@ object FanOutGoal {
             variables = vars,
             dependencies = deps,
             evidence = Set.empty)
-            ///(subGoal.track)
     }
 
 }

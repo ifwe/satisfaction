@@ -11,18 +11,18 @@ import java.io.InputStream
  */
 object Substituter {
 
-    def findVariablesInString(templateStr: String): Set[String] = {
+    def findVariablesInString(templateStr: String): List[String] = {
         substitute(templateStr, Witness()) match {
             case Left(vars)    => vars
-            case Right(noVars) => Set.empty
+            case Right(noVars) => List.empty
         }
     }
 
-    def substitute(str: String, subst: Witness): Either[Set[String], String] = {
+    def substitute(str: String, subst: Witness): Either[List[String], String] = {
         return substitute(new CharSequenceReader(str), subst)
     }
 
-  def substitute(readerBegin: CharSequenceReader, subst: Witness): Either[Set[String], String] = {
+  def substitute(readerBegin: CharSequenceReader, subst: Witness): Either[List[String], String] = {
     try {
       val sb: StringBuilder = new StringBuilder
       val missingList: Buffer[String] = new collection.mutable.ArrayBuffer()
@@ -57,7 +57,7 @@ object Substituter {
         reader = reader.rest
       }
       if (missingList.size != 0)
-        Left(missingList.toSet)
+        Left(missingList.toList)
       else
         Right(sb.toString)
     } catch {

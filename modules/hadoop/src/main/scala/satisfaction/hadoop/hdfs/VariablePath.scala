@@ -5,7 +5,7 @@ package hdfs
 
 import fs._
 
-case class VariablePath(pathTemplate: String)(implicit val hdfs : FileSystem, track : Track)
+case class VariablePath(pathTemplate: String)(implicit val hdfs : FileSystem, val track : Track)
       extends DataOutput {
 
     def variables = {
@@ -40,4 +40,30 @@ case class VariablePath(pathTemplate: String)(implicit val hdfs : FileSystem, tr
                 return Some(new Path(substitutedPath))
         }
     }
+}
+
+object VariablePath {
+  
+    /**
+     *  Return Variable Path
+     */
+    def apply( basePath : Path , vars : List[Variable[_]], expandVars : Set[Variable[_]] = Set.empty)
+         ( implicit hdfs: FileSystem, track : Track): VariablePath = {
+      val sb = new StringBuilder
+      sb.append( basePath.toString)
+      vars.foreach( v => {
+          sb.append("/")
+          if(expandVars.contains(v)) {
+            sb.append(v.name)
+            sb.append("=")
+            sb.append()
+          } 
+          sb.append("${")
+          sb.append(v.name)
+          sb.append("}")
+      })
+      
+      new VariablePath( sb.toString() )
+    }
+  
 }

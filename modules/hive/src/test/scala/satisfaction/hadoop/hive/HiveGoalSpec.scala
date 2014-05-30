@@ -19,25 +19,27 @@ import satisfaction.engine.actors.GoalState
 
 @RunWith(classOf[JUnitRunner])
 class HiveGoalSpec extends Specification {
-    val NetworkAbbr = new Variable[String]("network_abbr", classOf[String])
-    val DoDistcp = new Variable[Boolean]("doDistcp", classOf[Boolean])
-    val runDate = new Variable[String]("dt", classOf[String])
+    val hour = new Variable[String]("hour", classOf[String])
+    val runDate = new Variable[String]("date", classOf[String])
     
-    implicit val ms : MetaStore = MetaStore( new java.net.URI("thrift://jobs-dev-sched2:9085") )
-    implicit val hdfs : FileSystem = new Hdfs("hdfs://jobs-dev-hnn") 
+    implicit val ms : MetaStore = MetaStore.default
+    implicit val hdfs : FileSystem = Hdfs.default
 
     "HiveGoalSpec" should {
        "Run a Hive goal" in {
             implicit val track : Track = new Track(TrackDescriptor("HiveTrack"))
-            val vars: Set[Variable[_]] = Set(NetworkAbbr, runDate)
+            val vars: List[Variable[_]] = List(hour, runDate)
             val actorAction: Goal = HiveGoal(
-                name = "Fact Content",
-                queryResource ="fact_content.hql",
-                table = HiveTable("bi_maxwell", "actor_action"),
+                name = "Dau By Platform",
+                queryResource ="dau_by_platform.hql",
+                table = HiveTable("sqoop_test", "dau_by_platform"),
                  Set.empty);
 
-            val witness = Witness((runDate -> "20140117"), (NetworkAbbr -> "li"))
+            val witness = Witness((runDate -> "20140420"), (hour -> "03"))
             val goalResult = Satisfaction.satisfyGoal(actorAction, witness)
+            
+            
+            
 
             goalResult.state == GoalState.Success
         }

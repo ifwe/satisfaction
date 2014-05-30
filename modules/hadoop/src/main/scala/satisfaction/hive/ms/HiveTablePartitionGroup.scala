@@ -17,13 +17,13 @@ import satisfaction.fs.FileSystem
 case class HiveTablePartitionGroup(
     val dbName: String,
     val tblName: String,
-    val grouping: Set[Variable[_]],
+    val grouping: List[Variable[_]],
     val requiredPartitions :Option[Set[VariableAssignment[_]]] = None)
     ( implicit val ms : MetaStore,
       implicit val hdfs : FileSystem ) extends DataOutput {
 
 
-    override def variables = {
+    override def variables : List[Variable[_]] = {
         grouping
     }
 

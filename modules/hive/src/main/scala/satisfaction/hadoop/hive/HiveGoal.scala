@@ -20,7 +20,7 @@ object HiveGoal {
             : Goal = {
 
       //// Set the jar path 
-        implicit val hiveConf : HiveConf =  table.ms.config
+        implicit val hiveConf : HiveConf =  Config(track)
         ///val driver =  HiveDriver(track.auxJarFolder.getPath) 
         val driver = new HiveLocalDriver()
         val hiveSatisfier = new HiveSatisfier(queryResource,

@@ -104,11 +104,11 @@ object ApplicationBuild extends Build {
     items.map(_.exclude(group, artifact))
 
   implicit def dependencyFilterer(deps: Seq[ModuleID]) = new Object {
-        def excluding(group: String, artifactId: String) =
-          deps.map(_.exclude(group, artifactId))
+		    def excluding(group: String, artifactId: String) =
+			    deps.map(_.exclude(group, artifactId))
 
-        def excludingGroup(group: String) =
-          deps.map(_.exclude(group, "*"))
+		    def excludingGroup(group: String) =
+			    deps.map(_.exclude(group, "*"))
   }
 
 
@@ -120,16 +120,16 @@ object ApplicationBuild extends Build {
 
 
   def hadoopDependencies = Seq(
-    ("org.apache.hadoop" % "hadoop-common" % "2.3.0"),
-    ("org.apache.hadoop" % "hadoop-hdfs" % "2.3.0"),
-    ("org.apache.hadoop" % "hadoop-nfs" % "2.3.0"),
-    ("org.apache.hadoop" % "hadoop-hdfs-nfs" % "2.3.0"),
-    ("org.apache.hadoop" % "hadoop-mapreduce-client-app" % "2.3.0"),
-    ("org.apache.hadoop" % "hadoop-mapreduce-client-common" % "2.3.0"),
-    ("org.apache.hadoop" % "hadoop-mapreduce-client-core" % "2.3.0"),
-    ("org.apache.hadoop" % "hadoop-mapreduce-client-jobclient" % "2.3.0"),
-    ("org.apache.hadoop" % "hadoop-distcp" % "2.3.0"),
-    ("org.hamcrest" % "hamcrest-core" % "1.3"  ) 
+	  ("org.apache.hadoop" % "hadoop-common" % "2.3.0"),
+	  ("org.apache.hadoop" % "hadoop-hdfs" % "2.3.0"),
+	  ("org.apache.hadoop" % "hadoop-nfs" % "2.3.0"),
+	  ("org.apache.hadoop" % "hadoop-hdfs-nfs" % "2.3.0"),
+	  ("org.apache.hadoop" % "hadoop-mapreduce-client-app" % "2.3.0"),
+	  ("org.apache.hadoop" % "hadoop-mapreduce-client-common" % "2.3.0"),
+	  ("org.apache.hadoop" % "hadoop-mapreduce-client-core" % "2.3.0"),
+	  ("org.apache.hadoop" % "hadoop-mapreduce-client-jobclient" % "2.3.0"),
+	  ("org.apache.hadoop" % "hadoop-distcp" % "2.3.0"),
+	  ("org.hamcrest" % "hamcrest-core" % "1.3"  ) 
   ).excluding("commons-daemon", "commons-daemon" ).excluding("junit","junit") ++ testDependencies ++ metastoreDependencies
 
   def coreDependencies = Seq(
@@ -137,26 +137,26 @@ object ApplicationBuild extends Build {
   ) ++ testDependencies 
 
   def metastoreDependencies = Seq(
-    ("org.apache.hive" % "hive-common" % hiveVersion),
-    ("org.apache.hive" % "hive-shims" % hiveVersion),
-    ("org.apache.hive" % "hive-metastore" % hiveVersion),
-    ("org.apache.hive" % "hive-exec" % hiveVersion),
-    ("org.apache.thrift" % "libfb303" % "0.7.0" )
+	  ("org.apache.hive" % "hive-common" % hiveVersion),
+	  ("org.apache.hive" % "hive-shims" % hiveVersion),
+	  ("org.apache.hive" % "hive-metastore" % hiveVersion),
+	  ("org.apache.hive" % "hive-exec" % hiveVersion),
+	  ("org.apache.thrift" % "libfb303" % "0.7.0" )
   )
 
   def hiveDependencies = Seq(
-    ("org.apache.hive" % "hive-common" % hiveVersion),
-    ("org.apache.hive" % "hive-exec" % hiveVersion),
-    ("org.apache.hive" % "hive-metastore" % hiveVersion),
-    ("org.apache.hive" % "hive-cli" % hiveVersion),
-    ("org.apache.hive" % "hive-serde" % hiveVersion),
-    ("org.apache.hive" % "hive-shims" % hiveVersion),
-    ("org.apache.hive" % "hive-hbase-handler" % hiveVersion),
-    ("org.apache.hive" % "hive-jdbc" % hiveVersion),
-    ("org.apache.hive" % "hive-service" % hiveVersion ),
-    ("org.apache.thrift" % "libfb303" % "0.7.0" ),
-    ("org.antlr" % "antlr-runtime" % "3.4" ),
-    ("org.antlr" % "antlr" % "3.0.1" )
+	  ("org.apache.hive" % "hive-common" % hiveVersion),
+	  ("org.apache.hive" % "hive-exec" % hiveVersion),
+	  ("org.apache.hive" % "hive-metastore" % hiveVersion),
+	  ("org.apache.hive" % "hive-cli" % hiveVersion),
+	  ("org.apache.hive" % "hive-serde" % hiveVersion),
+	  ("org.apache.hive" % "hive-shims" % hiveVersion),
+	  ("org.apache.hive" % "hive-hbase-handler" % hiveVersion),
+	  ("org.apache.hive" % "hive-jdbc" % hiveVersion),
+	  ("org.apache.hive" % "hive-service" % hiveVersion ),
+	  ("org.apache.thrift" % "libfb303" % "0.7.0" ),
+	  ("org.antlr" % "antlr-runtime" % "3.4" ),
+	  ("org.antlr" % "antlr" % "3.0.1" )
   ) ++ metastoreDependencies ++ testDependencies
 
 
@@ -169,19 +169,19 @@ object ApplicationBuild extends Build {
   def Dependencies = libraryDependencies ++= Seq(
       jdbc,
       anorm,
-    ("javax.jdo" % "jdo-api" % "3.0.1"),
-   ("mysql" % "mysql-connector-java" % "5.1.18" ),
+	  ("javax.jdo" % "jdo-api" % "3.0.1"),
+	 ("mysql" % "mysql-connector-java" % "5.1.18" ),
          ("com.github.nscala-time" %% "nscala-time" % "0.4.2"),
-  ("com.googlecode.protobuf-java-format" % "protobuf-java-format" % "1.2"),
+	("com.googlecode.protobuf-java-format" % "protobuf-java-format" % "1.2"),
 
-    ("com.googlecode.protobuf-java-format" % "protobuf-java-format" % "1.2"),
-    ("org.specs2" %% "specs2" % "1.14" % "test"),
-    ("org.apache.thrift" % "libfb303" % "0.7.0" ),
-    ("org.antlr" % "antlr-runtime" % "3.4" ),
-    ("org.antlr" % "antlr" % "3.0.1" ),
+	  ("com.googlecode.protobuf-java-format" % "protobuf-java-format" % "1.2"),
+	  ("org.specs2" %% "specs2" % "1.14" % "test"),
+	  ("org.apache.thrift" % "libfb303" % "0.7.0" ),
+	  ("org.antlr" % "antlr-runtime" % "3.4" ),
+	  ("org.antlr" % "antlr" % "3.0.1" ),
 
           ( "com.typesafe.scala-logging" %% "scala-logging-slf4j" % "2.1.2" ),
-    ( "org.scala-lang" % "scala-reflect" % "2.10.2" )
+	  ( "org.scala-lang" % "scala-reflect" % "2.10.2" )
 
 
 

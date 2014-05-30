@@ -199,7 +199,7 @@ class QuartzActor extends Actor { // receives msg from TrackScheduler
 	      	.withIntervalInHours( period.getHours)
 	      	.withIntervalInMinutes( period.getMinutes)
 	    case pt => 
-	      println ("period is" + pt.getName())
+	      println ("period is" + pt.getName()+ "the string is " + pt.toString())
 	      null
 	  }
 	}

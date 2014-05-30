@@ -4,6 +4,7 @@ package hadoop
 package hive.ms
 
 import org.apache.hadoop.hive.ql.metadata._
+import org.apache.hadoop.hive.ql.metadata.{Table => ApacheTable}
 import org.apache.hadoop.fs.{Path => ApachePath}
 import collection.JavaConversions._
 import fs._
@@ -11,6 +12,7 @@ import hdfs.Hdfs
 import hdfs.HdfsPath
 import hdfs.HdfsFactoryInit
 import hdfs.HdfsImplicits._
+import satisfaction.hadoop.hdfs.VariablePath
 
 /**
  *  Implies a table with Partitions
@@ -24,12 +26,15 @@ case class HiveTable (
 
     
     val checkSuccessFile = true
+    
+    
+    private lazy val _hiveTable : ApacheTable =   ms.getTableByName(dbName, tblName) 
 
-    def variables = {
-      if(isPartitioned)
-        ms.getVariablesForTable(dbName, tblName)
-      else 
-        Set.empty
+    lazy val variables : List[Variable[_]] = {
+      if(isPartitioned) {
+    	 ms.getVariablesForTable(dbName, tblName)
+      } else 
+        List.empty
     }
 
     override def exists(w: Witness): Boolean = {
@@ -38,7 +43,7 @@ case class HiveTable (
            partitionExists( w)
          } else {
            /// XXX Unit test this ..
-            ms.getTableByName(dbName, tblName) != null
+           _hiveTable != null
          }
        } else {
          //// XXX What to check exactly ???
@@ -49,6 +54,7 @@ case class HiveTable (
        }
     }
     
+    
     def partitionExists(w: Witness): Boolean = {
       val partitionOpt = getPartition( w)
       
@@ -56,8 +62,7 @@ case class HiveTable (
         if( checkSuccessFile) {
         	val partition = partitionOpt.get
         	println(s" PARTITION = $partition")
-        	val partPath : Path = partition.getDataLocation
-        	if( hdfs.exists( partPath)) {
+        	if( hdfs.exists( partition.path)) {
         	  /// Check metadata to see if table has a min partition size 
         	   true 
         	} else {
@@ -76,13 +81,13 @@ case class HiveTable (
         if(variables.forall( w.contains(_))) {
           val partition = getPartition(w)
           partition match {
-            case Some(part) => Some(new HiveTablePartition(part))
+            case Some(part) => Some(part)
             case None => None 
           }
         } else {
           /// Data instance is 
           val partialVars = w.raw.filterKeys( variables.map( _.name).contains(_))
-          val parts = ms.getPartitionSetForTable(ms.getTableByName(dbName, this.tblName), partialVars).toSet
+          val parts = ms.getPartitionSetForTable(_hiveTable, partialVars).toSet
           val hivePartSet = new HivePartitionSet( parts.map( new HiveTablePartition(_))) 
           Some(hivePartSet)
         }
@@ -90,16 +95,17 @@ case class HiveTable (
          Some(new NonPartitionedTable( this))   
        }
     }
-
-    def getPartition(witness: Witness): Option[Partition] = {
+    
+    def getPartition(witness: Witness): Option[HiveTablePartition] =  {
         try {
             
-            val tblWitness = witness.filter( variables)
+            val tblWitness = witness.filter( variables.toSet)
             println( "variables for table is " + variables  +  " ; Witness variables = " + witness.variables)
             println(s" TableWitness = $tblWitness == regular witness = $witness")
             val part = ms.getPartition(dbName, tblName, tblWitness.raw)
+
             if( part != null) {
-              Some(part)
+              Some(HiveTablePartition(part))
             } else {
               None
             }
@@ -109,4 +115,35 @@ case class HiveTable (
         }
         
     }
+    
+    def addPartition(witness : Witness)( implicit track : Track) : HiveTablePartition = {
+        val varWit = witness.assignments.filter( va => { variables.contains( va.variable ) } )
+        val part = ms.addPartition( dbName, tblName , Witness(varWit).raw  )    
+        
+        partitionPath.getPathForWitness( witness) match {
+          case Some(path) =>
+            part.setLocation(path.toString)
+            ms.alterPartition(dbName, tblName, part)
+          case None =>
+            println("WARN Couldn't get path for some reason ")
+        }
+        HiveTablePartition(part)
+    }
+    
+    
+    /**
+     * Path for the location of the top leve directory for this table
+     */
+    def dataLocation : Path = {
+       _hiveTable.getDataLocation()
+    }
+    
+    
+    /**
+     *  Create a VariablePath describing the path for the partitions of this table
+     */
+    def partitionPath()(implicit track : Track) : VariablePath = {
+       VariablePath( dataLocation, variables) 
+    }
+
 }

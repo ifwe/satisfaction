@@ -34,7 +34,7 @@ class HiveTrackSpec extends Specification {
     val DoDistcp = new Variable[Boolean]("doDistcp", classOf[Boolean])
     val runDate = new Variable[String]("dt", classOf[String])
     
-    implicit val hdfs : FileSystem = new Hdfs("hdfs://jobs-dev-hnn") 
+    implicit val hdfs : FileSystem = LocalFileSystem
 
     "HiveTrackSpec" should {
        "Get AllTracks" in {

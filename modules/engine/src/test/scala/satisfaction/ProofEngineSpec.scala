@@ -24,12 +24,13 @@ class ProofEngineSpec extends Specification {
     val runDate = new Variable[String]("dt", classOf[String])
 
     implicit val track : Track = new Track( TrackDescriptor("TestTrack"))
+
     "ProofEngineSpec" should {
 
       
         "get a goals status" in {
             val engine = new ProofEngine()
-            val vars: Set[Variable[_]] = Set(NetworkAbbr, runDate)
+            val vars: List[Variable[_]] = List(NetworkAbbr, runDate)
             val singleGoal = TestGoal("SimpleGoal", vars)
 
             val witness = Witness((runDate -> "20130815"), (NetworkAbbr -> "tw"))
@@ -42,7 +43,7 @@ class ProofEngineSpec extends Specification {
         }
         "satisfy a single goal" in {
             val engine = new ProofEngine()
-            val vars: Set[Variable[_]] = Set(NetworkAbbr, runDate)
+            val vars: List[Variable[_]] = List(NetworkAbbr, runDate)
             val singleGoal = TestGoal("SimpleGoal", vars)
 
             val witness = Witness((runDate -> "20130815"), (NetworkAbbr -> "tw"))
@@ -67,7 +68,7 @@ class ProofEngineSpec extends Specification {
 
         "satisfy a goal hierarchy" in {
             val engine = new ProofEngine()
-            val vars: Set[Variable[_]] = Set(NetworkAbbr, runDate)
+            val vars: List[Variable[_]] = List(NetworkAbbr, runDate)
             val singleGoal = TestGoal("SimpleGoal", vars)
             val dep1 = TestGoal("Child1", vars)
             val dep2 = TestGoal("Child2", vars)
@@ -91,7 +92,7 @@ class ProofEngineSpec extends Specification {
         "satisfy a goal deeply nested hierarchy" in {
             val engine = new ProofEngine()
             //// All Goals created now should get the same track 
-            val vars: Set[Variable[_]] = Set(NetworkAbbr, runDate)
+            val vars: List[Variable[_]] = List(NetworkAbbr, runDate)
             val singleGoal = TestGoal("NestedGoal", vars)
             val dep1 = TestGoal("Level1", vars)
             val dep2 = TestGoal("Level2", vars)
@@ -119,7 +120,7 @@ class ProofEngineSpec extends Specification {
 
         "satisfy a  three level goal hierarchy" in {
             val engine = new ProofEngine()
-            val vars: Set[Variable[_]] = Set(NetworkAbbr, runDate)
+            val vars: List[Variable[_]] = List(NetworkAbbr, runDate)
             val singleGoal = TestGoal("SimpleGoal", vars)
             val dep1 = TestGoal("Child1", vars)
             val dep2 = TestGoal("Child2", vars).addDependency(TestGoal("Grand2_1", vars))
@@ -141,7 +142,7 @@ class ProofEngineSpec extends Specification {
 
         "satisfy a single slow goal" in {
             val engine = new ProofEngine()
-            val vars: Set[Variable[_]] = Set(NetworkAbbr, runDate)
+            val vars: List[Variable[_]] = List(NetworkAbbr, runDate)
             val singleGoal = TestGoal.SlowGoal("SlowGoal", vars, 6, 5000)
 
             val witness = Witness((runDate -> "20130815"), (NetworkAbbr -> "tw"))
@@ -153,7 +154,7 @@ class ProofEngineSpec extends Specification {
 
         "fail a single failing goal" in {
             val engine = new ProofEngine()
-            val vars: Set[Variable[_]] = Set(NetworkAbbr, runDate)
+            val vars: List[Variable[_]] = List(NetworkAbbr, runDate)
             val singleGoal = TestGoal.FailedGoal("FailingGoal", vars, 0, 0)
 
             val witness = Witness((runDate -> "20130815"), (NetworkAbbr -> "tw"))
@@ -165,7 +166,7 @@ class ProofEngineSpec extends Specification {
 
         "fail a slow  single failing goal" in {
             val engine = new ProofEngine()
-            val vars: Set[Variable[_]] = Set(NetworkAbbr, runDate)
+            val vars: List[Variable[_]] = List(NetworkAbbr, runDate)
             val singleGoal = TestGoal.FailedGoal("SlowFailingGoal", vars, 10, 2000)
 
             val witness = Witness((runDate -> "20130816"), (NetworkAbbr -> "tw"))
@@ -177,7 +178,7 @@ class ProofEngineSpec extends Specification {
 
         "fail a grandchild   single failing goal" in {
             val engine = new ProofEngine()
-            val vars: Set[Variable[_]] = Set(NetworkAbbr, runDate)
+            val vars: List[Variable[_]] = List(NetworkAbbr, runDate)
             val parentGoal = TestGoal.SlowGoal("SlowParentGoal", vars, 10, 2000)
             val child1 = TestGoal.SlowGoal("Child1", vars, 3, 2000)
             parentGoal.addDependency(child1)
@@ -205,7 +206,7 @@ class ProofEngineSpec extends Specification {
 
         "diamond hierarchy successful goal " in {
             val engine = new ProofEngine()
-            val vars: Set[Variable[_]] = Set(NetworkAbbr, runDate)
+            val vars: List[Variable[_]] = List(NetworkAbbr, runDate)
             val parentGoal = TestGoal.SlowGoal("TopGoal", vars, 5, 1000)
 
             val child1 = TestGoal.SlowGoal("Child1", vars, 5, 1000)
@@ -236,8 +237,8 @@ class ProofEngineSpec extends Specification {
 
         "witness mapping rule" in {
             val engine = new ProofEngine()
-            val vars: Set[Variable[_]] = Set(runDate)
-            val vars2: Set[Variable[_]] = Set(runDate, NetworkAbbr)
+            val vars: List[Variable[_]] = List(runDate)
+            val vars2: List[Variable[_]] = List(runDate, NetworkAbbr)
 
             val parentGoal = TestGoal.SlowGoal("TopGoal", vars, 5, 1000)
 
@@ -260,9 +261,28 @@ class ProofEngineSpec extends Specification {
         }
         
         
+        "satisfy a fan out goal" in {
+            val engine = new ProofEngine()
+            val vars: List[Variable[_]] = List(runDate)
+            val vars2: List[Variable[_]] = List(runDate, NetworkAbbr)
+            val networks : List[String] = List("ig","fb","tw","fs","kl")
+
+            val child = TestGoal.SlowGoal("FanoutSubGoal", vars2, 2, 1000)
+            val fanOut = FanOutGoal( child, NetworkAbbr, networks )
+          
+            val witness = Witness((runDate -> "20130821")) 
+            val result = engine.satisfyGoalBlocking( fanOut, witness, Duration(60, SECONDS))
+            println(result.state)
+
+            ///engine.stop
+            result.state must_== GoalState.Success
+
+        }
+        
+        
         "already satisfied" in {
             val engine = new ProofEngine()
-            val vars: Set[Variable[_]] = Set(NetworkAbbr, runDate)
+            val vars: List[Variable[_]] = List(NetworkAbbr, runDate)
             val singleGoal = TestGoal.AlreadySatisfiedGoal("AlreadySatisfied", vars, 1, 1)
 
             val witness = Witness((runDate -> "20130815"), (NetworkAbbr -> "tw"))
@@ -279,11 +299,9 @@ class ProofEngineSpec extends Specification {
                resultFuture.wait
         }
         
-        
-             
         "already satisfied blocking" in {
             val engine = new ProofEngine()
-            val vars: Set[Variable[_]] = Set(NetworkAbbr, runDate)
+            val vars: List[Variable[_]] = List(NetworkAbbr, runDate)
             val singleGoal = TestGoal.AlreadySatisfiedGoal("AlreadySatisfied", vars, 1, 1)
 
             val witness = Witness((runDate -> "20130815"), (NetworkAbbr -> "tw"))
@@ -294,7 +312,7 @@ class ProofEngineSpec extends Specification {
         
          "satisfy a goal hierarchy with one already satisfied" in {
             val engine = new ProofEngine()
-            val vars: Set[Variable[_]] = Set(NetworkAbbr, runDate)
+            val vars: List[Variable[_]] = List(NetworkAbbr, runDate)
             val singleGoal = TestGoal("SimpleGoal", vars)
             val dep1 = TestGoal("Child1", vars)
             val dep2 = TestGoal.AlreadySatisfiedGoal("SatisfiedChild2", vars, 1, 1)

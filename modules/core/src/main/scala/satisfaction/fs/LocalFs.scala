@@ -55,7 +55,6 @@ case class LocalFileSystem() extends FileSystem {
    
   
    override def uri : java.net.URI = {
-     /// 
      return new java.net.URI( s"file:///")
    }
    
@@ -141,4 +140,8 @@ object LocalFileSystem extends LocalFileSystem  {
    def currentDirectory : Path = {
       new Path( System.getProperty("user.dir"))
    } 
+   
+   def relativePath( p : Path) : Path = {
+      currentDirectory / p 
+   }
 }

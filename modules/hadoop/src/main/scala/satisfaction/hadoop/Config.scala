@@ -48,7 +48,12 @@ object Config {
            } )
         } else {
           println(" Invalid Hive Config directory")
-        }
+        } 
+
+       val nameService = hc.get("dfs.nameservices")
+       if(nameService != null) {
+         hc.set("fs.defaultFS", s"hdfs://$nameService")
+       }
         
         hc
     }

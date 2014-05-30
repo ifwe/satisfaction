@@ -12,6 +12,7 @@ import org.apache.hadoop.hive.metastore._
 import org.apache.hadoop.hive.ql.metadata.Table
 import org.apache.hadoop.hive.ql.metadata._
 import scala.collection.JavaConversions._
+import scala.collection.JavaConversions
 import org.apache.hadoop.hive.shims.ShimLoader
 import java.net.URI
 import java.util.HashMap
@@ -385,13 +386,21 @@ case class MetaStore(val hvConfig: HiveConf)  {
             _hive.getPartition(tbl, partMap, false)
         })
     }
+   
     
     def addPartition(db: String, tblName: String, partMap: Map[String, String]): Partition = {
         this.synchronized({
           val tbl = _hive.getTable( db, tblName)
-          _hive.createPartition( tbl, partMap)
+           _hive.createPartition( tbl, partMap)
         })
     }
+    
+    def alterPartition( db: String, tblName: String , part: Partition )  = {
+      this.synchronized {
+        _hive.alterPartition(db,tblName, part)
+      }
+    }
+    
 
     def getPartition(db: String, tblName: String, partSpec: List[String]): Partition = {
         this.synchronized({
@@ -543,9 +552,9 @@ case class MetaStore(val hvConfig: HiveConf)  {
 
     }
 
-    def getVariablesForTable(db: String, tblName: String): collection.immutable.Set[Variable[_]] = {
+    def getVariablesForTable(db: String, tblName: String): List[Variable[_]] = {
         val tbl = getTableByName(db, tblName)
-        val partCols = tbl.getPartitionKeys().toList
+        val partCols = tbl.getPartitionKeys()
         val vars = for (part <- partCols) yield {
             //// XXX Interpret partition type from column type
             //// Interpret "dt" as magical date type column
@@ -560,22 +569,23 @@ case class MetaStore(val hvConfig: HiveConf)  {
 
             }
         }
-        vars.toSet
+        vars.toList
     }
 }
 
 /**
  *  Companion object
  */
-///object MetaStore extends MetaStore(Config.config) {
 object MetaStore  {
   
     def apply( msURI : java.net.URI ) : MetaStore = {
-      val conf = Config.initHiveConf
+      val conf = Config.config
       conf.setVar(HiveConf.ConfVars.METASTOREURIS, msURI.toASCIIString())
       
       new MetaStore(conf)
     }
+    
+    val default = new MetaStore( Config.config)
   
     /**
      *  From a set of dates 

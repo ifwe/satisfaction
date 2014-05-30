@@ -13,7 +13,7 @@ case class VariableHolder(val dt: String, val network_abbr: String, val service_
  *  Since witnesses can have arbitrary types,
  *     and have arbitrary lengths and names
  */
-class VariableFormHandler(val variables: Set[Variable[_]]) {
+class VariableFormHandler(val variables: List[Variable[_]]) {
 
     def processRequest(req: Request[AnyContent]): Either[Set[String], Witness] = {
         val formVars = req.body.asFormUrlEncoded.get
