@@ -112,7 +112,7 @@ case class TrackFactory(val trackFS : FileSystem,
     *   make sure that it has setup everything it needs to run ..
     */
    def initializeTrack( track: Track , trackMap : Map[String,String] ) = {
-     println(s" Initializing Track ${track.descriptor.trackName}")
+     println(s" Initializing Track ${track.descriptor.trackName}") 
 
      val trackProps : Witness =  {
          defaultConfig match {
