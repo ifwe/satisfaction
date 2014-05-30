@@ -15,6 +15,9 @@ import org.specs2.mutable.Specification
 import satisfaction.fs._
 import satisfaction.track.TrackFactory
 import satisfaction.track.TrackScheduler
+import scala.concurrent.Future
+import org.joda.time.Period
+
 
 
 
@@ -28,22 +31,39 @@ class TrackSchedulerSpec extends Specification {// val mockFS = new LocalFileSys
  val engine = new ProofEngine()
  val scheduler = new TrackScheduler(engine)
  */ 
+  
+  
+  //can be shared across spec
+  val engine = new ProofEngine()
+  val scheduler = new TrackScheduler(engine)
   ///this concludes set up
  
  "TrackSchedulerSpec" should {
  
    "schedule" in {
-     "a reoccuring job" in { // trackfactory hasa scheduler
-       /*
-        implicit val track: Track = new Track( TrackDescriptor("TestSchedulerTrack")) with Recurring { // might have bug; be careful (track properties might not be set; but we don't need it right now)
-		   override def frequency = Recurring.period("3m")
-		   println("created track with recurring trait")
-		 }
-        */
-        val engine = new ProofEngine()
-        val observedVar = new Variable[String]("string", classOf[String])
-        val vars: List[Variable[_]] = List(observedVar)
+     "a reccuring job" in { // trackfactory hasa scheduler
+    
+
+       // possible variables that we can use
+      	var x : Int = 0
+        var observedVar = new Variable[String]("start", classOf[String])
+        var expectedVar = new Variable[String]("changed", classOf[String])
+        
+        
+        
+        implicit val track : Track = new Track ( TrackDescriptor("scheduleRecurringTrack") ) with Recurring {  // might have bug; be careful (track properties might not be set; but we don't need it right now) 
+         override def frequency = Recurring.period("P0Y0M0W0DT0H1M0S")
+        }
+      	
+      	
+        val vars: Set[Variable[_]] = Set(observedVar)
         val recurringGoal = TestGoal("RecurringGoal", vars)
+       
+
+      	track.addTopLevelGoal(recurringGoal)
+      	
+        scheduler.scheduleTrack(track)
+
      }
      
      "a cron job" in {
