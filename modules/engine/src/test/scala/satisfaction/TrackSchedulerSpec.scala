@@ -3,30 +3,28 @@ package satisfaction
 package engine
 package actors
 
-
-/*
- * Tests for Scheduler
- */
-
-import org.joda.time.DateTime
 import org.junit.runner.RunWith
-import org.specs2.runner.JUnitRunner
 import org.specs2.mutable.Specification
+import org.specs2.runner.JUnitRunner
+import org.joda.time.Period
+
 import satisfaction.fs._
 import satisfaction.track.TrackFactory
 import satisfaction.track.TrackScheduler
-import scala.concurrent.Future
-import org.joda.time.Period
+
 
 
 
 
 @RunWith(classOf[JUnitRunner])
 class TrackSchedulerSpec extends Specification {// val mockFS = new LocalFileSystem
-  /*
+/*
+ val mockFS = new LocalFileSystem
  val resourcePath = LocalFileSystem.currentDirectory / "modules" / "engine" / "src" / "test" / "resources";
  val mockTrackFactory = new TrackFactory(mockFS, resourcePath / "user" / "satisfaction") //might not need this either
+ */
  
+  /*
  implicit val hdfs : FileSystem = LocalFileSystem
  val engine = new ProofEngine()
  val scheduler = new TrackScheduler(engine)
@@ -36,12 +34,26 @@ class TrackSchedulerSpec extends Specification {// val mockFS = new LocalFileSys
   //can be shared across spec
   val engine = new ProofEngine()
   val scheduler = new TrackScheduler(engine)
+/*
+ implicit val trackFactory : TrackFactory = { // taken from willrogers
+    try {
+      val hadoopWitness: Witness = Config.Configuration2Witness(Config.config)
+      var tf = new TrackFactory( mockFS, resourcePath, Some(scheduler), Some(hadoopWitness))
+      scheduler.trackFactory = tf
+      tf
+    } catch {
+      case unexpected: Throwable =>
+        unexpected.printStackTrace(System.out) 
+        throw unexpected
+    }
+  }
   ///this concludes set up
+ */
  
  "TrackSchedulerSpec" should {
  
    "schedule" in {
-     "a reccuring job" in { // trackfactory hasa scheduler
+     "a reccuring job" in { 
     
 
        // possible variables that we can use
@@ -52,11 +64,14 @@ class TrackSchedulerSpec extends Specification {// val mockFS = new LocalFileSys
         
         
         implicit val track : Track = new Track ( TrackDescriptor("scheduleRecurringTrack") ) with Recurring {  // might have bug; be careful (track properties might not be set; but we don't need it right now) 
-         override def frequency = Recurring.period("PT1M")
+        	//P0Y0M0W0DT0H1M0S
+      	  //P1Y2M3W4DT5H6M7.008S
+      	  override def frequency = Recurring.period("P1Y2M3W4DT5H6M7.008S")
         }
       	
+      	      	
       	
-        val vars: Set[Variable[_]] = Set(observedVar)
+        val vars: List[Variable[_]] = List(observedVar)
         val recurringGoal = TestGoal("RecurringGoal", vars)
        
 
@@ -67,7 +82,16 @@ class TrackSchedulerSpec extends Specification {// val mockFS = new LocalFileSys
      }
      
      "a cron job" in {
+       implicit val track: Track = new Track ( TrackDescriptor("scheduleChronTrack") ) with Cronable {
+         override def cronString = "0 0 0/1 1/1 * ? *"
+       } 
        
+       var observedVar = new Variable[String]("start", classOf[String])
+       val vars: List[Variable[_]]=List(observedVar)
+       val cronGoal = TestGoal("CronGoal", vars)
+       
+       track.addTopLevelGoal(cronGoal)
+       scheduler.scheduleTrack(track)
      }
      
    }//schedule

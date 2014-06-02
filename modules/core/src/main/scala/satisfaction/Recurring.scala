@@ -1,13 +1,10 @@
 package com.klout
 package satisfaction
 
-import org.joda.time.LocalTime
 import org.joda.time.Period
-import org.joda.time.format.DateTimeFormat
-import org.joda.time.format.ISOPeriodFormat
-import org.joda.time.DateTime
-import org.joda.time.Partial
 import org.joda.time.ReadablePartial
+import org.joda.time.format.ISOPeriodFormat
+import org.joda.time.format.PeriodFormatter
 
 
 sealed trait Schedulable {
@@ -49,8 +46,12 @@ object Recurring {
      /**
       *  Parse a string to get the period
       */
+
      def period(periodStr : String) : Period = {
-         ISOPeriodFormat.standard.parsePeriod(periodStr) 
+    		 //YI: FIND WAY TO CONVERT TO MORE THAN STANDARD!!!!
+        ISOPeriodFormat.standard.parsePeriod(periodStr) 
+    	//Period.parse(periodStr)
+
      }
 }
 

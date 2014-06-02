@@ -28,6 +28,12 @@ case class TrackFactory(val trackFS : FileSystem,
     val schedulerOpt : Option[TrackScheduler] = None,
     val defaultConfig : Option[Witness] =  None) {
   
+	val initScheduler : Unit = {
+    schedulerOpt match {
+      case Some(sched) => sched.trackFactory = this
+    	} 
+  	}
+	
   implicit val hdfs = trackFS
   val localFS = LocalFileSystem
    
