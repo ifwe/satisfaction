@@ -41,7 +41,7 @@ class TrackSchedulerSpec extends Specification {// val mockFS = new LocalFileSys
     
     /*
      * Things we must test:
-     * - schedule a simple reocurring job
+     * - schedule a simple recurring job
      * - schedule a simple cron job
      * - schedule r/c job that has dependenies
      * - unschedule jobs
@@ -50,7 +50,7 @@ class TrackSchedulerSpec extends Specification {// val mockFS = new LocalFileSys
      */
  
    "schedule" in {
-     "a single reccuring job" in { 
+    /* "a single recuring job" in { 
     
 
        // possible variables that we can test on
@@ -116,18 +116,22 @@ class TrackSchedulerSpec extends Specification {// val mockFS = new LocalFileSys
         
       	track.addTopLevelGoal(recurringGoal)
         scheduler.scheduleTrack(track)
-        
+        Thread.sleep(10000)
+        x mustEqual 3
+        /*
         while (true) {
           Thread.sleep(10000)
           println("main thread: x is now "+ x)
           x mustEqual oldValue + 1
         }
-     }
+        */
+     }*/
      
      "a single cron job" in {
-       /*
-       var x : Int =0
-       var oldValue: Int = x
+       
+       // possible variables that we can test on
+      	var x : Int = 1
+        var oldValue: Int = 0 
        
        //set up track
        implicit val track: Track = new Track ( TrackDescriptor("scheduleChronTrack") ) with Cronable {
@@ -145,8 +149,6 @@ class TrackSchedulerSpec extends Specification {// val mockFS = new LocalFileSys
 	        }
 	      }
 	      scheduler.trackFactory = tf
-	      
-	
 	      tf
 	    } catch {
 	      case unexpected: Throwable =>
@@ -161,11 +163,46 @@ class TrackSchedulerSpec extends Specification {// val mockFS = new LocalFileSys
        }
  
        val vars: List[Variable[_]]=List(observedVar)
-       val cronGoal = TestGoal("CronGoal", vars)
+       //val cronGoal = TestGoal("CronGoal", vars)
+       implicit val cronGoal : Goal = {
+          try {
+        	  //first, define custom satisfier
+        	  val satisfier = new MockSatisfier() {
+        	    override def name="cronMockSatisfier"
+  
+        	    override def satisfy (witness:Witness) : ExecutionResult = robustly { // redefine satisfier
+        	      if (x == oldValue + 1) {
+        	        oldValue = x // replaces anon fn
+        	        x+=1
+        	        true
+        	      } else {
+        	        false
+        	      }
+        	    } 
+        	  }
+        	  //now set up a goal
+        	  var rg = new Goal("CronGoal", Some(satisfier), vars)
+        	  rg
+          } catch{
+             case unexpected: Throwable =>
+		        unexpected.printStackTrace(System.out) 
+		        throw unexpected
+          }
+        }
        
        track.addTopLevelGoal(cronGoal)
        scheduler.scheduleTrack(track)
-    
+       
+       Thread.sleep(60000)
+       println("main thread: cron x is now is now "+ x)
+       x mustEqual 2
+        
+        /*
+       while (true) {
+          Thread.sleep(60000)
+          println("main thread: cron x is now is now "+ x)
+          x mustEqual oldValue + 1
+       }
        */
      }
      
@@ -173,7 +210,7 @@ class TrackSchedulerSpec extends Specification {// val mockFS = new LocalFileSys
    
    
    "unschedule" in {
-     "a reoccuring job" in {
+     "a recuring job" in {
        
      }
      
