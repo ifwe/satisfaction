@@ -33,6 +33,7 @@ trait TemporalVariable {
 
     object MINUTE extends Variable[String]("minute", classOf[String], Some("Hourly Frequency")) with TemporalVariable {
        override val FormatString = "mm"      
+         
     }
     
     //// Provide  variable with full timestamp

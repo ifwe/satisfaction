@@ -179,7 +179,11 @@ class QuartzActor extends Actor { // receives msg from TrackScheduler
 	}
 	
 	def builderForPeriod( period : Period ) : ScheduleBuilder[ _ <: Trigger] = {
-	  println ("\nentering builderForPeriod\n" + 
+		/*
+	   * notes: The standard ISO format - PyYmMwWdDThHmMsS; Substitute for lower-case; Granularity = S
+	   * YY- should revisit this calculation after TrackScheulder is tested.
+	   */
+			  println ("\nentering builderForPeriod\n" + 
 			  period.getPeriodType.toString() + " type\n" +
 			  period.getYears()+ " years\n" +
 			  period.getMonths()+ " months\n" +
@@ -191,57 +195,15 @@ class QuartzActor extends Actor { // receives msg from TrackScheduler
 			  )
 			  
 			  CalendarIntervalScheduleBuilder.calendarIntervalSchedule
-	      	.withIntervalInYears(if (period.getYears() != 0) period.getYears else 0)
-	      	.withIntervalInMonths(if (period.getMonths() != 0) period.getMonths else 0)
-	      	.withIntervalInWeeks(if (period.getWeeks() != 0) period.getWeeks else 0)
-	      	.withIntervalInDays(if (period.getDays() != 0) period.getDays else 0) 
-	      	.withIntervalInHours(if (period.getHours() != 0) period.getHours else 0)
-	      	.withIntervalInMinutes(if (period.getMinutes() != 0) period.getMinutes else 0)
-	      	.withIntervalInSeconds(if (period.getSeconds() != 0) period.getSeconds else 0)
-	      	
-	  /*
-	   * notes: The standard ISO format - PyYmMwWdDThHmMsS; Substitute for lower-case; Granularity = S
-	   */
 			  /*
-	  period.getPeriodType match {
-	    case pt: PeriodType if pt.getName.equals("Hours")=> 
-	      SimpleScheduleBuilder.repeatHourlyForever( period.getHours() )
-	    case pt: PeriodType if pt.toString.equals("Minutes") => 
-	      SimpleScheduleBuilder.repeatMinutelyForever( period.getMinutes() )
-	    case pt: PeriodType if pt.toString.equals("Seconds") => 
-	      SimpleScheduleBuilder.repeatSecondlyForever( period.getSeconds() )
-	    case pt: PeriodType if pt.toString.contains("Month") => 
-	      CalendarIntervalScheduleBuilder.calendarIntervalSchedule
-	      	.withIntervalInMonths( period.getMonths)
-	      	.withIntervalInDays( period.getDays) /// 
-	      	.withIntervalInHours( period.getHours)
-	      	.withIntervalInMinutes( period.getMinutes)
-	    case pt: PeriodType if pt.toString.contains("Week") => 
-	      CalendarIntervalScheduleBuilder.calendarIntervalSchedule
-	      	.withIntervalInWeeks( period.getWeeks)
-	      	.withIntervalInDays( period.getDays) /// 
-	      	.withIntervalInHours( period.getHours)
-	      	.withIntervalInMinutes( period.getMinutes)
-	    
-	    case pt: PeriodType if pt.toString.equals("Standard")=>
-	      println("this is the fake Standard PeriodType")
-	      CalendarIntervalScheduleBuilder.calendarIntervalSchedule
-	      	.withIntervalInYears(period.getYears)
-	      	.withIntervalInMonths( period.getMonths)
-	      	.withIntervalInWeeks( period.getWeeks)
-	      	.withIntervalInDays( period.getDays) 
-	      	.withIntervalInHours( period.getHours)
-	      	.withIntervalInMinutes( period.getMinutes)
-	      	.withIntervalInSeconds(period.getSeconds)
-	      	
-	      /*
-	    case pt => 
-	      println ("period is" + pt.getName()+ "the string is " + pt.toString())
-	      null
-	      */
-	  }
-	  * 
-	  */
+		      	.withIntervalInYears(if (period.getYears() != 0) period.getYears else 0)
+		      	.withIntervalInMonths(if (period.getMonths() != 0) period.getMonths else 0)
+		      	.withIntervalInWeeks(if (period.getWeeks() != 0) period.getWeeks else 0)
+		      	.withIntervalInDays(if (period.getDays() != 0) period.getDays else 0) 
+		      	.withIntervalInHours(if (period.getHours() != 0) period.getHours else 0)
+		      	.withIntervalInMinutes(if (period.getMinutes() != 0) period.getMinutes else 0) */
+		      	.withIntervalInSeconds(if (period.getSeconds() != 0) period.getSeconds else 0)
+	      
 	}
 
 	// Largely imperative glue code to make quartz work :)
