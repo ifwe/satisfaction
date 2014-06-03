@@ -23,38 +23,43 @@ import satisfaction.track._
  */
 
 
-object MockTrackFactory   extends TrackFactory( LocalFileSystem, 
-      LocalFileSystem.currentDirectory / "modules/hadoop/test/resource/user/satisfaction/track") {
-  
-}
 
 @RunWith(classOf[JUnitRunner])
 class HiveTrackSpec extends Specification {
-    val NetworkAbbr = new Variable[String]("network_abbr", classOf[String])
-    val DoDistcp = new Variable[Boolean]("doDistcp", classOf[Boolean])
-    val runDate = new Variable[String]("dt", classOf[String])
+  
+  
+     object TestHiveTrack extends HiveTrack( TrackDescriptor("DauBackfill")) {
+       
+       setTrackPath(Path("/user/satisfaction/track/DauBackfill/version_0.2"))
+       
+       this.setTrackProperties( Witness( ( VariableAssignment(Variable("dauDB") ,"sqoop_test" ))) )
+       
+       val DauByPlatformTable = new HiveTable( "sqoop_test", "dau_by_platform_sketch") {
+          override def exists( w: Witness )  = { false }
+       }
+       
+         
+        val DauByPlatformSketch = HiveGoal(
+           "DAU By Platform", /// Name of our Goal
+           "dau_by_platform_sketch.hql", /// Hive Resource file
+           DauByPlatformTable).declareTopLevel   /// Our table outpu
+       
+     }
     
-    implicit val hdfs : FileSystem = LocalFileSystem
 
     "HiveTrackSpec" should {
-       "Get AllTracks" in {
-           val trackFactory = new TrackFactory(hdfs)
-           val allTracks = trackFactory.getAllTracks
-           System.out.println(" Number of tracks is " + allTracks.length)
-           allTracks.foreach( td => { println(s"Track is $td ") } )
+        "Run A Query" in {
+           val dt = Variable("dt")
+           val hour = Variable("hour")
            
-       }
-       
-       "Get Simple" in {
-           val trackFactory = new TrackFactory(hdfs)
+           val witness = Witness( VariableAssignment( dt ,"20140522"), VariableAssignment( hour, "01"))
            
-           val track = trackFactory.getTrack(TrackDescriptor("Sample"))
            
-           println(" Simple Track = " + track)
-          
+           val result = Satisfaction.satisfyGoal( TestHiveTrack.DauByPlatformSketch, witness)
            
-       }
-       
+           
+           result.state must_== GoalState.Success
+        }
 
     }
 }

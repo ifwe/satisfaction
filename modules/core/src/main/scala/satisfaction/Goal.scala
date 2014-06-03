@@ -119,7 +119,7 @@ object Goal {
     def mostRecentPath( fs : FileSystem , path : Path, dtVar : Variable[String] ) : (Witness => Witness ) = { w: Witness => {
         /// XXX probably want to do some error checking 
         ///  that path exists and is of YYYYMMDD format
-        val maxDt = fs.listFiles( path).map(  _.getPath.name ).max
+        val maxDt = fs.listFiles( path).map(  _.path.name ).max
         
         w.update( dtVar -> maxDt )
       }

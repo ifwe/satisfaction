@@ -133,12 +133,12 @@ case class Track(
     */
    def getResource(   resourceFile : String ) : String  = {
       println(" GET HDFS is " + hdfs)
-      hdfs.readFile( resourcePath / resourceFile ).mkString
+      new String(hdfs.readFile( resourcePath / resourceFile ))
    }
    
    def listResources : Seq[String]  = {
       println(" LIST  HDFS is " + hdfs)
-      hdfs.listFiles(  resourcePath ).map( _.getPath.name )
+      hdfs.listFiles(  resourcePath ).map( _.path.name )
    }
    
    def resourcePath : Path = {
@@ -153,8 +153,28 @@ case class Track(
      }
    }
    
+   def libPath : Path = {
+     if( _trackProperties != null) {
+       val libDir = _trackProperties.raw.get("satisfaction.track.lib") match {
+         case Some(path) => path
+         case None => "lib" 
+       } 
+       _trackPath /  libDir
+     } else {
+       _trackPath /  "lib"
+     }
+   }
+
+   def listJars : Seq[java.net.URI]  = {
+      println(" LIST  LIBS HDFS is " + hdfs)
+      hdfs.listFiles(  libPath ).map( _.path.toUri )
+   }
+   
+   
+   
      
    /// XXX File to LocalFileSystm ???
+   /**
      private var _auxJarFolder : File = null
      
      
@@ -168,11 +188,14 @@ case class Track(
      def setAuxJarFolder( auxJar : File) = {
        _auxJarFolder = auxJar
      }
+     * 
+     */
         /// Want to make it on a per-project basis
     /// but for now, but them in the auxlib directory
      
      
-    def registerJars( folder : String): Unit = {
+   /**
+    def registerJarsXXX( folder : String): Unit = {
         _auxJarFolder = new File( folder)
         this.auxJarFolder.listFiles.filter(_.getName.endsWith("jar")).foreach(
             f => {
@@ -196,9 +219,10 @@ case class Track(
                 println(s" Adding to current classpath $jarUrl")
             }
         )
-        
 
     }
+    * 
+    */
     
     
     def getTrackProperties(witness: Witness): Witness = {

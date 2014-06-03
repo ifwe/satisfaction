@@ -69,7 +69,7 @@ object HdfsImplicits {
 
 case class HdfsFStat( apacheFileStatus : ApacheFileStatus ) extends satisfaction.fs.FileStatus {
   
-    override def getSize : Long = {
+    override def size : Long = {
 	  apacheFileStatus.getLen
     }
     
@@ -81,7 +81,7 @@ case class HdfsFStat( apacheFileStatus : ApacheFileStatus ) extends satisfaction
 	  apacheFileStatus.isFile
     }
     
-    override def getPath : Path = {
+    override def path : Path = {
 	  new Path(apacheFileStatus.getPath.toUri.toString)
     }
     
@@ -128,7 +128,7 @@ case class Hdfs(val fsURI: String)
            fullList += fs
          } else {
            fullList += fs
-           fullList ++= listFilesRecursively( fs.getPath)
+           fullList ++= listFilesRecursively( fs.path)
          }
       })
       fullList
@@ -137,10 +137,6 @@ case class Hdfs(val fsURI: String)
     @Override 
     override def mkdirs( p : Path ): Boolean = {
       fs.mkdirs( p)
-    }
-    
-    override def readFile( path : Path ) : String = {
-      io.Source.fromInputStream( fs.open( path) ).getLines.mkString("\n")
     }
     
     
@@ -155,7 +151,7 @@ case class Hdfs(val fsURI: String)
            fullList += fs
          } else {
            fullList += fs
-           fullList ++= globFilesRecursively( fs.getPath)
+           fullList ++= globFilesRecursively( fs.path)
          }
       })
       fullList
@@ -169,8 +165,8 @@ case class Hdfs(val fsURI: String)
 	   return fs.getFileStatus( path)
     }
     
-    override def open( pth : Path) : io.BufferedSource = {
-       io.Source.fromInputStream( fs.open( pth))
+    override def open( pth : Path) : java.io.InputStream = {
+       fs.open( pth)
     }
     
     override def isDirectory( path : Path) : Boolean = {

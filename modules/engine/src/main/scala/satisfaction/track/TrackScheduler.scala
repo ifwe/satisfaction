@@ -101,7 +101,7 @@ case class TrackScheduler( val proofEngine : ProofEngine ) {
     
 case class StartGoalMessage( val trackDesc : TrackDescriptor )
    
-   class StartGoalActor( trackFactory : TrackFactory, proofEngine : ProofEngine ) extends Actor with ActorLogging {
+   class StartGoalActor( trackFactoryX : TrackFactory, proofEngine : ProofEngine ) extends Actor with ActorLogging {
        def receive = {
          case mess : StartGoalMessage =>
            log.info(" Starting Track " + mess.trackDesc +  " TrackFactory = " + TrackFactory)

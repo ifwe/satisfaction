@@ -21,7 +21,6 @@ class HiveDriverSpec extends Specification {
    /// XXX Pass in metastore and hdfs urls
    implicit val track : Track =  {
       val tr = new Track(TrackDescriptor("HiveLocalDriver"))
-      tr.setAuxJarFolder( new File("./auxlib")) /// XXX Ref to File, not Path
       
       tr.setTrackPath( new Path( System.getProperty("user.dir") + "/modules/hive/src/test"))
       
@@ -31,6 +30,89 @@ class HiveDriverSpec extends Specification {
    
    implicit val hiveConf : HiveConf = Config( track)
   
+   "Driver Test" should {
+     
+     /**
+      "instantiate driver object" in {
+         val hc = Config.config
+         
+         val hiveDriver = HiveDriver( hc)
+        
+         
+         hiveDriver.useDatabase("sqoop_test")
+         
+         hiveDriver.executeQuery( "select count(*) from page_view_log where date='20140522' and hour='00' ")
+        
+      }
+      * 
+      */
+      "Scan rows from HDFS" in {
+         val hc = Config.config
+         
+         val hiveDriver = HiveDriver( hc)
+        
+         
+         hiveDriver.useDatabase("sqoop_test")
+         
+         hiveDriver.executeQuery( "select * from page_view_log where date='20140522' and hour='00' ")
+        
+      }
+
+      
+      "Load External UDF" in {
+        
+        val hc = Config.config
+        val brickhouse = "file:///" + System.getProperty("user.dir") + "/modules/hive/src/test/lib/brickhouse-0.7.0-jdb-SNAPSHOT.jar"
+        
+        hc.setAuxJars( brickhouse)
+         val hiveDriver = HiveDriver( hc)
+         
+         hiveDriver.executeQuery("CREATE TEMPORARY FUNCTION append_array AS 'brickhouse.udf.collect.AppendArrayUDF' ");
+      }
+      
+      "Load UDF from hdfs " in {
+        val hc = Config.config
+        val brickhouse = "hdfs://dhdp2/user/satisfaction/track/DauBackfill/version_0.2/lib/brickhouse-0.7.0-jdb-SNAPSHOT.jar"
+        
+        hc.setAuxJars( brickhouse)
+        val hiveDriver = HiveDriver( hc)
+         
+         hiveDriver.executeQuery("CREATE TEMPORARY FUNCTION append_array AS 'brickhouse.udf.collect.AppendArrayUDF' ");
+        
+      }
+
+      "Run Query with UDF" in {
+        
+        val hc = Config.config
+        val brickhouse = "file:///" + System.getProperty("user.dir") + "/modules/hive/src/test/lib/brickhouse-0.7.0-jdb-SNAPSHOT.jar"
+        
+        hc.setAuxJars( brickhouse)
+         val hiveDriver = HiveDriver( hc)
+         
+         hiveDriver.executeQuery("CREATE TEMPORARY FUNCTION sketch_set AS 'brickhouse.udf.sketch.SketchSetUDAF'");
+         hiveDriver.executeQuery("CREATE TEMPORARY FUNCTION estimated_reach AS 'brickhouse.udf.sketch.EstimatedReachUDF'")
+         
+         hiveDriver.useDatabase("sqoop_test")
+         hiveDriver.executeQuery( "select estimated_reach( sketch_set( cast(user_id as string) ) ) as reach from page_view_log where date='20140522' and hour='00' ")
+         
+      }
+      
+      "Run Query with UDF on HDFS" in {
+        
+        val hc = Config.config
+        val brickhouse = "hdfs://dhdp2/user/satisfaction/track/DauBackfill/version_0.2/lib/brickhouse-0.7.0-jdb-SNAPSHOT.jar"
+        
+        hc.setAuxJars( brickhouse)
+         val hiveDriver = HiveDriver( hc)
+         
+         hiveDriver.executeQuery("CREATE TEMPORARY FUNCTION sketch_set AS 'brickhouse.udf.sketch.SketchSetUDAF'");
+         hiveDriver.executeQuery("CREATE TEMPORARY FUNCTION estimated_reach AS 'brickhouse.udf.sketch.EstimatedReachUDF'")
+         
+         hiveDriver.useDatabase("sqoop_test")
+         hiveDriver.executeQuery( "select estimated_reach( sketch_set( cast(user_id as string) ) ) as reach from page_view_log where date='20140522' and hour='00' ")
+      }
+     
+   }
   
   
 
