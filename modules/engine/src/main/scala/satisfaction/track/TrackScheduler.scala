@@ -117,12 +117,7 @@ case class TrackScheduler( val proofEngine : ProofEngine ) {
        scheduleMap.keySet.map( td => { Tuple2(td,scheduleMap.get(td).get._1) } )
    }
    
-
-
-    
    case class StartGoalMessage( val trackDesc : TrackDescriptor )
-   
-  
    
    def generateWitness( track : Track, nowDt : DateTime ) : Witness = {
      var subst = Witness()
