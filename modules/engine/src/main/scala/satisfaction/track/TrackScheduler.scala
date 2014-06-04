@@ -88,7 +88,7 @@ case class TrackScheduler( val proofEngine : ProofEngine ) {
          resultMess match { //able to schedule
             case yeah : AddScheduleSuccess => // these responses are from QuartzActor::scheduleJob
               scheduleMap.put( trackDesc, Tuple2(schedString ,yeah.cancel ))
-              println(" Successfully scheduled job " + trackDesc.trackName)
+              println(" Successfully scheduled job " + trackDesc.trackName+ " Cancellable object is: "+ yeah.cancel.toString())
               true
            case boo : AddScheduleFailure =>
               /// XXX better logging 
@@ -104,8 +104,11 @@ case class TrackScheduler( val proofEngine : ProofEngine ) {
     */
    def unscheduleTrack( trackDesc :TrackDescriptor ) = {
      val tup2 = scheduleMap.remove( trackDesc).get
-     println("  track "+trackDesc.trackName+" removed from scheduler")
-     quartzActor ! tup2._2
+     println("  track "+trackDesc.trackName+" removed from scheduler. TriggerKey is " + tup2._2.toString())
+     
+     val schedMess: Option[Any] =  Some(RemoveJob(tup2._2))
+    
+     quartzActor ! new RemoveJob(tup2._2)//tup2._2 // [goalname, cancellable]._2
      println("  track "+trackDesc.trackName+" should be dead")
    }
    

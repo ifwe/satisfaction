@@ -126,7 +126,7 @@ class TrackSchedulerSpec extends Specification {// val mockFS = new LocalFileSys
         var oldValue: Int = 0 
        
        //set up track
-       implicit val track: Track = new Track ( TrackDescriptor("scheduleChronTrack") ) with Cronable {
+       implicit val track: Track = new Track ( TrackDescriptor("scheduleCronTrack") ) with Cronable {
          override def cronString = "0 0/1 * 1/1 * ? *"
        }
        
@@ -203,6 +203,7 @@ class TrackSchedulerSpec extends Specification {// val mockFS = new LocalFileSys
    
    "unschedule" in {
      "a recuring job" in {
+       /*
        implicit val track: Track = new Track (TrackDescriptor("scheduleRecurringTrack")) with Recurring {
       	  override def frequency = new Period(0,0,0,0,0,0,1,0) //Recurring.period("PT1S")
        }
@@ -230,16 +231,47 @@ class TrackSchedulerSpec extends Specification {// val mockFS = new LocalFileSys
        track.addTopLevelGoal(recurringGoal)
        scheduler.scheduleTrack(track)
        
-       Thread.sleep(5000)
+       Thread.sleep(5000)       
+       scheduler.unscheduleTrack(track.descriptor)
+       scheduler.getScheduledTracks must haveSize(0)
+       * 
+       */
+     }
+     "a cron job" in { 
+      // WARNING: this test takes 2 minutes to run due to the granularity of cron jobs 
+      implicit val track: Track = new Track ( TrackDescriptor("scheduleCronTrack") ) with Cronable {
+         override def cronString = "0 0/1 * 1/1 * ? *"
+       }
+       implicit val trackFactory : TrackFactory = {
+         try {
+           var tf = new TrackFactory ( mockFS, resourcePath, Some(scheduler)) {
+             override def getTrack(trackDesc: TrackDescriptor): Option[Track] = {
+               Some(track)
+             }
+           }
+           scheduler.trackFactory = tf
+           tf
+         } catch {
+           	case unexpected: Throwable =>
+	        unexpected.printStackTrace(System.out) 
+	        throw unexpected
+         }
+       }
+       
+       var observedVar = new Variable[String]("minutes", classOf[String]) with TemporalVariable {
+         override val FormatString = "mm"
+       }
+       val vars: List[Variable[_]] = List(observedVar)
+       val recurringGoal = TestGoal("RecurringGoal", vars)
+       track.addTopLevelGoal(recurringGoal)
+       scheduler.scheduleTrack(track)
+       
+       Thread.sleep(125000)
        println(" scheduler had "+scheduler.getScheduledTracks.size+" tracks scheduled")
 
        scheduler.unscheduleTrack(track.descriptor)
        println(" scheduler should have "+scheduler.getScheduledTracks.size+" tracks scheduled")
        scheduler.getScheduledTracks must haveSize(0)
-     }
-     
-     "a cron job" in {
-       
      }
      
    }// unschedule

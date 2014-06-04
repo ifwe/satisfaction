@@ -148,6 +148,7 @@ class QuartzActor extends Actor { // receives msg from TrackScheduler
 			// Perhaps just a string is better :)
 			///val trigkey = new TriggerKey(to.toString() + message.toString + cron + "trigger")
 			val trigkey = new TriggerKey(to.toString() + message.toString +  "trigger")
+			println("    scheduled job's trigger key is "+trigkey.toString())
 			// We use JobDataMaps to pass data to the newly created job runner class
 			val jd = org.quartz.JobBuilder.newJob(classOf[QuartzIsNotScalaExecutor])
 			val jdm = new JobDataMap()
@@ -209,9 +210,8 @@ class QuartzActor extends Actor { // receives msg from TrackScheduler
 	// Largely imperative glue code to make quartz work :)
 	def receive = { // YY ? received here
 		case RemoveJob(cancel) => cancel match {
-		  
-			case cs: CancelSchedule => scheduler.deleteJob(cs.job); cs.cancelled = true
-			case _ => log.error("Incorrect cancelable sent")
+			case cs: CancelSchedule => scheduler.deleteJob(cs.job); println("   received removeJob message"); cs.cancelled = true
+			case _ => println("Incorrect cancelable sent"); log.error("Incorrect cancelable sent")
 		}
 		case AddCronSchedule(to, cron, message, reply, spigot) =>
 		    val schedBuilder : ScheduleBuilder[_ <: Trigger] = org.quartz.CronScheduleBuilder.cronSchedule(cron)
@@ -221,7 +221,7 @@ class QuartzActor extends Actor { // receives msg from TrackScheduler
 		    val schedBuilder : ScheduleBuilder[_ <: Trigger] = builderForPeriod(period)
 		    scheduleJob(to,schedBuilder,message,reply,spigot) 
 		case _ => //
-		   /// XXX
+		   println("   received unparsable message!")
 	}
 
 
