@@ -104,8 +104,9 @@ case class TrackScheduler( val proofEngine : ProofEngine ) {
     */
    def unscheduleTrack( trackDesc :TrackDescriptor ) = {
      val tup2 = scheduleMap.remove( trackDesc).get
-     
+     println("  track "+trackDesc.trackName+" removed from scheduler")
      quartzActor ! tup2._2
+     println("  track "+trackDesc.trackName+" should be dead")
    }
    
    

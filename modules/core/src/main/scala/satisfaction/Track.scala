@@ -25,7 +25,7 @@ import satisfaction.fs.LocalFileSystem
   case class TrackDescriptor( val trackName : String, val forUser : String, val version : String, variant : Option[String] = None) {
    
      override def toString() = {
-       s"TrackDescriptor::name=$trackName forUser=$forUser Version= $version Variant=$variant"
+       s"TrackDescriptor::name=$trackName forUser=$forUser Version=$version Variant=$variant"
      }
  }
   

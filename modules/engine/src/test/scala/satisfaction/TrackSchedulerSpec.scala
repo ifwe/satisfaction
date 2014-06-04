@@ -20,14 +20,6 @@ class TrackSchedulerSpec extends Specification {// val mockFS = new LocalFileSys
 
  val mockFS = new LocalFileSystem
  val resourcePath = LocalFileSystem.currentDirectory / "modules" / "engine" / "src" / "test" / "resources";
-
- 
-  /*
- implicit val hdfs : FileSystem = LocalFileSystem
- val engine = new ProofEngine()
- val scheduler = new TrackScheduler(engine)
- */ 
-  
   
   //can be shared across spec
   val engine = new ProofEngine()
@@ -43,16 +35,16 @@ class TrackSchedulerSpec extends Specification {// val mockFS = new LocalFileSys
      * Things we must test:
      * - schedule a simple recurring job
      * - schedule a simple cron job
-     * - schedule r/c job that has dependenies
+     * - schedule r/c job that have dependencies
      * - unschedule jobs
      * - list all jobs in scheduler
      * - generate witness (non-temporal case) needs to be covered
      */
  
    "schedule" in {
-    /* "a single recuring job" in { 
+   "a single recuring job" in { 
     
-
+ /* 
        // possible variables that we can test on
       	var x : Int = 1
         var oldValue: Int = 0 
@@ -118,17 +110,17 @@ class TrackSchedulerSpec extends Specification {// val mockFS = new LocalFileSys
         scheduler.scheduleTrack(track)
         Thread.sleep(10000)
         x mustEqual 3
-        /*
-        while (true) {
-          Thread.sleep(10000)
-          println("main thread: x is now "+ x)
-          x mustEqual oldValue + 1
-        }
-        */
-     }*/
+        
+//        while (true) {
+//          Thread.sleep(10000)
+//          println("main thread: x is now "+ x)
+//          x mustEqual oldValue + 1
+//        }
+      */ 
+     }
      
      "a single cron job" in {
-       
+       /*
        // possible variables that we can test on
       	var x : Int = 1
         var oldValue: Int = 0 
@@ -197,12 +189,12 @@ class TrackSchedulerSpec extends Specification {// val mockFS = new LocalFileSys
        println("main thread: cron x is now is now "+ x)
        x mustEqual 2
         
-        /*
-       while (true) {
-          Thread.sleep(60000)
-          println("main thread: cron x is now is now "+ x)
-          x mustEqual oldValue + 1
-       }
+        
+//       while (true) {
+//          Thread.sleep(60000)
+//          println("main thread: cron x is now is now "+ x)
+//          x mustEqual oldValue + 1
+//       }
        */
      }
      
@@ -211,7 +203,39 @@ class TrackSchedulerSpec extends Specification {// val mockFS = new LocalFileSys
    
    "unschedule" in {
      "a recuring job" in {
+       implicit val track: Track = new Track (TrackDescriptor("scheduleRecurringTrack")) with Recurring {
+      	  override def frequency = new Period(0,0,0,0,0,0,1,0) //Recurring.period("PT1S")
+       }
+       implicit val trackFactory : TrackFactory = {
+         try {
+           var tf = new TrackFactory ( mockFS, resourcePath, Some(scheduler)) {
+             override def getTrack(trackDesc: TrackDescriptor): Option[Track] = {
+               Some(track)
+             }
+           }
+           scheduler.trackFactory = tf
+           tf
+         } catch {
+           	case unexpected: Throwable =>
+	        unexpected.printStackTrace(System.out) 
+	        throw unexpected
+         }
+       }
        
+       var observedVar = new Variable[String]("time", classOf[String]) with TemporalVariable {
+         override val FormatString = "YYYYMMDD hh:mm:ss"
+       }
+       val vars: List[Variable[_]] = List(observedVar)
+       val recurringGoal = TestGoal("RecurringGoal", vars)
+       track.addTopLevelGoal(recurringGoal)
+       scheduler.scheduleTrack(track)
+       
+       Thread.sleep(5000)
+       println(" scheduler had "+scheduler.getScheduledTracks.size+" tracks scheduled")
+
+       scheduler.unscheduleTrack(track.descriptor)
+       println(" scheduler should have "+scheduler.getScheduledTracks.size+" tracks scheduled")
+       scheduler.getScheduledTracks must haveSize(0)
      }
      
      "a cron job" in {

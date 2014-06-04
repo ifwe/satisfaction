@@ -209,6 +209,7 @@ class QuartzActor extends Actor { // receives msg from TrackScheduler
 	// Largely imperative glue code to make quartz work :)
 	def receive = { // YY ? received here
 		case RemoveJob(cancel) => cancel match {
+		  
 			case cs: CancelSchedule => scheduler.deleteJob(cs.job); cs.cancelled = true
 			case _ => log.error("Incorrect cancelable sent")
 		}
