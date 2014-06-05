@@ -115,7 +115,35 @@ case class TrackScheduler( val proofEngine : ProofEngine ) {
        scheduleMap.keySet.map( td => { Tuple2(td,scheduleMap.get(td).get._1) } )
    }
    
+<<<<<<< HEAD
    case class StartGoalMessage( val trackDesc : TrackDescriptor )
+=======
+
+
+    
+case class StartGoalMessage( val trackDesc : TrackDescriptor )
+   
+   class StartGoalActor( trackFactoryX : TrackFactory, proofEngine : ProofEngine ) extends Actor with ActorLogging {
+       def receive = {
+         case mess : StartGoalMessage =>
+           log.info(" Starting Track " + mess.trackDesc +  " TrackFactory = " + TrackFactory)
+           val trckOpt =  trackFactory.getTrack( mess.trackDesc )
+           trckOpt match {
+             case Some(trck) =>
+        	   val witness = generateWitness(trck, DateTime.now)
+        	   
+        	   trck.topLevelGoals.foreach( goal => { 
+        	      log.info(s" Satisfying Goal $goal.name with witness $witness ")
+        	      goal.variables.foreach( v => println( s"  Goal $goal.name has variable " + v))
+                  proofEngine.satisfyGoal( goal, witness)
+              } )
+             case None =>
+              println(" Track " + mess.trackDesc.trackName + " not found ")
+           }
+         
+       } 
+   }
+>>>>>>> upstream/master
    
    def generateWitness( track : Track, nowDt : DateTime ) : Witness = {
      var subst = Witness()

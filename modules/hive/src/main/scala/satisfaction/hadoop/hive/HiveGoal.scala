@@ -19,15 +19,10 @@ object HiveGoal {
         (implicit track : Track )
             : Goal = {
 
-      //// Set the jar path 
         implicit val hiveConf : HiveConf =  Config(track)
-        ///val driver =  HiveDriver(track.auxJarFolder.getPath) 
-        val driver = new HiveLocalDriver()
+        val driver =  HiveDriver(hiveConf) 
         val hiveSatisfier = new HiveSatisfier(queryResource,
             driver)
-            ///HiveDriver(track.auxJarFolder.getPath) )
-            ///"/Users/jeromebanks/NewGit/satisfaction/auxJars/KloutToBing")( Config.config))
-        ///val hiveSatisfier = new HiveSatisfier(queryResource, new  HiveLocalDriver )
         
         val tblVariables = table.ms.getVariablesForTable(table.dbName, table.tblName)
         val tblOutputs = collection.Set(table.asInstanceOf[Evidence])
@@ -38,7 +33,6 @@ object HiveGoal {
             depends,
             evidence = tblOutputs) {
           
-           ///// XXX override satify to 
             
         }
     }

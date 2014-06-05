@@ -37,10 +37,13 @@ case class TrackFactory(val trackFS : FileSystem,
   implicit val hdfs = trackFS
   val localFS = LocalFileSystem
    
+  val initScheduler : Unit = {
+     schedulerOpt match {
+       case Some(sched) => sched.trackFactory = this
+     } 
+  }
    
-   ///  XXX Use Local FS abstraction
-   ///val auxJarsPathBase = new java.io.File(System.getProperty("user.dir") + "/auxJars")
-   val auxJarsPathBase : Path = LocalFileSystem.currentDirectory / "auxJars" ;
+   ////val auxJarsPathBase : Path = LocalFileSystem.currentDirectory / "auxJars" ;
    
    
    private val trackMap : collection.mutable.Map[TrackDescriptor,Track] = collection.mutable.HashMap[TrackDescriptor,Track]()
@@ -53,13 +56,10 @@ case class TrackFactory(val trackFS : FileSystem,
      try {
        /// XXX Have filesystem return path as well as uri 
       val trackRoot : Path =  baseTrackPath / "track" 
-      System.out.println(" GET ALL TRACKS --- TRACK ROOT = " + trackRoot)
       
       val allPaths = trackFS.listFilesRecursively(trackRoot)
-      System.out.println(" NUM LIST FILES ARE " + allPaths.size)
-      System.out.println(" LIST FILES ARE " + allPaths)
-      allPaths.filter(_.isDirectory).filter( _.getPath.name.startsWith("version_")).map( fs => {
-          parseTrackPath( fs.getPath )       
+      allPaths.filter(_.isDirectory).filter( _.path.name.startsWith("version_")).map( fs => {
+          parseTrackPath( fs.path )       
       }) 
      } catch {
        case exc: Exception => {
@@ -130,20 +130,23 @@ case class TrackFactory(val trackFS : FileSystem,
                 
      val trackPath = getTrackPath( track.descriptor )
      
+     /**
      trackProps.get(Variable( "satisfaction.track.auxjar")) match {
      case Some(trackAuxJar) =>
         val localAuxJarsPath : Path = ( auxJarsPathBase /  track.descriptor.trackName)
         localFS.mkdirs( localAuxJarsPath)
         val hdfsAuxJarPath = new Path(trackPath + "/" + trackAuxJar)
         trackFS.listFiles( hdfsAuxJarPath ).foreach { fs : FileStatus => {
-    	    println(s" Copying  ${fs.getPath} to local aux jars path ${localAuxJarsPath}" )
-    	   trackFS.copyToFileSystem( localFS, fs.getPath, localAuxJarsPath  )
+    	    println(s" Copying  ${fs.path} to local aux jars path ${localAuxJarsPath}" )
+    	   trackFS.copyToFileSystem( localFS, fs.path, localAuxJarsPath  )
          }}
         
         track.setAuxJarFolder( new java.io.File(localAuxJarsPath.toString))
         track.registerJars( localAuxJarsPath.toString)
      case None =>
      }
+     * 
+     */
        
      schedulerOpt match { // YY on init: if there is a scheduler, load track on it. May want to un/re schedule.
        case Some(scheduler) => 
@@ -215,10 +218,10 @@ case class TrackFactory(val trackFS : FileSystem,
      }
    }
    
+   /// XXX Move to static method
    def jarURLS( jarPath : Path ) : Array[java.net.URL] = {
      if( trackFS.isDirectory( jarPath) ) {
-       
-       trackFS.listFiles( jarPath).filter( _.getPath.toString.endsWith(".jar")).map( _.getPath.toUri.toURL).toArray
+       trackFS.listFiles( jarPath).filter( _.path.toString.endsWith(".jar")).map( _.path.toUri.toURL).toArray
      } else {
         val hdfsUri = jarPath.toUri
         if( jarPath.toString.endsWith(".jar")) {
@@ -231,6 +234,19 @@ case class TrackFactory(val trackFS : FileSystem,
         }
      }
    }
+   
+   def trackClassLoader( jarPath: Path) : ClassLoader = {
+      val urlClassloader = new java.net.URLClassLoader(jarURLS( jarPath), this.getClass.getClassLoader)
+      Thread.currentThread.setContextClassLoader(urlClassloader)
+      
+      urlClassloader.getURLs.foreach( earl => {
+         System.out.println(s" using jar URL $earl ")
+      } ) 
+     
+      Thread.currentThread().setContextClassLoader(urlClassloader);
+      urlClassloader
+   }
+
    
   def loadTrackClass( jarPath : Path , trackClassName : String ) : Option[Class[_ <: Track]]  = {
   ////def loadTrackClass( jarPath : Path , trackClassName : String ) : Option[Class[_]]  = {

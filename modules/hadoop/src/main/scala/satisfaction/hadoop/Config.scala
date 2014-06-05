@@ -12,6 +12,7 @@ import java.io.ByteArrayInputStream
 import java.io.FileNotFoundException
 import java.io.File
 import java.io.FileInputStream
+import satisfaction.hadoop.hdfs.Hdfs
 
 /**
  *  Scala Object to handle initial configuration
@@ -105,8 +106,7 @@ object Config {
             thisConf.addResource( new ByteArrayInputStream( track.getResource( res).getBytes() ), res) 
          } catch {
            case unexpected : Throwable => 
-             println("Trouble finding resource ")
-             unexpected.printStackTrace(System.out)
+             println(s"Trouble finding resource $res")
          }
         }
       }
@@ -119,6 +119,23 @@ object Config {
          }
         }
       }
+      track.hdfs = Hdfs.fromConfig(thisConf)
+      
+      ///// Set Hive AUX Jars Path
+      println(" Current AuxJars is " +config.getAuxJars())
+      val currentAux : Array[String] = if( config.getAuxJars != null) { 
+           config.getAuxJars.split(",")}
+        else {
+          Array()
+      }
+
+
+      val newJars = track.hdfs.listFiles( track.libPath ) map ( _.path.toUri )
+
+      val newAuxJars = (newJars ++ currentAux).mkString(",")
+      println(s" Seting AuxJars Path to $newAuxJars ")
+      thisConf.setAuxJars(newAuxJars)
+      
       thisConf
     }
     

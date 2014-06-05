@@ -32,7 +32,7 @@ case class TrackContext( val track : Track,
    
    def listResources : Seq[String]  = {
       println(" LIST  HDFS is " + hdfs)
-      hdfs.listFiles(  resourcePath ).map( _.getPath.name )
+      hdfs.listFiles(  resourcePath ).map( _.path.name )
    }
    
    def resourcePath : Path = {

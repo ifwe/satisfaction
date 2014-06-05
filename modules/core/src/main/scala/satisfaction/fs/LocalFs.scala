@@ -15,8 +15,8 @@ case class LocalFileSystem() extends FileSystem {
   
   case class LocalFStatus( file : java.io.File ) extends FileStatus {
       
-    override def getSize : Long = {
-      file.getSize 
+    override def size : Long = {
+      file.length
     }
     override def isDirectory : Boolean  = {
       file.isDirectory
@@ -26,7 +26,7 @@ case class LocalFileSystem() extends FileSystem {
       file.isFile 
     }
     
-    override def getPath : Path = {
+    override def path : Path = {
       new Path( file.getPath)
     }
     
@@ -58,13 +58,6 @@ case class LocalFileSystem() extends FileSystem {
      return new java.net.URI( s"file:///")
    }
    
-   /**
-   def appendPath( p : Path) : Path = {
-     new Path( basePath + "/" +  p.toUri.getPath)
-   } 
-   * 
-   */
-     
    override def listFiles( p : Path ) : Seq[FileStatus] = {
        val file :File = (p)
        System.out.println( " File is " + file)
@@ -79,11 +72,10 @@ case class LocalFileSystem() extends FileSystem {
    
    override def listFilesRecursively( p : Path ) : Seq[FileStatus] = {
      listFiles( (p) ).map( fs =>  { 
-       System.out.println( " Recursive file is " + fs );
          if( fs.isFile ) {
            Seq( fs)
          } else if( fs.isDirectory ) {
-           listFilesRecursively( fs.getPath ) ++ Seq(fs)
+           listFilesRecursively( fs.path ) ++ Seq(fs)
          } else {
            Seq.empty
          }
@@ -94,12 +86,9 @@ case class LocalFileSystem() extends FileSystem {
      (p).mkdirs
    }
    
-   override def readFile( path : Path ) : String = {
-     scala.io.Source.fromFile( (path)).mkString
-   }
    
-   override def open( path : Path) : io.BufferedSource = {
-      scala.io.Source.fromFile((path)) 
+   override def open( path : Path) : java.io.InputStream = {
+     new FileInputStream((path))
    }
    
    override def create( path : Path ) : java.io.OutputStream = {

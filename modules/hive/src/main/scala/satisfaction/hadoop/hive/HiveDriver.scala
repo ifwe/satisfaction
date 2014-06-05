@@ -29,6 +29,7 @@ import satisfaction.hadoop.Config
 import org.apache.hadoop.hive.ql.HiveDriverRunHook
 import org.apache.hadoop.hive.ql.hooks.ExecuteWithHookContext
 import org.apache.hadoop.hive.ql.hooks.HookContext
+import org.apache.hadoop.hive.ql.exec.mr.HadoopJobExecHelper
 
 /**
  * Executes jobs locally
@@ -58,7 +59,7 @@ trait HiveDriver {
  *    the internal 'SessionState' interface
  */
 
-class HiveLocalDriver( implicit val hiveConf : HiveConf = Config.config , implicit val track : Track) extends HiveDriver with MetricsProducing {
+class HiveLocalDriver( implicit val hiveConf : HiveConf = Config.config ) extends HiveDriver with MetricsProducing {
   
     /// XXX need to set because can't pass in with constructor
     lazy val driver = {
@@ -67,24 +68,17 @@ class HiveLocalDriver( implicit val hiveConf : HiveConf = Config.config , implic
         ////hiveConf.set("hive.exec.post.hooks", "com.klout.satisfaction.GatherStatsHook")
         //// XXX TODO  Each project should have on set of auxjars 
         ///hiveConf.setAuxJars()
-        val auxJars = auxJarsPath
-        println(s" AUX JARS PATH = ${auxJars}")
-        hiveConf.setAuxJars(auxJars)
+        ///val auxJars = auxJarsPath
+       ///println(s" AUX JARS PATH = ${auxJars}")
+        ///hiveConf.setAuxJars(auxJars)
 
         println("Version :: " + VersionInfo.getBuildVersion)
 
         val dr = new org.apache.hadoop.hive.ql.Driver(hiveConf)
 
         dr.init
-        sessionState
+        sessionState ///initials the Hive Session state
 
-        registerJars
-        
-        ///hiveConf.setVar(HiveConf.ConfVars.ONFAILUREHOOKS,"com.klout.satisfaction.hadoop.hive.FailureHook")
-        
-        ///println(" HiveDriver is " + dr)
-        ///println(" HiveConfig is " + hiveConf)
-        
         
         val shims = ShimLoader.getHadoopShims
         println(" RPC port is " + shims.getJobLauncherRpcAddress(hiveConf))
@@ -92,42 +86,6 @@ class HiveLocalDriver( implicit val hiveConf : HiveConf = Config.config , implic
         dr
     }
 
-    /// Want to make it on a per-project basis
-    /// but for now, but them in the auxlib directory
-    def registerJars(): Unit = {
-        auxJarFolder.listFiles.filter(_.getName.endsWith("jar")).foreach(
-            f => {
-                println(s" Register jar ${f.getAbsolutePath} ")
-                val jarUrl = "file://" + f.getAbsolutePath
-                SessionState.registerJar(jarUrl)
-            }
-        )
-    }
-    
-    def auxJarFolder : File = {
-       if(_auxJarFolder != null)  {
-         new File(_auxJarFolder)
-       } else {
-         track.auxJarFolder
-       }
-    }
-    
-    private var _auxJarFolder : String = null
-
-    def setAuxJarFolder( folder : String) = {
-      println(" Our AUX JAR FOLDER IS SET TO " + folder)
-      _auxJarFolder = folder 
-    }
-    
-    def auxJarsPath: String = {
-      //// XXX associate aux lib with project 
-      ////   link to project upload plugin ..
-      ////   download from HDFS
-      auxJarFolder.listFiles.filter(_.getName.endsWith("jar")).map(
-      ////new File("/Users/jeromebanks/NewGit/satisfaction/apps/willrogers/lib").listFiles.filter(_.getName.endsWith("jar")).map(
-            "file://" + _.getAbsolutePath
-        ).mkString(",")
-    }
 
     override def useDatabase(dbName: String) : Boolean = {
         println(" Using database " + dbName)
@@ -168,7 +126,7 @@ class HiveLocalDriver( implicit val hiveConf : HiveConf = Config.config , implic
        /// Not sure this works with multiple Hive Goals ...
        /// Hive Driver is somewhat opaque
        println(" Aborting all jobs for Hive Query ")
-       ////HadoopJobExecHelper.killRunningJobs()
+       HadoopJobExecHelper.killRunningJobs()
       
     }
 
@@ -183,9 +141,9 @@ class HiveLocalDriver( implicit val hiveConf : HiveConf = Config.config , implic
                 sessionState.getConf.set(kv(0), kv(1))
                 return true
             }
-            if( query.trim.toLowerCase.startsWith("source") || query.contains("oozie-setup")) {
+            if( query.trim.toLowerCase.startsWith("source") ) {
               /// XXX TODO source the file ...
-              /// for now ignore, because always oozie-setup.hql 
+              ///  Get from track ???
               println(s" Ignoring source statement $query for now ")
               return true
             }
@@ -225,6 +183,7 @@ class HiveLocalDriver( implicit val hiveConf : HiveConf = Config.config , implic
     /// XXX FIX ME
     /// output is not being returned 
     def readResults( response : CommandProcessorResponse, maxRows : Int ) = {
+      println(" Reading results")
       if(response.getSchema != null) {
         response.getSchema.getFieldSchemas.foreach( field => {
             print(s"${field.getName}\t")
@@ -285,48 +244,40 @@ class HiveLocalDriver( implicit val hiveConf : HiveConf = Config.config , implic
 
 object HiveDriver {
  
-   def apply( auxJarPath : String ) 
-     (implicit hiveConf : HiveConf ):HiveDriver = {
-     /**
-     
-     try {
-     val parentLoader = if( Thread.currentThread.getContextClassLoader != null) { 
-       Thread.currentThread.getContextClassLoader
-     } else { 
-        this.getClass.getClassLoader
-     }
-     val pathFile = new File( auxJarPath)
-     System.out.println(s" AUX JAR PATH =  $pathFile")
-     val urls = pathFile.listFiles.map("file://" + _.getPath ).map( new URL(_))
-     System.out.println(" URLS = " + urls.mkString(";"))
-     val urlClassLoader = new URLClassLoader( urls, parentLoader)
-     Thread.currentThread.setContextClassLoader( urlClassLoader)
-     
-     //// XXX 
-     val driverClass = urlClassLoader.loadClass("com.klout.satisfaction.hadoop.hive.HiveLocalDriver")
-     
-     val antlrClass = urlClassLoader.loadClass("org.antlr.runtime.tree.TreeAdaptor")
-     println(" Antler class is " + antlrClass + " Class is " + antlrClass.getCanonicalName())
-     
-     val constructor = driverClass.getConstructor( hiveConf.getClass() )
-     
-     val hiveDriver = constructor.newInstance( hiveConf).asInstanceOf[HiveLocalDriver]
-     println(" Our Hive Driver is " + hiveDriver )
-     val method = driverClass.getMethod( "setAuxJarFolder", classOf[String] )
-     method.invoke(hiveDriver, auxJarPath)
-     hiveDriver
-     } catch {
-       case e : Exception =>
-         System.out.println(" Error " + e)
-         e.printStackTrace( System.out)
-         throw e
-     }
-     
-     **/
-    
-     null 
-     
-   }
+	def apply( hiveConf : HiveConf ):HiveDriver = {
+
+    try {
+
+      val parentLoader = if (Thread.currentThread.getContextClassLoader != null) {
+        Thread.currentThread.getContextClassLoader
+      } else {
+        hiveConf.getClassLoader
+      }
+      val auxJars = hiveConf.getAuxJars
+      if (auxJars != null) {
+        val urls = auxJars.split(",").map(new URL(_))
+        val urlClassLoader = new URLClassLoader(urls, parentLoader)
+        System.out.println(" URLS = " + urls.mkString(";"))
+        hiveConf.setClassLoader(urlClassLoader)
+      }
+
+      val localDriverClass: Class[HiveLocalDriver] = hiveConf.getClass("com.klout.satisfaction.hadoop.hive.HiveLocalDriver", classOf[HiveLocalDriver]).asInstanceOf[Class[HiveLocalDriver]]
+      val constructor = localDriverClass.getConstructor(hiveConf.getClass())
+      val hiveDriver = constructor.newInstance(hiveConf).asInstanceOf[HiveLocalDriver]
+      println(" Our Hive Driver is " + hiveDriver)
+
+      hiveDriver
+
+    } catch {
+      case e: Exception =>
+        System.out.println(" Error " + e)
+        e.printStackTrace(System.out)
+        throw e
+    }
+
+
+
+	}
   
   
 }

@@ -2,6 +2,17 @@ package com.klout.satisfaction
 
 import com.klout.satisfaction._
 
+/**
+ * XXX TODO
+ *    Create multiple dependencies for a goal for a range of values ..
+ *    
+ *   For now the range needs to be know at compile time, 
+ *     or at least track build time.
+ *     
+ *   Change so that range can be determined at goal satisfy time
+ *   ( ie. specify start time and endtime in the witness )     
+ *    
+ */
 object FanOutGoal {
   /**
    *   Return a Goal which depends upon multiple subGoals,

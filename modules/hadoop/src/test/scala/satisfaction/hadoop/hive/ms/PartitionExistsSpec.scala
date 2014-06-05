@@ -62,7 +62,7 @@ class PartitionExistsSpec extends Specification {
             val partExist = PartitionExists( HiveTable("sqoop_test", "page_view_log"))
             
             
-            val allHours = ( 0 to 23 ) map ( hr => { 
+            val allHours = ( 01 to 23 ) map ( hr => { 
                  val nuum = new java.text.DecimalFormat("00").format(hr)
                  println(" HOUR = " + nuum);
                  nuum} )

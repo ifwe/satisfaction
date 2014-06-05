@@ -9,8 +9,9 @@ import org.junit.runner.RunWith
 class GoalSpec extends Specification {
 
     
-  case class SimpleDataOutput extends DataOutput {
-    def variables: Set[Variable[_]] = Set.empty
+  case class SimpleDataOutput(
+      val variables: List[Variable[_]] = List.empty
+     ) extends DataOutput {
     
     def exists(witness: Witness): Boolean = {
        false;
@@ -31,6 +32,21 @@ class GoalSpec extends Specification {
        
        
        true
+     }
+     
+     
+     "FanOut Goal" in {
+         implicit val track : Track = new Track(TrackDescriptor("TestTrack"))
+         
+         val subGoal : Goal = DataDependency( new SimpleDataOutput( List( Variable("date"), Variable("hour"))) )
+
+         val fanOut: Goal = FanOutGoal( subGoal, Variable("hour") ,   (0 to 23).map( _.toString )  )
+         
+         
+         fanOut.dependencies.foreach( dep => {
+             println(dep._2.name) 
+         })
+       
      }
      
      

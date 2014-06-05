@@ -5,11 +5,11 @@ import org.joda.time.DateTime
 
 trait FileStatus {
   
-    def getSize : Long
+    def size : Long
     def isDirectory : Boolean
     def isFile : Boolean
     
-    def getPath : Path
+    def path : Path
     
     def lastAccessed : DateTime
     def created : DateTime

@@ -11,6 +11,7 @@ import org.joda.time.DateTime
  *
  *    Includes information about all the dependent children as
  *    well
+ *    XXX make immutable 
  */
 
 object GoalState extends Enumeration {
@@ -21,6 +22,7 @@ object GoalState extends Enumeration {
 
 case class GoalStatus(track : TrackDescriptor, goalName: String, witness: Witness) {
 
+    // XXX Make immutable ... ????
     var state: GoalState.Value = GoalState.Unstarted
 
     var dependencyStatus = scala.collection.mutable.Map[String, GoalStatus]()
