@@ -107,14 +107,16 @@ class TrackSchedulerSpec extends Specification {// val mockFS = new LocalFileSys
       	track.addTopLevelGoal(recurringGoal)
         scheduler.scheduleTrack(track)
         
-       // Thread.sleep(10000)
-       // x mustEqual 3
-        
+        Thread.sleep(63000)
+        x mustEqual 3
+        /*
         while (true) {
           println("main thread: x is now "+ x)
           x mustEqual oldValue + 1
           Thread.sleep(65000)
         }
+        * 
+        */
      }
      
      "a single cron job" in {

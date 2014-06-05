@@ -88,6 +88,7 @@ case class TrackScheduler( val proofEngine : ProofEngine ) {
          resultMess match { //able to schedule
             case yeah : AddScheduleSuccess => // these responses are from QuartzActor::scheduleJob
               scheduleMap.put( trackDesc, Tuple2(schedString ,yeah.cancel ))
+              println(" Successfully scheduled job " + trackDesc.trackName)
               true
            case boo : AddScheduleFailure =>
               /// XXX better logging 
@@ -103,8 +104,9 @@ case class TrackScheduler( val proofEngine : ProofEngine ) {
     */
    def unscheduleTrack( trackDesc :TrackDescriptor ) = {
      val tup2 = scheduleMap.remove( trackDesc).get
-     quartzActor ! new RemoveJob(tup2._2)
-     }
+     
+     quartzActor ! tup2._2
+   }
    
    
    /**
@@ -115,35 +117,12 @@ case class TrackScheduler( val proofEngine : ProofEngine ) {
        scheduleMap.keySet.map( td => { Tuple2(td,scheduleMap.get(td).get._1) } )
    }
    
-<<<<<<< HEAD
-   case class StartGoalMessage( val trackDesc : TrackDescriptor )
-=======
 
 
     
-case class StartGoalMessage( val trackDesc : TrackDescriptor )
+   case class StartGoalMessage( val trackDesc : TrackDescriptor )
    
-   class StartGoalActor( trackFactoryX : TrackFactory, proofEngine : ProofEngine ) extends Actor with ActorLogging {
-       def receive = {
-         case mess : StartGoalMessage =>
-           log.info(" Starting Track " + mess.trackDesc +  " TrackFactory = " + TrackFactory)
-           val trckOpt =  trackFactory.getTrack( mess.trackDesc )
-           trckOpt match {
-             case Some(trck) =>
-        	   val witness = generateWitness(trck, DateTime.now)
-        	   
-        	   trck.topLevelGoals.foreach( goal => { 
-        	      log.info(s" Satisfying Goal $goal.name with witness $witness ")
-        	      goal.variables.foreach( v => println( s"  Goal $goal.name has variable " + v))
-                  proofEngine.satisfyGoal( goal, witness)
-              } )
-             case None =>
-              println(" Track " + mess.trackDesc.trackName + " not found ")
-           }
-         
-       } 
-   }
->>>>>>> upstream/master
+  
    
    def generateWitness( track : Track, nowDt : DateTime ) : Witness = {
      var subst = Witness()
@@ -190,5 +169,4 @@ case class StartGoalMessage( val trackDesc : TrackDescriptor )
    
   
 }
-
 

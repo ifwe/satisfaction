@@ -28,12 +28,6 @@ case class TrackFactory(val trackFS : FileSystem,
     val schedulerOpt : Option[TrackScheduler] = None,
     val defaultConfig : Option[Witness] =  None) {
   
-	val initScheduler : Unit = {
-    schedulerOpt match {
-      case Some(sched) => sched.trackFactory = this
-    	} 
-  	}
-	
   implicit val hdfs = trackFS
   val localFS = LocalFileSystem
    
@@ -118,7 +112,7 @@ case class TrackFactory(val trackFS : FileSystem,
     *   make sure that it has setup everything it needs to run ..
     */
    def initializeTrack( track: Track , trackMap : Map[String,String] ) = {
-     println(s" Initializing Track ${track.descriptor.trackName}") 
+     println(s" Initializing Track ${track.descriptor.trackName}")
 
      val trackProps : Witness =  {
          defaultConfig match {
@@ -148,8 +142,8 @@ case class TrackFactory(val trackFS : FileSystem,
      * 
      */
        
-     schedulerOpt match { // YY on init: if there is a scheduler, load track on it. May want to un/re schedule.
-       case Some(scheduler) => 
+     schedulerOpt match {
+       case Some(scheduler) =>
           scheduler.scheduleTrack( track)
         case None =>
           
