@@ -194,16 +194,44 @@ class QuartzActor extends Actor { // receives msg from TrackScheduler
 			  period.getSeconds()+ " seconds\n"
 			  )
 			  
+			 var scheduler = CalendarIntervalScheduleBuilder.calendarIntervalSchedule() // YY: RE-write this with fall-switch statements later!
+			 if (period.getYears().toInt > 0) {
+			  scheduler.withIntervalInYears(period.getYears)
+			 }
+			  
+			 if (period.getMonths().toInt > 0) {
+			  scheduler.withIntervalInMonths(period.getMonths)
+			 }
+			 
+			 if (period.getWeeks().toInt > 0) {
+			  scheduler.withIntervalInWeeks(period.getWeeks)
+			 }
+			 
+			 if (period.getDays().toInt > 0) {
+			  scheduler.withIntervalInDays(period.getDays)
+			 }
+			 if (period.getHours().toInt > 0) {
+			  scheduler.withIntervalInHours(period.getHours)
+			 }
+			 if (period.getMinutes().toInt > 0) {
+			  scheduler.withIntervalInMinutes(period.getMinutes)
+			 }
+			 if (period.getSeconds().toInt > 0) {
+			  scheduler.withIntervalInSeconds(period.getSeconds)
+			 }
+			// scheduler
+			 
+			  
 			  CalendarIntervalScheduleBuilder.calendarIntervalSchedule
-			  /*
+			  
 		      	.withIntervalInYears(if (period.getYears() != 0) period.getYears else 0)
 		      	.withIntervalInMonths(if (period.getMonths() != 0) period.getMonths else 0)
 		      	.withIntervalInWeeks(if (period.getWeeks() != 0) period.getWeeks else 0)
 		      	.withIntervalInDays(if (period.getDays() != 0) period.getDays else 0) 
 		      	.withIntervalInHours(if (period.getHours() != 0) period.getHours else 0)
-		      	.withIntervalInMinutes(if (period.getMinutes() != 0) period.getMinutes else 0) */
+		      	.withIntervalInMinutes(if (period.getMinutes() != 0) period.getMinutes else 0) 
 		      	.withIntervalInSeconds(if (period.getSeconds() != 0) period.getSeconds else 0)
-	      
+		      	
 	}
 
 	// Largely imperative glue code to make quartz work :)

@@ -44,7 +44,6 @@ class TrackSchedulerSpec extends Specification {// val mockFS = new LocalFileSys
    "schedule" in {
    "a single recuring job" in { 
     
- /* 
        // possible variables that we can test on
       	var x : Int = 1
         var oldValue: Int = 0 
@@ -52,7 +51,7 @@ class TrackSchedulerSpec extends Specification {// val mockFS = new LocalFileSys
         //set up track
         implicit val track : Track = new Track ( TrackDescriptor("scheduleRecurringTrack") ) with Recurring {  // might have bug; be careful (track properties might not be set; but we don't need it right now) 
     	 //P0Y0M0W0DT0H0M3S P1Y2M3W4DT5H6M7.008S PT1M
-      	  override def frequency = new Period(0,0,0,0,0,0,10,0) //Recurring.period("PT1S")
+      	  override def frequency = Recurring.period("P0Y0M0W0DT0H1M3S") //stick with the standard format! PyYmMwWdDThHmMsS
         }
       	
         //set up a mock TrackFactory
@@ -89,7 +88,6 @@ class TrackSchedulerSpec extends Specification {// val mockFS = new LocalFileSys
         	      if (x == oldValue + 1) {
         	        oldValue = x // replaces anon fn
         	        x+=1
-        	        println ("!!!!x is now " + x)
         	        true
         	      } else {
         	        false
@@ -108,15 +106,15 @@ class TrackSchedulerSpec extends Specification {// val mockFS = new LocalFileSys
         
       	track.addTopLevelGoal(recurringGoal)
         scheduler.scheduleTrack(track)
-        Thread.sleep(10000)
-        x mustEqual 3
         
-//        while (true) {
-//          Thread.sleep(10000)
-//          println("main thread: x is now "+ x)
-//          x mustEqual oldValue + 1
-//        }
-      */ 
+       // Thread.sleep(10000)
+       // x mustEqual 3
+        
+        while (true) {
+          println("main thread: x is now "+ x)
+          x mustEqual oldValue + 1
+          Thread.sleep(65000)
+        }
      }
      
      "a single cron job" in {
