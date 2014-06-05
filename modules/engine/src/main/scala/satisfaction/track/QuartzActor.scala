@@ -36,6 +36,7 @@ import utils.Key
 import org.joda.time.Period
 import org.joda.time.DateTime
 import org.joda.time.PeriodType
+import org.joda.time.Seconds
 
 
 /**
@@ -147,6 +148,7 @@ class QuartzActor extends Actor { // receives msg from TrackScheduler
 			val jobkey = new JobKey("%X".format((to.toString() + message.toString + "job").hashCode))
 			// Perhaps just a string is better :)
 			///val trigkey = new TriggerKey(to.toString() + message.toString + cron + "trigger")
+			
 			val trigkey = new TriggerKey(to.toString() + message.toString +  "trigger")
 			// We use JobDataMaps to pass data to the newly created job runner class
 			val jd = org.quartz.JobBuilder.newJob(classOf[QuartzIsNotScalaExecutor])
@@ -160,8 +162,11 @@ class QuartzActor extends Actor { // receives msg from TrackScheduler
 			    val triggerBuilder : TriggerBuilder[_ <:Trigger]  = org.quartz.TriggerBuilder.newTrigger().withIdentity(trigkey).forJob(job).withSchedule(schedBuilder)
 			    offsetTime match {
 			      case None => 
+			        println("we don't have an offset!!!")
 			       scheduler.scheduleJob( job, triggerBuilder.startNow.build)
 			      case Some(offsetTime) =>
+			        			println("we have an offset!!!")
+
 			       scheduler.scheduleJob( job, triggerBuilder.startAt(offsetTime.toDate).build)
 			    }
 
@@ -182,8 +187,11 @@ class QuartzActor extends Actor { // receives msg from TrackScheduler
 		/*
 	   * notes: The standard ISO format - PyYmMwWdDThHmMsS; Substitute for lower-case; Granularity = S
 	   * YY- should revisit this calculation after TrackScheulder is tested.
-	   */
-			  println ("\nentering builderForPeriod\n" + 
+	   * current limitations: cannot schedule anything that has bad precision ex// 1Month can be 30 or 31 days :(
+	   */	
+	  
+			val seconds=Seconds.standardSecondsIn(period)
+		/*	  println ("\nentering builderForPeriod\n" + 
 			  period.getPeriodType.toString() + " type\n" +
 			  period.getYears()+ " years\n" +
 			  period.getMonths()+ " months\n" +
@@ -191,48 +199,15 @@ class QuartzActor extends Actor { // receives msg from TrackScheduler
 			  period.getDays()+ " days\n" +
 			  period.getHours()+ " hours\n" +
 			  period.getMinutes()+ " minutes\n" +
-			  period.getSeconds()+ " seconds\n"
+			  period.getSeconds()+ " seconds\n" +
+			  "for a total of " + seconds.toString() + " seconds\n"
 			  )
-			  
-			 var scheduler = CalendarIntervalScheduleBuilder.calendarIntervalSchedule() // YY: RE-write this with fall-switch statements later!
-			 if (period.getYears().toInt > 0) {
-			  scheduler.withIntervalInYears(period.getYears)
-			 }
-			  
-			 if (period.getMonths().toInt > 0) {
-			  scheduler.withIntervalInMonths(period.getMonths)
-			 }
-			 
-			 if (period.getWeeks().toInt > 0) {
-			  scheduler.withIntervalInWeeks(period.getWeeks)
-			 }
-			 
-			 if (period.getDays().toInt > 0) {
-			  scheduler.withIntervalInDays(period.getDays)
-			 }
-			 if (period.getHours().toInt > 0) {
-			  scheduler.withIntervalInHours(period.getHours)
-			 }
-			 if (period.getMinutes().toInt > 0) {
-			  scheduler.withIntervalInMinutes(period.getMinutes)
-			 }
-			 if (period.getSeconds().toInt > 0) {
-			  scheduler.withIntervalInSeconds(period.getSeconds)
-			 }
-			// scheduler
-			 
-			  
+		*/  
 			  CalendarIntervalScheduleBuilder.calendarIntervalSchedule
-			  
-		      	.withIntervalInYears(if (period.getYears() != 0) period.getYears else 0)
-		      	.withIntervalInMonths(if (period.getMonths() != 0) period.getMonths else 0)
-		      	.withIntervalInWeeks(if (period.getWeeks() != 0) period.getWeeks else 0)
-		      	.withIntervalInDays(if (period.getDays() != 0) period.getDays else 0) 
-		      	.withIntervalInHours(if (period.getHours() != 0) period.getHours else 0)
-		      	.withIntervalInMinutes(if (period.getMinutes() != 0) period.getMinutes else 0) 
-		      	.withIntervalInSeconds(if (period.getSeconds() != 0) period.getSeconds else 0)
-		      	
+			  .withIntervalInSeconds(seconds.getSeconds)
+
 	}
+	
 
 	// Largely imperative glue code to make quartz work :)
 	def receive = { // YY ? received here
