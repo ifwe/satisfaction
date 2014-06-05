@@ -238,6 +238,7 @@ class TrackSchedulerSpec extends Specification {// val mockFS = new LocalFileSys
        */
      }
      "a cron job" in { 
+       /*
       // WARNING: this test takes 2 minutes to run due to the granularity of cron jobs 
       implicit val track: Track = new Track ( TrackDescriptor("scheduleCronTrack") ) with Cronable {
          override def cronString = "0 0/1 * 1/1 * ? *"
@@ -272,11 +273,30 @@ class TrackSchedulerSpec extends Specification {// val mockFS = new LocalFileSys
        scheduler.unscheduleTrack(track.descriptor)
        println(" scheduler should have "+scheduler.getScheduledTracks.size+" tracks scheduled")
        scheduler.getScheduledTracks must haveSize(0)
+       */
      }
-     
    }// unschedule
    
    "list all current jobs" in {
+     
+     implicit val cronTrack: Track = new Track ( TrackDescriptor("scheduleCronTrack") ) with Cronable {
+         override def cronString = "0 0/1 * 1/1 * ? *"
+     }
+     var cronVar = new Variable[String]("minutes", classOf[String]) with TemporalVariable {
+         override val FormatString = "mm"
+     }
+     val cronVars : List[Variable[_]] = List(cronVar)
+     val cronGoal = TestGoal("cronGoal", cronVars)
+     cronTrack.addTopLevelGoal(cronGoal)
+     
+     //test sizeof returned set
+     scheduler.getScheduledTracks must haveSize(0)
+     
+     scheduler.scheduleTrack(cronTrack)
+     scheduler.getScheduledTracks must haveSize(1)
+     
+     scheduler.unscheduleTrack(cronTrack.descriptor)
+     scheduler.getScheduledTracks must haveSize(0)
      
    } //list all
    
