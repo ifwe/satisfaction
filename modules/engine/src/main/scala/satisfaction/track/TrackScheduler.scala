@@ -25,7 +25,8 @@ import akka.actor.Cancellable
  *  
  */
 case class TrackScheduler( val proofEngine : ProofEngine ) {
-   var trackFactory :  TrackFactory = null
+   private val schedulerName = "masterScheduler"
+	var trackFactory :  TrackFactory = null
    
    private lazy val quartzActor = ProofEngine.akkaSystem.actorOf(Props[QuartzActor])
    private lazy val startGoalActor = ProofEngine.akkaSystem.actorOf(Props( new StartGoalActor( trackFactory, proofEngine)) )

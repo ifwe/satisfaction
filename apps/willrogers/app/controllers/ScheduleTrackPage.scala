@@ -25,17 +25,18 @@ import play.mvc.Results
 
 /**
  *   Page for seeing which Tracks have been scheduled,
- *    and for 
- *   
+ *    and for seeing which tracks are not scheduled.
  */
 object ScheduleTrackPage extends Controller {
-   lazy val trackFactory =  Global.trackFactory 
+     println(" must show schedules!")
 
-  
-   def showSchedulesAction( ) = Action { 
+   lazy val trackFactory =  Global.trackFactory 
+   lazy val scheduler = Global.trackScheduler
+   def showSchedulesAction = Action { 
    
        val tdList = trackFactory.getAllTracks
-     	Ok(views.html.showschedule(tdList))
+      
+     	Ok(views.html.scheduletrack(tdList))
    }
-
+  
 }
