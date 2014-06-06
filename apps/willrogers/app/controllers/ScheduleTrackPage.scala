@@ -25,17 +25,37 @@ import play.mvc.Results
 
 /**
  *   Page for seeing which Tracks have been scheduled,
- *    and for 
- *   
+ *    and for seeing which tracks are not scheduled.
  */
 object ScheduleTrackPage extends Controller {
-   lazy val trackFactory =  Global.trackFactory 
+     println(" must show schedules!")
 
-  
-   def showSchedulesAction( ) = Action { 
+   lazy val trackFactory =  Global.trackFactory 
+   lazy val scheduler = Global.trackScheduler
+   
+   
+   def showSchedulesAction = Action { 
    
        val tdList = trackFactory.getAllTracks
-     	Ok(views.html.showschedule(tdList))
+    val scList = scheduler.getScheduledTracks.map(_._1).toSeq
+     	Ok(views.html.scheduletrack(tdList, scList)) // multiple parameters work! Believe this!!!!
    }
-
+     
+   def scheduleOneTrack(trackName: String, rule: String, pattern: String) {
+    implicit val holderTrack: Track= {
+      rule match {
+        case cron if rule.contains("cron") =>
+          new Track(TrackDescriptor(trackName)) with Cronable {
+            override def cronString = pattern
+          }
+        case rec if rule.contains("recur") =>
+          new Track(TrackDescriptor(trackName)) with Recurring {
+            override def frequency = Recurring.period(pattern)
+          }
+      }
+      
+     scheduler.scheduleTrack(holderTrack)
+     // Later: might want to add some feedback for to the associated views....
+    } 
+   }
 }
