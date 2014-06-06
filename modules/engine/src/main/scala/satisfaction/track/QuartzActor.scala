@@ -23,6 +23,10 @@ limitations under the License.
  *  
  */
 
+
+// YY look up original source for reference
+// purpose: schedule by frequency (ex// every 8 hours).
+
 import akka.actor.{Cancellable, ActorRef, Actor}
 import akka.event.Logging
 import org.quartz.impl.StdSchedulerFactory
@@ -32,6 +36,7 @@ import utils.Key
 import org.joda.time.Period
 import org.joda.time.DateTime
 import org.joda.time.PeriodType
+import org.joda.time.Seconds
 
 
 /**
@@ -97,7 +102,7 @@ object OpenSpigot extends Spigot {
  * The base quartz scheduling actor. Handles a single quartz scheduler
  * and processes Add and Remove messages.
  */
-class QuartzActor extends Actor {
+class QuartzActor extends Actor { // receives msg from TrackScheduler
 	val log = Logging(context.system, this)
 
 	// Create a sane default quartz scheduler
@@ -143,6 +148,7 @@ class QuartzActor extends Actor {
 			val jobkey = new JobKey("%X".format((to.toString() + message.toString + "job").hashCode))
 			// Perhaps just a string is better :)
 			///val trigkey = new TriggerKey(to.toString() + message.toString + cron + "trigger")
+			
 			val trigkey = new TriggerKey(to.toString() + message.toString +  "trigger")
 			// We use JobDataMaps to pass data to the newly created job runner class
 			val jd = org.quartz.JobBuilder.newJob(classOf[QuartzIsNotScalaExecutor])
@@ -156,12 +162,15 @@ class QuartzActor extends Actor {
 			    val triggerBuilder : TriggerBuilder[_ <:Trigger]  = org.quartz.TriggerBuilder.newTrigger().withIdentity(trigkey).forJob(job).withSchedule(schedBuilder)
 			    offsetTime match {
 			      case None => 
+			        println("we don't have an offset!!!")
 			       scheduler.scheduleJob( job, triggerBuilder.startNow.build)
 			      case Some(offsetTime) =>
+			        			println("we have an offset!!!")
+
 			       scheduler.scheduleJob( job, triggerBuilder.startAt(offsetTime.toDate).build)
 			    }
 
-				if (reply)
+				if (reply) // success case
 					context.sender ! AddScheduleSuccess(new CancelSchedule(jobkey, trigkey))
 
 			} catch { // Quartz will drop a throwable if you give it an invalid cron expression - pass that info on
@@ -175,32 +184,35 @@ class QuartzActor extends Actor {
 	}
 	
 	def builderForPeriod( period : Period ) : ScheduleBuilder[ _ <: Trigger] = {
-	  period.getPeriodType match {
-	    case pt: PeriodType if pt.getName.equals("Hours")=> 
-	      SimpleScheduleBuilder.repeatHourlyForever( period.getHours() )
-	    case pt: PeriodType if pt.toString.equals("Minutes") => 
-	      SimpleScheduleBuilder.repeatMinutelyForever( period.getMinutes() )
-	    case pt: PeriodType if pt.toString.equals("Seconds") => 
-	      SimpleScheduleBuilder.repeatSecondlyForever( period.getSeconds() )
-	    case pt: PeriodType if pt.toString.contains("Month") => 
-	      CalendarIntervalScheduleBuilder.calendarIntervalSchedule
-	      	.withIntervalInMonths( period.getMonths)
-	      	.withIntervalInDays( period.getDays) /// 
-	      	.withIntervalInHours( period.getHours)
-	      	.withIntervalInMinutes( period.getMinutes)
-	    case pt: PeriodType if pt.toString.contains("Week") => 
-	      CalendarIntervalScheduleBuilder.calendarIntervalSchedule
-	      	.withIntervalInWeeks( period.getWeeks)
-	      	.withIntervalInDays( period.getDays) /// 
-	      	.withIntervalInHours( period.getHours)
-	      	.withIntervalInMinutes( period.getMinutes)
-	  }
+		/*
+	   * notes: The standard ISO format - PyYmMwWdDThHmMsS; Substitute for lower-case; Granularity = S
+	   * YY- should revisit this calculation after TrackScheulder is tested.
+	   * current limitations: cannot schedule anything that has bad precision ex// 1Month can be 30 or 31 days :(
+	   */	
+	  
+			val seconds=Seconds.standardSecondsIn(period)
+		/*	  println ("\nentering builderForPeriod\n" + 
+			  period.getPeriodType.toString() + " type\n" +
+			  period.getYears()+ " years\n" +
+			  period.getMonths()+ " months\n" +
+			  period.getWeeks()+ " weeks\n" +
+			  period.getDays()+ " days\n" +
+			  period.getHours()+ " hours\n" +
+			  period.getMinutes()+ " minutes\n" +
+			  period.getSeconds()+ " seconds\n" +
+			  "for a total of " + seconds.toString() + " seconds\n"
+			  )
+		*/  
+			  CalendarIntervalScheduleBuilder.calendarIntervalSchedule
+			  .withIntervalInSeconds(seconds.getSeconds)
+
 	}
+	
 
 	// Largely imperative glue code to make quartz work :)
-	def receive = {
+	def receive = { // YY ? received here
 		case RemoveJob(cancel) => cancel match {
-			case cs: CancelSchedule => scheduler.deleteJob(cs.job); cs.cancelled = true
+			case cs: CancelSchedule => scheduler.deleteJob(cs.job);cs.cancelled = true
 			case _ => log.error("Incorrect cancelable sent")
 		}
 		case AddCronSchedule(to, cron, message, reply, spigot) =>
@@ -208,10 +220,9 @@ class QuartzActor extends Actor {
 		    scheduleJob(to,schedBuilder,message,reply,spigot)
 			
 		case AddPeriodSchedule(to, period, offsetTime, message, reply, spigot) =>
-		    val schedBuilder : ScheduleBuilder[_ <: Trigger] = builderForPeriod( period)
-		    scheduleJob(to,schedBuilder,message,reply,spigot)
+		    val schedBuilder : ScheduleBuilder[_ <: Trigger] = builderForPeriod(period)
+		    scheduleJob(to,schedBuilder,message,reply,spigot) 
 		case _ => //
-		   /// XXX
 	}
 
 

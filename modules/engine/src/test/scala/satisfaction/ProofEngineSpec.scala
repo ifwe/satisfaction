@@ -41,8 +41,6 @@ class ProofEngineSpec extends Specification {
             ///engine.stop
             status.state must_== GoalState.Unstarted
         }
-
-
         "satisfy a single goal" in {
             val engine = new ProofEngine()
             val vars: List[Variable[_]] = List(NetworkAbbr, runDate)
