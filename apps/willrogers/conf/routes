@@ -9,6 +9,7 @@ GET     /                           willrogers.controllers.Application.index
 GET     /alldbs                      willrogers.controllers.Application.allDBs
 GET     /dbtabs                      willrogers.controllers.Application.allDBs
 GET     /projtabs                      willrogers.controllers.ProjectPage.allProjects
+GET		/schedules				willrogers.controllers.ScheduleTrackPage.showSchedulesAction
 GET     /current                   willrogers.controllers.SatisfyGoalPage.currentStatusAction()
 GET     /showproject/:projName         willrogers.controllers.ProjectPage.showProject(projName: String)
 GET     /alltables/:db                   willrogers.controllers.Application.getDBTables(db: String)
@@ -27,7 +28,7 @@ GET     /logwindow/:trackName/:goalName/:varString                   willrogers.
 GET     /rawlog/:trackName/:goalName/:varString                   willrogers.controllers.SatisfyGoalPage.rawLog(trackName: String, goalName: String, varString : String)
 GET     /restart/:trackName/:goalName/:varString                   willrogers.controllers.SatisfyGoalPage.restartJob(trackName: String, goalName: String, varString : String)
 GET     /abort/:trackName/:goalName/:varString                   willrogers.controllers.SatisfyGoalPage.abortJob(trackName: String, goalName: String, varString : String)
-
+GET		/scheduleonejob/:trackName/:rule/:pattern			willrogers.controllers.ScheduleTrackPage.scheduleOneTrack(trackName: String, rule: String, pattern : String)
 
 
 # Map static resources from the /public folder to the /assets URL path
