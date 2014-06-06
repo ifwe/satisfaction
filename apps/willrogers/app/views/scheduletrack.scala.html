@@ -1,0 +1,61 @@
+@(tdList : Seq[com.klout.satisfaction.TrackDescriptor], scList: Seq[com.klout.satisfaction.TrackDescriptor])
+
+
+@import helper._
+@import scala.collection.JavaConversions._
+@import com.klout.satisfaction._
+@import com.klout.satisfaction.engine._
+@import com.klout.satisfaction.engine.actors._
+@import models.HtmlUtil
+
+@main ( s"Satisfaction Scheduler Status ") {
+	
+	<div id="scheduler">
+		<h1> Scheduler</h1>
+		
+		<h2> Scheduled Tracks</h2>
+		<table>
+			<thead>
+				<td> Track </td>
+				<td> Status </td>
+				<td> Type (cron vs rec) </td>
+				<td> schedule </td>
+				<td> readable schedule </td>
+				<td> scheduled on </td>
+				<td> recent run </td>
+				<td> unschedule <td>
+			</thead>
+			@scList.map { td =>
+				<tr>
+					<td> td.trackName </td>
+					<td>- </td>
+					<td>- </td>
+					<td>-</td>
+					<td>-</td>
+					<td>-</td>
+					<td>-</td>
+					<td>unschedule me!</td>
+				</tr>
+				}
+
+		</table>
+		<h2> Unscheduled Tracks</h2>
+		<table>
+			<thead>
+				<td> Track </td>
+				<td> Status </td>
+				<td></td>
+			</thead>
+			@tdList.map { td =>
+				<tr>
+					<td>@td.trackName</td>
+					<td>"NO!"</td>	
+					<td><button id="scheduleButton" onClick="window.location.href='/scheduleonejob/@td.trackName/rec/P0Y0M0W0DT0H0M3S'">Abort</button></td>
+				</tr>
+				}
+		</table>
+		
+	</div>
+  
+
+	}

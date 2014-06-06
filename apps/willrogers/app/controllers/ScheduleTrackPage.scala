@@ -35,13 +35,15 @@ object ScheduleTrackPage extends Controller {
    
    
    def showSchedulesAction = Action { 
-   
-       val tdList = trackFactory.getAllTracks
-    val scList = scheduler.getScheduledTracks.map(_._1).toSeq
+    	 val scList = scheduler.getScheduledTracks.map(_._1).toSeq
+       val tdList = trackFactory.getAllTracks.diff(scList)
+    
      	Ok(views.html.scheduletrack(tdList, scList)) // multiple parameters work! Believe this!!!!
    }
      
-   def scheduleOneTrack(trackName: String, rule: String, pattern: String) {
+   def scheduleOneTrack(trackName: String, rule: String, pattern: String) = Action {
+
+     /*
     implicit val holderTrack: Track= {
       rule match {
         case cron if rule.contains("cron") =>
@@ -53,9 +55,14 @@ object ScheduleTrackPage extends Controller {
             override def frequency = Recurring.period(pattern)
           }
       }
-      
-     scheduler.scheduleTrack(holderTrack)
-     // Later: might want to add some feedback for to the associated views....
     } 
+      scheduler.scheduleTrack(holderTrack)
+      */
+     // Later: might want to add some feedback for to the associated views....
+     
+     println("teehee")
+      val tdList = trackFactory.getAllTracks
+    val scList = scheduler.getScheduledTracks.map(_._1).toSeq
+     Ok(views.html.scheduletrack(tdList, scList)) // multiple parameters work! Believe this!!!!
    }
 }
