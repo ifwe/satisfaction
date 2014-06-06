@@ -37,7 +37,7 @@ import hdfs.Hdfs
 
 
 ///case class MetaStore(val hvConfig: HiveConf) extends Logging {
-case class MetaStore(val hvConfig: HiveConf)  {
+case class MetaStore(val hvConfig: HiveConf)  extends Logging {
    import hdfs.HdfsImplicits
    import hdfs.HdfsImplicits._
 
@@ -47,8 +47,7 @@ case class MetaStore(val hvConfig: HiveConf)  {
     
     def config : HiveConf = { hvConfig}
     
-    ///val PRELOAD = false
-    val PRELOAD = true
+    val PRELOAD = false
     private var _dbList : List[String] = if( PRELOAD)  { _initDbList  } else { null }
     private var _tableMap : collection.immutable.Map[String,List[String]] = if( PRELOAD) { _initTableMap  } else { null }
     private var _viewMap : collection.immutable.Map[String,List[String]] = if( PRELOAD ) { _initViewMap } else { null }
@@ -64,15 +63,14 @@ case class MetaStore(val hvConfig: HiveConf)  {
     private def _initDbList = {
         this.synchronized({
           try {
-           System.out.println(" Init DB LIST !! hive =  " + _hive)
+            info(" Init DB LIST !! hive =  " + _hive)
             val list = _hive.getAllDatabases().toList
-           System.out.println(" list  =  " + list)
-            list.foreach( System.out.println(_))
+            list.foreach( info(_))
             list
           } catch {
             case exc: Exception => {
-                exc.printStackTrace(System.out) 
-                throw exc
+              error("Problem initializing DB List" , exc)
+              throw exc
             }
           }
         })
@@ -107,17 +105,16 @@ case class MetaStore(val hvConfig: HiveConf)  {
 
     private def _initTableMap :  collection.immutable.Map[String,List[String]] = {
       this.synchronized({
-         System.out.println(" INIT TABLE MAP")
        	 var buildMap : immutable.Map[String,List[String]]= Map.empty
            getDbs.foreach( db => {
         	buildMap = buildMap + ( db ->
         	_hive.getAllTables( db).toList.filter( tbl =>
               try{
-                println(s" Getting table $db :: $tbl")
+                debug(s" Getting table $db :: $tbl")
         	   _hive.getTable( db, tbl).getTableType() != TableType.VIRTUAL_VIEW
               } catch {
         	    case e:Throwable =>
-                  println("Ignoring ..Unable to get table " + tbl + " Exception " + e)
+                  warn("Ignoring ..Unable to get table " + tbl + " Exception " + e)
         		  false
                 })
         	 )
@@ -133,11 +130,11 @@ case class MetaStore(val hvConfig: HiveConf)  {
         	buildMap = buildMap + ( db ->
         	_hive.getAllTables( db).toList.filter( tbl =>
               try{
-                println(s" Getting view $db :: $tbl")
+                debug(s" Getting view $db :: $tbl")
         	   _hive.getTable( db, tbl).getTableType() == TableType.VIRTUAL_VIEW
               } catch {
         	    case e: Throwable  =>
-                  println(" Ignore ..Unable to get table " + tbl + " Exception " + e)
+                  warn(" Ignore ..Unable to get table " + tbl + " Exception " + e)
         		  false
                 })
         	 )
@@ -164,16 +161,16 @@ case class MetaStore(val hvConfig: HiveConf)  {
     def getPartitionSize(part: Partition): Long = {
         this.synchronized({
             val pMd = getPartitionMetaData(part)
-            println(" MetaData is " + pMd)
+            debug(" MetaData is " + pMd)
             if (!pMd.contains(MetaDataProps.SPACE_USED.toString)) {
 
                 val realPs: Long = _hdfs.getStatus(part.getDataLocation).size
-                println(" Real Part size is " + realPs)
+                debug(" Real Part size is " + realPs)
                 setPartitionMetaData(part, MetaDataProps.SPACE_USED.toString(), realPs.toString)
                 return realPs
             } else {
                 val ps = pMd.get(MetaDataProps.SPACE_USED.toString())
-                println(" its in the META DATA " + ps + " LL " + ps.get)
+                debug(" its in the META DATA " + ps + " LL " + ps.get)
                 return ps.get.toLong
             }
         })
@@ -199,14 +196,14 @@ case class MetaStore(val hvConfig: HiveConf)  {
                     _hive.getPartitions(tbl).toList.map { part =>
                         if (_hdfs.exists(part.getDataLocation)) {
                             if (_hdfs.getSpaceUsed(part.getDataLocation) == 0) {
-                               println("Dropping empty partition " + part.getValues + " for table " + tblName)
+                               debug("Dropping empty partition " + part.getValues + " for table " + tblName)
                                 _hive.dropPartition(db, tblName, part.getValues(), true)
                                 _hdfs.fs.delete(part.getDataLocation)
                             } else {
-                                println(" Keeping partition " + part.getValues + " for table " + tblName)
+                               debug(" Keeping partition " + part.getValues + " for table " + tblName)
                             }
                         } else {
-                            println(" Dropping missing partition " + part.getValues + " for table " + tblName)
+                            debug(" Dropping missing partition " + part.getValues + " for table " + tblName)
                             _hive.dropPartition(db, tblName, part.getValues(), false)
                         }
                     }
@@ -232,39 +229,35 @@ case class MetaStore(val hvConfig: HiveConf)  {
             val partCols = tbl.getPartCols
             for (i <- 0 to partCols.size - 1) {
                 if (partCols(i).getName().equals("dt")) {
-                    println("dt idx = " + i)
                     dtIdx = i;
                 }
             }
             val parts = _hive.getPartitions(tbl)
-            println(" Pruning Partitions on table " + tbl.getCompleteName() + " for " + reten + " days from " + now)
+            info(" Pruning Partitions on table " + tbl.getCompleteName() + " for " + reten + " days from " + now)
             if (!tbl.isView && tbl.isPartitioned()) {
                 parts.toList.map { part =>
-                    println(" Checking partition  " + part.getName() + " with parameters " + part.getParameters())
+                    debug(" Checking partition  " + part.getName() + " with parameters " + part.getParameters())
                     val dtStr: String = part.getValues().get(dtIdx)
                     if (dtStr != null) {
                         val partDate = MetaStore.YYYYMMDD.parseDateTime(dtStr)
                         val numDays = Days.daysBetween(partDate, now).getDays()
-                        println(" Number of days between " + partDate + " and  " + now + " = " + numDays)
+                        debug(" Number of days between " + partDate + " and  " + now + " = " + numDays)
                         if (numDays > reten) {
                             if (_hdfs.exists(part.getDataLocation)) {
-                                //info("Deleting obsolete dated path " + part.getDataLocation)
-                                println("Deleting obsolete dated path " + part.getDataLocation)
+                               info("Deleting obsolete dated path " + part.getDataLocation)
                                 _hdfs.fs.delete(part.getDataLocation)
                             }
-                            ///info("Dropping obsolete partition " + part.getValues + " for table " + tblName)
-                            println("Dropping obsolete partition " + part.getValues + " for table " + tblName)
+                            info("Dropping obsolete partition " + part.getValues + " for table " + tblName)
                             _hive.dropPartition(db, tblName, part.getValues(), true)
                         } else {
-                            ///info("Keeping recent partition " + part.getValues + " for table " + tblName)
-                            println("Keeping recent partition " + part.getValues + " for table " + tblName)
-
+                            info("Keeping recent partition " + part.getValues + " for table " + tblName)
                         }
                     }
                 }
             }
         })
     }
+
     /**
      *  Clean the partitions for all partitioned tables within a database
      */
@@ -273,8 +266,7 @@ case class MetaStore(val hvConfig: HiveConf)  {
             val tblList = _hive.getTablesForDb(db, "*").toList
             tblList.map { tblName =>
               if( tblName.compareTo( "ksuid_mapping") > 0) {
-                ///info(" Cleaning table " + db + "@" + tblName)
-                println(" Cleaning table " + db + "@" + tblName)
+                info(" Cleaning table " + db + "@" + tblName)
                 cleanPartitions(db, tblName)
               }
             }
@@ -334,22 +326,18 @@ case class MetaStore(val hvConfig: HiveConf)  {
       val map =  collection.mutable.HashMap[Interval,Seq[Either[Table,Partition]]]()
       val periods = MetaStore.getIntervalsForDates( periodDates)
       periods.foreach( per => {
-        println( " Putting buffers in for period " + per.toString)
     	  map.put( per, new collection.mutable.ArrayBuffer[Either[Table,Partition]])
       })
       
       
       val tables = _hive.getAllTables( db)
-      println(" Number of tables is " + tables.size)
       tables.foreach( tblName => {
-          println(" Processing table "+ tblName)
           val tbl = _hive.getTable( db, tblName)
           if(! tbl.isView)
             if( tbl.isPartitioned() ) {
               val parts = _hive.getPartitions(tbl)
               parts.foreach( part => {
                val partDt = getRecentTime( Right(part)) 
-               println(" part last access time is " + partDt)
                periods.foreach( per => {
                 if( per.contains(partDt) ) {
                    val buffer = map.get(per).get
@@ -361,7 +349,6 @@ case class MetaStore(val hvConfig: HiveConf)  {
             
               /// Change to be create time if last access is 0
               val tblDt =  getRecentTime(Left(tbl))
-              println(" Table last access time is " + tblDt)
               periods.foreach( per => {
                  if( per.contains(tblDt) ) {
                    val buffer = map.get(per).get
@@ -407,11 +394,9 @@ case class MetaStore(val hvConfig: HiveConf)  {
             val tbl = _hive.getTable(db, tblName)
             val partMap = new HashMap[String, String]()
             val partCols = tbl.getPartCols()
-            print("PArtCols = " + partCols)
             for (i <- 0 until partCols.size) {
                 partMap.put(partCols.get(i).getName(), partSpec.get(i))
             }
-            print(" PartMap = " + partMap)
             _hive.getPartition(tbl, partMap, false)
         })
     }
@@ -459,7 +444,6 @@ case class MetaStore(val hvConfig: HiveConf)  {
             val map = tbl.getParameters()
             map.put(key, md)
             _hive.alterTable(tblName, tbl)
-            println(" Set Table MetaData " + key + " :: " + md)
         })
     }
 
@@ -493,7 +477,6 @@ case class MetaStore(val hvConfig: HiveConf)  {
     def getTableMetaData(db: String, tblName: String): Map[String, String] = {
         this.synchronized({
             val tbl = _hive.getTable(db, tblName)
-            println("Table Metat Data is " + tbl.getParameters)
             tbl.getParameters.toMap
         })
     }
@@ -596,7 +579,6 @@ object MetaStore  {
        backward.foldLeft[Seq[Interval]]( Seq[Interval]() )( (seqP, dt) => {
          var lastDt :DateTime = null 
          if( lastDt != null) {
-           println(" Current DT = " + dt + " ; Last DT =- " + lastDt)
            val newInterval = new Interval( dt, lastDt) 
            lastDt = dt
            seqP :+ newInterval
@@ -610,27 +592,5 @@ object MetaStore  {
 
 
     val YYYYMMDD : DateTimeFormatter = DateTimeFormat.forPattern("YYYYMMdd")
-    def main(argv: Array[String]): Unit = {
-
-        val toMs: MetaStore = MetaStore( new java.net.URI( "hdfs://jobs-dev-hnn" ))
-
-        /// insights
-        ///fromMs.prunePartitionsByRetention("bi_insights", "agg_moment", now,  92)
-        ///fromMs.prunePartitionsByRetention("bi_insights", "actor_action", now,  92)
-        ///fromMs.prunePartitionsByRetention("bi_insights", "ksuid_mapping", now,  30)
-
-        ///fromMs.cleanPartitionsForDb("bi_insights")
-
-        //replicateTable( fromMs.hive, toMs.hive, tbl )
-        val md = toMs.getTableMetaData("bi_maxwell", "agg_moment")
-        md.foreach {
-            case (k, v) =>
-                println(" Key = " + k + " ; Value = " + v)
-        }
-        md.keys.map { k =>
-            println(" Key = " + k)
-        }
-
-    }
 
 }

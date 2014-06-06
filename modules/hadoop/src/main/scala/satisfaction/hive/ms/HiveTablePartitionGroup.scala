@@ -44,7 +44,6 @@ case class HiveTablePartitionGroup(
         if (!w.variables.contains(grouping))
             None
         val partMap: Map[String, String] = grouping.map( { v => { v.name -> w.get(v).get.toString } } ).toMap
-        println(s" PART MAP IS $partMap ")
         val hivePartSet = ms.getPartitionSetForTable(tbl, partMap)
         if (hivePartSet.size > 0) {
             Some(new HivePartitionSet(hivePartSet.map(new HiveTablePartition(_)).toSet))

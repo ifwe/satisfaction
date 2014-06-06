@@ -32,8 +32,6 @@ object HiveGoal {
             variables = tblVariables,
             depends,
             evidence = tblOutputs) {
-          
-            
         }
     }
 

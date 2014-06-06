@@ -3,6 +3,7 @@ package satisfaction
 
 import collection.mutable.{ HashMap => MutableHashMap }
 import org.joda.time.DateTime
+///import com.typesafe.scalalogging.Logging
 
 trait Satisfier {
   
@@ -48,8 +49,7 @@ trait Satisfier {
  *    catching errors , and building up the 
  *    ExecutionResult object correctly.
  */
-object RobustRun {
-  
+object RobustRun extends Logging {
   
       def apply ( name: String,  func : =>  Boolean ) : ExecutionResult =   {
             val execResult  = new ExecutionResult(name, DateTime.now)
@@ -62,9 +62,8 @@ object RobustRun {
                }
             } catch {
               case unexpected : Throwable => {
-               /// XXX TODO which logger ???
-                 unexpected.printStackTrace(); 
-                 execResult.markUnexpected(unexpected)
+                error( s"Error which running satisfier $name ; ${unexpected.getMessage} ", unexpected)
+                execResult.markUnexpected(unexpected)
             } 
           }
         }

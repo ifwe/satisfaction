@@ -13,10 +13,10 @@ import scala.collection.JavaConversions._
  *  PartitionExists is similar to HiveTable DataDependency,
  *    but creates the necessary partitions if they don't exist.
  */
-case class PartitionExistsSatisfier (
+case class PartitionExistsSatisfier(
     val table : HiveTable
     )( implicit val track : Track )
-      extends Satisfier  with Evidence {
+      extends Satisfier  with Evidence with Logging {
     var w : Witness = null
   
     override def name = "PartitionExists " + table.toString
@@ -24,7 +24,7 @@ case class PartitionExistsSatisfier (
     override def satisfy(subst: Witness): ExecutionResult = robustly {
         w = subst
         val part = table.addPartition(subst)
-        println(" Added Partition " + part )
+        info(" Added Partition " + part )
         true
     }
     

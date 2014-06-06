@@ -22,7 +22,7 @@ case class HiveTable (
     tblName: String,
     isPartitioned: Boolean = true)
     (implicit val ms : MetaStore,
-     implicit val hdfs : FileSystem) extends DataOutput  {
+     implicit val hdfs : FileSystem) extends DataOutput  with Logging {
 
     
     val checkSuccessFile = true
@@ -48,7 +48,7 @@ case class HiveTable (
        } else {
          //// XXX What to check exactly ???
          //// 
-         println(" Not all variables are saturated ; Use HivePartitionGroup instead of HiveTable")
+         warn(" Not all variables are saturated ; Use HivePartitionGroup instead of HiveTable")
 
          false 
        }
@@ -61,7 +61,6 @@ case class HiveTable (
       if(partitionOpt.isDefined ) {
         if( checkSuccessFile) {
         	val partition = partitionOpt.get
-        	println(s" PARTITION = $partition")
         	if( hdfs.exists( partition.path)) {
         	  /// Check metadata to see if table has a min partition size 
         	   true 
@@ -100,8 +99,8 @@ case class HiveTable (
         try {
             
             val tblWitness = witness.filter( variables.toSet)
-            println( "variables for table is " + variables  +  " ; Witness variables = " + witness.variables)
-            println(s" TableWitness = $tblWitness == regular witness = $witness")
+            debug( "variables for table is " + variables  +  " ; Witness variables = " + witness.variables)
+            debug(s" TableWitness = $tblWitness == regular witness = $witness")
             val part = ms.getPartition(dbName, tblName, tblWitness.raw)
 
             if( part != null) {
@@ -125,7 +124,7 @@ case class HiveTable (
             part.setLocation(path.toString)
             ms.alterPartition(dbName, tblName, part)
           case None =>
-            println("WARN Couldn't get path for some reason ")
+            warn(" Couldn't get partition path for some reason ")
         }
         HiveTablePartition(part)
     }

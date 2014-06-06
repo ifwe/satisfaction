@@ -242,7 +242,7 @@ class HiveLocalDriver( implicit val hiveConf : HiveConf = Config.config ) extend
 }
 
 
-object HiveDriver {
+object HiveDriver extends Logging {
  
 	def apply( hiveConf : HiveConf ):HiveDriver = {
 
@@ -257,21 +257,19 @@ object HiveDriver {
       if (auxJars != null) {
         val urls = auxJars.split(",").map(new URL(_))
         val urlClassLoader = new URLClassLoader(urls, parentLoader)
-        System.out.println(" URLS = " + urls.mkString(";"))
+        debug(" URLS = " + urls.mkString(";"))
         hiveConf.setClassLoader(urlClassLoader)
       }
 
       val localDriverClass: Class[HiveLocalDriver] = hiveConf.getClass("com.klout.satisfaction.hadoop.hive.HiveLocalDriver", classOf[HiveLocalDriver]).asInstanceOf[Class[HiveLocalDriver]]
       val constructor = localDriverClass.getConstructor(hiveConf.getClass())
       val hiveDriver = constructor.newInstance(hiveConf).asInstanceOf[HiveLocalDriver]
-      println(" Our Hive Driver is " + hiveDriver)
 
       hiveDriver
 
     } catch {
       case e: Exception =>
-        System.out.println(" Error " + e)
-        e.printStackTrace(System.out)
+        error("Error while accessing HiveDriver", e)
         throw e
     }
 

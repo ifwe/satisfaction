@@ -9,7 +9,7 @@ import org.joda.time.DateTime
 import scala.io.Source
 import org.apache.hadoop.hive.ql.metadata.HiveException
 
-case class HiveSatisfier(queryResource: String, driver: HiveDriver)( implicit val track : Track) extends Satisfier with MetricsProducing {
+case class HiveSatisfier(queryResource: String, driver: HiveDriver)( implicit val track : Track) extends Satisfier with MetricsProducing with Logging {
 
    override def name = s"Hive( $queryResource )" 
   
@@ -19,7 +19,7 @@ case class HiveSatisfier(queryResource: String, driver: HiveDriver)( implicit va
         val multipleQueries = hql.split(";")
         multipleQueries.foreach(query => {
             if (query.trim.length > 0) {
-                println(s" Executing query $query")
+                info(s" Executing query $query")
                 val results = driver.executeQuery(query)
                 if (!results)
                     return results
@@ -32,7 +32,6 @@ case class HiveSatisfier(queryResource: String, driver: HiveDriver)( implicit va
     
     
     def queryTemplate : String = {
-       println(" Query Template -- query Resource is " + queryResource)      
        if( queryResource.endsWith(".hql"))  { 
           track.getResource( queryResource) 
        } else {
@@ -44,7 +43,7 @@ case class HiveSatisfier(queryResource: String, driver: HiveDriver)( implicit va
       try {
         val setupScript = track.getResource("setup.hql")
         if( setupScript != null) {
-          println(s" Running setup script $setupScript")
+          info(s" Running setup script $setupScript")
           if ( !executeMultiple( setupScript) ) {
             throw new HiveException("Trouble loading setup.hql")
           }
@@ -52,9 +51,10 @@ case class HiveSatisfier(queryResource: String, driver: HiveDriver)( implicit va
         
       } catch { 
         case ill : IllegalArgumentException =>
-          println("Unable to find setup.hql")
+          warn("Unable to find setup.hql", ill)
         case unexpected:Throwable  =>
          throw unexpected 
+          error("Unable to find setup.hql", unexpected)
       }
       
     }
@@ -65,11 +65,11 @@ case class HiveSatisfier(queryResource: String, driver: HiveDriver)( implicit va
       try {
 
         val allProps = track.getTrackProperties(params)
-        println(s" Track Properties is $allProps ; Witness is $params ")
+        info(s" Track Properties is $allProps ; Witness is $params ")
         val queryMatch = Substituter.substitute(queryTemplate, allProps) match {
             case Left(badVars) =>
-                println(" Missing variables in query Template ")
-                badVars.foreach { s => println(s"   Missing variable ${s} ") }
+                error(" Missing variables in query Template ")
+                badVars.foreach { s => error(s"   Missing variable ${s} ") }
                 execResult.markFailure
                 execResult.errorMessage = "Missing variables in queryTemplate " + badVars.mkString(",")
             case Right(query) =>
