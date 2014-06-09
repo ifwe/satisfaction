@@ -65,9 +65,11 @@ object ScheduleTrackPage extends Controller {
    }
    
    def unscheduleOneTrack(trackName: String) = Action {
-     scheduler.unscheduleTrack(trackName) //pretty sure this is broken. Need a reference to its trackDescriptor!!!!
-      val scList = scheduler.getScheduledTracks.map(_._1).toSeq
-       val tdList = trackFactory.getAllTracks.diff(scList)
+     val desc = scheduler.getScheduledTracks.filter(_._1.trackName == trackName).last._1
+     scheduler.unscheduleTrack(desc) //YY this is gonna be broken due to versioning!
+     
+     val scList = scheduler.getScheduledTracks.map(_._1).toSeq
+     val tdList = trackFactory.getAllTracks.diff(scList)
      Ok(views.html.scheduletrack(tdList, scList)) 
    }
 }
