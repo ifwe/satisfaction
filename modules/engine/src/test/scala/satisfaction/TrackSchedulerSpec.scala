@@ -10,6 +10,7 @@ import org.joda.time.Period
 import satisfaction.fs._
 import satisfaction.track.TrackFactory
 import satisfaction.track.TrackScheduler
+import satisfaction.Temporal
 
 
 
@@ -73,7 +74,8 @@ class TrackSchedulerSpec extends Specification {// val mockFS = new LocalFileSys
       	}
 
       	var observedVar = new Variable[String]("timeLapse", classOf[String]) with TemporalVariable { // if not temporal: we will have to define a property file
-          override val FormatString = "YYYYMMDD hh:mm:ss"
+          override val formatString = "YYYYMMDD hh:mm:ss"
+          override val frequency = Temporal.frequency("PT1S")
       	}
         val vars: List[Variable[_]] = List(observedVar)
 
@@ -283,7 +285,8 @@ class TrackSchedulerSpec extends Specification {// val mockFS = new LocalFileSys
          override def cronString = "0 0/1 * 1/1 * ? *"
      }
      var cronVar = new Variable[String]("minutes", classOf[String]) with TemporalVariable {
-         override val FormatString = "mm"
+         override val formatString = "mm"
+         override val frequency = Temporal.minutePeriod
      }
      val cronVars : List[Variable[_]] = List(cronVar)
      val cronGoal = TestGoal("cronGoal", cronVars)
