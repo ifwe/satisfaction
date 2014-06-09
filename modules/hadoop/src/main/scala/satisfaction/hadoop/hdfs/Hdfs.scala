@@ -20,11 +20,12 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.hive.conf.HiveConf
 
 /**
+ *   Implement our FileSystem abstraction with 
+ *     classes which talk to HDFS
  *
  */
 
-
-object HdfsFactoryInit {
+object HdfsFactoryInit extends Logging {
          val fsClass = classOf[org.apache.hadoop.fs.FileSystem] 
          val meths = fsClass.getDeclaredMethods()
          val loadFSMeth = fsClass.getDeclaredMethod("loadFileSystems")
@@ -40,7 +41,9 @@ object HdfsFactoryInit {
               }catch { 
                 case  e :  Throwable =>
                   if( e.getMessage.contains("factory already defined")) {
-                     println(" Ignoring factory already defined error") 
+                     warn(" Ignoring factory already defined error") 
+                  } else {
+                    throw e
                   }
                   fsFactory
               }

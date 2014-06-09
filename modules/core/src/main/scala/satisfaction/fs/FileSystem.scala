@@ -63,7 +63,6 @@ trait FileSystem {
    }
 
    def copyToFileSystem( destFS : FileSystem , srcPath : Path, destPath : Path)  = {
-      println(s" Copying from $srcPath to $destPath ")
       if(! destFS.exists( destPath.parent)) {
         destFS.mkdirs( destPath.parent) 
       }

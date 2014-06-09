@@ -97,16 +97,6 @@ case class TrackFactory(val trackFS : FileSystem,
      new TrackDescriptor( trackName, user, version,  if (variant != null)  Some(variant) else None) 
    }
   
-   /** 
-    *  Perform some initialization work,
-    *   (needed by the various satisfiers of goals).
-    *  when a project is first deployed  
-    */
-   def registerTrackXXXX( trackDesc : TrackDescriptor ) = {
-     ////
-     
-   }
-   
    /**
     * Once a track has been loaded, 
     *   make sure that it has setup everything it needs to run ..
@@ -124,24 +114,6 @@ case class TrackFactory(val trackFS : FileSystem,
                 
      val trackPath = getTrackPath( track.descriptor )
      
-     /**
-     trackProps.get(Variable( "satisfaction.track.auxjar")) match {
-     case Some(trackAuxJar) =>
-        val localAuxJarsPath : Path = ( auxJarsPathBase /  track.descriptor.trackName)
-        localFS.mkdirs( localAuxJarsPath)
-        val hdfsAuxJarPath = new Path(trackPath + "/" + trackAuxJar)
-        trackFS.listFiles( hdfsAuxJarPath ).foreach { fs : FileStatus => {
-    	    println(s" Copying  ${fs.path} to local aux jars path ${localAuxJarsPath}" )
-    	   trackFS.copyToFileSystem( localFS, fs.path, localAuxJarsPath  )
-         }}
-        
-        track.setAuxJarFolder( new java.io.File(localAuxJarsPath.toString))
-        track.registerJars( localAuxJarsPath.toString)
-     case None =>
-     }
-     * 
-     */
-       
      schedulerOpt match {
        case Some(scheduler) =>
           scheduler.scheduleTrack( track)

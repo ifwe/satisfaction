@@ -122,8 +122,6 @@ object ApplicationBuild extends Build {
   def hadoopDependencies = Seq(
 	  ("org.apache.hadoop" % "hadoop-common" % "2.3.0"),
 	  ("org.apache.hadoop" % "hadoop-hdfs" % "2.3.0"),
-	  ("org.apache.hadoop" % "hadoop-nfs" % "2.3.0"),
-	  ("org.apache.hadoop" % "hadoop-hdfs-nfs" % "2.3.0"),
 	  ("org.apache.hadoop" % "hadoop-mapreduce-client-app" % "2.3.0"),
 	  ("org.apache.hadoop" % "hadoop-mapreduce-client-common" % "2.3.0"),
 	  ("org.apache.hadoop" % "hadoop-mapreduce-client-core" % "2.3.0"),
@@ -133,7 +131,9 @@ object ApplicationBuild extends Build {
   ).excluding("commons-daemon", "commons-daemon" ).excluding("junit","junit") ++ testDependencies ++ metastoreDependencies
 
   def coreDependencies = Seq(
-    ("com.github.nscala-time" %% "nscala-time" % "0.4.2")
+    ("org.slf4j" % "slf4j-api" % "1.7.7"),
+    ("com.github.nscala-time" %% "nscala-time" % "0.4.2"),
+    ("joda-time" % "joda-time" % "2.3")
   ) ++ testDependencies 
 
   def metastoreDependencies = Seq(

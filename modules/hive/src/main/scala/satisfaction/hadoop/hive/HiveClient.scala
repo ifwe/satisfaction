@@ -10,7 +10,13 @@ import org.apache.hadoop.hive.conf.HiveConf
 
 
 /**
- * Executes jobs locally
+ * Executes jobs remotely ...
+ * 
+ *   XXX  Can we support 
+ *     HiveServer2 ???
+ *    Can we add code (UDF's) 
+ *     to running server ??? 
+ * 
  */
 class HiveClient(val jdbcDriverUrl: String) extends HiveDriver {
     val driverClass = Class.forName("org.apache.hive.jdbc.HiveDriver")

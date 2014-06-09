@@ -18,37 +18,37 @@ import satisfaction.hadoop.hdfs.Hdfs
  *  Scala Object to handle initial configuration
  *   to be used
  */
-object Config {
+object Config  extends Logging {
     def initHiveConf: HiveConf = {
         print(ShimLoader.getMajorVersion())
         val hc = new HiveConf(new Configuration(), this.getClass())
         
         val hadoopDir = hadoopConfDir 
-        println(s"HADOOP Config Directory = $hadoopDir")
+        info(s"HADOOP Config Directory = $hadoopDir")
         if( hadoopDir != null && hadoopDir.exists  && hadoopDir.isDirectory) {
            HadoopResources.foreach( res => {
               val resFile = new File(hadoopDir.getPath + "/" + res)
               if(resFile.exists() ) {
-                println(s" Adding resource ${resFile.getPath} ")
+                info(s" Adding resource ${resFile.getPath} ")
                 hc.addResource( new FileInputStream(resFile))
               }
            } )
         } else {
-          println(" Invalid Hadoop Config directory")
+          warn(" Invalid Hadoop Config directory")
         }
         
         val hiveDir = hiveConfDir
-        println(s"Hive Config Directory = $hiveDir")
+        info(s"Hive Config Directory = $hiveDir")
         if( hiveDir != null && hiveDir.exists  && hiveDir.isDirectory) {
            HiveResources.foreach( res => {
               val resFile = new File(hiveDir.getPath + "/" + res)
               if(resFile.exists() ) {
-                println(s" Adding resource ${resFile.getPath} ")
+                info(s" Adding resource ${resFile.getPath} ")
                 hc.addResource( new FileInputStream(resFile))
               }
            } )
         } else {
-          println(" Invalid Hive Config directory")
+          warn(" Invalid Hive Config directory")
         } 
 
        val nameService = hc.get("dfs.nameservices")
@@ -98,7 +98,7 @@ object Config {
     val config = initHiveConf
     
     def apply( track : Track ) : HiveConf = {
-      println( s" Hadoop HADOOP_HOME= ${sys.env("HADOOP_HOME")}")
+      info( s" Hadoop HADOOP_HOME= ${sys.env("HADOOP_HOME")}")
       val thisConf = new HiveConf( config)
       
       HadoopResources.foreach { res => {
@@ -129,11 +129,11 @@ object Config {
           Array()
       }
 
-
+      //// Add all jars which are in the Track's lib directory
       val newJars = track.hdfs.listFiles( track.libPath ) map ( _.path.toUri )
 
       val newAuxJars = (newJars ++ currentAux).mkString(",")
-      println(s" Seting AuxJars Path to $newAuxJars ")
+      info(s" Seting AuxJars Path to $newAuxJars ")
       thisConf.setAuxJars(newAuxJars)
       
       thisConf

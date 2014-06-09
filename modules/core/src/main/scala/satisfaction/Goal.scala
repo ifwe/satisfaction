@@ -111,8 +111,6 @@ object Goal {
       }
     }
     
-    
-    
     /**
      *  Replace the variable 'dtVar' with the most recent date in the given path.
      */

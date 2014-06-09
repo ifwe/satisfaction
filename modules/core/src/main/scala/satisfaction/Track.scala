@@ -165,66 +165,14 @@ case class Track(
      }
    }
 
+   /**
    def listJars : Seq[java.net.URI]  = {
       println(" LIST  LIBS HDFS is " + hdfs)
       hdfs.listFiles(  libPath ).map( _.path.toUri )
    }
+   * 
+   */
    
-   
-   
-     
-   /// XXX File to LocalFileSystm ???
-   /**
-     private var _auxJarFolder : File = null
-     
-     
-     def auxJarFolder : File = {
-    	if( _auxJarFolder != null) { 
-    	   _auxJarFolder 
-    	} else{
-    	   throw new RuntimeException("AuxJars accessed, but not registered yet !!!")	
-    	}
-     }
-     def setAuxJarFolder( auxJar : File) = {
-       _auxJarFolder = auxJar
-     }
-     * 
-     */
-        /// Want to make it on a per-project basis
-    /// but for now, but them in the auxlib directory
-     
-     
-   /**
-    def registerJarsXXX( folder : String): Unit = {
-        _auxJarFolder = new File( folder)
-        this.auxJarFolder.listFiles.filter(_.getName.endsWith("jar")).foreach(
-            f => {
-                println(s" Register jar ${f.getAbsolutePath} ")
-                val jarUrl = "file://" + f.getAbsolutePath
-                
-                /// Need to add to current loader as well, not just thread loader,
-                //// because some classes call Class.forName
-                ////  Hive CLI would have jar in enclosing classpath.
-                //// To avoid spawning new JVM, call
-                val currentLoader = this.getClass.getClassLoader
-                if( currentLoader.isInstanceOf[URLClassLoader]) {
-                  val currentURLLoader = currentLoader.asInstanceOf[URLClassLoader]
-                  val method : Method = classOf[URLClassLoader].getDeclaredMethod("addURL", classOf[java.net.URL])
-                  method.setAccessible(true)
-                  println(s" Adding to current classpath $jarUrl")
-                  method.invoke( currentURLLoader, new java.net.URL(jarUrl))
-                } else {
-                   println(s" Current classloader is of type ${currentLoader.getClass} ; Cannot append classpath !!!") 
-                }
-                println(s" Adding to current classpath $jarUrl")
-            }
-        )
-
-    }
-    * 
-    */
-    
-    
     def getTrackProperties(witness: Witness): Witness = {
       
          val YYYYMMDD = DateTimeFormat.forPattern("YYYYMMdd")
@@ -249,15 +197,6 @@ case class Track(
             println(s" Adding Date variables ${dateVars.raw.mkString}")
             projProperties = projProperties ++ dateVars
             projProperties = projProperties.update(VariableAssignment("dateString", witness.get(Variable("dt")).get))
-        }
-
-        /// XXX Other domains won't have social networks ...
-        if (witness.contains(Variable("network_abbr"))) {
-            projProperties = projProperties + (Variable("networkAbbr") -> witness.get(Variable("network_abbr")).get)
-            //// needs to be handled outside of satisfier ???
-            /// XXX need way to munge track properties
-            projProperties = projProperties + (Variable("featureGroup") -> "3")
-            ///projProperties = projProperties.update(VariableAssignment("networkAbbr", witness.get(Variable("network_abbr"))))
         }
 
         projProperties ++ witness
