@@ -26,7 +26,10 @@ trait TrackHistory {
      /**
       *  DB Identifier for the run
       */
-     var runId : String
+     var runId : String = {
+       var s0 = " "
+         s0
+     }
   }
          
    /**
