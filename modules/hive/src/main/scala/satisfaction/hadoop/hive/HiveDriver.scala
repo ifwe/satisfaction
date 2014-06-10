@@ -59,20 +59,14 @@ trait HiveDriver {
  *    the internal 'SessionState' interface
  */
 
-class HiveLocalDriver( implicit val hiveConf : HiveConf = Config.config ) extends HiveDriver with MetricsProducing {
+class HiveLocalDriver( val hiveConf : HiveConf = Config.config)
+      extends HiveDriver with MetricsProducing with Logging {
+
+    implicit var track : Track = null
   
-    /// XXX need to set because can't pass in with constructor
     lazy val driver = {
       
-      
-        ////hiveConf.set("hive.exec.post.hooks", "com.klout.satisfaction.GatherStatsHook")
-        //// XXX TODO  Each project should have on set of auxjars 
-        ///hiveConf.setAuxJars()
-        ///val auxJars = auxJarsPath
-       ///println(s" AUX JARS PATH = ${auxJars}")
-        ///hiveConf.setAuxJars(auxJars)
-
-        println("Version :: " + VersionInfo.getBuildVersion)
+        info("Version :: " + VersionInfo.getBuildVersion)
 
         val dr = new org.apache.hadoop.hive.ql.Driver(hiveConf)
 
@@ -81,25 +75,26 @@ class HiveLocalDriver( implicit val hiveConf : HiveConf = Config.config ) extend
 
         
         val shims = ShimLoader.getHadoopShims
-        println(" RPC port is " + shims.getJobLauncherRpcAddress(hiveConf))
-        println(" Shims version is " + shims.getClass)
+        info(" RPC port is " + shims.getJobLauncherRpcAddress(hiveConf))
+        info(" Shims version is " + shims.getClass)
         dr
     }
 
 
     override def useDatabase(dbName: String) : Boolean = {
-        println(" Using database " + dbName)
+        info(" Using database " + dbName)
         executeQuery("use " + dbName)
     }
     
     def getQueryPlan( query: String ) : QueryPlan = {
        val retCode = driver.compile(query)
-       println(" Compiling " + query + " has return Code " + retCode)
+       info(" Compiling " + query + " has return Code " + retCode)
        
        
        driver.getPlan()
       
     }
+    
     
     
     def sessionState : SessionState  = {
@@ -112,12 +107,16 @@ class HiveLocalDriver( implicit val hiveConf : HiveConf = Config.config ) extend
        ss1
     }
     
-    def sourceFile( fileName : String ) : Boolean = {
-       println(s" Sourcing file $fileName")
-       val readFile   =scala.io.Source.fromFile( fileName ).mkString
-       println(s" Text is $readFile")
-       //// XXX do proper escaping, and parse out comments ...
-       readFile.split(";").filter( _.startsWith("---")).forall( executeQuery(_) )
+    def sourceFile( resourceName : String ) : Boolean = {
+       println(s" Sourcing resource $resourceName")
+       if( track.hasResource( resourceName ) ) {
+         val readFile= track.getResource( resourceName) 
+         
+          readFile.split(";").filter( _.startsWith("---")).forall( executeQuery(_) )
+       } else {
+          warn(s"No resource $resourceName available to source.") 
+          false
+       }
     }
     
     
@@ -144,8 +143,13 @@ class HiveLocalDriver( implicit val hiveConf : HiveConf = Config.config ) extend
             if( query.trim.toLowerCase.startsWith("source") ) {
               /// XXX TODO source the file ...
               ///  Get from track ???
-              println(s" Ignoring source statement $query for now ")
-              return true
+              val cmdArr = query.split(" ")
+              if(cmdArr.size != 2 ) {
+                warn(s" Unable to interpret source command $query ")
+                return false 
+              } else {
+                 return sourceFile(cmdArr(1).trim)
+              }
             }
 
             sessionState.setIsVerbose(true)
@@ -243,11 +247,9 @@ class HiveLocalDriver( implicit val hiveConf : HiveConf = Config.config ) extend
 
 
 object HiveDriver extends Logging {
- 
-	def apply( hiveConf : HiveConf ):HiveDriver = {
 
+  def apply(hiveConf: HiveConf): HiveDriver = {
     try {
-
       val parentLoader = if (Thread.currentThread.getContextClassLoader != null) {
         Thread.currentThread.getContextClassLoader
       } else {
@@ -273,9 +275,25 @@ object HiveDriver extends Logging {
         throw e
     }
 
-
-
-	}
+  }
   
+  val HiveCommentDelimiter = "---"
+
+  /**
+   *  Strip out comments starting with  ---,
+   *  So that we can have comments in our Hive scripts ..
+   *   #KillerApp
+   */ 
+  def stripComments( queryString : String ) : String = {
+    queryString.split("\n").map( line => {
+       if( line.contains(HiveCommentDelimiter) ) {
+          line.substring( 0, line.indexOf(HiveCommentDelimiter)) 
+       } else {
+          line  
+       }
+     }
+    ).mkString("\n")
+  }
+
   
 }

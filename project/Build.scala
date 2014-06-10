@@ -42,7 +42,7 @@ object ApplicationBuild extends Build {
       "willrogers",
       appVersion,
       path = file("apps/willrogers")
-  ).settings(AppSettings: _*).settings(RpmSettings: _* )dependsOn(core, engine, hadoop, hive)
+  ).settings(AppSettings: _*).settings(RpmSettings: _* ).dependsOn(core, engine, hadoop, hive)
 
   def CommonSettings =  Resolvers ++ Seq(
       scalacOptions ++= Seq(
@@ -78,7 +78,6 @@ object ApplicationBuild extends Build {
 
     linuxPackageMappings <++= (projectDependencyArtifacts) map { artifactSeq : Seq[Attributed[File]] =>
           artifactSeq map ( a => { packageMapping ( a.data -> s"${destDir}/lib/${a.data.name}" )  } )
-
     },
 
 
@@ -127,13 +126,15 @@ object ApplicationBuild extends Build {
 	  ("org.apache.hadoop" % "hadoop-mapreduce-client-core" % "2.3.0"),
 	  ("org.apache.hadoop" % "hadoop-mapreduce-client-jobclient" % "2.3.0"),
 	  ("org.apache.hadoop" % "hadoop-distcp" % "2.3.0"),
-	  ("org.hamcrest" % "hamcrest-core" % "1.3"  ) 
-  ).excluding("commons-daemon", "commons-daemon" ).excluding("junit","junit") ++ testDependencies ++ metastoreDependencies
+	  ("org.hamcrest" % "hamcrest-core" % "1.3"  ) ,
+          ("ch.qos.logback" % "logback-classic" % "1.0.13" ),
+          ("org.slf4j" % "log4j-over-slf4j" % "1.7.7" )
+  ).excluding("commons-daemon", "commons-daemon" ).excluding("junit","junit").excluding("log4j", "*").excluding("org.slf4j","slf4j-log4j12") ++ testDependencies ++ metastoreDependencies
 
   def coreDependencies = Seq(
     ("org.slf4j" % "slf4j-api" % "1.7.7"),
-    ("com.github.nscala-time" %% "nscala-time" % "0.4.2"),
-    ("joda-time" % "joda-time" % "2.3")
+    ("com.github.nscala-time" %% "nscala-time" % "1.2.0"),
+    ("org.scala-lang" % "scala-library" % "2.10.2" )
   ) ++ testDependencies 
 
   def metastoreDependencies = Seq(
@@ -142,7 +143,7 @@ object ApplicationBuild extends Build {
 	  ("org.apache.hive" % "hive-metastore" % hiveVersion),
 	  ("org.apache.hive" % "hive-exec" % hiveVersion),
 	  ("org.apache.thrift" % "libfb303" % "0.7.0" )
-  )
+  ).excluding( "log4j", "*" ).excluding("org.slf4j", "*")
 
   def hiveDependencies = Seq(
 	  ("org.apache.hive" % "hive-common" % hiveVersion),
@@ -150,14 +151,14 @@ object ApplicationBuild extends Build {
 	  ("org.apache.hive" % "hive-metastore" % hiveVersion),
 	  ("org.apache.hive" % "hive-cli" % hiveVersion),
 	  ("org.apache.hive" % "hive-serde" % hiveVersion),
-	  ("org.apache.hive" % "hive-shims" % hiveVersion),
+	  ("org.apache.hive" % "hive-shims" %   hiveVersion ),
 	  ("org.apache.hive" % "hive-hbase-handler" % hiveVersion),
 	  ("org.apache.hive" % "hive-jdbc" % hiveVersion),
 	  ("org.apache.hive" % "hive-service" % hiveVersion ),
 	  ("org.apache.thrift" % "libfb303" % "0.7.0" ),
 	  ("org.antlr" % "antlr-runtime" % "3.4" ),
 	  ("org.antlr" % "antlr" % "3.0.1" )
-  ) ++ metastoreDependencies ++ testDependencies
+  ).excluding("log4j", "*").excluding("org.slf4j", "slf4j-log4j12")  ++ metastoreDependencies ++ testDependencies
 
 
   def engineDependencies = Seq(
@@ -180,13 +181,13 @@ object ApplicationBuild extends Build {
 	  ("org.antlr" % "antlr-runtime" % "3.4" ),
 	  ("org.antlr" % "antlr" % "3.0.1" ),
 
-          ( "com.typesafe.scala-logging" %% "scala-logging-slf4j" % "2.1.2" ),
-	  ( "org.scala-lang" % "scala-reflect" % "2.10.2" )
+	  ( "org.scala-lang" % "scala-reflect" % "2.10.2" ),
+          ("ch.qos.logback" % "logback-classic" % "1.0.13" )
 
 
 
   ).excluding("org.apached.hadoop.hive","hive-cli").excluding("javax.jdo","jdo2-api").excluding("commons-daemon","commons-daemon").
-     excluding("org.apache.hbase","hbase").excluding("org.apache.maven.wagon","*")
+     excluding("org.apache.hbase","hbase").excluding("org.apache.maven.wagon","*").excluding("log4j","*").excluding("org.slf4j","slf4j-log4j12")
 
 
   def Resolvers = resolvers ++= Seq(

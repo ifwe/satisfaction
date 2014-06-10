@@ -3,13 +3,13 @@ package satisfaction
 package engine
 package actors
 
-import java.io._
 import scala.Console
-///import hive.ms.Hdfs
-///import org.apache.hadoop.fs.Path
+import fs._
 import scala.util.Try
 import scala.util.Success
 import scala.util.Failure
+import java.io.OutputStream
+import java.io.InputStream
 
 /**
  *  Divert all output from STDOUT and STDERR to a defined log file
@@ -17,14 +17,10 @@ import scala.util.Failure
  */
 case class LogWrapper[T]( track : Track, goal : Goal, witness : Witness) {
 
-  /**
-   * XXX Use satisfaction.fs abstraction instead of files
-   */
-   
   def log( functor :  () => T  ) : Try[T] = {
      val currOut = Console.out
      val currErr = Console.err
-     val outStream = getLoggingOutput
+     val outStream = loggingOutput
      try {
          Console.setOut(outStream)
          Console.setErr(outStream)
@@ -49,11 +45,11 @@ case class LogWrapper[T]( track : Track, goal : Goal, witness : Witness) {
     }
   }
 
-  def getLoggingOutput: OutputStream = {
-     new FileOutputStream( LogWrapper.logPathForGoalWitness( track.descriptor, goal.name, witness) )
+  def loggingOutput: OutputStream = {
+     LogWrapper.localFS.create( LogWrapper.logPathForGoalWitness( track.descriptor, goal.name, witness) )
   }
   
-  def getHdfsLogPath : String  = {
+  def hdfsLogPath : Path  = {
      LogWrapper.hdfsPathForGoalWitness( track.descriptor, goal.name, witness)
   }
   
@@ -63,43 +59,42 @@ case class LogWrapper[T]( track : Track, goal : Goal, witness : Witness) {
    *    So that it can be seen through some UI  
    */
   def streamLogs : InputStream = {
-     new FileInputStream( LogWrapper.logPathForGoalWitness( track.descriptor, goal.name, witness) )
+    LogWrapper.localFS.open(LogWrapper.logPathForGoalWitness( track.descriptor, goal.name, witness) )
   }
 
 }
 
 object LogWrapper {
+    val localFS : FileSystem = LocalFileSystem
   
-    val rootDirectory = new File(System.getProperty("user.dir") + "/logs")
-    /// Dependency injection
-    val hdfsRootDirectory = "/user/satisfaction/logs"
-    ///val hdfs :  FileSystem  = null
+    val rootDirectory : Path = Path(System.getProperty("user.dir")) / "logs"
+    val hdfsRootDirectory : Path = Path("/user/satisfaction/logs")
     
     
     def pathString( str : String ) : String = {
       str.replace(" ","_").replace("=>","@").replace("(","_").replace(")","_")
     }
     
-    def logPathForGoalWitness( track: TrackDescriptor, goalName : String, witness : Witness ) : File = {
-        new File(rootedPathForGoalWitness( LogWrapper.rootDirectory.getPath ,track, goalName, witness))
+    def logPathForGoalWitness( track: TrackDescriptor, goalName : String, witness : Witness ) : Path = {
+        rootedPathForGoalWitness( LogWrapper.rootDirectory ,track, goalName, witness)
     }
     
-    def hdfsPathForGoalWitness( track: TrackDescriptor, goalName : String, witness : Witness ) : String = {
+    def hdfsPathForGoalWitness( track: TrackDescriptor, goalName : String, witness : Witness ) : Path = {
         rootedPathForGoalWitness( hdfsRootDirectory ,track, goalName, witness)
     }
     
-    def rootedPathForGoalWitness(root: String, track: TrackDescriptor, goalName : String, witness : Witness ) : String = {
-        val goalFile = new File( root + "/" + pathString(track.trackName) + "/" + pathString(goalName) )
-        goalFile.mkdirs
-        goalFile.getPath() +  "/" + pathString(witness.toString ) 
+    def rootedPathForGoalWitness(root: Path, track: TrackDescriptor, goalName : String, witness : Witness ) : Path = {
+        val goalFile =  root / pathString(track.trackName) / pathString(goalName) 
+        localFS.mkdirs( goalFile)
+        goalFile / pathString(witness.toString ) 
     }
     
     
     def uploadToHdfs( track : Track, goal : Goal, witness : Witness ) = {
       try {
-        val localPath = logPathForGoalWitness( track.descriptor, goal.name, witness)
-        val destPath = hdfsPathForGoalWitness( track.descriptor, goal.name, witness)
-        ///hdfs.fs.copyFromLocalFile( false, true, new Path( localPath.getPath ), new Path( destPath))
+        val localPath : Path = logPathForGoalWitness( track.descriptor, goal.name, witness)
+        val destPath : Path = hdfsPathForGoalWitness( track.descriptor, goal.name, witness)
+        LocalFileSystem.copyToFileSystem( track.hdfs, localPath, destPath) 
       } catch {
         case unexpected : Throwable =>
           System.out.println(" Unexpected error copying logs ot HDFS" + unexpected)
@@ -109,7 +104,7 @@ object LogWrapper {
     
     /// Parse the path, in order to determine the goals and Witness
     //// XXX Change to tuple2[String,Witness] and add  Trackname 
-    def getGoalFromPath( path : File ) : Tuple3[String,String,String] = {
+    def getGoalFromPath( path : Path ) : Tuple3[String,String,String] = {
        if( path.toString.startsWith( rootDirectory.toString )) {
            val splitArr = path.toString.substring( rootDirectory.toString.length).split("/")
            val  gw = new Tuple3[String,String,String]( splitArr(0) , splitArr(1), splitArr(2))
@@ -121,10 +116,10 @@ object LogWrapper {
     }
     
    def getGoalLogMap( trackName : String ) : Map[String,List[String]] = {
-     val trackPath = new File( rootDirectory + "/"  + pathString( trackName))
-     if( trackPath.exists) {
-       trackPath.listFiles.map(  _.getName).map( gname => { 
-         ( gname, getLogPathsForGoal(trackName, gname))
+     val trackPath =  rootDirectory / pathString( trackName)
+     if( localFS.exists( trackPath) ) {
+       localFS.listFiles( trackPath).map(  _.path.name).map( gname => { 
+         ( gname, getLogPathsForGoal(trackName, gname).map( _.path.name ).toList )
        } ) toMap
        
      } else {
@@ -133,20 +128,10 @@ object LogWrapper {
      
    }
     
-   def getLogPathsForGoal( trackName : String, goalName : String )  : List[String] = {
-     //// XXX Use FileSystem abstraction 
-     /// and paths 
-     val goalPath = new File( rootDirectory + "/" +pathString( trackName) + "/" + pathString( goalName) )
-     ///println(" Goal Path is " + goalPath.getPath)
-     if( !goalPath.exists) {
-       println(s"Creating Log directory $goalPath")
-       goalPath.mkdirs
-     }
-     ///val goalTuple = get
+   def getLogPathsForGoal( trackName : String, goalName : String )  : Seq[FileStatus] = {
+     val goalPath : Path =  rootDirectory / pathString( trackName) / pathString( goalName) 
      
-     ///goalPath.listFiles.map( getGoalFromPath( _ )).map( _._2).toSet
-     
-     goalPath.listFiles.map( _.getPath ).toList
+     localFS.listFiles( goalPath)
    }
    
    /**

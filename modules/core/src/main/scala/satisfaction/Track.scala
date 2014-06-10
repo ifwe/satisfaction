@@ -84,12 +84,7 @@ case class Track(
         allGoals0(topLevelGoals.toList, Set.empty)
     }
 
-    //// XXX internal/external goals are broken
-    ///lazy val internalGoals: Set[Goal] = allGoals filter ((_.satisfier != null) && _.satisfier.isDefined)
-
-    ///lazy val externalGoals: Set[Goal] = allGoals filter (_.satisfier.isEmpty)
     val externalGoals :Set[Goal] = Set.empty
-    
     
     def getWitnessVariables : Set[Variable[_]] = {
       topLevelGoals.flatMap( _.variables ).toSeq.distinct.toSet
@@ -114,14 +109,6 @@ case class Track(
        _trackPath = path
      }
      
-     /**
-     def readProperties( pathString : String ) = {
-       //// XXX FIXME -- Reading from fileinputstream
-       _trackProperties = Witness( Substituter.readProperties(new FileInputStream( pathString )))
-     }
-     * *
-     */
-     
      def setTrackProperties( props : Witness) = {
     	  _trackProperties = props
      }
@@ -132,12 +119,14 @@ case class Track(
     * 
     */
    def getResource(   resourceFile : String ) : String  = {
-      println(" GET HDFS is " + hdfs)
       new String(hdfs.readFile( resourcePath / resourceFile ))
    }
    
+   def hasResource( resourceFile : String ) : Boolean  = {
+      hdfs.exists( resourcePath / resourceFile ) 
+   }
+   
    def listResources : Seq[String]  = {
-      println(" LIST  HDFS is " + hdfs)
       hdfs.listFiles(  resourcePath ).map( _.path.name )
    }
    
@@ -145,11 +134,11 @@ case class Track(
      if( _trackProperties != null) {
        val resourceDir = _trackProperties.raw.get("satisfaction.track.resource") match {
          case Some(path) => path
-         case None => "resource" 
+         case None => "resources" 
        } 
        _trackPath /  resourceDir
      } else {
-       _trackPath /  "resource"
+       _trackPath /  "resources"
      }
    }
    
@@ -165,13 +154,6 @@ case class Track(
      }
    }
 
-   /**
-   def listJars : Seq[java.net.URI]  = {
-      println(" LIST  LIBS HDFS is " + hdfs)
-      hdfs.listFiles(  libPath ).map( _.path.toUri )
-   }
-   * 
-   */
    
     def getTrackProperties(witness: Witness): Witness = {
       

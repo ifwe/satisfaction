@@ -1,4 +1,4 @@
-@(projName : String,  goalList : List[String], dependList : List[String]  )
+@(trackDesc : com.klout.satisfaction.TrackDescriptor,  goalList : List[String], dependList : List[String]  )
 
 @import helper._
 @import scala.collection.JavaConversions._
@@ -6,10 +6,11 @@
 
 
 
-@main( "Track " + projName ) {
+@main( s"Track ${trackDesc.trackName} ") {
     
      <h1>Satisfaction !!!</h1>
-    <h1>Track @projName  </h1>
+    <h1>Track @trackDesc.trackName  </h1>
+    <h2>Version @trackDesc.version </h2>
   <table>  
    <tr><td><h3>Goals</h3></td>
     <td>
@@ -19,7 +20,7 @@
    <td>
     <ul>
       @goalList.map { goal =>
-     	 <li><a href="satisfygoal/@projName/@goal" target="_blank">@goal </a> </li> 	  
+     	 <li><a href="satisfygoal/@trackDesc.trackName/@goal" target="_blank">@goal </a> </li> 	  
       }
     </ul>
     </td>
@@ -36,8 +37,8 @@
     </tr>
  </table>    
  
- <button id="listFiles" onClick="window.open('/listfiles/@projName')">List Files</button>
- <button id="logHistory" onClick="window.open('/loghistory/@projName')">Log History</button>
+ <button id="listFiles" onClick="window.open('/listfiles/@trackDesc.trackName')">List Files</button>
+ <button id="logHistory" onClick="window.open('/loghistory/@trackDesc.trackName')">Log History</button>
  
     
 }

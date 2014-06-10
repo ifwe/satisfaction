@@ -24,6 +24,7 @@ trait Logging {
  
  def error(message:String, values:Any*) = 
      log.error(message, values.map(_.asInstanceOf[Object]).toArray)
+
  def error(message:String, error:Throwable) = log.error(message, error)
 
 }

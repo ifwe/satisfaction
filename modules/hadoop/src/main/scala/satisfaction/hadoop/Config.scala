@@ -20,7 +20,9 @@ import satisfaction.hadoop.hdfs.Hdfs
  */
 object Config  extends Logging {
     def initHiveConf: HiveConf = {
-        print(ShimLoader.getMajorVersion())
+        
+     
+        info( s" Major Version is ${ShimLoader.getMajorVersion()}" )
         val hc = new HiveConf(new Configuration(), this.getClass())
         
         val hadoopDir = hadoopConfDir 
@@ -70,7 +72,7 @@ object Config  extends Logging {
           if(sys.env.contains("HADOOP_HOME")) {
               new File( sys.env("HADOOP_HOME") + "/etc/hadoop")   
           } else {
-            null
+             new File( "/usr/lib/hadoop/etc/hadoop" )
           }
        }
     }

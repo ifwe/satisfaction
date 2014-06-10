@@ -20,6 +20,8 @@ import models.VariableFormHandler
 import collection._
 import play.mvc.Results
 import models.HtmlUtil
+import fs.LocalFileSystem
+import fs._
 
 object SatisfyGoalPage extends Controller {
 
@@ -87,7 +89,7 @@ object SatisfyGoalPage extends Controller {
     
     
     def goalHistory( trackName : String, goalName : String ) =  {
-         val goalPaths = LogWrapper.getLogPathsForGoal( trackName, goalName).toList
+         val goalPaths = LogWrapper.getLogPathsForGoal( trackName, goalName).map( _.path.toString ).toList
          Ok( views.html.goalhistory( trackName, goalName, goalPaths) )
       
     }
@@ -163,8 +165,9 @@ object SatisfyGoalPage extends Controller {
     def readLogFile(track : TrackDescriptor, goalName: String, witness: Witness): Option[String] = {
         val logFile = LogWrapper.logPathForGoalWitness(track, goalName, witness)
 
-        if (logFile.exists()) {
-            Some( io.Source.fromFile(logFile).getLines.mkString("<br>\n"))
+        if ( LocalFileSystem.exists( logFile )) {
+          ///// XXXX 
+            Some( io.Source.fromFile(new java.io.File(logFile.toString)).getLines.mkString("<br>\n"))
         } else {
             None
         }

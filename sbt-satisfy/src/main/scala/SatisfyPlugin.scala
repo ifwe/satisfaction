@@ -98,8 +98,8 @@ object SatisfyPlugin extends sbt.Plugin {
      uploadPackageBin <<= uploadPackageBin.dependsOn(packageBin in Compile),
      
      uploadTrack <<= ( trackName, streams ) map uploadTask,
-     uploadTrack <<= uploadTrack.dependsOn( uploadPackageBin ),
      uploadTrack <<= uploadTrack.dependsOn( uploadJars ),
+     uploadTrack <<= uploadTrack.dependsOn( uploadPackageBin ),
      uploadTrack <<= uploadTrack.dependsOn( uploadResources ),
      uploadTrack <<= uploadTrack.dependsOn( uploadProperties )
   )
@@ -159,12 +159,12 @@ object SatisfyPlugin extends sbt.Plugin {
     val destFS = FileSystem.get(hdfsURI, hadoopConfiguration)
     if( ! destFS.exists(  destPath )) {
          strms.log.info(" Creating path " + destPath)
-         destFS.mkdirs(destPath) 
+         ///destFS.mkdirs(destPath) 
      } else {
        if(overwrite) {
          strms.log(s"Overwriting existing track project path  $destPath")
-         destFS.delete( destPath)
-         destFS.mkdirs(destPath) 
+         ///destFS.delete( destPath)
+         ///destFS.mkdirs(destPath) 
        } else {
          strms.log(s" Track path $destPath already exists! Aborting !!")
          throw new RuntimeException(s" Track path $destPath already exists! Aborting !!")
@@ -173,7 +173,7 @@ object SatisfyPlugin extends sbt.Plugin {
      }
      srcFiles.foreach( file => {
        if( file.isFile ) {
-          strms.log.info(" Uploading File " + file.getPath)
+          strms.log.info(s" Uploading File ${file.getPath} to destination path ${destPath}." )
           val outStream = destFS.create( new Path( destPath.toString + "/" + file.getName ))
           val inStream = new FileInputStream( file)
           IO.transfer(inStream,outStream) 

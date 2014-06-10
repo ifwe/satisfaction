@@ -21,6 +21,10 @@ object HiveGoal {
 
         implicit val hiveConf : HiveConf =  Config(track)
         val driver =  HiveDriver(hiveConf) 
+        
+        //// Hack to set the track XXX FIXME
+        driver.asInstanceOf[HiveLocalDriver].track = track
+        
         val hiveSatisfier = new HiveSatisfier(queryResource,
             driver)
         
