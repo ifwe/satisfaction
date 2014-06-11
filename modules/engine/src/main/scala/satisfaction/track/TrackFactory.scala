@@ -151,10 +151,10 @@ case class TrackFactory(val trackFS : FileSystem,
          error( s"No properties file found for Track found under ${trackPath.toUri.toString} for descripter ${trackDesc} ")
          return None
       }
+      info( s" Loading track properties at $propPath ")
       
       val inStream = trackFS.open( propPath)
       val trackProps = Substituter.readProperties( inStream)
-
 
       val trackClassName = trackProps.get( "satisfaction.track.class") match {
         case Some(name) => name
@@ -165,7 +165,7 @@ case class TrackFactory(val trackFS : FileSystem,
       val trackJar = trackProps.get( "satisfaction.track.jar").getOrElse("lib")
      
       val jarPath = trackPath / trackJar
-      println(s" Getting track from jar ${jarPath.toUri} ")
+      info(s" Getting track from jar ${jarPath.toUri} ")
       val trackClazzOpt = loadTrackClass( trackPath  / trackJar, trackClassName )
       trackClazzOpt match {
         case Some(trackClazz)  =>

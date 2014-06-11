@@ -243,13 +243,6 @@ object Hdfs {
      new Hdfs(getFileSystem(hiveConf) )( hiveConf)
   }
   
-  /**
-  def apply( hdfsUrl : String ) : Hdfs = {
-      new Hdfs( hdfsUrl)(hiveConf)
-  }
-  * *
-  */
-  
   /** 
    *  Get the implied FileSystem URI from a Configuration,
    *   Check for fs.defaultFS first, and then fallback to 

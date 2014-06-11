@@ -197,10 +197,14 @@ object SatisfyPlugin extends sbt.Plugin {
     val destFS = FileSystem.get(hdfsURI, hadoopConfiguration)
      srcFiles.foreach( file => {
        if( file.isFile ) {
-          ///strms.log.info(s" Uploading File ${file.getPath} to destination path ${destPath}." )
+          strms.log.info(s" Uploading File ${file.getPath} to destination path ${destPath}." )
           val outStream = destFS.create( new Path( destPath.toString + "/" + file.getName ))
           val inStream = new FileInputStream( file)
+          
           IO.transfer(inStream,outStream) 
+          
+          outStream.close
+          inStream.close
        } else if( file.isDirectory) {
          val dirContents = file.listFiles.toSeq
          uploadFiles( hdfsURI, destPath, dirContents, strms) 

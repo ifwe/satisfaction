@@ -108,7 +108,7 @@ class HiveLocalDriver( val hiveConf : HiveConf = Config.config)
     }
     
     def sourceFile( resourceName : String ) : Boolean = {
-       println(s" Sourcing resource $resourceName")
+       info(s" Sourcing resource $resourceName")
        if( track.hasResource( resourceName ) ) {
          val readFile= track.getResource( resourceName) 
          
@@ -124,7 +124,7 @@ class HiveLocalDriver( val hiveConf : HiveConf = Config.config)
       
        /// Not sure this works with multiple Hive Goals ...
        /// Hive Driver is somewhat opaque
-       println(" Aborting all jobs for Hive Query ")
+       info(" Aborting all jobs for Hive Query ")
        HadoopJobExecHelper.killRunningJobs()
       
     }
@@ -132,17 +132,15 @@ class HiveLocalDriver( val hiveConf : HiveConf = Config.config)
     override def executeQuery(query: String): Boolean = {
         try {
 
-            println(s"HIVE_DRIVER :: Executing Query $query")
+            info(s"HIVE_DRIVER :: Executing Query $query")
             if (query.trim.toLowerCase.startsWith("set")) {
                 val setExpr = query.trim.split(" ")(1)
                 val kv = setExpr.split("=")
-                println(s" Setting configuration ${kv(0)} to ${kv(1)} ")
+                info(s" Setting configuration ${kv(0)} to ${kv(1)} ")
                 sessionState.getConf.set(kv(0), kv(1))
                 return true
             }
             if( query.trim.toLowerCase.startsWith("source") ) {
-              /// XXX TODO source the file ...
-              ///  Get from track ???
               val cmdArr = query.split(" ")
               if(cmdArr.size != 2 ) {
                 warn(s" Unable to interpret source command $query ")
@@ -156,8 +154,6 @@ class HiveLocalDriver( val hiveConf : HiveConf = Config.config)
             val response = driver.run(query)
             println(s"Response Code ${response.getResponseCode} :: SQLState ${response.getSQLState} ")
             if (response.getResponseCode() != 0) {
-                println(" STACK TRACES = " + sessionState.getStackTraces())
-                println("  CMD = " + sessionState.getCmd)
                 println("Error while processing statement: " + response.getErrorMessage(), response.getSQLState(), response.getResponseCode());
                 if(sessionState.getStackTraces != null)
                    sessionState.getStackTraces.foreach( { case( stackName , stackTrace) => {
@@ -174,7 +170,7 @@ class HiveLocalDriver( val hiveConf : HiveConf = Config.config)
         } catch {
             ///case sqlExc: HiveSQLException =>
             case sqlExc: Exception =>
-                println("Dammit !!! Caught Hive SQLException " + sqlExc.getMessage())
+                error("Dammit !!! Caught Hive SQLException " + sqlExc.getMessage())
                 sqlExc.printStackTrace
                 sqlExc.printStackTrace(System.out)
                 sqlExc.printStackTrace(System.err)
