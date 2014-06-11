@@ -38,12 +38,10 @@ object SatisfyPlugin extends sbt.Plugin {
        hadoopConf.setClassLoader( newCl)
        
        val hadoopDir = hadoopConfDir 
-        println(s"HADOOP Config Directory = $hadoopDir")
         if( hadoopDir != null && hadoopDir.exists  && hadoopDir.isDirectory) {
            HadoopResources.foreach( res => {
               val resFile = new File(hadoopDir.getPath + "/" + res)
               if(resFile.exists() ) {
-                println(s" Adding resource ${resFile.getPath} ")
                 hadoopConf.addResource( new FileInputStream(resFile))
               }
            } )
@@ -62,19 +60,26 @@ object SatisfyPlugin extends sbt.Plugin {
     lazy val trackVariant = SettingKey[String]("track-variant", "The name of the track variant " )
     lazy val trackUser = SettingKey[String]("track-user", "The name of the track user setting, if desired " )
     lazy val overwriteTrack = SettingKey[Boolean]("track-overwrite", "Flag to overwrite track if it exists" )
+
+    /// XXX FIXME
+    lazy val uploadExcludes = SettingKey[Seq[ModuleID]]("upload-excludes", "List of modules to exclude from uploading to HDFS" )
     
-    lazy val trackPath = TaskKey[Path]("project-track-path", "The base path for a track" )
+    lazy val uploadDependencies = TaskKey[Classpath]("upload-dependencies", "The classpath of the dependent jars to be uploaded to HDFS" )
+    
+    lazy val trackPath = TaskKey[Path]("track-path", "The base path for a track" )
     lazy val uploadJarsPath = TaskKey[Path]("upload-jars-path", "The path which track jars are uploaded to" )
     lazy val uploadResourcePath = TaskKey[Path]("upload-resource-path", "The path which track resources are uploaded to" )
 
     lazy val uploadTrack = TaskKey[Unit]("upload", "Upload all files  to HDFS") 
     lazy val uploadProperties = TaskKey[Unit]("upload-properties", "Upload the satisfaction.properties file to HDFS")
-    lazy val uploadPackageBin = TaskKey[Unit]("upload-package-bin", "Upload the target jar file to HDFS")
     lazy val uploadJars = TaskKey[Unit]("upload-jars", "Upload the dependency jar directory to HDFS")
+    lazy val uploadPackage = TaskKey[Unit]("upload-package", "Upload the built package to HDFS")
     lazy val uploadResources = TaskKey[Unit]("upload-resources", "Upload the resource directory structure to HDFS")
+    lazy val cleanUpload = TaskKey[Unit]("clean-upload", "Clean up the upload directory on HDFS")
     
     
   }
+
   import SatisfyKeys._
   
   def satisfySettings : Seq[Setting[_]] = Seq(
@@ -90,20 +95,35 @@ object SatisfyPlugin extends sbt.Plugin {
      uploadJarsPath <<= ( trackPath) map appendPathTask("lib"),
      uploadResourcePath <<= ( trackPath) map appendPathTask("resources"),
      
-     uploadJars <<= ( hdfsURI, uploadJarsPath , (dependencyClasspath in Runtime), overwriteTrack, streams) map uploadFilesAttributed,
      
-     uploadResources <<= ( hdfsURI, uploadResourcePath , resources in Runtime, overwriteTrack, streams) map uploadFiles,
-     uploadProperties <<= ( hdfsURI, trackPath , trackProperties, overwriteTrack, streams) map uploadSingleFilename,
-     uploadPackageBin <<= ( hdfsURI, uploadJarsPath , packageBin in Compile, overwriteTrack, streams) map uploadSingleFile,
-     uploadPackageBin <<= uploadPackageBin.dependsOn(packageBin in Compile),
+     /// Exclude 
+     /// XXX JDB filter these modules out of uploaded jars ...
+     uploadExcludes := Seq(  ( "com.klout.satisfaction" %% "satisfaction-core" % "*" ) ,
+            ( "com.klout.satisfaction" %% "satisfaction-engine" % "*" ),
+            ( "com.klout.satisfaction" %% "satisfaction-hadoop" % "*" ),
+            ( "org.apache.hadoop" %% "*" % "*" )
+       ),
+
+     uploadDependencies <<= dependencyClasspath in Runtime,
      
-     uploadTrack <<= ( trackName, streams ) map uploadTask,
-     uploadTrack <<= uploadTrack.dependsOn( uploadJars ),
-     uploadTrack <<= uploadTrack.dependsOn( uploadPackageBin ),
-     uploadTrack <<= uploadTrack.dependsOn( uploadResources ),
-     uploadTrack <<= uploadTrack.dependsOn( uploadProperties )
+     uploadJars <<= ( hdfsURI, uploadJarsPath , uploadDependencies,  streams) map uploadFilesAttributed,
+     
+     uploadResources <<= ( hdfsURI, uploadResourcePath , resources in Runtime,  streams) map uploadFiles,
+     uploadProperties <<= ( hdfsURI, trackPath , trackProperties, streams) map uploadSingleFilename,
+     uploadPackage <<= ( hdfsURI, uploadJarsPath, (packageBin in Compile), streams) map uploadSingleFile,
+     
+     cleanUpload <<= ( hdfsURI, trackPath , overwriteTrack , streams) map cleanUploadPath,
+     
+     uploadTrack <<= (( trackName, streams ) map uploadTask ) 
+     	   dependsOn uploadProperties
+           dependsOn uploadJars 
+           dependsOn uploadPackage
+           dependsOn uploadResources
+           dependsOn cleanUpload
+           dependsOn (packageBin in Compile)
   )
   
+
   override lazy val settings = satisfySettings
   
   def uploadTask( trackName: String, strms : TaskStreams ) = {
@@ -138,48 +158,52 @@ object SatisfyPlugin extends sbt.Plugin {
     new Path( sb.toString)
   }
   
-  def uploadSingleFilename( hdfsURI : java.net.URI, destPath : Path,  filename : String , overwrite : Boolean, strms: TaskStreams) : Unit = {
+  def uploadSingleFilename( hdfsURI : java.net.URI, destPath : Path,  filename : String,  strms: TaskStreams) : Unit = {
     val singleFile = Seq(new java.io.File(filename))
-    uploadFiles(hdfsURI, destPath, singleFile, overwrite, strms )
+    uploadFiles(hdfsURI, destPath, singleFile, strms )
   }
 
-  def uploadSingleFile( hdfsURI : java.net.URI, destPath : Path,  file:java.io.File , overwrite : Boolean, strms: TaskStreams) : Unit = {
-    uploadFiles(hdfsURI, destPath, Seq(file), overwrite, strms )
+  def uploadSingleFile( hdfsURI : java.net.URI, destPath : Path,  file:java.io.File, strms: TaskStreams) : Unit = {
+    uploadFiles(hdfsURI, destPath, Seq(file), strms )
   }
   
-  def uploadFilesAttributed( hdfsURI : java.net.URI, destPath : Path,  srcFiles: Seq[Attributed[java.io.File]] , overwrite : Boolean, strms: TaskStreams) : Unit = {
+
+  def uploadFilesAttributed( hdfsURI : java.net.URI, destPath : Path,  srcFiles: Seq[Attributed[java.io.File]], strms: TaskStreams) : Unit = {
     val unattributed = srcFiles.map( _.data  )
-     uploadFiles(hdfsURI, destPath, unattributed, overwrite, strms )
+     uploadFiles(hdfsURI, destPath, unattributed, strms )
   }
   
-  
-  def uploadFiles( hdfsURI : java.net.URI, destPath : Path,  srcFiles: Seq[java.io.File] , overwrite : Boolean, strms: TaskStreams) : Unit = {
-    try {
-    strms.log.info("Uploading to HDFS "+ hdfsURI.toString + " at path " + destPath.toString )
+  def cleanUploadPath( hdfsURI : java.net.URI, destPath : Path, overwrite : Boolean, strms : TaskStreams ) : Unit = {
+    strms.log.info("Cleaning HDFS "+ hdfsURI.toString + " at path " + destPath.toString )
     val destFS = FileSystem.get(hdfsURI, hadoopConfiguration)
     if( ! destFS.exists(  destPath )) {
          strms.log.info(" Creating path " + destPath)
-         ///destFS.mkdirs(destPath) 
+         destFS.mkdirs(destPath) 
      } else {
        if(overwrite) {
          strms.log(s"Overwriting existing track project path  $destPath")
-         ///destFS.delete( destPath)
-         ///destFS.mkdirs(destPath) 
+         destFS.delete( destPath)
+         destFS.mkdirs(destPath) 
        } else {
          strms.log(s" Track path $destPath already exists! Aborting !!")
          throw new RuntimeException(s" Track path $destPath already exists! Aborting !!")
        }
-       
      }
+  }
+  
+  def uploadFiles( hdfsURI : java.net.URI, destPath : Path,  srcFiles: Seq[java.io.File] , strms: TaskStreams) : Unit = {
+    try {
+    strms.log.info("Uploading to HDFS "+ hdfsURI.toString + " at path " + destPath.toString )
+    val destFS = FileSystem.get(hdfsURI, hadoopConfiguration)
      srcFiles.foreach( file => {
        if( file.isFile ) {
-          strms.log.info(s" Uploading File ${file.getPath} to destination path ${destPath}." )
+          ///strms.log.info(s" Uploading File ${file.getPath} to destination path ${destPath}." )
           val outStream = destFS.create( new Path( destPath.toString + "/" + file.getName ))
           val inStream = new FileInputStream( file)
           IO.transfer(inStream,outStream) 
        } else if( file.isDirectory) {
          val dirContents = file.listFiles.toSeq
-         uploadFiles( hdfsURI, destPath, dirContents, overwrite, strms) 
+         uploadFiles( hdfsURI, destPath, dirContents, strms) 
        }
      })
      
