@@ -5,7 +5,6 @@ package track
 import org.joda.time._
 import engine.actors.GoalStatus
 import engine.actors.GoalState
-
 import scala.slick.driver.H2Driver.simple._
 import scala.slick.jdbc.{GetResult, StaticQuery => Q}
 import scala.slick.jdbc.JdbcBackend.Database
@@ -14,6 +13,8 @@ import java.sql.Connection
 import java.sql.DriverManager
 import java.sql.ResultSet
 import Q.interpolation
+import scala.slick.jdbc.meta.MTable
+import java.sql.Timestamp
 
 
 
@@ -27,16 +28,25 @@ class JDBCSlickTrackHistory extends TrackHistory{
  //encapsulate driver information
 	object H2DriverInfo {
 	  
-	  class TrackHistoryTable (tag: Tag) extends Table[(Int, String)](tag, "TrackHistoryTable") {
-		  def id : Column[Int]= column[Int]("id", O.PrimaryKey)
+	  class TrackHistoryTable (tag: Tag) extends Table[(Int, String, String, String, String, String, String, Timestamp, Timestamp, String)](tag, "TrackHistoryTable") { // autoincrement is broken. I can't have id.? ~ for some reason...
+		  def id : Column[Int]= column[Int]("id", O.PrimaryKey, O.AutoInc)
 		  def trackName : Column[String] = column[String]("trackName")
+		  def forUser: Column[String] = column[String]("forUser")
+		  def version: Column[String] = column[String]("version")
+		  def variant: Column[String] = column[String]("variant")
+		  def goalName: Column[String] = column[String]("goalName")
+		  def witness: Column[String] = column[String]("witness")
+		  def startTime: Column[Timestamp] = column[Timestamp]("startTime")
+		  def endTime: Column[Timestamp] = column[Timestamp]("endTime")
+		  def state: Column[String] = column[String]("state")
 		  
-		  def * : ProvenShape[(Int, String)] = (id, trackName)
+		  def * : ProvenShape[(Int, String, String, String, String, String, String, Timestamp, Timestamp, String)] = (id, trackName, forUser, version, variant, goalName, witness, startTime, endTime, state)
+		  
 		}
 	  
 	  
 	  val JDBC_DRIVER : String =  "org.h2.Driver"
-	  val DB_URL : String = "jdbc:h2:mem:engine" //change this to a file url, for persistence!
+	  val DB_URL : String = "jdbc:h2:file:data/sample" //change this to a file url, for persistence!
 	  val USER : String = "sa"
 	  val PASS : String = ""
 	  val mainTable : String = "TrackHistoryTable"
@@ -45,17 +55,12 @@ class JDBCSlickTrackHistory extends TrackHistory{
 	  var db = Database.forURL(DB_URL, driver = JDBC_DRIVER) 
 	  db withSession {
 	    implicit Session =>
-	      table.ddl.create
-	      val insertResult: Option[Int] = table ++= Seq (
-			 (1, "track1"),
-			 (2, "track2")
-			)
-
-		insertResult foreach {
-		   numRows=> println(s"inserts $numRows into the table")
-		 }
+	      if (MTable.getTables("TrackHistoryTable").list().isEmpty) {
+	    	 table.ddl.create
+	      }
+	      
 	  }
-	}
+	} // object H2Driverinfo
 	
 	
 
@@ -63,9 +68,8 @@ class JDBCSlickTrackHistory extends TrackHistory{
 	override def startRun(trackDesc : TrackDescriptor, goalName: String, witness: Witness, startTime: DateTime) : String =   {
 	 H2DriverInfo.db withSession {
 	   implicit session =>
-	     val insertResult: Option[Int] = this.H2DriverInfo.table ++= Seq (
-			 (3, "track3"),
-			 (4, "track4")
+	     val insertResult: Option[Int] = this.H2DriverInfo.table ++= Seq ( // rewite without Seq!
+			 (1, trackDesc.trackName, trackDesc.forUser, trackDesc.version, trackDesc.variant.toString(), goalName, "dummyWitness", new Timestamp(startTime.getMillis()), new Timestamp(startTime.getMillis()), GoalState.Running.toString()) // FIX ENDTIME!!!
 			)
 		insertResult foreach {
 		   numRows=> println(s"inserts $numRows into the table")
