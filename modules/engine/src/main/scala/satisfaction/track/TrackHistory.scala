@@ -7,10 +7,6 @@ import engine.actors.GoalStatus
 import engine.actors.GoalState
 
 
-import scala.slick.driver.H2Driver
-
-
-
 /**
  *  Interface to a persistent DB implementation which will store 
  *    track run history.
@@ -89,4 +85,5 @@ trait TrackHistory {
    *   by runID only
    */
    def lookupGoalRun( runID : String ) : Option[GoalRun]
+  
 }

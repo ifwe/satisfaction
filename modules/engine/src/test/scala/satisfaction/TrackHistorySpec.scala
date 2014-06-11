@@ -15,7 +15,7 @@ import org.joda.time._
 @RunWith(classOf[JUnitRunner])
 class TrackHistorySpec extends Specification {
   "TrackHistorySpec" should {
-    val trackHistory = new JDBCSlickTrackHistory
+    val trackHistory = new JDBCSlickTrackHistory()
     
     
     "insert started job into table" in  {
@@ -27,7 +27,7 @@ class TrackHistorySpec extends Specification {
       val result :String = trackHistory.startRun(trackDesc, goalName, witness, dt)
       
       result  must have length 1 // NO
-      H2DriverInfo.USER must be_==("sa") // NO
+      //H2DriverInfo.USER must be_==("sa") // NO
     }
   }
 }
