@@ -61,7 +61,7 @@ trait HiveDriver {
 
 class HiveLocalDriver( val hiveConf : HiveConf = Config.config)
       extends HiveDriver with MetricsProducing with Logging {
-
+  
     implicit var track : Track = null
   
     lazy val driver = {
@@ -267,7 +267,8 @@ object HiveDriver extends Logging {
 
     } catch {
       case e: Exception =>
-        error("Error while accessing HiveDriver", e)
+        e.printStackTrace(System.out)
+        ////error("Error while accessing HiveDriver", e)
         throw e
     }
 

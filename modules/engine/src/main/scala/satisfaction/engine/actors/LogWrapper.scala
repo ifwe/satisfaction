@@ -10,6 +10,15 @@ import scala.util.Success
 import scala.util.Failure
 import java.io.OutputStream
 import java.io.InputStream
+import ch.qos.logback.classic.Level
+import ch.qos.logback.classic.{ Logger => LogbackLogger }
+import ch.qos.logback.classic.LoggerContext
+import ch.qos.logback.classic.encoder.PatternLayoutEncoder
+import ch.qos.logback.core.ConsoleAppender
+import org.slf4j.LoggerFactory
+import org.slf4j.Logger;
+import ch.qos.logback.core.AppenderBase
+
 
 /**
  *  Divert all output from STDOUT and STDERR to a defined log file
@@ -144,6 +153,40 @@ object LogWrapper {
              kvArr(1).substring(1, kvArr(1).length -1) ) } ) 
      
      Witness( kvAss:_*)      
+   }
+   
+   class ScalaConsoleAppender[E] extends AppenderBase[E] {
+     
+       def append( event : E )  {
+         System.out.println(s" Sys.out SATISFACTION :: ${event.toString} ")
+         Console.println(s"Console.out SATISFACTION :: ${event.toString} ")
+       }
+     
+   }
+   
+   /**
+    *  If they implement our Logging trait, make sure we get their output into to correct 
+    *    Console object
+    */
+   def modifyLogger( obj : Any ) = {
+     obj match {
+       case logging : Logging => {
+         val scalaOut = Console.out
+         if( logging.log.isInstanceOf[LogbackLogger]) {
+         val logbackLogger : LogbackLogger = logging.log.asInstanceOf[LogbackLogger]  
+         logbackLogger.addAppender( new  ScalaConsoleAppender )
+         Console.println(s" Adding ${obj} with LogBack logging ")
+        } else {
+         System.out.println(s" Trying to Adding ${obj} with LogBack logging " )
+         Console.println(s" Trying to  Adding ${obj} with LogBack logging  "  )
+          
+        }
+       }
+       case _ => {
+         Console.println(s"${obj} Not a Logging interface ") 
+         System.out.println(s" ${obj} Not a Logging interface ") 
+       }
+     }
    }
     
 }

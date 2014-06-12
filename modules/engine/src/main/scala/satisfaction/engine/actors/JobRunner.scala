@@ -33,6 +33,9 @@ class JobRunner(
     var satisfierFuture: Future[ExecutionResult] = null
     var messageSender: ActorRef = null
     var startTime : DateTime = null;
+    LogWrapper.modifyLogger( track)
+    LogWrapper.modifyLogger( goal)
+    LogWrapper.modifyLogger( satisfier)
     val logger = new LogWrapper[ExecutionResult]( track, goal, witness)
 
     def receive = {
@@ -61,7 +64,7 @@ class JobRunner(
                 }
             }
         case Abort =>
-          log.warning(" Aborting Job !!!")
+          log.warning(s" Aborting Job ${goal.name} !!!")
           try {
              val abortResult : ExecutionResult = satisfier.abort()
               checkResults( Success(abortResult))
