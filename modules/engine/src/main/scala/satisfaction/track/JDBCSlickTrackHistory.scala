@@ -26,10 +26,8 @@ import java.util.Date
 
 class JDBCSlickTrackHistory extends TrackHistory{
 	
- //case class TrackHistoryTable(val id: String, val trackName: String, val forUser:String, val version:String, val variant: String, val goalName: String, val witness: String, val startTime: Timestamp, val endTime: Timestamp, val state:String) {}
 	class TrackHistoryTable (tag: Tag) extends Table[(Int, String, String, String, String, String, String, Timestamp, Timestamp, String)](tag, "TrackHistoryTable") { // autoincrement is broken. I can't have id.? ~ for some reason...
-	//object trackEntry extends Table[(Int, String, String, String, String, String, String, Timestamp, Timestamp, String)]("TrackHistoryTable") {
-  			def id : Column[Int]= column[Int]("id", O.PrimaryKey, O.AutoInc)
+  		  def id : Column[Int]= column[Int]("id", O.PrimaryKey, O.AutoInc)
 		  def trackName : Column[String] = column[String]("trackName")
 		  def forUser: Column[String] = column[String]("forUser")
 		  def version: Column[String] = column[String]("version")
@@ -41,7 +39,6 @@ class JDBCSlickTrackHistory extends TrackHistory{
 		  def state: Column[String] = column[String]("state")
 		  
 		  def * : ProvenShape[(Int, String, String, String, String, String, String, Timestamp, Timestamp, String)] = (id, trackName, forUser, version, variant, goalName, witness, startTime, endTime, state)
-		  
 		}
  //encapsulate driver information
 	object H2DriverInfo {
@@ -76,7 +73,7 @@ class JDBCSlickTrackHistory extends TrackHistory{
 		 }
 	 }
 	 
-	  "cheese"
+	  "cheese" // need to return runID, which should be the id. But autoinc is broken right now
 	}
 	
 	override def completeRun( id : String, state : GoalState.State) : String = {
@@ -89,7 +86,7 @@ class JDBCSlickTrackHistory extends TrackHistory{
 	     
 	    Q.updateNA("UPDATE \"TrackHistoryTable\" SET endTime="+new Timestamp(date.getTime())+",state="+state.toString()+" WHERE id=" + id+";")
 	  }
-	  "Cheese"
+	  "Cheese" // what should we return?
 	}
 	
 	override def goalRunsForTrack(  trackDesc : TrackDescriptor , 
@@ -106,19 +103,23 @@ class JDBCSlickTrackHistory extends TrackHistory{
 	override def lookupGoalRun(  trackDesc : TrackDescriptor ,  
               goalName : String,
               witness : Witness ) : Seq[GoalRun] = {
-	 var returnList : GoalRun = null.asInstanceOf[GoalRun]
-	 /*
-	  H2DriverInfo.db withSession {
-	   implicit session =>
-	     val g = this.H2DriverInfo.table.filter(l => (l.)).list
-	   	
-	     val trackDesc :TrackDescriptor = TrackDescriptor(g(0)._2, g(0)._3, g(0)._4, Some(g(0)._5))
-	     returnGoal = GoalRun(trackDesc, g(0)._6, null, new DateTime(g(0)._8.toLocalDateTime()), null, GoalState.WaitingOnDependencies) // rewrite endtime and goalstate
-	   }
-	  Some(returnList)
-	  null
-	  * 
-	  */
+		 var returnList : Seq[GoalRun] = null.asInstanceOf[Seq[GoalRun]]
+		 H2DriverInfo.db.withSession {
+		   implicit session =>
+		     returnList = H2DriverInfo.table.list.filter(g => (g._2 == trackDesc.trackName && // probably want filter then list for efficiency. Investigate whether type conversion in Table.Column == sting actually works
+		         										 	g._3 == trackDesc.forUser &&
+		         										 	g._4 == trackDesc.version &&
+		         										 	g._5 == trackDesc.variant &&
+		         										 	g._6 == goalName &&
+		         										 	g._7 == dummyWitnessToString(witness)
+		    		 									)).map(g => // can't print here... but should do one just to check values
+															       	GoalRun(TrackDescriptor(g._2, g._3, g._4, Some(g._5)), 
+															       	    g._6, dummyStringToWitness(g._7), new DateTime(g._8), 
+															       	    Some(new DateTime(g._9)), GoalState(g._10.toInt))
+															       ).seq
+		     
+		 }
+	 returnList
 	}
 	
 	def lookupGoalRun( runID : String ) : Option[GoalRun] = { 
@@ -128,12 +129,16 @@ class JDBCSlickTrackHistory extends TrackHistory{
 	     val g = this.H2DriverInfo.table.filter(_.id === runID.toInt).list
 	   	
 	     val trackDesc :TrackDescriptor = TrackDescriptor(g(0)._2, g(0)._3, g(0)._4, Some(g(0)._5))
-	     returnGoal = GoalRun(trackDesc, g(0)._6, null, new DateTime(g(0)._8.toLocalDateTime()), null, GoalState.WaitingOnDependencies) // rewrite endtime and goalstate
-	   }
+	     
+	     val dtStart : DateTime = new DateTime(g(0)._8)
+	     val dtEnd: Option[DateTime] = Some(new DateTime(g(0)._9))
+	     returnGoal = GoalRun(trackDesc, g(0)._6, dummyStringToWitness(g(0)._7), dtStart, dtEnd, GoalState.WaitingOnDependencies)
+	     println("my resulting trackName is:" + returnGoal.trackDescriptor.trackName)
+		}
 	  Some(returnGoal)
 	}
 	
-	//dummy method
+	//dummy method - wait for Jerome
 	def dummyWitnessToString ( witness : Witness) : String = {
 	  "cheese"
 	}

@@ -8,9 +8,7 @@ import org.specs2.runner.JUnitRunner
 import org.joda.time.Period
 import satisfaction.fs._
 import satisfaction.track
-
 import org.joda.time._
- 
 
 @RunWith(classOf[JUnitRunner])
 class TrackHistorySpec extends Specification {
@@ -25,9 +23,16 @@ class TrackHistorySpec extends Specification {
       val dt : DateTime = new DateTime(System.currentTimeMillis())
       
       val result :String = trackHistory.startRun(trackDesc, goalName, witness, dt)
-      
+      val result2 = trackHistory.lookupGoalRun(trackDesc, goalName, witness)
       result  must have length 1 // NO
-      //H2DriverInfo.USER must be_==("sa") // NO
+      
+      
+     // H2DriverInfo.USER must be_==("sa") // NO
+    }
+    
+    "find GoalRun by ID" in {
+        val goalResult  = trackHistory.lookupGoalRun("1")
+        
     }
   }
 }
