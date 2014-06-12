@@ -142,7 +142,7 @@ object ApplicationBuild extends Build {
 	  ("org.apache.hive" % "hive-shims" % hiveVersion),
 	  ("org.apache.hive" % "hive-metastore" % hiveVersion),
 	  ("org.apache.hive" % "hive-exec" % hiveVersion),
-	  ("org.apache.thrift" % "libfb303" % "0.7.0" )
+	  ("org.apache.thrift" % "libfb303" % "0.7.0"),
   ).excluding( "log4j", "*" ).excluding("org.slf4j", "*")
 
   def hiveDependencies = Seq(
@@ -166,9 +166,10 @@ object ApplicationBuild extends Build {
     ("org.quartz-scheduler" % "quartz" % "2.2.1"),
     ("ch.qos.logback" % "logback-classic" % "1.0.13" ),
    ("com.typesafe.slick" %% "slick" % "2.0.2"),
-  ("org.slf4j" % "slf4j-nop" % "1.6.4"),
   ("com.h2database" % "h2" % "1.3.170"),
-  ("org.scalatest" %% "scalatest" % "2.0" % "test")
+   ("com.typesafe.slick" %% "slick" % "2.0.2"),
+  ("org.slf4j" % "slf4j-nop" % "1.6.4"),
+    ("ch.qos.logback" % "logback-classic" % "1.0.13" )
   ) ++ testDependencies
 
 
@@ -186,12 +187,8 @@ object ApplicationBuild extends Build {
 	  ("org.apache.thrift" % "libfb303" % "0.7.0" ),
 	  ("org.antlr" % "antlr-runtime" % "3.4" ),
 	  ("org.antlr" % "antlr" % "3.0.1" ),
-
 	  ( "org.scala-lang" % "scala-reflect" % "2.10.2" ),
-          ("ch.qos.logback" % "logback-classic" % "1.0.13" )
-
-
-
+    ("ch.qos.logback" % "logback-classic" % "1.0.13" )
   ).excluding("org.apached.hadoop.hive","hive-cli").excluding("javax.jdo","jdo2-api").excluding("commons-daemon","commons-daemon").
      excluding("org.apache.hbase","hbase").excluding("org.apache.maven.wagon","*").excluding("log4j","*").excluding("org.slf4j","slf4j-log4j12")
 

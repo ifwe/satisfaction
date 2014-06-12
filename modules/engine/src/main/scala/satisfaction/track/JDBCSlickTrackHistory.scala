@@ -86,7 +86,7 @@ class JDBCSlickTrackHistory extends TrackHistory{
 	     
 	    Q.updateNA("UPDATE \"TrackHistoryTable\" SET endTime="+new Timestamp(date.getTime())+",state="+state.toString()+" WHERE id=" + id+";")
 	  }
-	  "Cheese" // what should we return?
+	  "Cheese" // what should we return? Probably the RunID; but that's broken right now
 	}
 	
 	override def goalRunsForTrack(  trackDesc : TrackDescriptor , 
@@ -103,22 +103,33 @@ class JDBCSlickTrackHistory extends TrackHistory{
 	override def lookupGoalRun(  trackDesc : TrackDescriptor ,  
               goalName : String,
               witness : Witness ) : Seq[GoalRun] = {
+			println("entering lookupGoalRun, " + trackDesc.trackName + " "+ trackDesc.forUser+ " "+ trackDesc.version+ " "+ trackDesc.variant+ " "+ goalName+ " "+ dummyWitnessToString(witness))
 		 var returnList : Seq[GoalRun] = null.asInstanceOf[Seq[GoalRun]]
 		 H2DriverInfo.db.withSession {
 		   implicit session =>
-		     returnList = H2DriverInfo.table.list.filter(g => (g._2 == trackDesc.trackName && // probably want filter then list for efficiency. Investigate whether type conversion in Table.Column == sting actually works
+		      H2DriverInfo.table.list.map(e => println(" this is an entry: " + e._1 + " " + e._2 + " "+ e._3 + " " + e._4 + " " + e._5 + " " + e._6 + " " + e._7 + " " + e._8 + " " + e._9 + " " + e._10))
+		     H2DriverInfo.table.list.filter(g => (g._2 == trackDesc.trackName && // probably want filter then list for efficiency. Investigate whether type conversion in Table.Column == sting actually works
+		         										g._3 == trackDesc.forUser &&
+		         										 	g._4 == trackDesc.version &&
+		         										 	//g._5 == trackDesc.variant && Variant is broken even though they both match "None" == "None" - must investigate
+		         										 	g._6 == goalName &&
+		         										 	g._7 == dummyWitnessToString(witness)	 
+		    		 									)).map(g => println("  found a match! " + g._1 + g._2)
+															       )
+		      returnList = H2DriverInfo.table.list.filter(g => (g._2 == trackDesc.trackName && // probably want filter then list for efficiency. Investigate whether type conversion in Table.Column == sting actually works
 		         										 	g._3 == trackDesc.forUser &&
 		         										 	g._4 == trackDesc.version &&
 		         										 	g._5 == trackDesc.variant &&
 		         										 	g._6 == goalName &&
 		         										 	g._7 == dummyWitnessToString(witness)
-		    		 									)).map(g => // can't print here... but should do one just to check values
-															       	GoalRun(TrackDescriptor(g._2, g._3, g._4, Some(g._5)), 
+		    		 									)).map(g => GoalRun(TrackDescriptor(g._2, g._3, g._4, Some(g._5)), 
 															       	    g._6, dummyStringToWitness(g._7), new DateTime(g._8), 
 															       	    Some(new DateTime(g._9)), GoalState(g._10.toInt))
 															       ).seq
 		     
 		 }
+			
+	println("   the returned set size is: " + returnList.size)
 	 returnList
 	}
 	
@@ -133,14 +144,14 @@ class JDBCSlickTrackHistory extends TrackHistory{
 	     val dtStart : DateTime = new DateTime(g(0)._8)
 	     val dtEnd: Option[DateTime] = Some(new DateTime(g(0)._9))
 	     returnGoal = GoalRun(trackDesc, g(0)._6, dummyStringToWitness(g(0)._7), dtStart, dtEnd, GoalState.WaitingOnDependencies)
-	     println("my resulting trackName is:" + returnGoal.trackDescriptor.trackName)
+	     //println("my resulting trackName is:" + returnGoal.trackDescriptor.trackName)
 		}
 	  Some(returnGoal)
 	}
 	
 	//dummy method - wait for Jerome
 	def dummyWitnessToString ( witness : Witness) : String = {
-	  "cheese"
+	  "dummyWitness"
 	}
 	
 	def dummyStringToWitness(string : String ) : Witness = {
