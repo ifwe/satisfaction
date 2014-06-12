@@ -1,6 +1,13 @@
 package willrogers
 
 import play.api._
+import scala.slick.driver.H2Driver.simple._
+
+//import play.api.db.DB
+import play.api.GlobalSettings
+import scala.slick.driver.H2Driver.simple._
+//import Database.threadLocalSession
+
 import com.klout.satisfaction._
 import com.klout.satisfaction.track.TrackFactory
 import com.klout.satisfaction.track.TrackScheduler
@@ -44,6 +51,8 @@ object Global extends GlobalSettings {
               e.printStackTrace
           }
         })
+       // lazy val database = Database.forDataSource(DB.getDataSource())
+
     }
     
     

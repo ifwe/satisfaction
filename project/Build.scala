@@ -12,6 +12,7 @@ import com.typesafe.sbt.packager.universal.Keys.stagingDirectory
 
 import play.Project._
 
+
 object ApplicationBuild extends Build {
 
   val appVersion = "2.0.1"
@@ -64,7 +65,6 @@ object ApplicationBuild extends Build {
       packageSummary := "lowenstein",
      
       libraryDependencies ++= testDependencies
-
   ) 
 
   def AppSettings = CommonSettings ++ playScalaSettings
@@ -165,12 +165,17 @@ object ApplicationBuild extends Build {
     ("com.typesafe.akka" %% "akka-actor" % "2.2.0"),
     ("org.quartz-scheduler" % "quartz" % "2.2.1"),
     ("ch.qos.logback" % "logback-classic" % "1.0.13" )
+   ("com.typesafe.slick" %% "slick" % "2.0.2"),
+  ("org.slf4j" % "slf4j-nop" % "1.6.4"),
+  ("com.h2database" % "h2" % "1.3.170"),
+  ("org.scalatest" %% "scalatest" % "2.0" % "test")
   ) ++ testDependencies
 
 
   def Dependencies = libraryDependencies ++= Seq(
       jdbc,
       anorm,
+          
 	  ("javax.jdo" % "jdo-api" % "3.0.1"),
 	 ("mysql" % "mysql-connector-java" % "5.1.18" ),
          ("com.github.nscala-time" %% "nscala-time" % "0.4.2"),
@@ -196,8 +201,8 @@ object ApplicationBuild extends Build {
       "releases"  at "http://oss.sonatype.org/content/repositories/releases",
       ////"theatr" at "http://repo.theatr.us"
       "Maven Central" at "http://repo1.maven.org/maven2",
-      "Apache Maven Repository" at "http://people.apache.org/repo/m2-snapshot-repository/"
-
+      "Apache Maven Repository" at "http://people.apache.org/repo/m2-snapshot-repository/",
+      "ScalaToolsMaven2Repository" at "http://scala-tools.org/repo-releases"
   )
 
 }

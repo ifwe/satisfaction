@@ -43,7 +43,7 @@ object ScheduleTrackPage extends Controller {
      
    def scheduleOneTrack(trackName: String, rule: String, pattern: String) = Action {
 
-     
+     println("my rule is "+rule)
     implicit val holderTrack: Track= {
       rule match {
         case cron if rule.contains("cron") =>
@@ -57,7 +57,8 @@ object ScheduleTrackPage extends Controller {
       }
     } 
       scheduler.scheduleTrack(holderTrack)
-      
+           println(" I've been scheduled!")
+
      // Later: might want to add some live feedback for to the associated views....
        val scList = scheduler.getScheduledTracks.map(_._1).toSeq
        val tdList = trackFactory.getAllTracks.diff(scList)
@@ -65,9 +66,12 @@ object ScheduleTrackPage extends Controller {
    }
    
    def unscheduleOneTrack(trackName: String) = Action {
-     scheduler.unscheduleTrack(TrackDescriptor(trackName)) //pretty sure this is broken. Need a reference to its trackDescriptor!!!!
-      val scList = scheduler.getScheduledTracks.map(_._1).toSeq
-       val tdList = trackFactory.getAllTracks.diff(scList)
+     val desc = scheduler.getScheduledTracks.filter(_._1.trackName == trackName).last._1
+     scheduler.unscheduleTrack(desc) //YY this is gonna be broken due to versioning!
+      println(" I've been unscheduled!")
+
+     val scList = scheduler.getScheduledTracks.map(_._1).toSeq
+     val tdList = trackFactory.getAllTracks.diff(scList)
      Ok(views.html.scheduletrack(tdList, scList)) 
    }
 }
