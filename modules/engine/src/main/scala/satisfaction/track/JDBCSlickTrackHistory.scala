@@ -86,7 +86,7 @@ class JDBCSlickTrackHistory extends TrackHistory{
 	     
 	    Q.updateNA("UPDATE \"TrackHistoryTable\" SET endTime="+new Timestamp(date.getTime())+",state="+state.toString()+" WHERE id=" + id+";")
 	  }
-	  "Cheese" // what should we return?
+	  "Cheese" // what should we return? Probably the RunID; but that's broken right now
 	}
 	
 	override def goalRunsForTrack(  trackDesc : TrackDescriptor , 
