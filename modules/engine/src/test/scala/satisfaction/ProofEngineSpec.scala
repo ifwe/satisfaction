@@ -13,21 +13,21 @@ import org.specs2.runner.JUnitRunner
 import org.junit.runner.RunWith
 import scala.util.Success
 import scala.util.Failure
-
-
 import com.klout.satisfaction.engine._
+import scala.concurrent.Await
+import akka.util.Timeout
 
 
 class ProofEngineSpec extends Specification {
     val NetworkAbbr = new Variable[String]("network_abbr", classOf[String])
     val DoDistcp = new Variable[Boolean]("doDistcp", classOf[Boolean])
     val runDate = new Variable[String]("dt", classOf[String])
+    val timeout : Timeout = new Timeout(Duration.create(300, "seconds"));
 
     implicit val track : Track = new Track( TrackDescriptor("TestTrack"))
 
     "ProofEngineSpec" should {
 
-      
         "get a goals status" in {
             val engine = new ProofEngine()
             val vars: List[Variable[_]] = List(NetworkAbbr, runDate)
@@ -59,11 +59,10 @@ class ProofEngineSpec extends Specification {
                 isDone=true
                 true must_== false
             } )
-            /**
-            while( !resultFuture.isCompleted) 
-            	resultFuture.wait
-            	* 
-            	*/
+
+            val status = Await.result(resultFuture, timeout.duration )
+           	status.state must_== GoalState.Success
+
         }
 
         "satisfy a goal hierarchy" in {
@@ -85,8 +84,9 @@ class ProofEngineSpec extends Specification {
                 t.printStackTrace()
                 true must_== false
             } )
-            System.out.println(" afterWait")
-            ///resultFuture.wait
+
+            val status = Await.result(resultFuture, timeout.duration )
+           	status.state must_== GoalState.Success
         }
 
         "satisfy a goal deeply nested hierarchy" in {
@@ -115,7 +115,10 @@ class ProofEngineSpec extends Specification {
                 t.printStackTrace()
                 true must_== false
             } )
-            ///resultFuture.wait
+            
+
+            val status = Await.result(resultFuture, timeout.duration )
+           	status.state must_== GoalState.Success
         }
 
         "satisfy a  three level goal hierarchy" in {
@@ -283,7 +286,7 @@ class ProofEngineSpec extends Specification {
         "already satisfied" in {
             val engine = new ProofEngine()
             val vars: List[Variable[_]] = List(NetworkAbbr, runDate)
-            val singleGoal = TestGoal.AlreadySatisfiedGoal("AlreadySatisfied", vars, 1, 1)
+            val singleGoal = TestGoal.AlreadySatisfiedGoal("AlreadySatisfiedGoal", vars, 1, 1)
 
             val witness = Witness((runDate -> "20130815"), (NetworkAbbr -> "tw"))
             val resultFuture : Future[GoalStatus] = engine.satisfyGoal(singleGoal, witness)
@@ -295,14 +298,16 @@ class ProofEngineSpec extends Specification {
                 t.printStackTrace()
                 true must_== false
             } )
-            if( ! resultFuture.isCompleted)
-               resultFuture.wait
+            
+            val status =  Await.result( resultFuture , timeout.duration)
+           	status.state must_== GoalState.AlreadySatisfied
+
         }
         
         "already satisfied blocking" in {
             val engine = new ProofEngine()
             val vars: List[Variable[_]] = List(NetworkAbbr, runDate)
-            val singleGoal = TestGoal.AlreadySatisfiedGoal("AlreadySatisfied", vars, 1, 1)
+            val singleGoal = TestGoal.AlreadySatisfiedGoal("AlreadySatisfiedBlocking", vars, 1, 1)
 
             val witness = Witness((runDate -> "20130815"), (NetworkAbbr -> "tw"))
             val result : GoalStatus = engine.satisfyGoalBlocking( singleGoal, witness, Duration(10, SECONDS))

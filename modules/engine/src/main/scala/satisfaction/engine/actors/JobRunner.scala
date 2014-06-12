@@ -33,6 +33,9 @@ class JobRunner(
     var satisfierFuture: Future[ExecutionResult] = null
     var messageSender: ActorRef = null
     var startTime : DateTime = null;
+    LogWrapper.modifyLogger( track)
+    LogWrapper.modifyLogger( goal)
+    LogWrapper.modifyLogger( satisfier)
     val logger = new LogWrapper[ExecutionResult]( track, goal, witness)
 
     def receive = {
@@ -44,13 +47,13 @@ class JobRunner(
                 satisfierFuture = future {
                     logger.log( { () => satisfier.satisfy(params) } ) match {
                       case Success(execResult) =>
-                        execResult.hdfsLogPath = logger.getHdfsLogPath 
+                        execResult.hdfsLogPath = logger.hdfsLogPath.toString
                         execResult
                       case Failure(throwable) =>
                         //// Error occurred somehow because of logging,
                         ///   or from satisfier throwing unexpected exception
                         val execResult = new ExecutionResult(goal.name, startTime )
-                        execResult.hdfsLogPath = logger.getHdfsLogPath 
+                        execResult.hdfsLogPath = logger.hdfsLogPath.toString
                         execResult.markUnexpected( throwable)
                       
                     }
@@ -61,7 +64,7 @@ class JobRunner(
                 }
             }
         case Abort =>
-          log.warning(" Aborting Job !!!")
+          log.warning(s" Aborting Job ${goal.name} !!!")
           try {
              val abortResult : ExecutionResult = satisfier.abort()
               checkResults( Success(abortResult))
@@ -78,7 +81,7 @@ class JobRunner(
         log.info("Some result =  " + result)
         if (result.isSuccess) {
             val execResult = result.get
-            execResult.hdfsLogPath = logger.getHdfsLogPath
+            execResult.hdfsLogPath = logger.hdfsLogPath.toString
             if (execResult.isSuccess ) {
                 messageSender ! new JobRunSuccess(execResult)
             } else {
@@ -89,7 +92,7 @@ class JobRunner(
              //// Error occurred with Akka Actors
             log.info(" result isFailure " + result.failed.get)
             val execResult = new ExecutionResult( "Failure executing Goal " + goal.name , new DateTime)
-            execResult.hdfsLogPath = logger.getHdfsLogPath
+            execResult.hdfsLogPath = logger.hdfsLogPath.toString
             execResult.markUnexpected( result.failed.get)
             messageSender ! new JobRunFailed(execResult)
         }

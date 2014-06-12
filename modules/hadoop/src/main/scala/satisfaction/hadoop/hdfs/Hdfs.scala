@@ -126,7 +126,6 @@ case class Hdfs(val fsURI: String)
     override def listFilesRecursively( rootPath : Path ) : Seq[FileStatus] = {
       val fullList : collection.mutable.Buffer[FileStatus] = new ArrayBuffer[FileStatus]
       listFiles( rootPath).foreach( { fs : FileStatus =>
-         println(s" Listing path $rootPath ")
          if( !fs.isDirectory ) {
            fullList += fs
          } else {
@@ -243,13 +242,6 @@ object Hdfs {
   def default : Hdfs = {
      new Hdfs(getFileSystem(hiveConf) )( hiveConf)
   }
-  
-  /**
-  def apply( hdfsUrl : String ) : Hdfs = {
-      new Hdfs( hdfsUrl)(hiveConf)
-  }
-  * *
-  */
   
   /** 
    *  Get the implied FileSystem URI from a Configuration,

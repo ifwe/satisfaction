@@ -17,7 +17,7 @@ import akka.actor.EmptyLocalActorRef
 import scala.concurrent.Future
 import ExecutionContext.Implicits.global
 
-class ProofEngine {
+class ProofEngine extends  satisfaction.Logging{
 
     val akkaSystem = ActorSystem("satisfaction")
     val proverFactory = akkaSystem.actorOf(Props[ProverFactory], "ProverFactory")
@@ -31,10 +31,10 @@ class ProofEngine {
         val response = Await.result(f, duration)
         response match {
             case s: GoalSuccess =>
-                println(" Goal Was Satisfied")
+                info(s" Goal ${goal.name} was Satisfied")
                 s.goalStatus
             case f: GoalFailure =>
-                println(" Received GoalFailure ")
+                info(s" Goal ${goal.name} received GoalFailure ")
                 f.goalStatus
         }
     }
@@ -45,11 +45,11 @@ class ProofEngine {
             val response = Await.result(f, Duration(6, HOURS))
             response match {
                 case s: GoalSuccess =>
-                    println(" Goal Was Satisfied")
+                    info(s" Goal ${goal.name} Was Satisfied")
                     ProverFactory.releaseProver(proverFactory, goal, witness)
                     s.goalStatus
                 case f: GoalFailure =>
-                    println(" Received GoalFailure ")
+                    info(s" Goal ${goal.name} received GoalFailure ")
                     f.goalStatus
             }
         }
@@ -61,11 +61,11 @@ class ProofEngine {
             val response = Await.result(f, Duration(6, HOURS))
             response match {
                 case s: GoalSuccess =>
-                    println(" Restart Goal Was Successfull" )
+                    info(s" Restart Goal ${goal.name} was Successfull" )
                     ProverFactory.releaseProver(proverFactory, goal, witness)
                     s.goalStatus
                 case f: GoalFailure =>
-                    println(" Restart Failure ")
+                    info(s" Restart Goal ${goal.name} was Failure ")
                     f.goalStatus
             }
         }
@@ -77,11 +77,11 @@ class ProofEngine {
          val response = Await.result( f, Duration( 6, HOURS))
          response match {
             case s: GoalSuccess =>
-               println(" Abort was successful ")
+               info(s" Abort Goal ${goal.name} was successful ")
                ProverFactory.releaseProver(proverFactory, goal, witness)
                s.goalStatus
             case f: GoalFailure =>
-               println(" Failure to Abort -- releasing anyway  ")
+               info(s" Failure to Abort Goal ${goal.name} -- releasing anyway  ")
                ProverFactory.releaseProver(proverFactory, goal, witness)
                f.goalStatus
          }
@@ -110,25 +110,24 @@ class ProofEngine {
         val activeActorsF = proverFactory ? GetActiveActors
 
         val activeActors = Await.result(activeActorsF, timeout.duration).asInstanceOf[Set[ActorRef]]
-        println("Getting Goals in progres ")
-        println(" Active actors are " + activeActors)
+        val allActors = activeActors.map( _.path  ).mkString(",")
+        info(" Active actors are ${allActors}")
 
         /// Get a set of futures for every actor, and ask their status
         val listOfRequests: Set[Future[StatusResponse]] = activeActors.map(ask(_, WhatsYourStatus).mapTo[StatusResponse])
         val futureList = Future.sequence(listOfRequests)
         val fMap = futureList.map(_.map(_.goalStatus))
 
-        ///Await.result( fMap, timeout.duration).asInstanceOf[Set[GoalStatus]
         var resultSet = Await.result(fMap, timeout.duration)
         
         //// Not quite what we want because we only want the ones for a particular track ...
-        println(s" REsultSet SIZE is ${resultSet.size} Active Actors = ${activeActors.size} ")
+        info(s" ResultSet size is ${resultSet.size} Active Actors = ${activeActors.size} ")
         while( resultSet.size < activeActors.size ) {
-           println(" Result Set size is " + resultSet.size)
+           info(" Result Set size is " + resultSet.size)
            resultSet = Await.result(fMap, timeout.duration)
         }
         resultSet.foreach( statResp => {
-            println(" Status = " + statResp.goalName + " :: " + statResp.witness + " :: " + statResp.state + " result = " + statResp.execResult)
+            info(s" Status = ${statResp.goalName}  :: ${statResp.witness}   :: ${statResp.state} :: result = ${statResp.execResult} ")
         })
         resultSet
     }

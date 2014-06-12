@@ -40,23 +40,13 @@ case class HiveSatisfier(queryResource: String, driver: HiveDriver)( implicit va
     }
     
     def loadSetup = {
-      try {
-        val setupScript = track.getResource("setup.hql")
-        if( setupScript != null) {
-          info(s" Running setup script $setupScript")
-          if ( !executeMultiple( setupScript) ) {
+      if( track.hasResource("setup.hql")) {
+         val setupScript = track.getResource("setup.hql")
+         info(s" Running setup script $setupScript")
+         if ( !executeMultiple( setupScript) ) {
             throw new HiveException("Trouble loading setup.hql")
-          }
-        }
-        
-      } catch { 
-        case ill : IllegalArgumentException =>
-          warn("Unable to find setup.hql", ill)
-        case unexpected:Throwable  =>
-         throw unexpected 
-          error("Unable to find setup.hql", unexpected)
-      }
-      
+         }
+       }
     }
     
 

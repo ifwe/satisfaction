@@ -111,7 +111,7 @@ class JDBCSlickTrackHistory extends TrackHistory{
 		     H2DriverInfo.table.list.filter(g => (g._2 == trackDesc.trackName && // probably want filter then list for efficiency. Investigate whether type conversion in Table.Column == sting actually works
 		         										g._3 == trackDesc.forUser &&
 		         										 	g._4 == trackDesc.version &&
-		         										 	//g._5 == trackDesc.variant &&
+		         										 	//g._5 == trackDesc.variant && Variant is broken even though they both match "None" == "None" - must investigate
 		         										 	g._6 == goalName &&
 		         										 	g._7 == dummyWitnessToString(witness)	 
 		    		 									)).map(g => println("  found a match! " + g._1 + g._2)

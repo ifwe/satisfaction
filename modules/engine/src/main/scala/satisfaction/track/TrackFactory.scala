@@ -26,7 +26,7 @@ import com.klout.satisfaction.Recurring
 case class TrackFactory(val trackFS : FileSystem, 
     val baseTrackPath : Path = Path("/user/satisfaction"),
     val schedulerOpt : Option[TrackScheduler] = None,
-    val defaultConfig : Option[Witness] =  None) {
+    val defaultConfig : Option[Witness] =  None) extends Logging {
   
   implicit val hdfs = trackFS
   val localFS = LocalFileSystem
@@ -36,9 +36,6 @@ case class TrackFactory(val trackFS : FileSystem,
        case Some(sched) => sched.trackFactory = this
      } 
   }
-   
-   ////val auxJarsPathBase : Path = LocalFileSystem.currentDirectory / "auxJars" ;
-   
    
    private val trackMap : collection.mutable.Map[TrackDescriptor,Track] = collection.mutable.HashMap[TrackDescriptor,Track]()
    
@@ -68,7 +65,6 @@ case class TrackFactory(val trackFS : FileSystem,
     *    to the implied track descriptor 
     */
    def parseTrackPath( path : Path) : TrackDescriptor = {
-     println(s" PARSE TRACK PATH $path")
      val pathStr  = path.toUri.toString 
      val tailStr = pathStr.substring( pathStr.indexOf( this.baseTrackPath.pathString) + baseTrackPath.pathString.length + 1) 
      
@@ -103,6 +99,7 @@ case class TrackFactory(val trackFS : FileSystem,
     */
    def initializeTrack( track: Track , trackMap : Map[String,String] ) = {
      println(s" Initializing Track ${track.descriptor.trackName}")
+     info(s" Initializing Track ${track.descriptor.trackName}")
 
      val trackProps : Witness =  {
          defaultConfig match {
@@ -116,9 +113,10 @@ case class TrackFactory(val trackFS : FileSystem,
      
      schedulerOpt match {
        case Some(scheduler) =>
+          info(" Scheduling Track ")
           scheduler.scheduleTrack( track)
         case None =>
-          
+          warn(" No scheduler instantiated; not scheduling") 
      }
      
      track.setTrackPath( getTrackPath( track.descriptor))
@@ -148,20 +146,27 @@ case class TrackFactory(val trackFS : FileSystem,
       if( !trackFS.exists(trackPath)) {
         throw new RuntimeException( s"No Track found under ${trackFS.uri}/${baseTrackPath} for descripter ${trackDesc} ")
       }
-      val propPath = new Path(trackPath.toUri   + "/satisfaction.properties")
+      val propPath = new Path(trackPath.toUri.toString)   / "satisfaction.properties"
       if( !trackFS.exists(propPath)) {
-        throw new RuntimeException( s"No properties file found for Track found under ${trackPath.toUri.toString} for descripter ${trackDesc} ")
+         error( s"No properties file found for Track found under ${trackPath.toUri.toString} for descripter ${trackDesc} ")
+         return None
       }
+      info( s" Loading track properties at $propPath ")
       
       val inStream = trackFS.open( propPath)
       val trackProps = Substituter.readProperties( inStream)
-      
-      val trackClassName = trackProps.get( "satisfaction.track.class").get
-      val trackJar = trackProps.get( "satisfaction.track.jar").get
+
+      val trackClassName = trackProps.get( "satisfaction.track.class") match {
+        case Some(name) => name
+        case None =>
+          error("Unable to find track class in properties file ; TrackProps is  " + trackProps)
+          return None
+      }
+      val trackJar = trackProps.get( "satisfaction.track.jar").getOrElse("lib")
      
-      val jarPath = new Path(trackPath + "/" + trackJar)
-      println(s" Getting track from jar ${jarPath.toUri} ")
-      val trackClazzOpt = loadTrackClass( new Path(trackPath  + "/" + trackJar) , trackClassName )
+      val jarPath = trackPath / trackJar
+      info(s" Getting track from jar ${jarPath.toUri} ")
+      val trackClazzOpt = loadTrackClass( trackPath  / trackJar, trackClassName )
       trackClazzOpt match {
         case Some(trackClazz)  =>
          val track = trackClazz.newInstance 
@@ -173,13 +178,16 @@ case class TrackFactory(val trackFS : FileSystem,
          track.descriptor = trackDesc
          initializeTrack( track,  trackProps)
       	 Some(track)
-        case None => None
+        case None => 
+          warn("initializeTrack returned None")
+          None
       }
       
      } catch {
        case exc : Throwable =>
          /// Unexpected 
          exc.printStackTrace(System.err)
+         error(s"Unable to instantiate Track Class s${exc.getMessage}", exc)
          None
      }
    }
@@ -248,7 +256,7 @@ case class TrackFactory(val trackFS : FileSystem,
          case e : Throwable =>
            /// XXX Case match any catch all throwable
            e.printStackTrace(System.out)
-           println(" Could not find Track class ")
+           error(" Could not find Track class ",e)
            None
      }
      
@@ -290,7 +298,7 @@ case class TrackFactory(val trackFS : FileSystem,
     				 Some(track)
     	 } else {
     		 val trackOpt = generateTrack( trackDesc)
-    		 println(" GENERATING TRACK AGAIN !!!")
+    		 info(s" Generqting track again $trackDesc ; Found $trackOpt ") 
     		 trackOpt match {
     		   case Some(track) =>
     		     trackMap.put( trackDesc, track)
@@ -299,10 +307,10 @@ case class TrackFactory(val trackFS : FileSystem,
     		 }
     	 }
      } else {
-       val latestTd = getAllTracks.filter( _.trackName.equals(trackDesc.trackName)  ).
+       val latestId = getAllTracks.filter( _.trackName.equals(trackDesc.trackName)  ).
            toList.sortWith( versionSort )(0)
-            
-       getTrack( latestTd)
+       info( s"Getting track ${trackDesc.trackName} with latest version ${latestId.version} ")     
+       getTrack( latestId)
      }
    }
 }

@@ -27,7 +27,9 @@ trait TrackHistory {
      /**
       *  DB Identifier for the run
       */
-     var runId : String = "" // make this abstract later!!!!!
+
+     var runId : String = null
+
   }
          
    /**

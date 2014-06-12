@@ -36,7 +36,7 @@ object ProjectPage extends Controller {
           val internalGoals = track.topLevelGoals.toList
           val externalGoals = track.externalGoals.toList
 
-          Ok(views.html.showproject(projName, internalGoals map (_.name), externalGoals map (_.name)))
+          Ok(views.html.showproject(trackDesc, internalGoals map (_.name), externalGoals map (_.name)))
         case None =>
           Ok( views.html.brokenproject( projName))
         }
