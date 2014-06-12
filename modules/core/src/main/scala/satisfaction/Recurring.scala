@@ -7,6 +7,10 @@ import org.joda.time.format.ISOPeriodFormat
 import org.joda.time.format.PeriodFormatter
 
 
+/**
+ *   A Schedulable is a trait which can be attached to Trait
+ *   to signify that a TrackScheduler is capable of scheduling it
+ */
 sealed trait Schedulable {
    def scheduleString : String 
 }
@@ -16,7 +20,7 @@ sealed trait Schedulable {
  *  To schedule a Track , give it the "Recurring" trait,
  *   and define a frequency and a timeOffset
  */
-trait Recurring  extends Schedulable {
+abstract trait Recurring  extends Schedulable {
   
   
     /**
@@ -41,6 +45,20 @@ trait Recurring  extends Schedulable {
 
 }
 
+/**
+ *  Define specific traits for hourly and daily frequency
+ */
+trait Hourly extends Recurring {
+   override def frequency = Temporal.hourlyPeriod
+}
+
+/**
+ * 
+ */
+trait Daily extends Recurring {
+   override def frequency = Temporal.dailyPeriod
+}
+
 object Recurring {
   
      /**
@@ -59,7 +77,7 @@ object Recurring {
  *  If one prefers to specify a cron string for the Track,
  *  One can schedule the job with
  */
-trait Cronable extends Schedulable {
+abstract trait Cronable extends Schedulable {
  
     def cronString : String
   

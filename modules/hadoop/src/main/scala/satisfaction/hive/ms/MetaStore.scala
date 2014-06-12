@@ -537,22 +537,25 @@ case class MetaStore(val hvConfig: HiveConf)  extends Logging {
 
     def getVariablesForTable(db: String, tblName: String): List[Variable[_]] = {
         val tbl = getTableByName(db, tblName)
-        val partCols = tbl.getPartitionKeys()
-        val vars = for (part <- partCols) yield {
-            //// XXX Interpret partition type from column type
-            //// Interpret "dt" as magical date type column
+        tbl.getPartitionKeys.map( part => {
             val name = part.getName
-            val typeName = part.getType
-            val comment = part.getComment
-            if (comment != null) {
-                val param = new Variable(name, classOf[String], Some(comment))
-                param
-            } else {
-                new Variable(name, classOf[String], None)
-
+            name match {
+              case "dt" => TemporalVariable.Dt
+              case "date" => TemporalVariable.Date
+              case "hour" => TemporalVariable.Hour
+              case "minute" => TemporalVariable.Minute
+              case _ => {
+                val typeName = part.getType
+                val comment = part.getComment
+                if (comment != null) {
+                    new Variable(name, classOf[String], Some(comment))
+                } else {
+                    new Variable(name, classOf[String], None)
+                }
+              }
             }
-        }
-        vars.toList
+          }
+       ).toList
     }
 }
 
