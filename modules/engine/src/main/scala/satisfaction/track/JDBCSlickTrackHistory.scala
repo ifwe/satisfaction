@@ -105,7 +105,10 @@ class JDBCSlickTrackHistory extends TrackHistory{
 		   	 returnList=H2DriverInfo.table.list.filter(g=>(g._2 == trackDesc.trackName &&
 		         								g._3 == trackDesc.forUser &&
 		         								g._4 == trackDesc.version &&
-		         								// g._5 == trackDesc.variant && trackDesc.variant
+		         								(g._5 match {
+		         										 	  case v if !(v == "None") => v == trackDesc.variant
+		         										 	  case v if (v == "None") => !trackDesc.variant.isDefined}) &&
+		         								
 		         								g._6 == goalName )).filter(g=> (startTime match { // I don't like this double filtering. Need to figure out syntax for an elegant solution.
 										    		 							  case Some(dateTime) =>
 										    		 							    new DateTime(g._8).compareTo(startTime.asInstanceOf[DateTime]) >= 0
@@ -125,22 +128,25 @@ class JDBCSlickTrackHistory extends TrackHistory{
 	override def lookupGoalRun(  trackDesc : TrackDescriptor ,  
               goalName : String,
               witness : Witness ) : Seq[GoalRun] = {
-			println("entering lookupGoalRun, " + trackDesc.trackName + " "+ trackDesc.forUser+ " "+ trackDesc.version+ " "+ trackDesc.variant+ " "+ goalName+ " "+ dummyWitnessToString(witness))
+			//println("entering lookupGoalRun, " + trackDesc.trackName + " "+ trackDesc.forUser+ " "+ trackDesc.version+ " "+ trackDesc.variant+ " "+ goalName+ " "+ dummyWitnessToString(witness))
 		 var returnList : Seq[GoalRun] = null.asInstanceOf[Seq[GoalRun]]
 		 H2DriverInfo.db.withSession {
 		   implicit session =>
-		     H2DriverInfo.table.list.map(e => println(" this is an entry: " + e._1 + " " + e._2 + " "+ e._3 + " " + e._4 + " " + e._5 + " " + e._6 + " " + e._7 + " " + e._8 + " " + e._9 + " " + e._10))
+		     //H2DriverInfo.table.list.map(e => println(" this is an entry: " + e._1 + " " + e._2 + " "+ e._3 + " " + e._4 + " " + e._5 + " " + e._6 + " " + e._7 + " " + e._8 + " " + e._9 + " " + e._10))
 		     
-		     returnList = H2DriverInfo.table.list.filter(g => (g._2 == trackDesc.trackName && // probably want filter then list for efficiency. Investigate whether type conversion in Table.Column == sting actually works
+		     returnList = H2DriverInfo.table.list.filter(g => (g._2 == trackDesc.trackName && // probably want: filter then list for efficiency. But it breaks comparison
 		         										 	g._3 == trackDesc.forUser &&
 		         										 	g._4 == trackDesc.version &&
-		         										 	//g._5 == trackDesc.variant && need to add some extra checks for Null values
+		         										 	(g._5 match {
+		         										 	  case v if !(v == "None") => v == trackDesc.variant
+		         										 	  case v if (v == "None") => !trackDesc.variant.isDefined}) &&
 		         										 	g._6 == goalName &&
 		         										 	g._7 == dummyWitnessToString(witness)
 		    		 									)).map(g => GoalRun(TrackDescriptor(g._2, g._3, g._4, Some(g._5)), 
 															       	    g._6, dummyStringToWitness(g._7), new DateTime(g._8), 
-															       	    g._9 match { case Some(timestamp) => Some(new DateTime(timestamp)) case None => null}, GoalState.withName(g._10))).seq
-
+															       	    g._9 match { case Some(timestamp) => Some(new DateTime(timestamp)) case None => null}, GoalState.withName(g._10))
+		    		 											).seq // TODO: STICK RUNID IN HERE!!!! HOW?!?!??!?!?
+		   //println("  lookingGoalRun result set is size: " + returnList.size)
 		 }	
 		returnList
 	}
@@ -151,14 +157,21 @@ class JDBCSlickTrackHistory extends TrackHistory{
 	   implicit session =>
 	     val g = this.H2DriverInfo.table.filter(_.id === runID.toInt).list
 	   	
-	     val trackDesc :TrackDescriptor = TrackDescriptor(g(0)._2, g(0)._3, g(0)._4, Some(g(0)._5))
+	     if (!g.isEmpty) {
+	    	 val trackDesc :TrackDescriptor = TrackDescriptor(g(0)._2, g(0)._3, g(0)._4, Some(g(0)._5))
 	     
-	     val dtStart : DateTime = new DateTime(g(0)._8)
-	     val dtEnd: Option[DateTime] = Some(new DateTime(g(0)._9))
-	     returnGoal = GoalRun(trackDesc, g(0)._6, dummyStringToWitness(g(0)._7), dtStart, dtEnd, GoalState.WaitingOnDependencies)
-	     //println("my resulting trackName is:" + returnGoal.trackDescriptor.trackName)
+		     val dtStart : DateTime = new DateTime(g(0)._8)
+		     val dtEnd = g(0)._9 match {
+		       case Some(timestamp) => Some(new DateTime(timestamp))
+		       case None => None
+		     }
+		     returnGoal = GoalRun(trackDesc, g(0)._6, dummyStringToWitness(g(0)._7), dtStart, dtEnd, GoalState.WaitingOnDependencies)
+		     returnGoal.runId = g(0)._1.toString
+		     Some(returnGoal)
+	     } else {
+	       None
+	     }
 		}
-	  Some(returnGoal)
 	}
 	
 	//dummy method - wait for Jerome

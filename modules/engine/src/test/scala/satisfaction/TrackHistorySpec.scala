@@ -16,7 +16,7 @@ class TrackHistorySpec extends Specification {
   "TrackHistorySpec" should {
     //set ups
     val trackHistory = new JDBCSlickTrackHistory()
-    val trackDesc : TrackDescriptor = TrackDescriptor ("testTrackName")
+    val trackDesc : TrackDescriptor = TrackDescriptor ("testTrackNameDiff")
     val goalName : String = "testGoalName"
     val witness : Witness = null
     val dt : DateTime = new DateTime(System.currentTimeMillis())
@@ -25,22 +25,27 @@ class TrackHistorySpec extends Specification {
     
       val result :String = trackHistory.startRun(trackDesc, goalName, witness, dt)
       
-    	println(" inserted a row, id was: " + result)
      // H2DriverInfo.USER must be_==("sa") // NO
     }
     "update a running jobhistory" in {
-     //val result : String = trackHistory.completeRun("2", GoalState.Success)
+     //val result : String = trackHistory.completeRun("4", GoalState.Success)
     }
     
-    "look up goal(s)" in {
-        val result2 = trackHistory.lookupGoalRun(trackDesc, goalName, witness)
+    "get Goals by time spans" in {
+        
     }
     
-    "find GoalRun by ID" in {
-       // val goalResult  = trackHistory.lookupGoalRun(1.toString)
-        //found
-        //val goalResultFalse = trackHistory.lookupGoalRun(2000.toString)
-        //not found
+    "look up goals" in {
+      "by ID" in {
+         val goalResult  = trackHistory.lookupGoalRun(1.toString)
+        goalResult should not be (None)
+        val goalResultFalse = trackHistory.lookupGoalRun(2000.toString)
+        goalResultFalse should be (None) // this looks problematic, ask about better forms
+      }
+       "by desc" in {
+         val goalListResult = trackHistory.lookupGoalRun(trackDesc, goalName, witness)
+        //result2.size should_== 25
+       }
     }
   }
 }
