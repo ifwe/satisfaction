@@ -84,7 +84,10 @@ class JDBCSlickTrackHistory extends TrackHistory{
 	   implicit session =>
 	     val date : Date = new Date()
 	     
-	    Q.updateNA("UPDATE \"TrackHistoryTable\" SET endTime="+new Timestamp(date.getTime())+",state="+state.toString()+" WHERE id=" + id+";")
+	    //Q.updateNA("UPDATE \"TrackHistoryTable\" SET endTime="+new Timestamp(date.getTime())+",state="+state.toString()+" WHERE id=" + id+";")
+	    val query = for {e <- H2DriverInfo.table if e.id == id} yield e.endTime
+	     
+	    println("  should've updated by now...")
 	  }
 	  "Cheese" // what should we return? Probably the RunID; but that's broken right now
 	}
@@ -97,8 +100,30 @@ class JDBCSlickTrackHistory extends TrackHistory{
 	override  def goalRunsForGoal(  trackDesc : TrackDescriptor ,  
               goalName : String,
               startTime : Option[DateTime], endTime : Option[DateTime] ) : Seq[GoalRun] = {
-	  null
-	}
+	  var returnList : Seq[GoalRun] = null.asInstanceOf[Seq[GoalRun]]
+	  H2DriverInfo.db.withSession {
+		   implicit session =>
+		     H2DriverInfo.table.list.map(e => println(" this is an entry: " + e._1 + " " + e._2 + " "+ e._3 + " " + e._4 + " " + e._5 + " " + e._6 + " " + e._7 + " " + e._8 + " " + e._9 + " " + e._10))
+
+		   	 returnList=H2DriverInfo.table.list.filter(g=>(g._2 == trackDesc.trackName &&
+		         								g._3 == trackDesc.forUser &&
+		         								g._4 == trackDesc.version &&
+		         								// g._5 == trackDesc.variant && trackDesc.variant
+		         								g._6 == goalName )).filter(g=> (startTime match { // I don't like this double filtering. Need to figure out syntax for an elegant solution.
+										    		 							  case Some(dateTime) =>
+										    		 							    new DateTime(g._8).compareTo(startTime.asInstanceOf[DateTime]) >= 0
+										    		 							  case None => true
+					    		 							})).filter(g=> (endTime match {
+									    		 							  case Some(dateTime) if g._9.isDefined =>
+									    		 							    new DateTime(g._9).compareTo(endTime.asInstanceOf[DateTime]) <= 0
+									    		 							  case Some(dateTime) if !g._9.isDefined => false
+									    		 							  case None => true
+					    		 							})).map(g => GoalRun(TrackDescriptor(g._2, g._3, g._4, Some(g._5)), 
+															       	    g._6, dummyStringToWitness(g._7), new DateTime(g._8), 
+															       	    g._9 match { case Some(timestamp) => Some(new DateTime(timestamp)) case None => null}, GoalState.withName(g._10))).seq
+			}
+	  returnList
+	}	
 	
 	override def lookupGoalRun(  trackDesc : TrackDescriptor ,  
               goalName : String,
@@ -107,18 +132,9 @@ class JDBCSlickTrackHistory extends TrackHistory{
 		 var returnList : Seq[GoalRun] = null.asInstanceOf[Seq[GoalRun]]
 		 H2DriverInfo.db.withSession {
 		   implicit session =>
-		     
 		     H2DriverInfo.table.list.map(e => println(" this is an entry: " + e._1 + " " + e._2 + " "+ e._3 + " " + e._4 + " " + e._5 + " " + e._6 + " " + e._7 + " " + e._8 + " " + e._9 + " " + e._10))
-		     H2DriverInfo.table.list.filter(g => (g._2 == trackDesc.trackName && // probably want filter then list for efficiency. Investigate whether type conversion in Table.Column == sting actually works
-		         										g._3 == trackDesc.forUser &&
-		         										 	g._4 == trackDesc.version &&
-		         										 	//g._5 == trackDesc.variant && Variant is broken even though they both match "None" == "None" - must investigate
-		         										 	g._6 == goalName &&
-		         										 	g._7 == dummyWitnessToString(witness)	 
-		    		 									)).map(g => println("  found a match! " + g._1 + g._2)
-															       )
-		      
-		     /* returnList = H2DriverInfo.table.list.filter(g => (g._2 == trackDesc.trackName && // probably want filter then list for efficiency. Investigate whether type conversion in Table.Column == sting actually works
+		     
+		     returnList = H2DriverInfo.table.list.filter(g => (g._2 == trackDesc.trackName && // probably want filter then list for efficiency. Investigate whether type conversion in Table.Column == sting actually works
 		         										 	g._3 == trackDesc.forUser &&
 		         										 	g._4 == trackDesc.version &&
 		         										 	//g._5 == trackDesc.variant && need to add some extra checks for Null values
@@ -126,12 +142,10 @@ class JDBCSlickTrackHistory extends TrackHistory{
 		         										 	g._7 == dummyWitnessToString(witness)
 		    		 									)).map(g => GoalRun(TrackDescriptor(g._2, g._3, g._4, Some(g._5)), 
 															       	    g._6, dummyStringToWitness(g._7), new DateTime(g._8), 
-															       	    Some(new DateTime(g._9)), GoalState(g._10.toInt))
-															       ).seq*/
-		     
-		 }
-			
-	 returnList
+															       	    g._9 match { case Some(timestamp) => Some(new DateTime(timestamp)) case None => null}, GoalState.withName(g._10))).seq
+
+		 }	
+		returnList
 	}
 	
 	def lookupGoalRun( runID : String ) : Option[GoalRun] = { 
