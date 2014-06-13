@@ -6,7 +6,6 @@ import org.joda.time._
 import engine.actors.GoalStatus
 import engine.actors.GoalState
 
-
 /**
  *  Interface to a persistent DB implementation which will store 
  *    track run history.
