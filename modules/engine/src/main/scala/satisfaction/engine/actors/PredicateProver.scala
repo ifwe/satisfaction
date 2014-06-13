@@ -16,6 +16,7 @@ import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
 import akka.util.Timeout
 import org.joda.time.DateTime
+import satisfaction.track.TrackHistory
 
 
 /**
@@ -34,9 +35,10 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
     var listenerList: Set[ActorRef] = mutable.Set[ActorRef]()
     implicit val ec: ExecutionContext = ExecutionContext.global /// ???
     implicit val timeout = Timeout(5 minutes)
+    
+    var trackHistory : TrackHistory = null
 
     def receive = {
-        /// Messages which can be sent from parents 
 
         case Satisfy =>
           try { 
@@ -97,8 +99,10 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
             }
             sender ! StatusResponse(status)
         case RestartJob =>
+          log.info(s" Received RestartJob Message ; Current state is ${status.state} " )
           status.state match {
-            case GoalState.Failed =>
+            case GoalState.Failed |
+                 GoalState.Aborted =>
               /// Restart our job Runner
                runLocalJob()
             case GoalState.DependencyFailed =>
@@ -115,34 +119,62 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
                                 case GoalState.DependencyFailed =>
                                   log.info(s"Actor $pred has dependency job failed; sending restart...")
                                   actor ! RestartJob
+                                case GoalState.Aborted =>
+                                  log.info(s"Actor $pred has been aborted; sending restart...")
+                                  actor ! RestartJob
                                 case _ =>
                                   /// don't restart if job hasn't failed 
                               }
                     }
                 status.state = GoalState.WaitingOnDependencies
             case _ =>
+              log.error( s"Invalid Request ; Job in state ${status.state} can not be restarted." )
               sender ! InvalidRequest(status,"Job needs to have failed in order to be restarted")
           }
-        case Abort =>
+          /// Make Abort fire and forget for now 
+        case Abort(killChildren) =>
+          log.info(" Received ABORT Message; State is " + status.state)
           status.state match {
             case GoalState.Unstarted |
                  GoalState.AlreadySatisfied |
                  GoalState.Success |
             	 GoalState.Failed =>
-              sender ! GoalSuccess( status)
+
+              ///sender ! GoalSuccess( status)
+            	  log.warning(s" Received Abort message, but state is ${status.state} ; Ignoring ." )
             case GoalState.Running =>
-              /// If our job is running ... kill it 
-              //// XXX Handle return messages ?
+               /// If our job is running ... kill it 
+              //// Check to see if abort was able to succeed ...
+              log.info(" Received Abort message while Job is running; Killing Job ")
+               status.state = GoalState.Aborted
                jobRunner ! Abort
-              sender ! GoalSuccess( status)
-              //// check the status after attempting to abort the job
+               /**
+               val abortResultF = jobRunner ? Abort
+               val abortResult = Await.result( abortResultF, Duration( 30, SECONDS))
+               abortResult match {
+                 case JobRunSuccess(abortSuccess) => {
+                    /// XXX Should we have abort fail ???
+                   sender ! GoalSuccess( status)
+                 }
+                 case JobRunFailed(abortFail) => {
+                   sender ! GoalFailure( status)
+                 }
+               }
+               * 
+               */
+            //// check the status after attempting to abort the job
             case GoalState.DependencyFailed  |
             	 GoalState.WaitingOnDependencies =>
-                  dependencies.foreach {
-                    case (pred, actor) =>
-                    actor ! Abort
-                  }
-              sender ! GoalSuccess( status)
+            	   log.info("Received Abort while DependenciesFailed, or WaitingOnDependencies ")
+            	   if(killChildren) {
+            	     log.info("Killing all my children.")
+                     dependencies.foreach {
+                       case (pred, actor) =>
+                         actor ! Abort
+                     }
+            	   }
+              //// XXX TODO wait for all children's results
+              ////sender ! GoalSuccess( status)
           }
 
         /// Messages which can be sent from children
@@ -176,12 +208,19 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
             publishSuccess 
         case JobRunFailed(result) =>
             log.info(s" ${goal.name} Received Goal Failed from ${result.executionName} , send to our parent  ")
-            status.state = GoalState.Failed
+            if( status.state != GoalState.Aborted)
+               status.state = GoalState.Failed
             status.execResult = result
             status.timeFinished = DateTime.now
             publishFailure
 
         case InvalidRequest =>
+          
+        case unexpected : Any => {
+          log.error(" Received Unexpected message " + unexpected)
+          log.warning(" Received Unexpected message " + unexpected)
+          log.info(" Received Unexpected message " + unexpected)
+        }
     }
 
     def publishSuccess = {
@@ -211,8 +250,10 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
             status.state = GoalState.Running
             goal.satisfier match {
                 case Some(satisfier) =>
-                    val jobRunActor = Props(new JobRunner(satisfier, track ,goal, witness, getWitness))
-                    this.jobRunner = context.system.actorOf((jobRunActor), "Satisfier_" + ProofEngine.getActorName(goal, witness))
+                    if( this.jobRunner == null) {
+                       val jobRunActor = Props(new JobRunner(satisfier, track ,goal, witness, getWitness))
+                       this.jobRunner = context.system.actorOf((jobRunActor), "Satisfier_" + ProofEngine.getActorName(goal, witness))
+                    }
                     jobRunner ! Satisfy
                 case None =>
                     //// XXX Refactor names 
@@ -223,9 +264,11 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
                     jobRunner ! Satisfy
                     * 
                     */
-                    val jobRunActor = Props(new DefaultGoalSatisfier(
-                        immutable.Set(goal.evidence.toSeq: _*), witness))
-                    this.jobRunner = context.system.actorOf(jobRunActor)
+                    if( this.jobRunner == null) {
+                       val jobRunActor = Props(new DefaultGoalSatisfier(
+                           immutable.Set(goal.evidence.toSeq: _*), witness))
+                       this.jobRunner = context.system.actorOf(jobRunActor)
+                    }
                     jobRunner ! Satisfy
             }
         }

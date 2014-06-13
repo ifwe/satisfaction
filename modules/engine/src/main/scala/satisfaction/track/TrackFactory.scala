@@ -34,6 +34,9 @@ case class TrackFactory(val trackFS : FileSystem,
   val initScheduler : Unit = {
      schedulerOpt match {
        case Some(sched) => sched.trackFactory = this
+       case None => {
+          warn(" No Scheduler available") 
+       }
      } 
   }
    

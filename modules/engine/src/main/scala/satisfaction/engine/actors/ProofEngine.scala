@@ -98,6 +98,7 @@ class ProofEngine( val trackHistoryOpt : Option[TrackHistory] = None) extends  s
     
     def restartGoal( goal : Goal, witness: Witness ) : Future[GoalStatus] = {
        future {
+            info(s" Restarting Goal ${goal.name} ( ${witness} )")
             val f = getProver( goal, witness) ? RestartJob
             val runID = startGoal( goal, witness )
             val response = Await.result(f, Duration(6, HOURS))
@@ -115,9 +116,17 @@ class ProofEngine( val trackHistoryOpt : Option[TrackHistory] = None) extends  s
         }
     }
     
-    def abortGoal( goal : Goal, witness: Witness) : Future[GoalStatus] = {
-      future {
-         val f = getProver( goal, witness ) ? Abort
+    ///def abortGoal( goal : Goal, witness: Witness) : Future[GoalStatus] = {
+    /// XXX JDB Abort is fire and forget for now 
+    def abortGoal( goal : Goal, witness: Witness) : Unit = {
+      ///future {
+         val prover = getProver( goal, witness ) 
+         info(" Prover is " + prover)
+         println(" Prover is " + prover)
+         prover ! Abort(killChildren=true)
+         info(" Prover message sent  " + prover)
+         println(" Prover message sent  " + prover)
+         /**
          val response = Await.result( f, Duration( 6, HOURS))
          response match {
             case s: GoalSuccess =>
@@ -129,8 +138,10 @@ class ProofEngine( val trackHistoryOpt : Option[TrackHistory] = None) extends  s
                ProverFactory.releaseProver(proverFactory, goal, witness)
                f.goalStatus
          }
-      }
+         */
+      ///}
     }
+    
 
     def isSatisfied( goal: Goal, witness: Witness): Boolean = {
         getStatus( goal, witness).state == GoalState.AlreadySatisfied
