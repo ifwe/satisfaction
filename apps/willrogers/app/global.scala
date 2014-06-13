@@ -2,12 +2,8 @@ package willrogers
 
 import play.api._
 import scala.slick.driver.H2Driver.simple._
-
-//import play.api.db.DB
 import play.api.GlobalSettings
 import scala.slick.driver.H2Driver.simple._
-//import Database.threadLocalSession
-
 import com.klout.satisfaction._
 import com.klout.satisfaction.track.TrackFactory
 import com.klout.satisfaction.track.TrackScheduler
@@ -16,8 +12,10 @@ import com.klout.satisfaction.hadoop.hive.ms._
 import com.klout.satisfaction.hadoop.Config
 import org.apache.hadoop.conf.{ Configuration => HadoopConfiguration }
 import com.klout.satisfaction.fs.Path
-
 import com.klout.satisfaction.hadoop.Config
+import com.klout.satisfaction.track.TrackHistory
+import com.klout.satisfaction.track.JDBCSlickTrackHistory
+import com.klout.satisfaction.engine.actors.ProofEngine
 
 object Global extends GlobalSettings {
 
@@ -36,7 +34,8 @@ object Global extends GlobalSettings {
         println(" Starting up Will Rogers;  I never metastore I didn't like ...")
         
         println(" Starting the Akka Actors")
-        val initPe = engine.actors.ProofEngine
+        
+        val initPe = proofEngine
         println(" Loading all Tracks ")
             /// 
         val initTf = trackFactory.getAllTracks
@@ -55,8 +54,11 @@ object Global extends GlobalSettings {
 
     }
     
+    //// XXX Add Driver info ...
+    val trackHistory : TrackHistory = JDBCSlickTrackHistory
+    val proofEngine = new ProofEngine(Some(trackHistory))
     
-    val trackScheduler = new TrackScheduler( engine.actors.ProofEngine)
+    val trackScheduler = new TrackScheduler( proofEngine)
       
     implicit val trackFactory : TrackFactory = {
       ///// XXX Why doesn't implicits automatically convert???

@@ -5,26 +5,29 @@ package track
 import org.joda.time._
 import engine.actors.GoalStatus
 import engine.actors.GoalState
-import scala.slick.driver.H2Driver.simple._
-import scala.slick.jdbc.{GetResult, StaticQuery => Q}
-import scala.slick.jdbc.JdbcBackend.Database
-import scala.slick.lifted.ProvenShape
+import slick.driver.H2Driver.simple._
+import slick.jdbc.{GetResult, StaticQuery => Q}
+import slick.jdbc.JdbcBackend.Database
+import slick.lifted.ProvenShape
 import java.sql.Connection
 import java.sql.DriverManager
 import java.sql.ResultSet
-import Q.interpolation
-import scala.slick.jdbc.meta.MTable
+import slick.jdbc.meta.MTable
 import java.sql.Timestamp
 import java.util.Date
 
 
 
+case class DriverInfo(
+	  val jdbcDriver : String =  "org.h2.Driver",
+	  val dbURI : String = "jdbc:h2:file:data/sample", //change this to a file url, for persistence!
+	  val user : String = "sa",
+	  val passwd : String = "",
+	  val mainTable : String = "TrackHistoryTable" 
+);
+	    
 
-//WE ARE USING H2!!!!!!@!!!!!!!!
-// look up hibernate 
-
-
-class JDBCSlickTrackHistory extends TrackHistory{
+class JDBCSlickTrackHistory( driverInfo : DriverInfo ) extends TrackHistory{
 	
 	class TrackHistoryTable (tag: Tag) extends Table[(Int, String, String, String, String, String, String, Timestamp, Timestamp, String)](tag, "TrackHistoryTable") { // autoincrement is broken. I can't have id.? ~ for some reason...
   		  def id : Column[Int]= column[Int]("id", O.PrimaryKey, O.AutoInc)
@@ -41,31 +44,24 @@ class JDBCSlickTrackHistory extends TrackHistory{
 		  def * : ProvenShape[(Int, String, String, String, String, String, String, Timestamp, Timestamp, String)] = (id, trackName, forUser, version, variant, goalName, witness, startTime, endTime, state)
 		}
  //encapsulate driver information
-	object H2DriverInfo {
-	  val JDBC_DRIVER : String =  "org.h2.Driver"
-	  val DB_URL : String = "jdbc:h2:file:data/sample" //change this to a file url, for persistence!
-	  val USER : String = "sa"
-	  val PASS : String = ""
-	  val mainTable : String = "TrackHistoryTable"
 	    
 	  val table : TableQuery[TrackHistoryTable] = TableQuery[TrackHistoryTable]
-	  var db = Database.forURL(DB_URL, driver = JDBC_DRIVER) 
+	  val db = Database.forURL(driverInfo.dbURI, driverInfo.jdbcDriver) 
 	  db withSession {
 	    implicit Session =>
-	      if (MTable.getTables("TrackHistoryTable").list().isEmpty) {
+	      if (MTable.getTables(driverInfo.mainTable).list().isEmpty) {
 	    	 table.ddl.create
 	      }
 	      
 	  }
-	} // object H2Driverinfo
 	
 	
 
   //ex..startRun : create GoalRun obj from param, then insert into H2
 	override def startRun(trackDesc : TrackDescriptor, goalName: String, witness: Witness, startTime: DateTime) : String =   {
-	 H2DriverInfo.db withSession {
+	  db withSession {
 	   implicit session =>
-	     val insertResult: Option[Int] = this.H2DriverInfo.table ++= Seq ( // rewite without Seq!
+	     val insertResult: Option[Int] = table ++= Seq ( // rewite without Seq!
 			 (1, trackDesc.trackName, trackDesc.forUser, trackDesc.version, trackDesc.variant.toString(), goalName, "dummyWitness", new Timestamp(startTime.getMillis()), new Timestamp(startTime.getMillis()), GoalState.Running.toString()) // FIX ENDTIME!!!
 			)
 		insertResult foreach {
@@ -80,7 +76,7 @@ class JDBCSlickTrackHistory extends TrackHistory{
 	// update not a drop~~
 	  
 	  //might want to check the endDate timeStamp....
-	  H2DriverInfo.db withSession {
+	  db withSession {
 	   implicit session =>
 	     val date : Date = new Date()
 	     
@@ -105,10 +101,10 @@ class JDBCSlickTrackHistory extends TrackHistory{
               witness : Witness ) : Seq[GoalRun] = {
 			println("entering lookupGoalRun, " + trackDesc.trackName + " "+ trackDesc.forUser+ " "+ trackDesc.version+ " "+ trackDesc.variant+ " "+ goalName+ " "+ dummyWitnessToString(witness))
 		 var returnList : Seq[GoalRun] = null.asInstanceOf[Seq[GoalRun]]
-		 H2DriverInfo.db.withSession {
+		db.withSession {
 		   implicit session =>
-		      H2DriverInfo.table.list.map(e => println(" this is an entry: " + e._1 + " " + e._2 + " "+ e._3 + " " + e._4 + " " + e._5 + " " + e._6 + " " + e._7 + " " + e._8 + " " + e._9 + " " + e._10))
-		     H2DriverInfo.table.list.filter(g => (g._2 == trackDesc.trackName && // probably want filter then list for efficiency. Investigate whether type conversion in Table.Column == sting actually works
+		      table.list.map(e => println(" this is an entry: " + e._1 + " " + e._2 + " "+ e._3 + " " + e._4 + " " + e._5 + " " + e._6 + " " + e._7 + " " + e._8 + " " + e._9 + " " + e._10))
+		      table.list.filter(g => (g._2 == trackDesc.trackName && // probably want filter then list for efficiency. Investigate whether type conversion in Table.Column == sting actually works
 		         										g._3 == trackDesc.forUser &&
 		         										 	g._4 == trackDesc.version &&
 		         										 	//g._5 == trackDesc.variant && Variant is broken even though they both match "None" == "None" - must investigate
@@ -116,7 +112,7 @@ class JDBCSlickTrackHistory extends TrackHistory{
 		         										 	g._7 == dummyWitnessToString(witness)	 
 		    		 									)).map(g => println("  found a match! " + g._1 + g._2)
 															       )
-		      returnList = H2DriverInfo.table.list.filter(g => (g._2 == trackDesc.trackName && // probably want filter then list for efficiency. Investigate whether type conversion in Table.Column == sting actually works
+		      returnList = table.list.filter(g => (g._2 == trackDesc.trackName && // probably want filter then list for efficiency. Investigate whether type conversion in Table.Column == sting actually works
 		         										 	g._3 == trackDesc.forUser &&
 		         										 	g._4 == trackDesc.version &&
 		         										 	g._5 == trackDesc.variant &&
@@ -135,9 +131,9 @@ class JDBCSlickTrackHistory extends TrackHistory{
 	
 	def lookupGoalRun( runID : String ) : Option[GoalRun] = { 
 	  var returnGoal : GoalRun = null.asInstanceOf[GoalRun]
-	  H2DriverInfo.db withSession {
+	  db withSession {
 	   implicit session =>
-	     val g = this.H2DriverInfo.table.filter(_.id === runID.toInt).list
+	     val g = table.filter(_.id === runID.toInt).list
 	   	
 	     val trackDesc :TrackDescriptor = TrackDescriptor(g(0)._2, g(0)._3, g(0)._4, Some(g(0)._5))
 	     
@@ -166,5 +162,12 @@ class JDBCSlickTrackHistory extends TrackHistory{
 	  
 	}
 	*/
+  
+}
+
+/**
+ *  
+ */
+object JDBCSlickTrackHistory extends JDBCSlickTrackHistory(new DriverInfo ) {
   
 }

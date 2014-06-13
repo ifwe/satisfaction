@@ -13,7 +13,7 @@ import org.joda.time._
 @RunWith(classOf[JUnitRunner])
 class TrackHistorySpec extends Specification {
   "TrackHistorySpec" should {
-    val trackHistory = new JDBCSlickTrackHistory()
+    val trackHistory = JDBCSlickTrackHistory
     
     
     "insert started job into table" in  {
@@ -32,7 +32,13 @@ class TrackHistorySpec extends Specification {
     
     "find GoalRun by ID" in {
         val goalResult  = trackHistory.lookupGoalRun("1")
+        println(" Goal REsult = " + goalResult)
         
+    }
+    
+    "find all job runs"  in {
+       val goalRuns = trackHistory.goalRunsForTrack(TrackDescriptor("DAU"), None, None)
+       println(" Number of DAU Goals is " + goalRuns.size)
     }
   }
 }

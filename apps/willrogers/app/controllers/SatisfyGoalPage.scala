@@ -24,6 +24,7 @@ import fs.LocalFileSystem
 import fs._
 
 object SatisfyGoalPage extends Controller {
+    val proofEngine : ProofEngine = Global.proofEngine
 
     def satisfyGoalAction(trackName: String, goalName: String) = Action { implicit request =>
         println(s" Satisfying Goal  $trackName $goalName")
@@ -55,7 +56,7 @@ object SatisfyGoalPage extends Controller {
     
     def currentStatusAction() = Action {
         //// XXX Apply sort order to statuses
-        val statList = ProofEngine.getGoalsInProgress
+        val statList = proofEngine.getGoalsInProgress
         println(" Number of Goals in Progress are " + statList.size)
         Ok(views.html.currentstatus( statList))
     }
@@ -224,7 +225,7 @@ object SatisfyGoalPage extends Controller {
        val goalOpt = getTrackGoalByName( trackName, goalName)
        goalOpt match {
             case Some(abortGoal) =>
-             ProofEngine.abortGoal(abortGoal._2, witness)
+             proofEngine.abortGoal(abortGoal._2, witness)
              ///currentStatusActiono       
              ///val statList = ProofEngine.getGoalsInProgress
              ///Ok(views.html.currentstatus( statList))
@@ -239,7 +240,7 @@ object SatisfyGoalPage extends Controller {
        val goalOpt = getTrackGoalByName( trackName, goalName)
        goalOpt match {
           case Some(abortGoal) =>
-             ProofEngine.restartGoal(abortGoal._2, witness)
+             proofEngine.restartGoal(abortGoal._2, witness)
              ///currentStatusActiono       
              Redirect( routes.SatisfyGoalPage.currentStatusAction)
           case None =>
@@ -262,7 +263,7 @@ object SatisfyGoalPage extends Controller {
         //// use project name 
          ///val allStats = ProofEngine.getGoalsInProgress 
          ///allStats.foreach { stat => println( stat.track.name  + " :: " + stat.goal.name)}
-        val statList = ProofEngine.getGoalsInProgress.filter(_.track.trackName.equals(trackName)).filter(_.goalName.equals(goalName))
+        val statList = proofEngine.getGoalsInProgress.filter(_.track.trackName.equals(trackName)).filter(_.goalName.equals(goalName))
         if (statList.size > 0)
             Some(statList.head)
         else
@@ -289,8 +290,8 @@ object SatisfyGoalPage extends Controller {
         //// instead of holding onto the Future, 
         //// just ask again to get current status,
         //// and bring up project status page
-        ProofEngine.satisfyGoal( goal, witness)
-        ProofEngine.getStatus( goal, witness)
+        proofEngine.satisfyGoal( goal, witness)
+        proofEngine.getStatus( goal, witness)
     }
 
     def getTrackByName(trackName: String): Track = {

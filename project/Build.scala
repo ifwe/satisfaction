@@ -165,10 +165,10 @@ object ApplicationBuild extends Build {
     ("com.typesafe.akka" %% "akka-actor" % "2.2.0"),
     ("org.quartz-scheduler" % "quartz" % "2.2.1"),
     ("ch.qos.logback" % "logback-classic" % "1.0.13" ),
-   ("com.typesafe.slick" %% "slick" % "2.0.2"),
-  ("com.h2database" % "h2" % "1.3.170"),
-   ("com.typesafe.slick" %% "slick" % "2.0.2"),
-  ("org.slf4j" % "slf4j-nop" % "1.6.4"),
+    ("com.typesafe.slick" %% "slick" % "2.0.2"),
+    ("com.h2database" % "h2" % "1.3.170"),
+    ("com.typesafe.slick" %% "slick" % "2.0.2"),
+    ("org.slf4j" % "slf4j-nop" % "1.6.4"),
     ("ch.qos.logback" % "logback-classic" % "1.0.13" )
   ) ++ testDependencies
 
