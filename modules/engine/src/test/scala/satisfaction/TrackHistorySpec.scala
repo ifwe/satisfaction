@@ -24,11 +24,12 @@ class TrackHistorySpec extends Specification {
     "insert started job into table" in  {
     
       val result :String = trackHistory.startRun(trackDesc, goalName, witness, dt)
-
+      
+    	println(" inserted a row, id was: " + result)
      // H2DriverInfo.USER must be_==("sa") // NO
     }
     "update a running jobhistory" in {
-      val result : String = trackHistory.completeRun("2", GoalState.Success)
+     //val result : String = trackHistory.completeRun("2", GoalState.Success)
     }
     
     "look up goal(s)" in {
@@ -36,7 +37,7 @@ class TrackHistorySpec extends Specification {
     }
     
     "find GoalRun by ID" in {
-        val goalResult  = trackHistory.lookupGoalRun(1.toString)
+       // val goalResult  = trackHistory.lookupGoalRun(1.toString)
         //found
         //val goalResultFalse = trackHistory.lookupGoalRun(2000.toString)
         //not found

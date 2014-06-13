@@ -25,8 +25,10 @@ import java.util.Date
 
 
 class JDBCSlickTrackHistory extends TrackHistory{
-	
-	class TrackHistoryTable (tag: Tag) extends Table[(Int, String, String, String, String, String, String, Timestamp, Option[Timestamp], String)](tag, "TrackHistoryTable") { // autoincrement is broken. I can't have id.? ~ for some reason...
+	/**
+	 * class for database formatting
+	 */
+	class TrackHistoryTable (tag: Tag) extends Table[(Int, String, String, String, String, String, String, Timestamp, Option[Timestamp], String)](tag, "TrackHistoryTable") {
   		  def id : Column[Int]= column[Int]("id", O.PrimaryKey, O.AutoInc)
 		  def trackName : Column[String] = column[String]("trackName")
 		  def forUser: Column[String] = column[String]("forUser")
@@ -40,7 +42,10 @@ class JDBCSlickTrackHistory extends TrackHistory{
 		  
 		  def * : ProvenShape[(Int, String, String, String, String, String, String, Timestamp, Option[Timestamp], String)] = (id, trackName, forUser, version, variant, goalName, witness, startTime, endTime, state)
 		}
- //encapsulate driver information
+	
+	/**
+	 * Encapsulate DB drivers/info
+	 */
 	object H2DriverInfo {
 	  val JDBC_DRIVER : String =  "org.h2.Driver"
 	  val DB_URL : String = "jdbc:h2:file:data/sample" //change this to a file url, for persistence!
@@ -55,41 +60,33 @@ class JDBCSlickTrackHistory extends TrackHistory{
 	      if (MTable.getTables("TrackHistoryTable").list().isEmpty) {
 	    	 table.ddl.create
 	      }
-	      
 	  }
 	} // object H2Driverinfo
 	
-	
-
-  //ex..startRun : create GoalRun obj from param, then insert into H2
 	override def startRun(trackDesc : TrackDescriptor, goalName: String, witness: Witness, startTime: DateTime) : String =   {
+	  var insertedID = -1
 	 H2DriverInfo.db withSession {
 	   implicit session =>
-	     val insertResult: Option[Int] = this.H2DriverInfo.table ++= Seq ( // rewite without Seq!
-			 (1, trackDesc.trackName, trackDesc.forUser, trackDesc.version, trackDesc.variant.toString(), goalName, "dummyWitness", new Timestamp(startTime.getMillis()), None, GoalState.Running.toString()) // FIXME ENDTIME!!!
-			)
-		insertResult foreach {
-		   numRows=> println(s"inserts $numRows into the table")
-		 }
+		insertedID = (H2DriverInfo.table returning H2DriverInfo.table.map(_.id)) += (1, trackDesc.trackName, trackDesc.forUser, trackDesc.version, trackDesc.variant.toString(), 
+																					goalName, "dummyWitness", new Timestamp(startTime.getMillis()), None, 
+																					GoalState.Running.toString())
 	 }
-	 
-	  "cheese" // need to return runID, which should be the id. But autoinc is broken right now
+	  insertedID.toString
 	}
 	
 	override def completeRun( id : String, state : GoalState.State) : String = {
-	// update not a drop~~
-	  
-	  //might want to check the endDate timeStamp....
 	  H2DriverInfo.db withSession {
 	   implicit session =>
 	     val date : Date = new Date()
 	     
-	    //Q.updateNA("UPDATE \"TrackHistoryTable\" SET endTime="+new Timestamp(date.getTime())+",state="+state.toString()+" WHERE id=" + id+";")
-	    val query = for {e <- H2DriverInfo.table if e.id == id} yield e.endTime
-	     
-	    println("  should've updated by now...")
+	    val updateEndTime = for {e <- H2DriverInfo.table if e.id === id.toInt} yield e.endTime 
+	    updateEndTime.update(Some(new Timestamp (date.getTime())))
+	    
+	    val updateState = for {e <-H2DriverInfo.table if e.id === id.toInt} yield e.state
+	    updateState.update(state.toString())
+	    
 	  }
-	  "Cheese" // what should we return? Probably the RunID; but that's broken right now
+	  id // what should we return? Probably the RunID??
 	}
 	
 	override def goalRunsForTrack(  trackDesc : TrackDescriptor , 
