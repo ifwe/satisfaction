@@ -36,9 +36,9 @@ class MockSatisfier extends Satisfier with Evidence {
     
     @Override 
     override def abort() : ExecutionResult = {
-      
+      retCode = false 
       val abortResult = new ExecutionResult("MockSatisfier", startTime);
-      abortResult.isSuccess = false;
+      abortResult.isSuccess = true;
       abortResult.timeEnded = DateTime.now
       abortResult
     }

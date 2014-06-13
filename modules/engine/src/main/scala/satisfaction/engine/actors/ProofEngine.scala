@@ -36,6 +36,10 @@ class ProofEngine( val trackHistoryOpt : Option[TrackHistory] = None) extends  s
             ////   versus sub goal runs
         	trackHistory.startRun(goal.track.descriptor, goal.name, witness, new DateTime)
         }
+        case None => {
+           debug(" No TrackHistory Specified" ) 
+           null
+        }
       }
     }
     
@@ -47,6 +51,9 @@ class ProofEngine( val trackHistoryOpt : Option[TrackHistory] = None) extends  s
       trackHistoryOpt match {
         case Some(trackHistory)  => {
           trackHistory.completeRun(runId, state)
+        }
+        case None => {
+           debug(" No TrackHistory Specified" ) 
         }
       }
     }
