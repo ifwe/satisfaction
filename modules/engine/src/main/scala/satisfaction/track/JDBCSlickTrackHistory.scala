@@ -78,7 +78,6 @@ class JDBCSlickTrackHistory extends TrackHistory{
 			     println(" insert: index is: " + insertResult)
 		insertResult.toString
 	 }
-	 
 	  //"cheese" // need to return runID, which should be the id. But autoinc is broken right now
 	}
 	
