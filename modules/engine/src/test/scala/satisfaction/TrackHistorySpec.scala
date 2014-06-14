@@ -10,6 +10,8 @@ import satisfaction.fs._
 import satisfaction.track
 import org.joda.time._
 import satisfaction.engine.actors.GoalState
+import org.joda.time.format.DateTimeFormatter
+import java.text.SimpleDateFormat
 
 @RunWith(classOf[JUnitRunner])
 class TrackHistorySpec extends Specification {
@@ -27,12 +29,17 @@ class TrackHistorySpec extends Specification {
       
      // H2DriverInfo.USER must be_==("sa") // NO
     }
-    "update a running jobhistory" in {
+    "update a running jobhistory" in { 
      //val result : String = trackHistory.completeRun("4", GoalState.Success)
     }
     
     "get Goals by time spans" in {
-        
+    	
+      //set up custom start and end DateTimes
+    	//val startTime : DateTime = new SimpleDateFormat("yyyy-mm-dd HH:mm:ss").parse("2014-06-13 15:43:07.672")
+    	//val endTime = new SimpleDateFormat("yyyy-mm-dd HH:mm:ss").parse("2014-06-13 15:55:15.286")
+
+        val resultList = trackHistory.goalRunsForGoal(trackDesc, goalName, None, None)
     }
     
     "look up goals" in {

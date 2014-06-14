@@ -91,36 +91,80 @@ class JDBCSlickTrackHistory extends TrackHistory{
 	
 	override def goalRunsForTrack(  trackDesc : TrackDescriptor , 
               startTime : Option[DateTime], endTime : Option[DateTime] ) : Seq[GoalRun] = {
-	  null
-	}
-	
-	override  def goalRunsForGoal(  trackDesc : TrackDescriptor ,  
-              goalName : String,
-              startTime : Option[DateTime], endTime : Option[DateTime] ) : Seq[GoalRun] = {
 	  var returnList : Seq[GoalRun] = null.asInstanceOf[Seq[GoalRun]]
 	  H2DriverInfo.db.withSession {
 		   implicit session =>
-		     H2DriverInfo.table.list.map(e => println(" this is an entry: " + e._1 + " " + e._2 + " "+ e._3 + " " + e._4 + " " + e._5 + " " + e._6 + " " + e._7 + " " + e._8 + " " + e._9 + " " + e._10))
-
+		     
 		   	 returnList=H2DriverInfo.table.list.filter(g=>(g._2 == trackDesc.trackName &&
 		         								g._3 == trackDesc.forUser &&
 		         								g._4 == trackDesc.version &&
 		         								(g._5 match {
 		         										 	  case v if !(v == "None") => v == trackDesc.variant
 		         										 	  case v if (v == "None") => !trackDesc.variant.isDefined}) &&
-		         								
-		         								g._6 == goalName )).filter(g=> (startTime match { // I don't like this double filtering. Need to figure out syntax for an elegant solution.
-										    		 							  case Some(dateTime) =>
-										    		 							    new DateTime(g._8).compareTo(startTime.asInstanceOf[DateTime]) >= 0
-										    		 							  case None => true
-					    		 							})).filter(g=> (endTime match {
-									    		 							  case Some(dateTime) if g._9.isDefined =>
-									    		 							    new DateTime(g._9).compareTo(endTime.asInstanceOf[DateTime]) <= 0
-									    		 							  case Some(dateTime) if !g._9.isDefined => false
-									    		 							  case None => true
-					    		 							})).map(g => GoalRun(TrackDescriptor(g._2, g._3, g._4, Some(g._5)), 
+		         								(startTime match { case Some(dateTime) =>new DateTime(g._8).compareTo(startTime.asInstanceOf[DateTime]) >= 0
+										    		 			   case None => true
+					    		 							}) &&
+					    		 				(endTime match {case Some(dateTime) if g._9.isDefined =>new DateTime(g._9).compareTo(endTime.asInstanceOf[DateTime]) <= 0
+									    		 				case Some(dateTime) if !g._9.isDefined => false
+									    		 				case None => true
+					    		 							})
+		   			 							)).map(g => GoalRun(TrackDescriptor(g._2, g._3, g._4, Some(g._5)), 
 															       	    g._6, dummyStringToWitness(g._7), new DateTime(g._8), 
 															       	    g._9 match { case Some(timestamp) => Some(new DateTime(timestamp)) case None => null}, GoalState.withName(g._10))).seq
+								println("  goalRunsForGoal result set is size: " + returnList.size)
+			}
+	  returnList
+	}
+	
+	override  def goalRunsForGoal(  trackDesc : TrackDescriptor ,  
+              goalName : String,
+              startTime : Option[DateTime], endTime : Option[DateTime] ) : Seq[GoalRun] = {
+	  println("entering lookupGoalRun, " + trackDesc.trackName + " "+ trackDesc.forUser+ " "+ trackDesc.version+ " "+ trackDesc.variant+ " "+ goalName + " " + startTime + " " + endTime)
+	  
+	  var returnList : Seq[GoalRun] = null.asInstanceOf[Seq[GoalRun]]
+	  H2DriverInfo.db.withSession {
+		   implicit session =>
+		     //H2DriverInfo.table.list.map(e => println(" this is an entry: " + e._1 + " " + e._2 + " "+ e._3 + " " + e._4 + " " + e._5 + " " + e._6 + " " + e._7 + " " + e._8 + " " + e._9 + " " + e._10))
+		     
+		     //println("==================")
+		     		     						
+		     /*
+		     H2DriverInfo.table.list.filter(g=>(g._2 == trackDesc.trackName &&
+		         								g._3 == trackDesc.forUser &&
+		         								g._4 == trackDesc.version &&
+		         								(g._5 match {
+		         										 	  case v if !(v == "None") => v == trackDesc.variant
+		         										 	  case v if (v == "None") => !trackDesc.variant.isDefined}) &&
+		         								g._6 == goalName &&
+		         								(startTime match { case Some(dateTime) =>new DateTime(g._8).compareTo(startTime.asInstanceOf[DateTime]) >= 0
+										    		 			   case None => true
+					    		 							}) &&
+					    		 				(endTime match {case Some(dateTime) if g._9.isDefined =>new DateTime(g._9).compareTo(endTime.asInstanceOf[DateTime]) <= 0
+									    		 				case Some(dateTime) if !g._9.isDefined => false
+									    		 				case None => true
+					    		 							})
+		   			 							)).map(e => println(" qualifying goalruns " + e._1 + " " + e._2 + " "+ e._3 + " " + e._4 + " " + e._5 + " " + e._6 + " " + e._7 + " " + e._8 + " " + e._9 + " " + e._10))
+
+		     */
+		     
+		   	 returnList=H2DriverInfo.table.list.filter(g=>(g._2 == trackDesc.trackName &&
+		         								g._3 == trackDesc.forUser &&
+		         								g._4 == trackDesc.version &&
+		         								(g._5 match {
+		         										 	  case v if !(v == "None") => v == trackDesc.variant
+		         										 	  case v if (v == "None") => !trackDesc.variant.isDefined}) &&
+		         								g._6 == goalName &&
+		         								(startTime match { case Some(dateTime) =>new DateTime(g._8).compareTo(startTime.asInstanceOf[DateTime]) >= 0
+										    		 			   case None => true
+					    		 							}) &&
+					    		 				(endTime match {case Some(dateTime) if g._9.isDefined =>new DateTime(g._9).compareTo(endTime.asInstanceOf[DateTime]) <= 0
+									    		 				case Some(dateTime) if !g._9.isDefined => false
+									    		 				case None => true
+					    		 							})
+		   			 							)).map(g => GoalRun(TrackDescriptor(g._2, g._3, g._4, Some(g._5)), 
+															       	    g._6, dummyStringToWitness(g._7), new DateTime(g._8), 
+															       	    g._9 match { case Some(timestamp) => Some(new DateTime(timestamp)) case None => null}, GoalState.withName(g._10))).seq
+								println("  goalRunsForGoal result set is size: " + returnList.size)
 			}
 	  returnList
 	}	
