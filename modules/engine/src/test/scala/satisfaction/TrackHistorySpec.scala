@@ -17,22 +17,24 @@ import java.text.SimpleDateFormat
 class TrackHistorySpec extends Specification {
   "TrackHistorySpec" should {
     //set ups
-    val trackHistory = new JDBCSlickTrackHistory()
+    val trackHistory =  JDBCSlickTrackHistory
     val trackDesc : TrackDescriptor = TrackDescriptor ("testTrackName")
     val goalName : String = "testGoalName"
     val witness : Witness = null
     val dt : DateTime = new DateTime(System.currentTimeMillis())
 
-    
+    /*
     
     "insert started job into table" in  {
     
-      val result :String = trackHistory.startRun(trackDesc, goalName, witness, dt)
-      
+      val result  = trackHistory.startRun(trackDesc, goalName, witness, dt)
+      println(" inserted string " + result)
+      //result.toString must be 
      // H2DriverInfo.USER must be_==("sa") // NO
     }
+    
     "update a running jobhistory" in { 
-     val result : String = trackHistory.completeRun("29", GoalState.Success)
+     //val result : String = trackHistory.completeRun("29", GoalState.Success)
     }
     
     "get Goals by time spans" in {
@@ -59,6 +61,7 @@ class TrackHistorySpec extends Specification {
        }
 
     }
+    */
     
   }
 }

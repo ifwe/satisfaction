@@ -60,7 +60,7 @@ object Global extends GlobalSettings {
     val trackHistory : TrackHistory = JDBCSlickTrackHistory
     val proofEngine = new ProofEngine(Some(trackHistory))
     
-    val trackScheduler = new TrackScheduler( proofEngine)
+    val trackScheduler = new TrackScheduler(proofEngine)
       
     implicit val trackFactory : TrackFactory = {
       ///// XXX Why doesn't implicits automatically convert???
