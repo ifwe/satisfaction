@@ -34,6 +34,9 @@ case class TrackFactory(val trackFS : FileSystem,
   val initScheduler : Unit = {
      schedulerOpt match {
        case Some(sched) => sched.trackFactory = this
+       case None => {
+          warn(" No Scheduler available") 
+       }
      } 
   }
    
@@ -111,10 +114,17 @@ case class TrackFactory(val trackFS : FileSystem,
                 
      val trackPath = getTrackPath( track.descriptor )
      
+     
      schedulerOpt match {
        case Some(scheduler) =>
           info(" Scheduling Track ")
-          scheduler.scheduleTrack( track)
+          //// Check that scheduling flag isn't set to false          
+          val checkDoSched = trackMap.getOrElse( "satisfaction.track.scheduleFlag", "true").toBoolean
+          if( checkDoSched) {
+            scheduler.scheduleTrack( track)
+          } else {
+            warn(s" satisfaction.track.scheduleFlag set to false; not scheduling ${track.descriptor.trackName} ")
+          }
         case None =>
           warn(" No scheduler instantiated; not scheduling") 
      }

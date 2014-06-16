@@ -29,7 +29,7 @@ case class LogWrapper[T]( track : Track, goal : Goal, witness : Witness) {
   def log( functor :  () => T  ) : Try[T] = {
      val currOut = Console.out
      val currErr = Console.err
-     val outStream = loggingOutput
+     var outStream = loggingOutput
      try {
          Console.setOut(outStream)
          Console.setErr(outStream)
@@ -53,6 +53,7 @@ case class LogWrapper[T]( track : Track, goal : Goal, witness : Witness) {
       Console.setOut(currErr)
     }
   }
+  
 
   def loggingOutput: OutputStream = {
      LogWrapper.localFS.create( LogWrapper.logPathForGoalWitness( track.descriptor, goal.name, witness) )
@@ -183,8 +184,8 @@ object LogWrapper {
         }
        }
        case _ => {
-         Console.println(s"${obj} Not a Logging interface ") 
-         System.out.println(s" ${obj} Not a Logging interface ") 
+         ///Console.println(s"${obj} Not a Logging interface ") 
+         ///System.out.println(s" ${obj} Not a Logging interface ") 
        }
      }
    }

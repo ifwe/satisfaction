@@ -142,9 +142,7 @@ object ApplicationBuild extends Build {
 	  ("org.apache.hive" % "hive-shims" % hiveVersion),
 	  ("org.apache.hive" % "hive-metastore" % hiveVersion),
 	  ("org.apache.hive" % "hive-exec" % hiveVersion),
-	  ("org.apache.thrift" % "libfb303" % "0.7.0"),
-    ("com.typesafe.slick" %% "slick" % "2.0.0"),
-	  ("org.apache.thrift" % "libfb303" % "0.7.0" )
+	  ("org.apache.thrift" % "libfb303" % "0.7.0")
   ).excluding( "log4j", "*" ).excluding("org.slf4j", "*")
 
   def hiveDependencies = Seq(
@@ -166,10 +164,11 @@ object ApplicationBuild extends Build {
   def engineDependencies = Seq(
     ("com.typesafe.akka" %% "akka-actor" % "2.2.0"),
     ("org.quartz-scheduler" % "quartz" % "2.2.1"),
-   ("com.typesafe.slick" %% "slick" % "2.0.2"),
-  ("org.slf4j" % "slf4j-nop" % "1.6.4"),
-  ("com.h2database" % "h2" % "1.3.170"),
-  ("org.scalatest" %% "scalatest" % "2.0" % "test"),
+    ("ch.qos.logback" % "logback-classic" % "1.0.13" ),
+    ("com.typesafe.slick" %% "slick" % "2.0.2"),
+    ("com.h2database" % "h2" % "1.3.170"),
+    ("com.typesafe.slick" %% "slick" % "2.0.2"),
+    ("org.slf4j" % "slf4j-nop" % "1.6.4"),
     ("ch.qos.logback" % "logback-classic" % "1.0.13" )
   ) ++ testDependencies
 

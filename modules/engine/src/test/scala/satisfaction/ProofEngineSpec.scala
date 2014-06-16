@@ -329,6 +329,36 @@ class ProofEngineSpec extends Specification {
             val result = engine.satisfyGoalBlocking( singleGoal, witness, Duration( 20, SECONDS))
              result.state must_== GoalState.Success
         }
+         
+         
+        "abort a goal"  in {
+            val engine = new ProofEngine()
+            val vars: List[Variable[_]] = List(NetworkAbbr, runDate)
+            val longRunningGoal = TestGoal.SlowGoal("AbortedGoal", vars, 5000, 5000)
+
+            val witness = Witness((runDate -> "20130815"), (NetworkAbbr -> "tw"))
+            val resultFuture : Future[GoalStatus] = engine.satisfyGoal( longRunningGoal, witness)
+            resultFuture.onComplete( { 
+              case Success(status) => 
+                 println(" Success ???  State us " + status.state)
+                 //// No exceptions were thrown, so job was aborted
+           	     status.state must_== GoalState.Aborted
+              case Failure(t) =>
+                true must_== false
+            } )
+            println(" Result Future is "+ resultFuture)
+          
+            Thread.sleep( 2000)
+            println(" Before Abort Goal")
+
+            engine.abortGoal(longRunningGoal, witness)
+            println(" After Abort Goal")
+            
+
+            val status = Await.result(resultFuture, Duration( 10 , SECONDS) )
+           	status.state must_== GoalState.Aborted
+
+        }
 
     }
 }

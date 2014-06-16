@@ -16,12 +16,17 @@ import java.text.SimpleDateFormat
 @RunWith(classOf[JUnitRunner])
 class TrackHistorySpec extends Specification {
   "TrackHistorySpec" should {
+<<<<<<< HEAD
     //set ups
     val trackHistory = new JDBCSlickTrackHistory()
     val trackDesc : TrackDescriptor = TrackDescriptor ("testTrackNameDiff")
     val goalName : String = "testGoalName"
     val witness : Witness = null
     val dt : DateTime = new DateTime(System.currentTimeMillis())
+=======
+    val trackHistory = JDBCSlickTrackHistory
+    
+>>>>>>> upstream/master
     
     "insert started job into table" in  {
     
@@ -42,6 +47,7 @@ class TrackHistorySpec extends Specification {
         val resultList = trackHistory.goalRunsForGoal(trackDesc, goalName, None, None)
     }
     
+<<<<<<< HEAD
     "look up goals" in {
       "by ID" in {
          val goalResult  = trackHistory.lookupGoalRun(1.toString)
@@ -53,6 +59,17 @@ class TrackHistorySpec extends Specification {
          val goalListResult = trackHistory.lookupGoalRun(trackDesc, goalName, witness)
         //result2.size should_== 25
        }
+=======
+    "find GoalRun by ID" in {
+        val goalResult  = trackHistory.lookupGoalRun("1")
+        println(" Goal REsult = " + goalResult)
+        
+>>>>>>> upstream/master
+    }
+    
+    "find all job runs"  in {
+       val goalRuns = trackHistory.goalRunsForTrack(TrackDescriptor("DAU"), None, None)
+       println(" Number of DAU Goals is " + goalRuns.size)
     }
   }
 }

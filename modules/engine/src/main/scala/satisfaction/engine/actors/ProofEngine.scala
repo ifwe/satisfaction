@@ -16,25 +16,63 @@ import akka.actor.ActorRef
 import akka.actor.EmptyLocalActorRef
 import scala.concurrent.Future
 import ExecutionContext.Implicits.global
+import satisfaction.track.TrackHistory
+import org.joda.time.DateTime
 
-class ProofEngine extends  satisfaction.Logging{
+class ProofEngine( val trackHistoryOpt : Option[TrackHistory] = None) extends  satisfaction.Logging{
 
     val akkaSystem = ActorSystem("satisfaction")
-    val proverFactory = akkaSystem.actorOf(Props[ProverFactory], "ProverFactory")
+    val proverFactory = {
+       val actorRef = akkaSystem.actorOf(Props[ProverFactory], "ProverFactory")
+       actorRef
+    }
     implicit val timeout = Timeout(24 hours)
+    
+    
+    private def startGoal( goal : Goal , witness : Witness) : String = {
+      trackHistoryOpt match {
+        case Some(trackHistory)  => {
+            //// XXX Record differently if it was top level goal
+            ////   versus sub goal runs
+        	trackHistory.startRun(goal.track.descriptor, goal.name, witness, new DateTime)
+        }
+        case None => {
+           debug(" No TrackHistory Specified" ) 
+           null
+        }
+      }
+    }
+    
+    /**
+     *   XXX Save entire GoalStatus 
+     *    which each subrun ...
+     */
+    private def completeGoal( runId : String, state : GoalState.State) = {
+      trackHistoryOpt match {
+        case Some(trackHistory)  => {
+          trackHistory.completeRun(runId, state)
+        }
+        case None => {
+           debug(" No TrackHistory Specified" ) 
+        }
+      }
+    }
 
     /**
      *  Blocking call to satisfy Goal
      */
     def satisfyGoalBlocking( goal: Goal, witness: Witness, duration: Duration): GoalStatus = {
         val f = getProver(goal, witness) ? Satisfy
+        val runID = startGoal( goal, witness )
         val response = Await.result(f, duration)
         response match {
             case s: GoalSuccess =>
                 info(s" Goal ${goal.name} was Satisfied")
+                completeGoal( runID, s.goalStatus.state)
                 s.goalStatus
             case f: GoalFailure =>
                 info(s" Goal ${goal.name} received GoalFailure ")
+                completeGoal( runID, f.goalStatus.state )
                 f.goalStatus
         }
     }
@@ -42,14 +80,17 @@ class ProofEngine extends  satisfaction.Logging{
     def satisfyGoal( goal: Goal, witness: Witness): Future[GoalStatus] = {
         future {
             val f = getProver(goal, witness) ? Satisfy
+            val runID = startGoal( goal, witness )
             val response = Await.result(f, Duration(6, HOURS))
             response match {
                 case s: GoalSuccess =>
                     info(s" Goal ${goal.name} Was Satisfied")
                     ProverFactory.releaseProver(proverFactory, goal, witness)
+                    completeGoal( runID, s.goalStatus.state )
                     s.goalStatus
                 case f: GoalFailure =>
                     info(s" Goal ${goal.name} received GoalFailure ")
+                    completeGoal( runID, f.goalStatus.state )
                     f.goalStatus
             }
         }
@@ -57,23 +98,35 @@ class ProofEngine extends  satisfaction.Logging{
     
     def restartGoal( goal : Goal, witness: Witness ) : Future[GoalStatus] = {
        future {
+            info(s" Restarting Goal ${goal.name} ( ${witness} )")
             val f = getProver( goal, witness) ? RestartJob
+            val runID = startGoal( goal, witness )
             val response = Await.result(f, Duration(6, HOURS))
             response match {
                 case s: GoalSuccess =>
                     info(s" Restart Goal ${goal.name} was Successfull" )
                     ProverFactory.releaseProver(proverFactory, goal, witness)
+                    completeGoal( runID, s.goalStatus.state )
                     s.goalStatus
                 case f: GoalFailure =>
                     info(s" Restart Goal ${goal.name} was Failure ")
+                    completeGoal( runID, f.goalStatus.state )
                     f.goalStatus
             }
         }
     }
     
-    def abortGoal( goal : Goal, witness: Witness) : Future[GoalStatus] = {
-      future {
-         val f = getProver( goal, witness ) ? Abort
+    ///def abortGoal( goal : Goal, witness: Witness) : Future[GoalStatus] = {
+    /// XXX JDB Abort is fire and forget for now 
+    def abortGoal( goal : Goal, witness: Witness) : Unit = {
+      ///future {
+         val prover = getProver( goal, witness ) 
+         info(" Prover is " + prover)
+         println(" Prover is " + prover)
+         prover ! Abort(killChildren=true)
+         info(" Prover message sent  " + prover)
+         println(" Prover message sent  " + prover)
+         /**
          val response = Await.result( f, Duration( 6, HOURS))
          response match {
             case s: GoalSuccess =>
@@ -85,8 +138,10 @@ class ProofEngine extends  satisfaction.Logging{
                ProverFactory.releaseProver(proverFactory, goal, witness)
                f.goalStatus
          }
-      }
+         */
+      ///}
     }
+    
 
     def isSatisfied( goal: Goal, witness: Witness): Boolean = {
         getStatus( goal, witness).state == GoalState.AlreadySatisfied
@@ -103,7 +158,7 @@ class ProofEngine extends  satisfaction.Logging{
     }
 
     def getProver(goal: Goal, witness: Witness): ActorRef = {
-        ProverFactory.getProver(proverFactory, goal.track, goal, witness)
+      ProverFactory.getProver(proverFactory, goal.track, goal, witness)
     }
 
     def getGoalsInProgress: Set[GoalStatus] = {
@@ -151,7 +206,7 @@ class ProofEngine extends  satisfaction.Logging{
     }
 
 }
-object ProofEngine extends ProofEngine {
+object ProofEngine  {
 
     def getActorName(goal: Goal, witness: Witness): String = {
         ///"akka://localhost/satisfaction/" + Goal.getPredicateString(goal, witness).replace("(", "/").replace(",", "/").replace(")", "").replace("=", "_eq_")

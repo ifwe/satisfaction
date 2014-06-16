@@ -20,17 +20,20 @@ import org.joda.time.DateTime
 import scala.util.Success
 import scala.util.Failure
 
+/**
+ *  JobRunner actually satisfies a goal,
+ *   most likely by running some sort of job.
+ */
 class JobRunner(
-    satisfier: Satisfier,
-    track : Track,
-    goal : Goal, 
-    witness : Witness,
+    val satisfier: Satisfier,
+    val track : Track,
+    val goal : Goal, 
+    val witness : Witness,
     params: Witness ) extends Actor with ActorLogging {
 
   
     implicit val executionContext : ExecutionContext = ExecutionContext.global
     
-    var satisfierFuture: Future[ExecutionResult] = null
     var messageSender: ActorRef = null
     var startTime : DateTime = null;
     LogWrapper.modifyLogger( track)
@@ -40,11 +43,10 @@ class JobRunner(
 
     def receive = {
         case Satisfy =>
-            log.info(s"Asked to satisfy for params: ${params}")
+            log.info(s"Asked to satisfy ${track.descriptor.trackName} :: ${goal.name} for params: ${params}")
             startTime = DateTime.now
 
-            if (satisfierFuture == null) {
-                satisfierFuture = future {
+                val satisfierFuture = future {
                     logger.log( { () => satisfier.satisfy(params) } ) match {
                       case Success(execResult) =>
                         execResult.hdfsLogPath = logger.hdfsLogPath.toString
@@ -55,16 +57,23 @@ class JobRunner(
                         val execResult = new ExecutionResult(goal.name, startTime )
                         execResult.hdfsLogPath = logger.hdfsLogPath.toString
                         execResult.markUnexpected( throwable)
-                      
                     }
                 }
                 messageSender = sender
                 satisfierFuture onComplete {
                     checkResults(_)
                 }
-            }
         case Abort =>
           log.warning(s" Aborting Job ${goal.name} !!!")
+          Console.println(s" Aborting Job ${goal.name} !!!")
+          /// For now Aborts are fire and forget
+          ///  Assume Abort has completed.
+          //// TODO Wait for abort result, and send to parents
+
+          val abortResult : ExecutionResult = satisfier.abort()
+          log.info( "Result of Abort Attempt is " + abortResult)
+          Console.println( "Result of Abort Attempt is " + abortResult)
+          /**
           try {
              val abortResult : ExecutionResult = satisfier.abort()
               checkResults( Success(abortResult))
@@ -72,20 +81,19 @@ class JobRunner(
             case unexpected : Throwable =>
               checkResults( Failure(unexpected))
           }
+          * 
+          */
           
     }
 
 
     def checkResults(result: Try[ExecutionResult]) = {
-        log.info("Sending GoalSatisfied to parent")
-        log.info("Some result =  " + result)
         if (result.isSuccess) {
             val execResult = result.get
             execResult.hdfsLogPath = logger.hdfsLogPath.toString
             if (execResult.isSuccess ) {
                 messageSender ! new JobRunSuccess(execResult)
             } else {
-                log.info(" Bool is false " + execResult)
                 messageSender ! new JobRunFailed(execResult)
             }
         } else {

@@ -9,12 +9,12 @@ import akka.pattern._
 import akka.actor.ActorLogging
 import scala.collection._
 import scala.concurrent.Await
-//import com.klout.satisfaction.Goal
 import satisfaction._
-//import com.klout.satisfaction.Witness
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
 import akka.util.Timeout
+import satisfaction.track.TrackFactory
+import satisfaction.track.TrackHistory
 
 
 /**
@@ -41,6 +41,10 @@ class ProverFactory extends Actor with ActorLogging {
     ///val listenerMap: mutable.Map[Tuple2[Goal, Witness], mutable.Set[ActorRef]] = mutable.Map[Tuple2[Goal, Witness], mutable.Set[ActorRef]]()
     val actorMap: mutable.Map[String, ActorRef] = mutable.Map()
     val listenerMap: mutable.Map[String, mutable.Set[ActorRef]] = mutable.Map[String, mutable.Set[ActorRef]]()
+    
+    var trackHistory : TrackHistory = null
+    
+    
     
     implicit val ec = ExecutionContext.Implicits.global
 
@@ -77,6 +81,9 @@ class ProverFactory extends Actor with ActorLogging {
             } else {
                 val actorRef = context.system.actorOf(Props(new PredicateProver(track, goal, witness, context.self)),
                     ProofEngine.getActorName(goal, witness))
+                if( trackHistory != null) {
+                  
+                }
                 actorMap.put(actorTupleName, actorRef)
                 val listenerList = mutable.Set[ActorRef]()
                 listenerList += sender

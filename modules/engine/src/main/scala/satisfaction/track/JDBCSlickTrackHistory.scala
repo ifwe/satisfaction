@@ -205,7 +205,7 @@ class JDBCSlickTrackHistory extends TrackHistory{
 	    	 val trackDesc :TrackDescriptor = TrackDescriptor(g(0)._2, g(0)._3, g(0)._4, Some(g(0)._5))
 	     
 		     val dtStart : DateTime = new DateTime(g(0)._8)
-		     val dtEnd = g(0)._9 match {
+		     val dtEnd = g(0)._9 match { 
 		       case Some(timestamp) => Some(new DateTime(timestamp))
 		       case None => None
 		     }
@@ -226,14 +226,5 @@ class JDBCSlickTrackHistory extends TrackHistory{
 	def dummyStringToWitness(string : String ) : Witness = {
 	   null
 	} 
-	
-	
-	/**
-	 * Insert a GoalRun object into the db
-	 
-	def insert (goalRun: GoalRun) : String  = { //generate a runID
-	  
-	}
-	*/
   
 }

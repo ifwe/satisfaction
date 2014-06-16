@@ -28,8 +28,8 @@ case class TrackScheduler( val proofEngine : ProofEngine ) {
    private val schedulerName = "masterScheduler"
 	var trackFactory :  TrackFactory = null
    
-   private lazy val quartzActor = ProofEngine.akkaSystem.actorOf(Props[QuartzActor])
-   private lazy val startGoalActor = ProofEngine.akkaSystem.actorOf(Props( new StartGoalActor( trackFactory, proofEngine)) )
+   private lazy val quartzActor = proofEngine.akkaSystem.actorOf(Props[QuartzActor])
+   private lazy val startGoalActor = proofEngine.akkaSystem.actorOf(Props( new StartGoalActor( trackFactory, proofEngine)) )
    implicit val timeout = Timeout(24 hours)
   
    private val scheduleMap : collection.mutable.Map[TrackDescriptor,Tuple2[String,Cancellable]] = new collection.mutable.HashMap[TrackDescriptor,Tuple2[String,Cancellable]]
