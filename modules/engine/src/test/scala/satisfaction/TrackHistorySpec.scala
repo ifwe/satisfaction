@@ -27,17 +27,17 @@ class TrackHistorySpec extends Specification {
     
     "insert started job into table" in  {
     
-      //val result :String = trackHistory.startRun(trackDesc, goalName, witness, dt)
+      val result :String = trackHistory.startRun(trackDesc, goalName, witness, dt)
       
      // H2DriverInfo.USER must be_==("sa") // NO
     }
     "update a running jobhistory" in { 
-     //val result : String = trackHistory.completeRun("29", GoalState.Success)
+     val result : String = trackHistory.completeRun("29", GoalState.Success)
     }
     
     "get Goals by time spans" in {
     	
-      //set up custom start and end DateTimes
+      //set up custom start and end DateTimes; then toggle 
     	val simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
     	val startTime = new DateTime(simpleDateFormat.parse("2014-06-13 15:43:07"))
     	val endTime = new DateTime(simpleDateFormat.parse("2014-06-17 15:55:15"))
@@ -46,7 +46,7 @@ class TrackHistorySpec extends Specification {
     }
 
     "look up goals" in {
-      /*
+      
       "by ID" in {
          val goalResult  = trackHistory.lookupGoalRun(1.toString)
         goalResult should not be (None)
@@ -56,7 +56,7 @@ class TrackHistorySpec extends Specification {
        "by desc" in {
          val goalListResult = trackHistory.lookupGoalRun(trackDesc, goalName, witness)
         //result2.size should_== 25
-       }*/
+       }
 
     }
     

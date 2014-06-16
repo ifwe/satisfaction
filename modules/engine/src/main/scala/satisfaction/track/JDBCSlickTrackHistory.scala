@@ -18,10 +18,12 @@ import java.sql.Timestamp
 import java.util.Date
 
 
-
-
-//WE ARE USING H2!!!!!!@!!!!!!!!
-// look up hibernate 
+/**
+ * Using slick with H2 as our light-weight db
+ * TODO:
+ *  - figure out syntax for updating GoalRun.runId in map
+ *  - update dummyWitness<->String functions when they are ready
+ */
 
 
 class JDBCSlickTrackHistory extends TrackHistory{
@@ -101,17 +103,18 @@ class JDBCSlickTrackHistory extends TrackHistory{
 		         								(g._5 match {
 		         										 	  case v if !(v == "None") => v == trackDesc.variant
 		         										 	  case v if (v == "None") => !trackDesc.variant.isDefined}) &&
-		         								(startTime match { case Some(dateTime) =>new DateTime(g._8).compareTo(startTime.asInstanceOf[DateTime]) >= 0
+		         								(startTime match { case Some(dateTime) =>new DateTime(g._8).compareTo(dateTime.asInstanceOf[DateTime]) >= 0
 										    		 			   case None => true
 					    		 							}) &&
-					    		 				(endTime match {case Some(dateTime) if g._9.isDefined =>new DateTime(g._9).compareTo(endTime.asInstanceOf[DateTime]) <= 0
+					    		 				(endTime match {case Some(dateTime) if g._9.isDefined =>new DateTime(g._9.get).compareTo(dateTime.asInstanceOf[DateTime]) <= 0
 									    		 				case Some(dateTime) if !g._9.isDefined => false
 									    		 				case None => true
 					    		 							})
 		   			 							)).map(g => GoalRun(TrackDescriptor(g._2, g._3, g._4, Some(g._5)), 
 															       	    g._6, dummyStringToWitness(g._7), new DateTime(g._8), 
-															       	    g._9 match { case Some(timestamp) => Some(new DateTime(timestamp)) case None => null}, GoalState.withName(g._10))).seq
-								println("  goalRunsForGoal result set is size: " + returnList.size)
+															       	    g._9 match { case Some(timestamp) => Some(new DateTime(timestamp))
+															       	    			 case None => null}, GoalState.withName(g._10))
+															       	    			 ).seq
 			}
 	  returnList
 	}
@@ -124,27 +127,7 @@ class JDBCSlickTrackHistory extends TrackHistory{
 	  var returnList : Seq[GoalRun] = null.asInstanceOf[Seq[GoalRun]]
 	  H2DriverInfo.db.withSession {
 		   implicit session =>
-		     H2DriverInfo.table.list.map(e => println(" this is an entry: " + e._1 + " " + e._2 + " "+ e._3 + " " + e._4 + " " + e._5 + " " + e._6 + " " + e._7 + " " + e._8 + " " + e._9 + " " + e._10))
-		     
-		     println("==================")
-		     		     						
-		     
-		     H2DriverInfo.table.list.filter(g=>(g._2 == trackDesc.trackName &&
-		         								g._3 == trackDesc.forUser &&
-		         								g._4 == trackDesc.version &&
-		         								(g._5 match { case v if !(v == "None") => v == trackDesc.variant
-		         										 	  case v if (v == "None") => !trackDesc.variant.isDefined}) &&
-		         								g._6 == goalName &&
-		         								(startTime match { case Some(dateTime) =>new DateTime(g._8).compareTo(dateTime.asInstanceOf[DateTime]) >= 0
-										    		 			   case None => true
-					    		 							}) &&
-					    		 				(endTime match {case Some(dateTime) if g._9.isDefined =>new DateTime(g._9.get).compareTo(dateTime.asInstanceOf[DateTime]) <= 0
-									    		 				case Some(dateTime) if !g._9.isDefined => false
-									    		 				case None => true
-					    		 							})
-		   			 							)).map(e => println(" qualifying goalruns " + e._1 + " " + e._2 + " "+ e._3 + " " + e._4 + " " + e._5 + " " + e._6 + " " + e._7 + " " + e._8 + " " + e._9 + " " + e._10))
-
-		   	 returnList=H2DriverInfo.table.list.filter(g=>(g._2 == trackDesc.trackName &&
+		   		   	 returnList=H2DriverInfo.table.list.filter(g=>(g._2 == trackDesc.trackName &&
 		         								g._3 == trackDesc.forUser &&
 		         								g._4 == trackDesc.version &&
 		         								(g._5 match {
@@ -160,8 +143,9 @@ class JDBCSlickTrackHistory extends TrackHistory{
 					    		 							})
 		   			 							)).map(g => GoalRun(TrackDescriptor(g._2, g._3, g._4, Some(g._5)), 
 															       	    g._6, dummyStringToWitness(g._7), new DateTime(g._8), 
-															       	    g._9 match { case Some(timestamp) => Some(new DateTime(timestamp)) case None => null}, GoalState.withName(g._10))).seq
-								println("  goalRunsForGoal result set is size: " + returnList.size)
+															       	    g._9 match { case Some(timestamp) => Some(new DateTime(timestamp))
+															       	    			 case None => null}, GoalState.withName(g._10))
+															       	    			 ).seq
 			}
 	  returnList
 	}	
@@ -169,11 +153,9 @@ class JDBCSlickTrackHistory extends TrackHistory{
 	override def lookupGoalRun(  trackDesc : TrackDescriptor ,  
               goalName : String,
               witness : Witness ) : Seq[GoalRun] = {
-			//println("entering lookupGoalRun, " + trackDesc.trackName + " "+ trackDesc.forUser+ " "+ trackDesc.version+ " "+ trackDesc.variant+ " "+ goalName+ " "+ dummyWitnessToString(witness))
 		 var returnList : Seq[GoalRun] = null.asInstanceOf[Seq[GoalRun]]
 		 H2DriverInfo.db.withSession {
 		   implicit session =>
-		     //H2DriverInfo.table.list.map(e => println(" this is an entry: " + e._1 + " " + e._2 + " "+ e._3 + " " + e._4 + " " + e._5 + " " + e._6 + " " + e._7 + " " + e._8 + " " + e._9 + " " + e._10))
 		     
 		     returnList = H2DriverInfo.table.list.filter(g => (g._2 == trackDesc.trackName && // probably want: filter then list for efficiency. But it breaks comparison
 		         										 	g._3 == trackDesc.forUser &&
@@ -185,10 +167,9 @@ class JDBCSlickTrackHistory extends TrackHistory{
 		         										 	g._7 == dummyWitnessToString(witness)
 		    		 									)).map(g => GoalRun(TrackDescriptor(g._2, g._3, g._4, Some(g._5)), 
 															       	    g._6, dummyStringToWitness(g._7), new DateTime(g._8), 
-															       	    g._9 match { case Some(timestamp) => Some(new DateTime(timestamp)) case None => null}, GoalState.withName(g._10))
-		    		 											).seq // TODO: STICK RUNID IN HERE!!!! HOW?!?!??!?!?
-		   //println("  lookingGoalRun result set is size: " + returnList.size)
-		 }	
+															       	    g._9 match { case Some(timestamp) => Some(new DateTime(timestamp)) case None => null}, GoalState.withName(g._10)) 
+		    		 											).seq // TODO: add runID to GoalRun object!!!! HOW?!?!??!?!?
+		 }
 		returnList
 	}
 	

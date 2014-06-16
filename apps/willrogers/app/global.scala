@@ -56,6 +56,7 @@ object Global extends GlobalSettings {
     }
     
     //// XXX Add Driver info ...
+    
     val trackHistory : TrackHistory = JDBCSlickTrackHistory
     val proofEngine = new ProofEngine(Some(trackHistory))
     

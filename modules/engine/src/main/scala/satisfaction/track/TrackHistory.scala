@@ -18,15 +18,15 @@ trait TrackHistory {
    */
   case class GoalRun( val trackDescriptor : TrackDescriptor,
          val goalName : String, 
-         val witness : Witness, //to string fn
+         val witness : Witness, 
          val startTime : DateTime, 
          val endTime : Option[DateTime],
-         val state : GoalState.State) {/*to string as well*/
+         val state : GoalState.State) {
     
      /**
       *  DB Identifier for the run
       */
-     var runId : String = null
+     var runId : String 
   }
          
    /**
