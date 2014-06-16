@@ -79,7 +79,7 @@ class JDBCSlickTrackHistory extends TrackHistory{
 	   implicit session =>
 	     val date : Date = new Date()
 	     
-	    val updateEndTime = for {e <- H2DriverInfo.table if e.id === id.toInt} yield e.endTime 
+	    val updateEndTime = for {e <- H2DriverInfo.table if e.id === id.toInt} yield e.endTime //can't find a way to update multiple columns at once
 	    updateEndTime.update(Some(new Timestamp (date.getTime())))
 	    
 	    val updateState = for {e <-H2DriverInfo.table if e.id === id.toInt} yield e.state
@@ -124,29 +124,26 @@ class JDBCSlickTrackHistory extends TrackHistory{
 	  var returnList : Seq[GoalRun] = null.asInstanceOf[Seq[GoalRun]]
 	  H2DriverInfo.db.withSession {
 		   implicit session =>
-		     //H2DriverInfo.table.list.map(e => println(" this is an entry: " + e._1 + " " + e._2 + " "+ e._3 + " " + e._4 + " " + e._5 + " " + e._6 + " " + e._7 + " " + e._8 + " " + e._9 + " " + e._10))
+		     H2DriverInfo.table.list.map(e => println(" this is an entry: " + e._1 + " " + e._2 + " "+ e._3 + " " + e._4 + " " + e._5 + " " + e._6 + " " + e._7 + " " + e._8 + " " + e._9 + " " + e._10))
 		     
-		     //println("==================")
+		     println("==================")
 		     		     						
-		     /*
+		     
 		     H2DriverInfo.table.list.filter(g=>(g._2 == trackDesc.trackName &&
 		         								g._3 == trackDesc.forUser &&
 		         								g._4 == trackDesc.version &&
-		         								(g._5 match {
-		         										 	  case v if !(v == "None") => v == trackDesc.variant
+		         								(g._5 match { case v if !(v == "None") => v == trackDesc.variant
 		         										 	  case v if (v == "None") => !trackDesc.variant.isDefined}) &&
 		         								g._6 == goalName &&
-		         								(startTime match { case Some(dateTime) =>new DateTime(g._8).compareTo(startTime.asInstanceOf[DateTime]) >= 0
+		         								(startTime match { case Some(dateTime) =>new DateTime(g._8).compareTo(dateTime.asInstanceOf[DateTime]) >= 0
 										    		 			   case None => true
 					    		 							}) &&
-					    		 				(endTime match {case Some(dateTime) if g._9.isDefined =>new DateTime(g._9).compareTo(endTime.asInstanceOf[DateTime]) <= 0
+					    		 				(endTime match {case Some(dateTime) if g._9.isDefined =>new DateTime(g._9.get).compareTo(dateTime.asInstanceOf[DateTime]) <= 0
 									    		 				case Some(dateTime) if !g._9.isDefined => false
 									    		 				case None => true
 					    		 							})
 		   			 							)).map(e => println(" qualifying goalruns " + e._1 + " " + e._2 + " "+ e._3 + " " + e._4 + " " + e._5 + " " + e._6 + " " + e._7 + " " + e._8 + " " + e._9 + " " + e._10))
 
-		     */
-		     
 		   	 returnList=H2DriverInfo.table.list.filter(g=>(g._2 == trackDesc.trackName &&
 		         								g._3 == trackDesc.forUser &&
 		         								g._4 == trackDesc.version &&
@@ -154,10 +151,10 @@ class JDBCSlickTrackHistory extends TrackHistory{
 		         										 	  case v if !(v == "None") => v == trackDesc.variant
 		         										 	  case v if (v == "None") => !trackDesc.variant.isDefined}) &&
 		         								g._6 == goalName &&
-		         								(startTime match { case Some(dateTime) =>new DateTime(g._8).compareTo(startTime.asInstanceOf[DateTime]) >= 0
+		         								(startTime match { case Some(dateTime) =>new DateTime(g._8).compareTo(dateTime.asInstanceOf[DateTime]) >= 0
 										    		 			   case None => true
 					    		 							}) &&
-					    		 				(endTime match {case Some(dateTime) if g._9.isDefined =>new DateTime(g._9).compareTo(endTime.asInstanceOf[DateTime]) <= 0
+					    		 				(endTime match {case Some(dateTime) if g._9.isDefined =>new DateTime(g._9.get).compareTo(dateTime.asInstanceOf[DateTime]) <= 0
 									    		 				case Some(dateTime) if !g._9.isDefined => false
 									    		 				case None => true
 					    		 							})

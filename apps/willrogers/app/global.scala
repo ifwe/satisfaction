@@ -17,6 +17,7 @@ import com.klout.satisfaction.track.TrackHistory
 import com.klout.satisfaction.track.JDBCSlickTrackHistory
 import com.klout.satisfaction.engine.actors.ProofEngine
 
+
 object Global extends GlobalSettings {
 
     implicit val hiveConf = Config.config

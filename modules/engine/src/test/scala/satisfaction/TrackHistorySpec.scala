@@ -16,39 +16,37 @@ import java.text.SimpleDateFormat
 @RunWith(classOf[JUnitRunner])
 class TrackHistorySpec extends Specification {
   "TrackHistorySpec" should {
-<<<<<<< HEAD
     //set ups
     val trackHistory = new JDBCSlickTrackHistory()
-    val trackDesc : TrackDescriptor = TrackDescriptor ("testTrackNameDiff")
+    val trackDesc : TrackDescriptor = TrackDescriptor ("testTrackName")
     val goalName : String = "testGoalName"
     val witness : Witness = null
     val dt : DateTime = new DateTime(System.currentTimeMillis())
-=======
-    val trackHistory = JDBCSlickTrackHistory
+
     
->>>>>>> upstream/master
     
     "insert started job into table" in  {
     
-      val result :String = trackHistory.startRun(trackDesc, goalName, witness, dt)
+      //val result :String = trackHistory.startRun(trackDesc, goalName, witness, dt)
       
      // H2DriverInfo.USER must be_==("sa") // NO
     }
     "update a running jobhistory" in { 
-     //val result : String = trackHistory.completeRun("4", GoalState.Success)
+     //val result : String = trackHistory.completeRun("29", GoalState.Success)
     }
     
     "get Goals by time spans" in {
     	
       //set up custom start and end DateTimes
-    	//val startTime : DateTime = new SimpleDateFormat("yyyy-mm-dd HH:mm:ss").parse("2014-06-13 15:43:07.672")
-    	//val endTime = new SimpleDateFormat("yyyy-mm-dd HH:mm:ss").parse("2014-06-13 15:55:15.286")
+    	val simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+    	val startTime = new DateTime(simpleDateFormat.parse("2014-06-13 15:43:07"))
+    	val endTime = new DateTime(simpleDateFormat.parse("2014-06-17 15:55:15"))
 
-        val resultList = trackHistory.goalRunsForGoal(trackDesc, goalName, None, None)
+        val resultList = trackHistory.goalRunsForGoal(trackDesc, goalName, None, Some(endTime))
     }
-    
-<<<<<<< HEAD
+
     "look up goals" in {
+      /*
       "by ID" in {
          val goalResult  = trackHistory.lookupGoalRun(1.toString)
         goalResult should not be (None)
@@ -58,18 +56,9 @@ class TrackHistorySpec extends Specification {
        "by desc" in {
          val goalListResult = trackHistory.lookupGoalRun(trackDesc, goalName, witness)
         //result2.size should_== 25
-       }
-=======
-    "find GoalRun by ID" in {
-        val goalResult  = trackHistory.lookupGoalRun("1")
-        println(" Goal REsult = " + goalResult)
-        
->>>>>>> upstream/master
+       }*/
+
     }
     
-    "find all job runs"  in {
-       val goalRuns = trackHistory.goalRunsForTrack(TrackDescriptor("DAU"), None, None)
-       println(" Number of DAU Goals is " + goalRuns.size)
-    }
   }
 }
