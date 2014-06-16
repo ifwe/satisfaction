@@ -23,7 +23,7 @@ class TrackHistorySpec extends Specification {
     val witness : Witness = null
     val dt : DateTime = new DateTime(System.currentTimeMillis())
 
-    /*
+   
     
     "insert started job into table" in  {
     
@@ -32,7 +32,7 @@ class TrackHistorySpec extends Specification {
       //result.toString must be 
      // H2DriverInfo.USER must be_==("sa") // NO
     }
-    
+     
     "update a running jobhistory" in { 
      //val result : String = trackHistory.completeRun("29", GoalState.Success)
     }
@@ -61,7 +61,7 @@ class TrackHistorySpec extends Specification {
        }
 
     }
-    */
+    
     
   }
 }

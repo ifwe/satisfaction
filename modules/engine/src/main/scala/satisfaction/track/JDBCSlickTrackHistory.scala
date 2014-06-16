@@ -25,16 +25,7 @@ import java.util.Date
  *  - update dummyWitness<->String functions when they are ready
  */
 
-case class DriverInfo(
-	  val jdbcDriver : String =  "org.h2.Driver",
-	  val dbURI : String = "jdbc:h2:file:data/sample", //change this to a file url, for persistence!
-	  val user : String = "sa",
-	  val passwd : String = "",
-	  val mainTable : String = "TrackHistoryTable" 
-);
-
-
-class JDBCSlickTrackHistory ( driverInfo : DriverInfo ) extends TrackHistory{
+class JDBCSlickTrackHistory  extends TrackHistory{
 	/**
 	 * class for database formatting
 	 */
@@ -53,21 +44,34 @@ class JDBCSlickTrackHistory ( driverInfo : DriverInfo ) extends TrackHistory{
 		  def * : ProvenShape[(Int, String, String, String, String, String, String, Timestamp, Option[Timestamp], String)] = (id, trackName, forUser, version, variant, goalName, witness, startTime, endTime, state)
 		}
 	
-	val table : TableQuery[TrackHistoryTable] = TableQuery[TrackHistoryTable]
-	val db = Database.forURL(driverInfo.dbURI, driverInfo.jdbcDriver) 
+	/**
+	 * Encapsulate DB drivers/info
+	 *  MOVE this as a external class
+	 *  	it is left this way due to a db connection error (wrong userpass)
+	 */
+	object driverInfo {
+	  val JDBC_DRIVER : String =  "org.h2.Driver"
+	  val DB_URL : String = "jdbc:h2:file:data/sample" //change this to a file url, for persistence!
+	  val USER : String = "sa"
+	  val PASS : String = ""
+	  val mainTable : String = "TrackHistoryTable"
+
+	  val table : TableQuery[TrackHistoryTable] = TableQuery[TrackHistoryTable]
+	  var db = Database.forURL(DB_URL, driver = JDBC_DRIVER) 
 	  db withSession {
 	    implicit Session =>
-	      if (MTable.getTables(driverInfo.mainTable).list().isEmpty) {
+	      if (MTable.getTables("TrackHistoryTable").list().isEmpty) {
 	    	 table.ddl.create
 	      }
-
 	  }
+	} // object H2Driverinfo
+
 
 	override def startRun(trackDesc : TrackDescriptor, goalName: String, witness: Witness, startTime: DateTime) : String =   {
 	  var insertedID = -1
-	 db withSession {
+	 driverInfo.db withSession {
 	   implicit session =>
-		insertedID = (table returning table.map(_.id)) += (1, trackDesc.trackName, trackDesc.forUser, trackDesc.version, trackDesc.variant.toString(), 
+		insertedID = (driverInfo.table returning driverInfo.table.map(_.id)) += (1, trackDesc.trackName, trackDesc.forUser, trackDesc.version, trackDesc.variant.toString(), 
 																					goalName, "dummyWitness", new Timestamp(startTime.getMillis()), None, 
 																					GoalState.Running.toString())
 	 }
@@ -75,14 +79,14 @@ class JDBCSlickTrackHistory ( driverInfo : DriverInfo ) extends TrackHistory{
 	}
 	
 	override def completeRun( id : String, state : GoalState.State) : String = {
-	  db withSession {
+	  driverInfo.db withSession {
 	   implicit session =>
 	     val date : Date = new Date()
 	     
-	    val updateEndTime = for {e <- table if e.id === id.toInt} yield e.endTime //can't find a way to update multiple columns at once
+	    val updateEndTime = for {e <- driverInfo.table if e.id === id.toInt} yield e.endTime //can't find a way to update multiple columns at once
 	    updateEndTime.update(Some(new Timestamp (date.getTime())))
 	    
-	    val updateState = for {e <-table if e.id === id.toInt} yield e.state
+	    val updateState = for {e <-driverInfo.table if e.id === id.toInt} yield e.state
 	    updateState.update(state.toString())
 	    
 	  }
@@ -92,10 +96,10 @@ class JDBCSlickTrackHistory ( driverInfo : DriverInfo ) extends TrackHistory{
 	override def goalRunsForTrack(  trackDesc : TrackDescriptor , 
               startTime : Option[DateTime], endTime : Option[DateTime] ) : Seq[GoalRun] = {
 	  var returnList : Seq[GoalRun] = null.asInstanceOf[Seq[GoalRun]]
-	  db.withSession {
+	  driverInfo.db.withSession {
 		   implicit session =>
 		     
-		   	 returnList=table.list.filter(g=>(g._2 == trackDesc.trackName &&
+		   	 returnList=driverInfo.table.list.filter(g=>(g._2 == trackDesc.trackName &&
 		         								g._3 == trackDesc.forUser &&
 		         								g._4 == trackDesc.version &&
 		         								(g._5 match { case v if !(v == "None") => v == trackDesc.variant
@@ -127,9 +131,9 @@ class JDBCSlickTrackHistory ( driverInfo : DriverInfo ) extends TrackHistory{
 	  println("entering lookupGoalRun, " + trackDesc.trackName + " "+ trackDesc.forUser+ " "+ trackDesc.version+ " "+ trackDesc.variant+ " "+ goalName + " " + startTime + " " + endTime)
 	  
 	  var returnList : Seq[GoalRun] = null.asInstanceOf[Seq[GoalRun]]
-	  db.withSession {
+	  driverInfo.db.withSession {
 		   implicit session =>
-		   		   	 returnList=table.list.filter(g=>(g._2 == trackDesc.trackName &&
+		   		   	 returnList=driverInfo.table.list.filter(g=>(g._2 == trackDesc.trackName &&
 		         								g._3 == trackDesc.forUser &&
 		         								g._4 == trackDesc.version &&
 		         								(g._5 match {
@@ -161,10 +165,10 @@ class JDBCSlickTrackHistory ( driverInfo : DriverInfo ) extends TrackHistory{
               goalName : String,
               witness : Witness ) : Seq[GoalRun] = {
 		 var returnList : Seq[GoalRun] = null.asInstanceOf[Seq[GoalRun]]
-		 db.withSession {
+		 driverInfo.db.withSession {
 		   implicit session =>
 		     
-		     returnList = table.list.filter(g => (g._2 == trackDesc.trackName && // probably want: filter then list for efficiency. But it breaks comparison
+		     returnList = driverInfo.table.list.filter(g => (g._2 == trackDesc.trackName && // probably want: filter then list for efficiency. But it breaks comparison
 		         										 	g._3 == trackDesc.forUser &&
 		         										 	g._4 == trackDesc.version &&
 		         										 	(g._5 match {
@@ -185,9 +189,9 @@ class JDBCSlickTrackHistory ( driverInfo : DriverInfo ) extends TrackHistory{
 	
 	def lookupGoalRun( runID : String ) : Option[GoalRun] = { 
 	  var returnGoal : GoalRun = null.asInstanceOf[GoalRun]
-	  db withSession {
+	  driverInfo.db withSession {
 	   implicit session =>
-	     val g = this.table.filter(_.id === runID.toInt).list
+	     val g = driverInfo.table.filter(_.id === runID.toInt).list
 	   	
 	     if (!g.isEmpty) {
 	    	 val trackDesc :TrackDescriptor = TrackDescriptor(g(0)._2, g(0)._3, g(0)._4, Some(g(0)._5))
@@ -216,6 +220,5 @@ class JDBCSlickTrackHistory ( driverInfo : DriverInfo ) extends TrackHistory{
 	} 
   
 }
-object JDBCSlickTrackHistory extends JDBCSlickTrackHistory(new DriverInfo ) {
-  
+object JDBCSlickTrackHistory extends JDBCSlickTrackHistory {
 }
