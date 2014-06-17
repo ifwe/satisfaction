@@ -12,15 +12,19 @@ import org.joda.time._
 import satisfaction.engine.actors.GoalState
 import org.joda.time.format.DateTimeFormatter
 import java.text.SimpleDateFormat
+import Witness2Json._
+import satisfaction.track.Witness2Json
 
 @RunWith(classOf[JUnitRunner])
 class TrackHistorySpec extends Specification {
+
   "TrackHistorySpec" should {
     //set ups
     val trackHistory =  JDBCSlickTrackHistory
     val trackDesc : TrackDescriptor = TrackDescriptor ("testTrackName")
     val goalName : String = "testGoalName"
-    val witness : Witness = null
+    val witness : Witness = Witness( (Variable("date") -> "20140522" ),( Variable("hour") -> "02"))
+    
     val dt : DateTime = new DateTime(System.currentTimeMillis())
 
    
@@ -64,4 +68,35 @@ class TrackHistorySpec extends Specification {
     
     
   }
+  
+  
+  "Translate a Witness to JSON" should {
+      "Produce JSON " in {
+         val witness = Witness( VariableAssignment( Variable("date"), "20140522"), VariableAssignment(Variable("hour"), "08"))
+         val json = renderWitness( witness)
+         
+         json.length must_!= 0
+         println(json)
+        
+      } 
+      
+      "Parse JSON" in {
+         val jsonStr =  "{\"date\":\"20140522\",\"hour\":\"08\"}"
+           
+         val witness = parseWitness(jsonStr)
+         
+         val year = witness.get(Variable("date")).get
+         
+         year must_== "20140522"
+           
+         val hour = witness.get(Variable("hour")).get
+         
+         hour must_== "08"
+           
+      }
+
+      
+    
+  }
+  
 }

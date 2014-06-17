@@ -137,6 +137,10 @@ object ApplicationBuild extends Build {
     ("org.scala-lang" % "scala-library" % "2.10.2" )
   ) ++ testDependencies 
 
+  def jsonDependencies = Seq(
+   ("org.json4s" %% "json4s-jackson" % "3.2.9" )
+ )
+
   def metastoreDependencies = Seq(
 	  ("org.apache.hive" % "hive-common" % hiveVersion),
 	  ("org.apache.hive" % "hive-shims" % hiveVersion),
@@ -170,9 +174,8 @@ object ApplicationBuild extends Build {
     ("com.typesafe.slick" %% "slick" % "2.0.2"),
     ("com.h2database" % "h2" % "1.3.170"),
     ("com.typesafe.slick" %% "slick" % "2.0.2"),
-    ("org.slf4j" % "slf4j-nop" % "1.6.4"),
     ("ch.qos.logback" % "logback-classic" % "1.0.13" )
-  ) ++ testDependencies
+  ) ++ testDependencies ++ jsonDependencies
 
 
   def Dependencies = libraryDependencies ++= Seq(
