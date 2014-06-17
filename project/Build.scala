@@ -141,8 +141,10 @@ object ApplicationBuild extends Build {
 	  ("org.apache.hive" % "hive-common" % hiveVersion),
 	  ("org.apache.hive" % "hive-shims" % hiveVersion),
 	  ("org.apache.hive" % "hive-metastore" % hiveVersion),
+	  ("org.apache.hive" % "hive-serde" % hiveVersion),
 	  ("org.apache.hive" % "hive-exec" % hiveVersion),
-	  ("org.apache.thrift" % "libfb303" % "0.7.0")
+	  ("org.apache.thrift" % "libfb303" % "0.7.0"),
+          ("com.tagged.analytics" % "avro-serde" % "0.13.1-jdb")
   ).excluding( "log4j", "*" ).excluding("org.slf4j", "*")
 
   def hiveDependencies = Seq(
@@ -199,7 +201,8 @@ object ApplicationBuild extends Build {
       ////"theatr" at "http://repo.theatr.us"
       "Maven Central" at "http://repo1.maven.org/maven2",
       "Apache Maven Repository" at "http://people.apache.org/repo/m2-snapshot-repository/",
-      "ScalaToolsMaven2Repository" at "http://scala-tools.org/repo-releases"
+      "ScalaToolsMaven2Repository" at "http://scala-tools.org/repo-releases",
+      "Local Maven Repository" at "file://"+Path.userHome.absolutePath+"/.m2/repository"
   )
 
 }

@@ -139,7 +139,6 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
                  GoalState.AlreadySatisfied |
                  GoalState.Success |
             	 GoalState.Failed =>
-
               ///sender ! GoalSuccess( status)
             	  log.warning(s" Received Abort message, but state is ${status.state} ; Ignoring ." )
             case GoalState.Running =>

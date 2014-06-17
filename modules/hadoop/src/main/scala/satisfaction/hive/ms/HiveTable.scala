@@ -46,11 +46,12 @@ case class HiveTable (
            _hiveTable != null
          }
        } else {
-         //// XXX What to check exactly ???
-         //// 
          warn(" Not all variables are saturated ; Use HivePartitionGroup instead of HiveTable")
-
-         false 
+         //// Try getting all the partitions for the table 
+         val partitionList =  ms.getPartitionSetForTable(_hiveTable, w.raw)
+         //// If there is at least one partition, say it exists; 
+         ///// Otherwise use a  HivePartitionGroup , instead of HiveTable
+         partitionList.size > 0
        }
     }
     
