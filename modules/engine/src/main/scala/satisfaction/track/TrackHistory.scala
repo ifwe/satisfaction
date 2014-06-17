@@ -6,7 +6,6 @@ import org.joda.time._
 import engine.actors.GoalStatus
 import engine.actors.GoalState
 
-
 /**
  *  Interface to a persistent DB implementation which will store 
  *    track run history.
@@ -19,10 +18,10 @@ trait TrackHistory {
    */
   case class GoalRun( val trackDescriptor : TrackDescriptor,
          val goalName : String, 
-         val witness : Witness, //to string fn
+         val witness : Witness, 
          val startTime : DateTime, 
          val endTime : Option[DateTime],
-         val state : GoalState.State) {/*to string as well*/
+         val state : GoalState.State) {
     
      /**
       *  DB Identifier for the run
