@@ -17,6 +17,7 @@ import com.klout.satisfaction.track.TrackHistory
 import com.klout.satisfaction.track.JDBCSlickTrackHistory
 import com.klout.satisfaction.engine.actors.ProofEngine
 
+
 object Global extends GlobalSettings {
 
     implicit val hiveConf = Config.config
@@ -55,10 +56,11 @@ object Global extends GlobalSettings {
     }
     
     //// XXX Add Driver info ...
+    
     val trackHistory : TrackHistory = JDBCSlickTrackHistory
     val proofEngine = new ProofEngine(Some(trackHistory))
     
-    val trackScheduler = new TrackScheduler( proofEngine)
+    val trackScheduler = new TrackScheduler(proofEngine)
       
     implicit val trackFactory : TrackFactory = {
       ///// XXX Why doesn't implicits automatically convert???
