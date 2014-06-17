@@ -11,8 +11,6 @@ import engine.actors.GoalState
  *    track run history.
  */
 trait TrackHistory {
-  
-  
   /**
    *  Case class representing a single 
    */

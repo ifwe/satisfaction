@@ -8,9 +8,8 @@
 @import com.klout.satisfaction.engine.actors._
 @import models.HtmlUtil
 
-@main ( s"Satisfaction Scheduler Status ") {
+@main( s"Satisfaction Scheduler Status" ) {
 	
-	<div id="scheduler">
 		<h1> Scheduler</h1>
 		
 		<h2> Scheduled Tracks</h2>
@@ -30,10 +29,10 @@
 					<td> td.trackName </td>
 					<td>- </td>
 					<td>- </td>
-					<td>-</td>
-					<td>-</td>
-					<td>-</td>
-					<td>-</td>
+					<td>- </td>
+					<td>- </td>
+					<td>- </td>
+					<td>- </td>
 					<td><button id ="unscheduleButton" onClick="window.location.href='/unscheduleonejob/@td.trackName'">Unschedule</button></td>
 				</tr>
 				}
@@ -54,8 +53,7 @@
 				</tr>
 				}
 		</table>
-		
-	</div>
+
   
 
 	}

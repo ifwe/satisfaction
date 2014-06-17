@@ -34,11 +34,11 @@ object ScheduleTrackPage extends Controller {
    lazy val scheduler = Global.trackScheduler
    
    
-   def showSchedulesAction = Action { 
+   def showSchedulesAction() = Action { 
     	 val scList = scheduler.getScheduledTracks.map(_._1).toSeq
        val tdList = trackFactory.getAllTracks.diff(scList)
     
-     	Ok(views.html.scheduletrack(tdList, scList)) // multiple parameters work! Believe this!!!!
+     	Ok(views.html.scheduletrack( tdList, scList)) // multiple parameters work! Believe this!!!!
    }
      
    def scheduleOneTrack(trackName: String, rule: String, pattern: String) = Action {
@@ -62,7 +62,7 @@ object ScheduleTrackPage extends Controller {
      // Later: might want to add some live feedback for to the associated views....
        val scList = scheduler.getScheduledTracks.map(_._1).toSeq
        val tdList = trackFactory.getAllTracks.diff(scList)
-     Ok(views.html.scheduletrack(tdList, scList)) 
+     Ok(views.html.scheduletrack(tdList, scList)) //FIXME: Reload, not new page
    }
    
    def unscheduleOneTrack(trackName: String) = Action {
