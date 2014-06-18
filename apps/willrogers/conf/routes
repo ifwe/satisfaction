@@ -33,7 +33,7 @@ GET     /abort/:trackName/:goalName/:varString                   willrogers.cont
 GET		/scheduleonejob/:trackName/:rule/:pattern			willrogers.controllers.ScheduleTrackPage.scheduleOneTrack(trackName: String, rule: String, pattern : String)
 GET		/unscheduleonejob/:trackName						willrogers.controllers.ScheduleTrackPage.unscheduleOneTrack(trackName: String)
 
-GET		/filterJobHistory/:trackName/:forUser/:version/:variant/:goalName/:startTime/:endTime	willrogers.controllers.TrackHistoryPage.filterHistory(trackName:String, forUser:String, version:String, variant:String, goalName:String, startTime:String, endTime:String)
+GET		/filterJobHistory	willrogers.controllers.TrackHistoryPage.filterJobHistory
 GET		/lookupJobHistoryGoal willrogers.controllers.TrackHistoryPage.lookupJobHistoryGoal
 GET		/lookupGoalHistoryID	willrogers.controllers.TrackHistoryPage.lookupGoalHistoryID
 

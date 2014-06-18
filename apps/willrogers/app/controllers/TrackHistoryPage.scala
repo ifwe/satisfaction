@@ -1,28 +1,23 @@
 package willrogers
 package controllers
 
+import java.text.SimpleDateFormat
+import scala.collection._
+import com.klout.satisfaction._
+import com.klout.satisfaction.track._
+import com.klout.satisfaction.track.TrackHistory
+import models.VariableFormHandler
 import play.api._
 import play.api.data._
 import play.api.data.Forms._
-import play.mvc.Controller
-import play.api.mvc.Results._
 import play.api.data.validation.Constraints._
-import play.api.mvc.Action
-import play.api.Configuration
-import models.VariableHolder
 import play.api.mvc
-import com.klout.satisfaction._
-import com.klout.satisfaction.engine._
-import com.klout.satisfaction.engine.actors.ProofEngine
-import com.klout.satisfaction.engine.actors._
-import com.klout.satisfaction.track._
-import com.klout.satisfaction.track.TrackHistory
-import java.io.FileInputStream
-import java.io.File
-import models.PlumbGraph
-import models.VariableFormHandler
-import collection._
+import play.api.mvc.Action
+import play.api.mvc.Results._
+import play.mvc.Controller
 import play.mvc.Results
+import org.joda.time.DateTime
+
 
 
 object TrackHistoryPage extends Controller {
@@ -41,8 +36,20 @@ object TrackHistoryPage extends Controller {
   /**
    *  filter based on the desired Track/Goal, as well as start/end time
    */
-  def filterHistory (trackName:String, forUser:String, version:String, variant:String, goalName:String, startTime:String, endTime:String) =  {
-	  
+  
+    val filterHistoryForm = Form(
+      tuple(
+          "trackName" -> text,
+          "forUser" -> text,
+          "version" -> text,
+          "variant" -> text,
+          "goalName"-> text,
+          "startTime" -> text,
+          "endTime" -> text
+          ))
+          
+  def filterJobHistory = Action { implicit request =>
+	  val(trackName, forUser, version, variant, goalName, startTime, endTime) = filterHistoryForm.bindFromRequest.get
 	  println ("filterHistory: Here's what I got!")
 	  println(" "+ trackName)
 	  println(" "+ forUser)
@@ -52,8 +59,25 @@ object TrackHistoryPage extends Controller {
 	  println(" "+ startTime)
 	  println(" "+ endTime)
 	  
-	  if (goalName.length == 0) println("  doesn't have goalName")
-	  loadHistoryPageAction()
+	  //set up variables - need to massage this part....
+	  val trackDesc : TrackDescriptor = TrackDescriptor (trackName)
+	  val simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss") 
+	  val sTime : Option[DateTime]= startTime match{
+	    case timestring if timestring.length() > 0 => Some(new DateTime(simpleDateFormat.parse(timestring)))
+	    case _ => None
+	  }
+	  
+	  val eTime: Option[DateTime]=endTime match{
+	    case timestring if timestring.length() > 0 => Some(new DateTime(simpleDateFormat.parse(timestring)))
+	    case _ => None
+	  }
+	  
+	  
+	  val grList = goalName match {
+	    case name if name.length() > 0 => trackHistory.goalRunsForGoal(trackDesc, goalName, sTime, eTime)
+	    case _ => trackHistory.goalRunsForTrack(trackDesc, sTime, eTime)
+	  }
+	 Ok(views.html.trackhistory(grList))
   }
   
   
@@ -73,10 +97,9 @@ object TrackHistoryPage extends Controller {
           ))
           
    def lookupJobHistoryGoal = Action { implicit request =>
-    println("processing lookupGoalHistoryID submit action ")
-    val(trackName, forUse, version, variant, goalName, witness) = lookupGoalHistoryForm.bindFromRequest.get
+    val(trackName, forUser, version, variant, goalName, witness) = lookupGoalHistoryForm.bindFromRequest.get
     
-    val trackDesc = TrackDescriptor(trackName) //eh... might have to massage this part a bit more. Esp. string->Witness
+    val trackDesc = TrackDescriptor(trackName) //FixME: eh... might have to massage this part a bit more. Esp. string->Witness
     
     val grList = trackHistory.lookupGoalRun(trackDesc, goalName, null)
     Ok(views.html.trackhistory(grList))
@@ -90,7 +113,6 @@ object TrackHistoryPage extends Controller {
 	)
 	
     def lookupGoalHistoryID = Action { implicit request =>
-    println(" processing lookupGoalHistoryID submit action")
     val runId= lookupGoalHistoryIDForm.bindFromRequest.get
     val gr = trackHistory.lookupGoalRun(runId)
     gr match {
