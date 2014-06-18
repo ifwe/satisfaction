@@ -1,0 +1,103 @@
+@(grList: Seq[willrogers.controllers.TrackHistoryPage.trackHistory.GoalRun])
+
+@import helper._
+@import scala.collection.JavaConversions._
+@import com.klout.satisfaction._
+@import com.klout.satisfaction.engine._
+@import com.klout.satisfaction.engine.actors._
+@import models.HtmlUtil
+
+@main( s"Track History Page" ) {
+	
+	<script>
+	  $(function() {
+	    $( "#historyMenu" ).accordion({
+		    	header: "h2",
+	    		active: false,
+		    	collapsible: true
+		});
+	  });
+	</script>
+	
+	<h1> Track History</h1>
+	
+	<div id = "historyMenu" >
+		<h2>Filter</h2>
+
+		<form role="form" class="form-inline" action="/filterJobHistory">
+			<div class="form-group">
+				<label for="filterTrackDescName">trackName</label>
+				<input class="form-control" id="filterTrackDescName" placeholder="track name">
+			</div>
+			
+			<div class="form-group">
+				<label for="filterTrackDescUser">forUser</label>
+				<input class="form-control" id="filterTrackDescUser" placeholder="track owner">
+			</div>
+			
+			<div class="form-group">
+				<label for="filterTrackDescVersion">version</label>
+				<input class="form-control" id="filterTrackDescVersion" placeholder="track version">
+			</div>
+			
+			<div class="form-group">
+				<label for="filterTrackDescVariant">variant</label>
+				<input class="form-control" id=""filterTrackDescVariant"" placeholder="track variant">
+			</div>
+			
+			<div class="form-group">
+				<label for="filterTrackDescGoal">goalName</label>
+				<input class="form-control" id=""filterTrackDescGoal"" placeholder="goal from track">
+			</div>
+			
+			<div class="form-group">
+				<label for="filterTrackDescStart">starTime (yyyy-mm-dd HH:mm:ss) </label>
+				<input class="form-control" id=""filterTrackDescStart"" placeholder="started on">
+			</div>
+			
+			<div class="form-group">
+				<label for="filterTrackDescEnd">endTime (yyyy-mm-dd HH:mm:ss) </label>
+				<input class="form-control" id=""filterTrackDescEnd"" placeholder="finished by">
+			</div>
+			
+			<button id ="filterSubmit" type="submit" class="btn btn-default">Filter!</button>
+		</form>
+		
+		<h2>Lookup</h2>
+			<div>
+				<h3>Look up by Id</h3>
+				<p> just look by ID </p>
+				<h3>Look up by description</h3>
+				<p> find by lots</p>
+			</div>
+			
+		
+	</div>
+	
+	
+	<div id ="historyListing">
+		<h2>History Listing</h2>
+		<table>
+			<thead>
+				<td>TrackDescriptor</td>
+				<td>Goal Name</td>
+				<td>Witness(es) </td>
+				<td>Start Time</td>
+				<td> Finish Time</td>
+				<td> Status </td>
+			</thead>
+			@grList.map { gr =>
+				<tr>
+					<td>gr.trackDescriptor.trackName</td>
+					<td>gr.goalName</td>
+					<td>"what do I do with witness?"</td>
+					<td>gr.startTime</td>
+					<td>gr.endTime</td>
+					<td>gr.status.toString</td>
+				</tr>
+				}
+			
+			
+		</table>
+	</div>
+	}

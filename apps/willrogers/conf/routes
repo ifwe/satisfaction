@@ -11,6 +11,7 @@ GET     /dbtabs                      willrogers.controllers.Application.allDBs
 GET     /projtabs                      willrogers.controllers.ProjectPage.allProjects
 GET		/schedules				willrogers.controllers.ScheduleTrackPage.showSchedulesAction()
 GET     /current                   willrogers.controllers.SatisfyGoalPage.currentStatusAction()
+GET		/trackhistoy				willrogers.controllers.TrackHistoryPage.loadHistoryPageAction()
 GET     /showproject/:projName         willrogers.controllers.ProjectPage.showProject(projName: String)
 GET     /alltables/:db                   willrogers.controllers.Application.getDBTables(db: String)
 GET     /showtable/:db/:tblName                   willrogers.controllers.Application.showDBTable(db: String, tblName: String)
@@ -28,9 +29,11 @@ GET     /logwindow/:trackName/:goalName/:varString                   willrogers.
 GET     /rawlog/:trackName/:goalName/:varString                   willrogers.controllers.SatisfyGoalPage.rawLog(trackName: String, goalName: String, varString : String)
 GET     /restart/:trackName/:goalName/:varString                   willrogers.controllers.SatisfyGoalPage.restartJob(trackName: String, goalName: String, varString : String)
 GET     /abort/:trackName/:goalName/:varString                   willrogers.controllers.SatisfyGoalPage.abortJob(trackName: String, goalName: String, varString : String)
+
 GET		/scheduleonejob/:trackName/:rule/:pattern			willrogers.controllers.ScheduleTrackPage.scheduleOneTrack(trackName: String, rule: String, pattern : String)
 GET		/unscheduleonejob/:trackName						willrogers.controllers.ScheduleTrackPage.unscheduleOneTrack(trackName: String)
 
+GET		/filterJobHistory/:trackName/:forUser/:version/:variant/:goalName/:startTime/:endTime	willrogers.controllers.TrackHistoryPage.filterHistory(trackName:String, forUser:String, version:String, variant:String, goalName:String, startTime:String, endTime:String)
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)
 

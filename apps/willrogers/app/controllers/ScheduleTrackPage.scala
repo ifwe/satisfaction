@@ -38,7 +38,7 @@ object ScheduleTrackPage extends Controller {
     	 val scList = scheduler.getScheduledTracks.map(_._1).toSeq
        val tdList = trackFactory.getAllTracks.diff(scList)
     
-     	Ok(views.html.scheduletrack( tdList, scList)) // multiple parameters work! Believe this!!!!
+     	Ok(views.html.scheduletrack( tdList, scList))
    }
      
    def scheduleOneTrack(trackName: String, rule: String, pattern: String) = Action {
