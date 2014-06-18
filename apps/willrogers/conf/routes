@@ -34,6 +34,9 @@ GET		/scheduleonejob/:trackName/:rule/:pattern			willrogers.controllers.Schedule
 GET		/unscheduleonejob/:trackName						willrogers.controllers.ScheduleTrackPage.unscheduleOneTrack(trackName: String)
 
 GET		/filterJobHistory/:trackName/:forUser/:version/:variant/:goalName/:startTime/:endTime	willrogers.controllers.TrackHistoryPage.filterHistory(trackName:String, forUser:String, version:String, variant:String, goalName:String, startTime:String, endTime:String)
+GET		/lookupJobHistoryGoal willrogers.controllers.TrackHistoryPage.lookupJobHistoryGoal
+GET		/lookupGoalHistoryID	willrogers.controllers.TrackHistoryPage.lookupGoalHistoryID
+
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)
 
