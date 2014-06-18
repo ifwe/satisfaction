@@ -1,6 +1,9 @@
 import sbt._
 import Keys._
 
+import sbtSatisfy._
+import sbtSatisfy.SatisfyPlugin.SatisfyKeys._
+
 
 
 
@@ -32,8 +35,7 @@ object SatisfySimpleBuild extends Build {
 
    def commonResolvers = Seq(
      "snapshots" at "http://oss.sonatype.org/content/repositories/snapshots",
-     "releases"  at "http://oss.sonatype.org/content/repositories/releases",
-     "theatr" at "http://repo.theatr.us"
+     "releases"  at "http://oss.sonatype.org/content/repositories/releases"
   )
 
 
@@ -41,7 +43,7 @@ object SatisfySimpleBuild extends Build {
    def BaseSettings = Seq(
       resolvers ++= commonResolvers,
 
-      organization := "com.klout.satisfy",
+      organization := "com.tagged.satisfy",
 
       scalaVersion := "2.10.2",
 
@@ -62,28 +64,15 @@ object SatisfySimpleBuild extends Build {
 
          credentials := Credentials(Path.userHome / ".ivy2" / ".credentials") :: Nil,
 
-		 exportJars := false
-		  
+	 exportJars := false,
+
+         trackName := "SampleTrack",
+ 
+         overwriteTrack := true
+
 
    )  
 
-
-/**
-  def uploadSettings = {
-
-     Seq (
-	   hdfsURI := new java.net.URI("hdfs://jobs-dev-hnn"),
-	   baseHdfsPath := "/user/satisfaction/",
-	   pathPattern := "/track/${project}/version_2.1/",
-       hiveDependencies := Seq(
-	      ("com.google.guava" % "guava" % "11.0.1"),
-		  ("joda-time" % "joda" % "1.6"),
-		  ("com.klout" % "brickhouse" % "0.5.5")
-	   )
-
-     ) ++ UploadPlugin.UploadTasks
-   }
-   **/
 
    def LibrarySettings = BaseSettings
 }

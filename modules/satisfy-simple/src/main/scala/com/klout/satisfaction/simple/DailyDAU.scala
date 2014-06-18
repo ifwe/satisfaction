@@ -8,13 +8,13 @@ object SampleGoal {
     
   
     def apply(name: String, numIterations: Int)(implicit track : Track): Goal = {
-        val variables: Set[Variable[_]] = Set(Variable("dt"), Variable("network_abbr"), Variable[Int]("service_id", classOf[Int]))
+        val variables: List[Variable[_]] = List(Variable("dt"), Variable("network_abbr"), Variable[Int]("service_id", classOf[Int]))
         val sampSatisfier = new SampleSatisfier(numIterations, 1000)
         new Goal(name = name, satisfier = Some(sampSatisfier), variables = variables)
 
     }
 
-    def apply(name: String, varArg: Set[Variable[_]], numIterations: Int)(implicit track : Track): Goal = {
+    def apply(name: String, varArg: List[Variable[_]], numIterations: Int)(implicit track : Track): Goal = {
         val sampSatisfier = new SampleSatisfier(numIterations, 1000)
         new Goal(name = name, satisfier = Some(sampSatisfier), variables = varArg)
     }
@@ -42,9 +42,9 @@ class  SampleProject extends Track(TrackDescriptor("SampleTrack")) with Recurrin
     val topLevelGoal: Goal = {
         println(" TopLevel Goal -- Networks = )" + featureNetworks)
 
-        val tlGoal = SampleGoal("Top Level Goal", Set(Variable("dt")), 23)
+        val tlGoal = SampleGoal("Top Level Goal", List(Variable("dt")), 23)
 
-        val waitForKsuidMapping = SampleGoal("Wait for KSUID Mapping", Set(Variable("dt")), 60)
+        val waitForKsuidMapping = SampleGoal("Wait for KSUID Mapping", List(Variable("dt")), 60)
 
         for (network <- featureNetworks) {
             println(s" Adding dependency on score with features ${network.networkAbbr} ")
@@ -67,4 +67,3 @@ class  SampleProject extends Track(TrackDescriptor("SampleTrack")) with Recurrin
 
 }
 
-class WorkAroundTrack extends Track(TrackDescriptor("Sample"))

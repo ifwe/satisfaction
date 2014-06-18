@@ -13,7 +13,6 @@ import com.typesafe.sbt.packager.universal.Keys.stagingDirectory
 import play.Project._
 
 
-
 object ApplicationBuild extends Build {
 
   val appVersion = "2.0.1"
@@ -65,7 +64,13 @@ object ApplicationBuild extends Build {
 
       packageSummary := "lowenstein",
 
-      libraryDependencies ++= testDependencies
+      libraryDependencies ++= testDependencies,
+
+      publishMavenStyle := true,
+
+      publishTo := Some("tagged-artifactory-release" at "http://artifactory.tagged.com:8081/artifactory/libs-release-local"),
+
+      credentials += Credentials(Path.userHome / ".m2" / ".credentials")
   ) 
 
   def AppSettings =  CommonSettings ++ playScalaSettings ++ Seq(
