@@ -100,7 +100,6 @@ object Config  extends Logging {
     val config = initHiveConf
     
     def apply( track : Track ) : HiveConf = {
-      info( s" Hadoop HADOOP_HOME= ${sys.env("HADOOP_HOME")}")
       val thisConf = new HiveConf( config)
       
       HadoopResources.foreach { res => {

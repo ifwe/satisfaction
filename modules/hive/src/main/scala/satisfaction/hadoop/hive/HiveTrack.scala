@@ -6,10 +6,12 @@ package hive
 import satisfaction.Track
 import ms.MetaStore
 
-class HiveTrack(tr : TrackDescriptor) extends Track(tr) {
+/**
+ *  Allow the track to access the currently configured Hive MetaStore
+ *  by extending HiveTrack, instead of just Track
+ *  
+ */
+class HiveTrack(tr : TrackDescriptor)(implicit var ms : MetaStore = MetaStore.default) extends Track(tr) {
   
-     implicit lazy val ms  : MetaStore  = new MetaStore(Config(this)) 
-  
-     implicit val hiveTrack : Track = this
 
 }

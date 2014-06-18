@@ -13,6 +13,7 @@ import com.typesafe.sbt.packager.universal.Keys.stagingDirectory
 import play.Project._
 
 
+
 object ApplicationBuild extends Build {
 
   val appVersion = "2.0.1"
@@ -63,18 +64,24 @@ object ApplicationBuild extends Build {
       version := appVersion,
 
       packageSummary := "lowenstein",
-     
+
       libraryDependencies ++= testDependencies
   ) 
 
-  def AppSettings = CommonSettings ++ playScalaSettings
+  def AppSettings =  CommonSettings ++ playScalaSettings ++ Seq(
+     javacOptions in Compile ++= Seq("-source", "1.6", "-target", "1.6")
+  )
 
 
   val destDir = "/usr/local/satisfaction"
 
-  def RpmSettings = packagerSettings ++ deploymentSettings ++  playScalaSettings ++  Seq(
+  def RpmSettings = packagerSettings ++ deploymentSettings ++  playScalaSettings ++ packageArchetype.java_server ++  Seq(
     maintainer in Linux := "Jerome Banks jbanks@tagged.com",
-    packageDescription in Linux := "Next Generation Hadoop Scheduler",
+    packageSummary in Linux := "Satisfaction",
+    packageDescription in Linux := "The Next Generation Hadoop Scheduler",
+    daemonUser in Linux := "satisfaction",
+    daemonGroup in Linux := "satisfaction",
+    normalizedName in Linux := "satisfaction",
 
     linuxPackageMappings <++= (projectDependencyArtifacts) map { artifactSeq : Seq[Attributed[File]] =>
           artifactSeq map ( a => { packageMapping ( a.data -> s"${destDir}/lib/${a.data.name}" )  } )
@@ -130,7 +137,7 @@ object ApplicationBuild extends Build {
 	  ("org.hamcrest" % "hamcrest-core" % "1.3"  ) ,
           ("ch.qos.logback" % "logback-classic" % "1.0.13" ),
           ("org.slf4j" % "log4j-over-slf4j" % "1.7.7" )
-  ).excluding("commons-daemon", "commons-daemon" ).excluding("junit","junit").excluding("log4j", "*").excluding("org.slf4j","slf4j-log4j12") ++ testDependencies ++ metastoreDependencies
+  ).excluding("commons-daemon", "commons-daemon" ).excluding("junit","junit").excluding("log4j", "log4j").excluding("org.slf4j","slf4j-log4j12") ++ testDependencies ++ metastoreDependencies
 
   def coreDependencies = Seq(
     ("org.slf4j" % "slf4j-api" % "1.7.7"),
@@ -150,7 +157,7 @@ object ApplicationBuild extends Build {
 	  ("org.apache.hive" % "hive-exec" % hiveVersion),
 	  ("org.apache.thrift" % "libfb303" % "0.7.0"),
           ("com.tagged.analytics" % "avro-serde" % "0.13.1-jdb")
-  ).excluding( "log4j", "*" ).excluding("org.slf4j", "*")
+  ).excluding( "log4j", "log4j" ).excluding("org.slf4j", "slf4j-log4j12")
 
   def hiveDependencies = Seq(
 	  ("org.apache.hive" % "hive-common" % hiveVersion),
@@ -165,7 +172,7 @@ object ApplicationBuild extends Build {
 	  ("org.apache.thrift" % "libfb303" % "0.7.0" ),
 	  ("org.antlr" % "antlr-runtime" % "3.4" ),
 	  ("org.antlr" % "antlr" % "3.0.1" )
-  ).excluding("log4j", "*").excluding("org.slf4j", "slf4j-log4j12")  ++ metastoreDependencies ++ testDependencies
+  ).excluding("log4j", "log4jj").excluding("org.slf4j", "slf4j-log4j12")  ++ metastoreDependencies ++ testDependencies
 
 
   def engineDependencies = Seq(
@@ -178,25 +185,6 @@ object ApplicationBuild extends Build {
     ("ch.qos.logback" % "logback-classic" % "1.0.13" )
   ) ++ testDependencies ++ jsonDependencies
 
-
-  def Dependencies = libraryDependencies ++= Seq(
-      jdbc,
-      anorm,
-          
-	  ("javax.jdo" % "jdo-api" % "3.0.1"),
-	 ("mysql" % "mysql-connector-java" % "5.1.18" ),
-         ("com.github.nscala-time" %% "nscala-time" % "0.4.2"),
-	("com.googlecode.protobuf-java-format" % "protobuf-java-format" % "1.2"),
-
-	  ("com.googlecode.protobuf-java-format" % "protobuf-java-format" % "1.2"),
-	  ("org.specs2" %% "specs2" % "1.14" % "test"),
-	  ("org.apache.thrift" % "libfb303" % "0.7.0" ),
-	  ("org.antlr" % "antlr-runtime" % "3.4" ),
-	  ("org.antlr" % "antlr" % "3.0.1" ),
-	  ( "org.scala-lang" % "scala-reflect" % "2.10.2" ),
-    ("ch.qos.logback" % "logback-classic" % "1.0.13" )
-  ).excluding("org.apached.hadoop.hive","hive-cli").excluding("javax.jdo","jdo2-api").excluding("commons-daemon","commons-daemon").
-     excluding("org.apache.hbase","hbase").excluding("org.apache.maven.wagon","*").excluding("log4j","*").excluding("org.slf4j","slf4j-log4j12")
 
 
   def Resolvers = resolvers ++= Seq(
