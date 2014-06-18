@@ -50,14 +50,6 @@ object TrackHistoryPage extends Controller {
           
   def filterJobHistory = Action { implicit request =>
 	  val(trackName, forUser, version, variant, goalName, startTime, endTime) = filterHistoryForm.bindFromRequest.get
-	  println ("filterHistory: Here's what I got!")
-	  println(" "+ trackName)
-	  println(" "+ forUser)
-	  println(" "+ version)
-	  println(" "+ variant)
-	  println(" "+ goalName)
-	  println(" "+ startTime)
-	  println(" "+ endTime)
 	  
 	  //set up variables - need to massage this part....
 	  val trackDesc : TrackDescriptor = TrackDescriptor (trackName)
