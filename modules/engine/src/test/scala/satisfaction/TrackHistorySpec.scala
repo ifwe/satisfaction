@@ -63,10 +63,7 @@ class TrackHistorySpec extends Specification {
          val goalListResult = trackHistory.lookupGoalRun(trackDesc, goalName, witness)
         //result2.size should_== 25
        }
-
     }
-    
-    
   }
   
   
