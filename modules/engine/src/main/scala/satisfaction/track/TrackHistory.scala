@@ -11,8 +11,6 @@ import engine.actors.GoalState
  *    track run history.
  */
 trait TrackHistory {
-  
-  
   /**
    *  Case class representing a single 
    */
@@ -77,6 +75,11 @@ trait TrackHistory {
               witness : Witness ) : Seq[GoalRun]
   
 
+   /**
+    *  get all entries in the history table
+    */
+   def getAllHistory() : Seq[GoalRun]
+   
   /**
    *  Lookup a specific goal run, 
    *   given the runID
@@ -84,5 +87,8 @@ trait TrackHistory {
    *   by runID only
    */
    def lookupGoalRun( runID : String ) : Option[GoalRun]
-  
+}
+
+object TrackHistory {
+
 }

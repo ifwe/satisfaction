@@ -1,0 +1,91 @@
+@(grList: Seq[willrogers.controllers.TrackHistoryPage.trackHistory.GoalRun])
+
+@import helper._
+@import scala.collection.JavaConversions._
+@import com.klout.satisfaction._
+@import com.klout.satisfaction.engine._
+@import com.klout.satisfaction.engine.actors._
+@import models.HtmlUtil
+
+
+@main("Track History Page") {
+	
+	<script>
+	  $(function() {
+	    $( "#historyMenu" ).accordion({
+		    	header: "h2",
+	    		active: false,
+		    	collapsible: true
+		});
+	  });
+	</script>
+	
+	<h1> Track History</h1>
+	
+	<div id = "historyMenu" >
+		<h2>Filter</h2>
+		<form method = "get" autocomplete="on" action="filterJobHistory">
+			Track Name: <input type="text" name="trackName"><br />
+			Owner(optional): <input type="text" name="forUser"><br />
+			Track Version: <input type="text" name="version"><br />
+			Track Version Variant: <input type="text" name="variant"><br />
+			Goal Name: <input type="text" name="goalName"><br />
+			Start Time (yyyy-mm-dd HH:mm:ss): <input type="text" name="startTime"><br />
+			End Time (yyyy-mm-dd HH:mm:ss): <input type="text" name="endTime"><br />
+		<input type="submit">
+		</form>
+			
+		<h2>Lookup</h2>
+			<div>
+				<h3>Look up by Id</h3>
+				<form method = "get" autocomplete="on" action="lookupGoalHistoryID">
+					runID:<input type="text" name="runId"> <br />
+					<input type="submit">
+				</form>
+				
+				<h3>Look up by description</h3>
+				<form method = "get" autocomplete="on" action="lookupJobHistoryGoal">
+					Track Name: <input type="text" name="trackName"><br />
+					Owner (optional): <input type="text" name="forUser"><br />
+					Track Version: <input type="text" name="version"><br />
+					Track Version Variant: <input type="text" name="variant"><br />
+					Goal Name: <input type="text" name="goalName"><br />
+					Witness(String - not sure what to do with this for now...): <input type="text" name="witness"><br />
+					<input type="submit">
+				</form>
+			</div>
+	</div>
+	
+	
+	<div id ="historyListing">
+		<h2>History Listing</h2>
+		<table>
+			<thead>
+				<td> ID </td>
+				<td>TrackDescriptor</td>
+				<td>Goal Name</td>
+				<td>Witness(es) </td>
+				<td>Start Time</td>
+				<td> Finish Time</td>
+				<td> Status </td>
+			</thead>
+			@grList.map { gr =>
+				<tr>
+					<td>@gr.runId</td>
+					<td>@gr.trackDescriptor.trackName <br />
+						@gr.trackDescriptor.forUser <br />
+						@gr.trackDescriptor.version <br />
+						@gr.trackDescriptor.variant
+					</td>
+					<td>@gr.goalName</td>
+					<td>"what do I do with witness?"</td>
+					<td>@gr.startTime</td>
+					<td>@gr.endTime</td>
+					<td>@gr.state</td>
+				</tr>
+				}
+			
+			
+		</table>
+	</div>
+	}

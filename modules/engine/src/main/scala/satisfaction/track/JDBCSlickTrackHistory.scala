@@ -15,7 +15,7 @@ import java.sql.ResultSet
 import scala.slick.jdbc.meta.MTable
 import java.sql.Timestamp
 
-import Witness2Json._
+import com.klout.satisfaction.track.Witness2Json._
 
 
 
@@ -134,7 +134,6 @@ class JDBCSlickTrackHistory( val driverInfo : DriverInfo)   extends TrackHistory
 	override  def goalRunsForGoal(  trackDesc : TrackDescriptor ,  
               goalName : String,
               startTime : Option[DateTime], endTime : Option[DateTime] ) : Seq[GoalRun] = {
-	  println("entering lookupGoalRun, " + trackDesc.trackName + " "+ trackDesc.forUser+ " "+ trackDesc.version+ " "+ trackDesc.variant+ " "+ goalName + " " + startTime + " " + endTime)
 	  
 	  var returnList : Seq[GoalRun] = null.asInstanceOf[Seq[GoalRun]]
 	  db withSession {
@@ -215,6 +214,26 @@ class JDBCSlickTrackHistory( val driverInfo : DriverInfo)   extends TrackHistory
 	     }
 		}
 	}
+
+	
+	
+	def getAllHistory() : Seq[GoalRun] = {
+	  var returnList : Seq[GoalRun] = null.asInstanceOf[Seq[GoalRun]]
+	  db.withSession {
+		   implicit session =>
+		   		   	 returnList=table.list.map(g => {
+		   			 							  val gr = GoalRun(TrackDescriptor(g._2, g._3, g._4, Some(g._5)), 
+															       	    g._6, parseWitness(g._7), new DateTime(g._8), 
+															       	    g._9 match { case Some(timestamp) => Some(new DateTime(timestamp))
+															       	    			 case None => null}, GoalState.withName(g._10))
+														gr.runId=g._1.toString
+														gr
+		   			 							}).seq
+			}
+	  returnList
+	}
+	
+
   
 }
 
