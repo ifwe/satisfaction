@@ -29,7 +29,6 @@ object TrackHistoryPage extends Controller {
    */
   def loadHistoryPageAction() = Action {
     val grList = trackHistory.getAllHistory
-    val word = "OK"
    Ok(views.html.trackhistory(grList))
   }
   
@@ -94,6 +93,8 @@ object TrackHistoryPage extends Controller {
     val trackDesc = TrackDescriptor(trackName) //FixME: eh... might have to massage this part a bit more. Esp. String->Witness
     
     val grList = trackHistory.lookupGoalRun(trackDesc, goalName, null)
+    
+  
     Ok(views.html.trackhistory(grList))
   }
   

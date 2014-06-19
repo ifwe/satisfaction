@@ -21,6 +21,7 @@ import hdfs.HdfsImplicits._
 import org.apache.hadoop.fs.{Path => ApachePath}
 import org.apache.hadoop.fs.{FileStatus => ApacheFileStatus}
 import org.apache.hadoop.fs.{FileSystem => ApacheFileSystem}
+import java.net.URI
 
 
 //import org.apache.hadoop.hive.metastore.api.Partition
@@ -190,7 +191,7 @@ object Replicator {
     def main3(argv: Array[String]): Unit = {
         val stageHc = new HiveConf(new Configuration(), this.getClass())
         stageHc.setVar(HiveConf.ConfVars.METASTOREURIS, "thrift://jobs-dev-hive1:9085")
-        val toMs = new MetaStore(stageHc)
+        val toMs = MetaStore()(stageHc)
         println(" Destination MetaStore = " + toMs)
         
 
@@ -216,12 +217,12 @@ object Replicator {
         val prodHc = new HiveConf(new Configuration(), this.getClass())
         ///prodHc.setVar(HiveConf.ConfVars.METASTOREURIS, "thrift://jobs-dev-hive1:9085")
         prodHc.setVar(HiveConf.ConfVars.METASTOREURIS, "thrift://jobs-aa-sched1:9083")
-        val fromMs = new MetaStore(prodHc)
+        val fromMs = new MetaStore()(prodHc)
         println(" Production MetaStore = " + fromMs)
         
         val stageHc = new HiveConf(new Configuration(), this.getClass())
         stageHc.setVar(HiveConf.ConfVars.METASTOREURIS, "thrift://jobs-dev-hive2:9085")
-        val toMs = new MetaStore(stageHc)
+        val toMs = MetaStore()(stageHc)
         println(" Destination MetaStore = " + toMs)
 
         ///val now = MetaStore.YYYYMMDD.parseDateTime("20130729")

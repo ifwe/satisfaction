@@ -32,7 +32,7 @@ object Config  extends Logging {
               val resFile = new File(hadoopDir.getPath + "/" + res)
               if(resFile.exists() ) {
                 info(s" Adding resource ${resFile.getPath} ")
-                hc.addResource( new FileInputStream(resFile))
+                hc.addResource( new FileInputStream(resFile),res)
               }
            } )
         } else {
@@ -46,7 +46,7 @@ object Config  extends Logging {
               val resFile = new File(hiveDir.getPath + "/" + res)
               if(resFile.exists() ) {
                 info(s" Adding resource ${resFile.getPath} ")
-                hc.addResource( new FileInputStream(resFile))
+                hc.addResource( new FileInputStream(resFile),res)
               }
            } )
         } else {
@@ -100,7 +100,6 @@ object Config  extends Logging {
     val config = initHiveConf
     
     def apply( track : Track ) : HiveConf = {
-      info( s" Hadoop HADOOP_HOME= ${sys.env("HADOOP_HOME")}")
       val thisConf = new HiveConf( config)
       
       HadoopResources.foreach { res => {

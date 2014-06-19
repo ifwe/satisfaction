@@ -21,7 +21,7 @@ import com.klout.satisfaction.engine.actors.ProofEngine
 object Global extends GlobalSettings {
 
     implicit val hiveConf = Config.config
-    implicit val metaStore : MetaStore  = new MetaStore( hiveConf)
+    implicit val metaStore : MetaStore  = new MetaStore()( hiveConf)
 
     lazy val hdfsFS = Hdfs.fromConfig( hiveConf )
     lazy val trackPath : Path = new Path("/user/satisfaction") /// XXX Get From appconfig

@@ -89,7 +89,6 @@ case class Witness(
         new Witness(filtered + (param -> value))
     }
 
-    /// XXX Unit test all this logic 
     def contains[T](variable: Variable[T]): Boolean = {
         assignments.map(_.variable).contains(variable)
     }

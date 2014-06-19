@@ -37,15 +37,13 @@ import hdfs.Hdfs
 
 
 ///case class MetaStore(val hvConfig: HiveConf) extends Logging {
-case class MetaStore(val hvConfig: HiveConf)  extends Logging {
+case class MetaStore(implicit val config: HiveConf)  extends Logging {
    import hdfs.HdfsImplicits
    import hdfs.HdfsImplicits._
 
-    private val _hive = Hive.get(hvConfig)
-    private val _hdfs = Hdfs.default
+    private lazy val _hive = {val hv=  Hive.get(config); Hive.set( hv); hv }
+    private lazy val _hdfs = Hdfs.fromConfig(config)
     
-    
-    def config : HiveConf = { hvConfig}
     
     val PRELOAD = false
     private var _dbList : List[String] = if( PRELOAD)  { _initDbList  } else { null }
@@ -154,7 +152,7 @@ case class MetaStore(val hvConfig: HiveConf)  extends Logging {
         this.synchronized({ _hive.getPartitions(tbl).toList })
     }
 
-    def getPartitionSetForTable(tbl: Table, partialVars: Map[String, String]) = {
+    def getPartitionSetForTable(tbl: Table, partialVars: Map[String, String]) : List[Partition] = {
         this.synchronized({ _hive.getPartitions(tbl, partialVars).toList })
     }
 
@@ -181,7 +179,7 @@ case class MetaStore(val hvConfig: HiveConf)  extends Logging {
     }
     
     def tableExists( db: String, tblName: String) : Boolean = {
-       this.synchronized( _hive.getTable(db,tblName, false) == null)
+       this.synchronized( _hive.getTable(db,tblName, false) != null)
     }
 
     /**
@@ -369,6 +367,11 @@ case class MetaStore(val hvConfig: HiveConf)  extends Logging {
 
     def getPartition(db: String, tblName: String, partMap: Map[String, String]): Partition = {
         this.synchronized({
+         println(" METASTORE  -- Property dfs.client.failover.proxy.provider.dhdp2 = "  + config.get("dfs.client.failover.proxy.provider.dhdp2") );
+         info(" METASTORE  -- Property dfs.client.failover.proxy.provider.dhdp2 = "  + config.get("dfs.client.failover.proxy.provider.dhdp2") );
+         info(" METASTORE  CONF -- Property dfs.client.failover.proxy.provider.dhdp2 = "  + _hive.getConf().get("dfs.client.failover.proxy.provider.dhdp2") );
+         println(" METASTORE  CONF -- Property dfs.client.failover.proxy.provider.dhdp2 = "  + _hive.getConf().get("dfs.client.failover.proxy.provider.dhdp2") );
+
             val tbl = _hive.getTable(db, tblName)
             _hive.getPartition(tbl, partMap, false)
         })
@@ -564,14 +567,13 @@ case class MetaStore(val hvConfig: HiveConf)  extends Logging {
  */
 object MetaStore  {
   
-    def apply( msURI : java.net.URI ) : MetaStore = {
-      val conf = Config.config
-      conf.setVar(HiveConf.ConfVars.METASTOREURIS, msURI.toASCIIString())
+    def apply( msURI : java.net.URI )(implicit config :  HiveConf = Config.config) : MetaStore = {
+      config.setVar(HiveConf.ConfVars.METASTOREURIS, msURI.toASCIIString())
       
-      new MetaStore(conf)
+      new MetaStore()(config)
     }
     
-    val default = new MetaStore( Config.config)
+    lazy val default = new MetaStore()(Config.config)
   
     /**
      *  From a set of dates 

@@ -23,13 +23,15 @@ class HiveTableSpec extends Specification {
 
     //// XXX Externalize  ---
     //// Remove references to Klout ( or Tagged)
-    implicit  val ms : MetaStore = MetaStore(new java.net.URI("thrift://dhdp2jump01:9083"))
+    ///implicit  val ms : MetaStore = MetaStore(new java.net.URI("thrift://dhdp2jump01:9083"))
+    implicit val ms : MetaStore = MetaStore.default
     implicit  val hdfs : FileSystem = Hdfs.default
     implicit val track : Track = Track.localTrack( "PartitionExistsTrack", 
            LocalFileSystem.relativePath( new Path(
                 "modules/hadoop/src/test/resources/track/PartitionExists")))
     
     "HiveTable" should {
+      /**
         "provide variables" in {
             val dauByPlatform = new HiveTable("ramblas", "dau_by_platform")
             val params = dauByPlatform.variables
@@ -83,7 +85,7 @@ class HiveTableSpec extends Specification {
         }
         "create partition" in {
             val pageViewLog = new HiveTable("sqoop_test", "page_view_log")
-            val witness = new Witness(Set((dateParam -> "20140522"), (hourParam -> "05")))
+            val witness = new Witness(Set((dateParam -> "20140615"), (hourParam -> "05")))
             
             val partOpt = pageViewLog.getPartition( witness)
 
@@ -102,6 +104,42 @@ class HiveTableSpec extends Specification {
             
             
             true
+        }
+        **/
+        "non partitoned table" in {
+            val chkConfig = Config.config 
+            val failOver = chkConfig.get( "dfs.client.failover.proxy.provider.dhdp2")
+            println(" FailOver Provider = " + failOver)
+            failOver must not beNull
+          
+          
+            val pageViewLogNonPartitioned = new HiveTable("default", "page_view_event_non_partitioned", false)
+            
+            val emptyWitness = new Witness(Set.empty)
+            
+            val exists = pageViewLogNonPartitioned.exists( emptyWitness)
+            if( exists) {
+              println("XXX XXXX non Partitoned table exists")
+            } else {
+              println("XXX XXXXnon Partitoned table Doesn't  exists")
+            }
+            
+            exists must_== true
+
+            val dataInstanceOpt : Option[DataInstance] = pageViewLogNonPartitioned.getDataInstance( emptyWitness)
+            
+            dataInstanceOpt.isDefined must_== true
+            
+            val dataInstance = dataInstanceOpt.get
+            
+            println("  XXX XXX XXX Non Partitioned data instance is " + dataInstance)
+            System.out.println("  XXX XXX XXX Non Partitioned data instance is " + dataInstance)
+            
+            dataInstance.exists must_== true
+            
+            println(" Created time = " + dataInstance.created )
+
+          
         }
 
     }

@@ -42,7 +42,7 @@ import satisfaction.fs.LocalFileSystem
   *     dependencies
   */
 case class Track( 
-    var descriptor : TrackDescriptor )  {
+    var descriptor : TrackDescriptor )(implicit var hdfs : FileSystem = LocalFileSystem)  {
 
   
     /// XXX Track initialization
@@ -61,7 +61,7 @@ case class Track(
     /// Define filesystems which Tracks can read and write to
     /// Define as local, to avoid unnecessary dependencies
     //// XXX FIXME -- Allow implicit HDFS to be in scope on object creation
-    implicit var hdfs : FileSystem = LocalFileSystem
+    ///implicit var hdfs : FileSystem = LocalFileSystem
     implicit val track : Track = this
     
     
