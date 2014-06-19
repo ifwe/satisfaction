@@ -91,7 +91,7 @@ object TrackHistoryPage extends Controller {
    def lookupJobHistoryGoal = Action { implicit request =>
     val(trackName, forUser, version, variant, goalName, witness) = lookupGoalHistoryForm.bindFromRequest.get
     
-    val trackDesc = TrackDescriptor(trackName) //FixME: eh... might have to massage this part a bit more. Esp. string->Witness
+    val trackDesc = TrackDescriptor(trackName) //FixME: eh... might have to massage this part a bit more. Esp. String->Witness
     
     val grList = trackHistory.lookupGoalRun(trackDesc, goalName, null)
     Ok(views.html.trackhistory(grList))
