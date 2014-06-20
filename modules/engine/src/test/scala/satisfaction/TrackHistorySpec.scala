@@ -13,7 +13,7 @@ import satisfaction.engine.actors.GoalState
 import org.joda.time.format.DateTimeFormatter
 import java.text.SimpleDateFormat
 import Witness2Json._
-import satisfaction.track.Witness2Json
+import satisfaction.track.TrackHistory._
 
 @RunWith(classOf[JUnitRunner])
 class TrackHistorySpec extends Specification {
@@ -31,16 +31,42 @@ class TrackHistorySpec extends Specification {
     
     "insert started job into table" in  {
     
-      val result  = trackHistory.startRun(trackDesc, goalName, witness, dt)
-      println(" inserted string " + result)
+      val runId  = trackHistory.startRun(trackDesc, goalName, witness, dt)
+      println(" inserted string " + runId)
+      val goalResult  = trackHistory.lookupGoalRun(runId.toString).get
+      
+      println(" GoalResult is " + goalResult)
+      goalResult.state must_== GoalState.Running
+      
+
       //result.toString must be 
      // H2DriverInfo.USER must be_==("sa") // NO
     }
      
     "update a running jobhistory" in { 
      //val result : String = trackHistory.completeRun("29", GoalState.Success)
+
+      val runId  = trackHistory.startRun(trackDesc, goalName, witness, dt)
+      println(" inserted string " + runId)
+      
+      val goalResult  = trackHistory.lookupGoalRun(runId.toString).get
+      println(" Result 1 is " + goalResult)
+      goalResult.state must_== GoalState.Running
+
+      goalResult.endTime must beNone
+      
+      val completeRun = trackHistory.completeRun( runId, GoalState.Success)
+
+      val goalResult2 = trackHistory.lookupGoalRun(runId.toString).get
+      println(" Result 2 is " + goalResult2)
+      goalResult2.state must_== GoalState.Success
+      
+      goalResult2.endTime must not beNone
+      println(" Result 2 endtime  is " + goalResult2.endTime.get)
+
     }
     
+    /**
     "get Goals by time spans" in {
     	
       //set up custom start and end DateTimes; then toggle 
@@ -92,6 +118,7 @@ class TrackHistorySpec extends Specification {
            
       }
 
+**/
       
     
   }

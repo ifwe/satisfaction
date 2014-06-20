@@ -92,7 +92,7 @@ class JDBCSlickTrackHistory( val driverInfo : DriverInfo)   extends TrackHistory
 	override def completeRun( id : String, state : GoalState.State) : String = {
 	  db withSession {
 	   implicit session =>
-	     val check = table.filter( _.id == id.toString ).
+	     val check = table.filter( _.id === id.toInt ).
 	       map( x => ( x.state , x.endTime)).update( (state.toString, Some(new Timestamp(DateTime.now.getMillis))))
 	         
 	  }
@@ -206,7 +206,7 @@ class JDBCSlickTrackHistory( val driverInfo : DriverInfo)   extends TrackHistory
 		       case Some(timestamp) => Some(new DateTime(timestamp))
 		       case None => None
 		     }
-		     returnGoal = GoalRun(trackDesc, g(0)._6, parseWitness(g(0)._7), dtStart, dtEnd, GoalState.WaitingOnDependencies)
+		     returnGoal = GoalRun(trackDesc, g(0)._6, parseWitness(g(0)._7), dtStart, dtEnd, GoalState.withName(g(0)_10))
 		     returnGoal.runId = g(0)._1.toString
 		     Some(returnGoal)
 	     } else {

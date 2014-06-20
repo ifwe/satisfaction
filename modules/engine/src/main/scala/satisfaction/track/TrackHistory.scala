@@ -25,6 +25,7 @@ trait TrackHistory {
       *  DB Identifier for the run
       */
      var runId : String = null
+     
   }
          
    /**
@@ -87,6 +88,7 @@ trait TrackHistory {
    *   by runID only
    */
    def lookupGoalRun( runID : String ) : Option[GoalRun]
+   
 }
 
 object TrackHistory {
