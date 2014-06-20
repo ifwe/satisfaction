@@ -2,20 +2,35 @@ package com.klout
 package satisfaction
 package track
 
-import org.joda.time._
-import engine.actors.GoalStatus
-import engine.actors.GoalState
-import scala.slick.driver.H2Driver.simple._
-import scala.slick.jdbc.{GetResult, StaticQuery => Q}
-import scala.slick.jdbc.JdbcBackend.Database
-import scala.slick.lifted.ProvenShape
-import java.sql.Connection
-import java.sql.DriverManager
-import java.sql.ResultSet
-import scala.slick.jdbc.meta.MTable
 import java.sql.Timestamp
 
-import com.klout.satisfaction.track.Witness2Json._
+import scala.slick.driver.H2Driver.simple.TableQuery
+import scala.slick.driver.H2Driver.simple.Tag
+import scala.slick.driver.H2Driver.simple.columnExtensionMethods
+import scala.slick.driver.H2Driver.simple.ddlToDDLInvoker
+import scala.slick.driver.H2Driver.simple.intColumnType
+import scala.slick.driver.H2Driver.simple.queryToAppliedQueryInvoker
+import scala.slick.driver.H2Driver.simple.queryToInsertInvoker
+import scala.slick.driver.H2Driver.simple.queryToUpdateInvoker
+import scala.slick.driver.H2Driver.simple.stringColumnType
+import scala.slick.driver.H2Driver.simple.tableQueryToTableQueryExtensionMethods
+import scala.slick.driver.H2Driver.simple.timestampColumnType
+import scala.slick.driver.H2Driver.simple.valueToConstColumn
+import scala.slick.jdbc.JdbcBackend.Database
+import scala.slick.jdbc.meta.MTable
+import scala.slick.lifted.ProvenShape
+import scala.slick.lifted.ProvenShape.proveShapeOf
+import scala.slick.profile.RelationalProfile.SimpleQL.Table
+
+import org.joda.time.DateTime
+
+import com.klout.satisfaction.TrackDescriptor
+import com.klout.satisfaction.Witness
+import com.klout.satisfaction.track.Witness2Json.parseWitness
+import com.klout.satisfaction.track.Witness2Json.renderWitness
+
+import engine.actors.GoalState
+import scala.slick.lifted.Aliases.Column
 
 
 
