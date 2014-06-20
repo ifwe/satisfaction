@@ -22,6 +22,11 @@ object HtmlUtil {
        wit.toString 
     }
     
+    def witnessTable( wit : Witness , css : String = "witness") : String = {
+       s"<table style=$css>" + 
+       wit.assignments.map(  ass => { "<tr><td>" + ass.variable.name + "</td><td>" + ass.value + "</td>" } ).mkString  + "</table>"
+    }
+    
       
     def parseWitness( varString : String ) : Witness = {
       val vaSeq : Seq[VariableAssignment[String]] = varString.split(";").map( _.split("=") ).map( kvArr  => 

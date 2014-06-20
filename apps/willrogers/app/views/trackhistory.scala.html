@@ -64,7 +64,7 @@
 				<td> ID </td>
 				<td>TrackDescriptor</td>
 				<td>Goal Name</td>
-				<td>Witness(es) </td>
+				<td>Witness </td>
 				<td>Start Time</td>
 				<td> Finish Time</td>
 				<td> Status </td>
@@ -78,7 +78,7 @@
 						@gr.trackDescriptor.variant
 					</td>
 					<td>@gr.goalName</td>
-					<td>"what do I do with witness?"</td>
+					<td>@Html(HtmlUtil.witnessTable( gr.witness))</td>
 					<td>@gr.startTime</td>
 					<td>@gr.endTime</td>
 					<td>@gr.state</td>
