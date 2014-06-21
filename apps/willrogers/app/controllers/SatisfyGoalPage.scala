@@ -208,13 +208,17 @@ object SatisfyGoalPage extends Controller {
        val witness = parseWitness( varString)
        
        val logFileOpt = readLogFile( TrackDescriptor( trackName), goalName, witness) 
+       
+       val lines = io.Source.fromFile("/Users/yyin/Desktop/fake.log").mkString
+       Ok(lines)
+       /*
        logFileOpt match {
          case Some(logFile) =>
            Ok( logFile)
          
          case None =>
-           NotFound(s" No Log File for $trackName $goalName $witness")
-       } 
+          NotFound(s" No Log File for $trackName $goalName $witness")
+       } */
     }
     
     /**

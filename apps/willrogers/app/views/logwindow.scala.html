@@ -17,7 +17,7 @@
   <td>
 	    <h3>Current Log Output</h3> 
  <div>
-  <iframe id="logFrame" style="width:600px;height:30px;overflow:scroll" src='/rawlog/@trackName/@goalName/@HtmlUtil.witnessPath(witness)'>
+  <iframe id="logFrame" style="width:600px;height:600px;overflow:scroll" src='/rawlog/@trackName/@goalName/@HtmlUtil.witnessPath(witness)' scrollTop="600px" onload="scrollDown()">
   </iframe>
    </div>
    </td>
@@ -27,8 +27,13 @@
    	  
    	  <script type="text/javascript">
    	    setInterval(function(){
-   	       document.getElementById('logFrame').contentWindow.location.reload(true);
+   	      document.getElementById('logFrame').contentWindow.location.reload(true);
+   	   		document.getElementById("logFrame").contentWindow.scrollTo(0,document.getElementById("logFrame").contentWindow.document.body.scrollHeight)
     	},2000);
+
+    	function scrollDown() {
+    		 document.getElementById("logFrame").contentWindow.scrollTo(0,document.getElementById("logFrame").contentWindow.document.body.scrollHeight)
+       	}
    	  </script>
     
 }
