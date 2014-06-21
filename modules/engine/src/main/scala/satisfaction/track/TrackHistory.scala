@@ -74,6 +74,12 @@ trait TrackHistory {
    def lookupGoalRun(  trackDesc : TrackDescriptor ,  
               goalName : String,
               witness : Witness ) : Seq[GoalRun]
+  
+
+   /**
+    *  get all entries in the history table
+    */
+   def getAllHistory() : Seq[GoalRun]
    
   /**
    *  Lookup a specific goal run, 
@@ -82,11 +88,7 @@ trait TrackHistory {
    *   by runID only
    */
    def lookupGoalRun( runID : String ) : Option[GoalRun]
-
-   /**
-    *  get all entries in the history table
-    */
-   def getAllHistory() : Seq[GoalRun]
+   
 }
 
 object TrackHistory {
