@@ -14,7 +14,7 @@ def satisfaction = new Project(
     ]
 ).basicJob {
     description "Satisfaction Scheduler"
-    label "scala rpmbuild"
+    label "scala"
     steps {
         sbt('sbt',
             'clean publish',
