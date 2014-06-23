@@ -10,11 +10,11 @@ def satisfaction = new Project(
         githubProject: 'satisfaction-limbo',
         hipchatRoom: 'Cluster Corner',
         email: 'jbanks@tagged.com',
-        jdk: 'jdk 7u51'
     ]
 ).basicJob {
     description "Satisfaction Scheduler"
     label "scala"
+    jdk "jdk 7u51"
     steps {
         sbt('sbt',
             'clean publish',
