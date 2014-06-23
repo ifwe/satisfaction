@@ -25,7 +25,6 @@ def satisfaction = new Project(
             '-Dsbt.log.noformat=true -Dsbt.override.build.repos=true',
             '-Xmx1536M -Xss1M -XX:+CMSClassUnloadingEnabled -XX:MaxPermSize=256m')
     }
-    }
     triggers {
         githubPush()
     }
