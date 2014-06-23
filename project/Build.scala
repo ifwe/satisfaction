@@ -15,7 +15,7 @@ import play.Project._
 
 object ApplicationBuild extends Build {
 
-  val appVersion = "2.0.1"
+  val appVersion = "2.0.3"
 
   val hiveVersion = "0.13.0"
 
@@ -161,7 +161,7 @@ object ApplicationBuild extends Build {
 	  ("org.apache.hive" % "hive-serde" % hiveVersion),
 	  ("org.apache.hive" % "hive-exec" % hiveVersion),
 	  ("org.apache.thrift" % "libfb303" % "0.7.0"),
-    ("com.tagged.analytics" % "avro-serde" % "0.13.1-jdb")
+          ("com.tagged.analytics" % "avro-serde" % "0.13.1-jdb")
   ).excluding( "log4j", "log4j" ).excluding("org.slf4j", "slf4j-log4j12")
 
   def hiveDependencies = Seq(
