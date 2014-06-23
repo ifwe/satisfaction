@@ -37,6 +37,7 @@ GET		/filterJobHistory	willrogers.controllers.TrackHistoryPage.filterJobHistory
 GET		/lookupJobHistoryGoal willrogers.controllers.TrackHistoryPage.lookupJobHistoryGoal
 GET		/lookupGoalHistoryID	willrogers.controllers.TrackHistoryPage.lookupGoalHistoryID
 
+GET		/reloadTrackFactory		willrogers.controllers.Application.reloadFactory()
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)
 

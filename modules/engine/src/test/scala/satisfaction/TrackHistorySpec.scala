@@ -62,7 +62,7 @@ class TrackHistorySpec extends Specification {
       goalResult2.state must_== GoalState.Success
       
       goalResult2.endTime must not beNone
-      println(" Result 2 endtime  is " + goalResult2.endTime.get)
+      //println(" Result 2 endtime  is " + goalResult2.endTime.get)
 
     }
     
@@ -89,10 +89,7 @@ class TrackHistorySpec extends Specification {
          val goalListResult = trackHistory.lookupGoalRun(trackDesc, goalName, witness)
         //result2.size should_== 25
        }
-
     }
-    
-    
   }
   
   

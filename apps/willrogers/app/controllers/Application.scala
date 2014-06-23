@@ -49,5 +49,10 @@ object Application extends Controller {
         val part = ms.getPartitionByName(db, tblName, partName.replace('@', '/'))
         Ok(views.html.showpartition(db, tblName, ms, part))
     }
+    
+    def reloadFactory() = Action {
+      Global.trackFactory.getAllTracks
+      Ok(s"what do I pass in here?")
+    }
 
 }
