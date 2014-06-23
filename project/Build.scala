@@ -68,13 +68,17 @@ object ApplicationBuild extends Build {
 
       publishMavenStyle := true,
 
-      publishTo := Some("tagged-artifactory-release" at "http://artifactory.tagged.com:8081/artifactory/libs-release-local"),
+      ///publishTo := Some("tagged-artifactory-release" at "http://artifactory.tagged.com:8081/artifactory/libs-release-local"),
+      publishTo := Some("subversion-releases" at "http://artifactory.tagged.com:8081/artifactory/libs-release-local"),
 
-      credentials += Credentials(Path.userHome / ".m2" / ".credentials")
+      ////credentials += Credentials(Path.userHome / ".m2" / ".credentials"),
+      credentials += Credentials(Path.userHome / ".ivy2" / ".credentials"),
+ 
+      isSnapshot := true
   ) 
 
   def AppSettings =  CommonSettings ++ playScalaSettings ++ Seq(
-     javacOptions in Compile ++= Seq("-source", "1.6", "-target", "1.6")
+     javacOptions in Compile ++= Seq("-source", "1.6", "-target", "1.6"),
   )
 
 

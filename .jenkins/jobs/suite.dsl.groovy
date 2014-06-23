@@ -17,7 +17,19 @@ def satisfaction = new Project(
     jdk "jdk 7u51"
     steps {
         sbt('sbt',
-            'clean publish',
+            '\'project satisfaction-core\' clean publish',
+            '-Dsbt.log.noformat=true -Dsbt.override.build.repos=true',
+            '-Xmx1536M -Xss1M -XX:+CMSClassUnloadingEnabled -XX:MaxPermSize=256m')
+        sbt('sbt',
+            '\'project satisfaction-engine\' clean publish',
+            '-Dsbt.log.noformat=true -Dsbt.override.build.repos=true',
+            '-Xmx1536M -Xss1M -XX:+CMSClassUnloadingEnabled -XX:MaxPermSize=256m')
+        sbt('sbt',
+            '\'project satisfaction-hadoop\' clean publish',
+            '-Dsbt.log.noformat=true -Dsbt.override.build.repos=true',
+            '-Xmx1536M -Xss1M -XX:+CMSClassUnloadingEnabled -XX:MaxPermSize=256m')
+        sbt('sbt',
+            '\'project satisfaction-hive\' clean publish',
             '-Dsbt.log.noformat=true -Dsbt.override.build.repos=true',
             '-Xmx1536M -Xss1M -XX:+CMSClassUnloadingEnabled -XX:MaxPermSize=256m')
         sbt('sbt',
