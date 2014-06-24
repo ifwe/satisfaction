@@ -68,17 +68,15 @@ object ApplicationBuild extends Build {
 
       publishMavenStyle := true,
 
-      ///publishTo := Some("tagged-artifactory-release" at "http://artifactory.tagged.com:8081/artifactory/libs-release-local"),
       publishTo := Some("subversion-releases" at "http://artifactory.tagged.com:8081/artifactory/libs-release-local"),
 
-      ////credentials += Credentials(Path.userHome / ".m2" / ".credentials"),
       credentials += Credentials(Path.userHome / ".ivy2" / ".credentials"),
  
       isSnapshot := true
   ) 
 
   def AppSettings =  CommonSettings ++ playScalaSettings ++ Seq(
-     javacOptions in Compile ++= Seq("-source", "1.6", "-target", "1.6"),
+     javacOptions in Compile ++= Seq("-source", "1.6", "-target", "1.6")
   )
 
 
@@ -199,7 +197,7 @@ object ApplicationBuild extends Build {
   def Resolvers = resolvers ++= Seq(
       "snapshots" at "http://oss.sonatype.org/content/repositories/snapshots",
       "releases"  at "http://oss.sonatype.org/content/repositories/releases",
-      ////"theatr" at "http://repo.theatr.us"
+      "Typesafe repository" at "http://repo.typesafe.com/typesafe/releases/",
       "Maven Central" at "http://repo1.maven.org/maven2",
       "Apache Maven Repository" at "http://people.apache.org/repo/m2-snapshot-repository/",
       "ScalaToolsMaven2Repository" at "http://scala-tools.org/repo-releases",
