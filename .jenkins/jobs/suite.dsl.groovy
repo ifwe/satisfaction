@@ -18,23 +18,23 @@ def satisfaction = new Project(
     steps {
         sbt('sbt',
             '\'project satisfaction-core\' clean publish',
-            '-Dsbt.log.noformat=true -Dsbt.override.build.repos=true',
+            '-Dsbt.log.noformat=true',
             '-Xmx1536M -Xss1M -XX:+CMSClassUnloadingEnabled -XX:MaxPermSize=256m')
         sbt('sbt',
             '\'project satisfaction-engine\' clean publish',
-            '-Dsbt.log.noformat=true -Dsbt.override.build.repos=true',
+            '-Dsbt.log.noformat=true',
             '-Xmx1536M -Xss1M -XX:+CMSClassUnloadingEnabled -XX:MaxPermSize=256m')
         sbt('sbt',
             '\'project satisfaction-hadoop\' clean publish',
-            '-Dsbt.log.noformat=true -Dsbt.override.build.repos=true',
+            '-Dsbt.log.noformat=true',
             '-Xmx1536M -Xss1M -XX:+CMSClassUnloadingEnabled -XX:MaxPermSize=256m')
         sbt('sbt',
             '\'project satisfaction-hive\' clean publish',
-            '-Dsbt.log.noformat=true -Dsbt.override.build.repos=true',
+            '-Dsbt.log.noformat=true',
             '-Xmx1536M -Xss1M -XX:+CMSClassUnloadingEnabled -XX:MaxPermSize=256m')
         sbt('sbt',
             '\'project willrogers\' rpm:packageBin',
-            '-Dsbt.log.noformat=true -Dsbt.override.build.repos=true',
+            '-Dsbt.log.noformat=true',
             '-Xmx1536M -Xss1M -XX:+CMSClassUnloadingEnabled -XX:MaxPermSize=256m')
     }
     triggers {
