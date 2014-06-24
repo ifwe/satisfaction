@@ -31,6 +31,7 @@ object TrackHistoryPage extends Controller {
     val grList = trackHistory.getAllHistory
     println("loading page history: I have "+ grList.length + " tracks")
    Ok(views.html.trackhistory(grList))
+   
   }
   
   /**
