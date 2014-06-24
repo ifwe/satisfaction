@@ -15,7 +15,7 @@ import play.Project._
 
 object ApplicationBuild extends Build {
 
-  val appVersion = "2.0.1"
+  val appVersion = "2.0.3"
 
   val hiveVersion = "0.13.0"
 
@@ -68,9 +68,11 @@ object ApplicationBuild extends Build {
 
       publishMavenStyle := true,
 
-      publishTo := Some("tagged-artifactory-release" at "http://artifactory.tagged.com:8081/artifactory/libs-release-local"),
+      publishTo := Some("subversion-releases" at "http://artifactory.tagged.com:8081/artifactory/libs-release-local"),
 
-      credentials += Credentials(Path.userHome / ".m2" / ".credentials")
+      credentials += Credentials(Path.userHome / ".ivy2" / ".credentials"),
+ 
+      isSnapshot := true
   ) 
 
   def AppSettings =  CommonSettings ++ playScalaSettings ++ Seq(
@@ -160,8 +162,7 @@ object ApplicationBuild extends Build {
 	  ("org.apache.hive" % "hive-metastore" % hiveVersion),
 	  ("org.apache.hive" % "hive-serde" % hiveVersion),
 	  ("org.apache.hive" % "hive-exec" % hiveVersion),
-	  ("org.apache.thrift" % "libfb303" % "0.7.0"),
-    ("com.tagged.analytics" % "avro-serde" % "0.13.1-jdb")
+	  ("org.apache.thrift" % "libfb303" % "0.7.0")
   ).excluding( "log4j", "log4j" ).excluding("org.slf4j", "slf4j-log4j12")
 
   def hiveDependencies = Seq(
@@ -195,7 +196,7 @@ object ApplicationBuild extends Build {
   def Resolvers = resolvers ++= Seq(
       "snapshots" at "http://oss.sonatype.org/content/repositories/snapshots",
       "releases"  at "http://oss.sonatype.org/content/repositories/releases",
-      ////"theatr" at "http://repo.theatr.us"
+      "Typesafe repository" at "http://repo.typesafe.com/typesafe/releases/",
       "Maven Central" at "http://repo1.maven.org/maven2",
       "Apache Maven Repository" at "http://people.apache.org/repo/m2-snapshot-repository/",
       "ScalaToolsMaven2Repository" at "http://scala-tools.org/repo-releases",
