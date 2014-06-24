@@ -162,8 +162,7 @@ object ApplicationBuild extends Build {
 	  ("org.apache.hive" % "hive-metastore" % hiveVersion),
 	  ("org.apache.hive" % "hive-serde" % hiveVersion),
 	  ("org.apache.hive" % "hive-exec" % hiveVersion),
-	  ("org.apache.thrift" % "libfb303" % "0.7.0"),
-          ("com.tagged.analytics" % "avro-serde" % "0.13.1-jdb")
+	  ("org.apache.thrift" % "libfb303" % "0.7.0")
   ).excluding( "log4j", "log4j" ).excluding("org.slf4j", "slf4j-log4j12")
 
   def hiveDependencies = Seq(
