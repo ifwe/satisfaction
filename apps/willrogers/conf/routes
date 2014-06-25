@@ -5,7 +5,6 @@
 # Home page
 GET     /                           willrogers.controllers.Application.index
 
-
 GET     /alldbs                      willrogers.controllers.Application.allDBs
 GET     /dbtabs                      willrogers.controllers.Application.allDBs
 GET     /projtabs                      willrogers.controllers.ProjectPage.allProjects
@@ -30,6 +29,7 @@ GET     /rawlog/:trackName/:goalName/:varString                   willrogers.con
 GET     /restart/:trackName/:goalName/:varString                   willrogers.controllers.SatisfyGoalPage.restartJob(trackName: String, goalName: String, varString : String)
 GET     /abort/:trackName/:goalName/:varString                   willrogers.controllers.SatisfyGoalPage.abortJob(trackName: String, goalName: String, varString : String)
 
+POST	/scheduletrack/:trackName										willrogers.controllers.ScheduleTrackPage.scheduleTrack(trackName: String)
 GET		/scheduleonejob/:trackName/:rule/:pattern			willrogers.controllers.ScheduleTrackPage.scheduleOneTrack(trackName: String, rule: String, pattern : String)
 GET		/unscheduleonejob/:trackName						willrogers.controllers.ScheduleTrackPage.unscheduleOneTrack(trackName: String)
 

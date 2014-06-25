@@ -9,6 +9,12 @@
 @import models.HtmlUtil
 
 @main( s"Satisfaction Scheduler Status" ) {
+	<script>
+	$(function() {
+	    $( document ).tooltip();
+	    $('.scheduleRule').prop('selectedIndex', -1);
+	  });
+	</script>
 	
 		<h1> Scheduler</h1>
 		
@@ -43,13 +49,19 @@
 			<thead>
 				<td> Track </td>
 				<td> Status </td>
-				<td></td>
+				<td>Scheduling Option</td>
 			</thead>
 			@tdList.map { td =>
 				<tr>
 					<td>@td.trackName</td>
 					<td>"NO!"</td>	
-					<td><button id="scheduleButton" onClick="window.location.href='/scheduleonejob/@td.trackName/recurring/P0Y0M0W0DT0H0M3S'">schedule me!</button></td>
+					<td>
+						<form  method = "post" action="scheduletrack/@td.trackName">
+							Type: <input type = "text" name="rule" title = "cron or recur">
+							Pattern:<input type="text" name="pattern" title="If Recurring: format must be standard: PyYmMwWdDThHmMsS">
+							<input type="submit">
+						</form>
+					</td>
 				</tr>
 				}
 		</table>
