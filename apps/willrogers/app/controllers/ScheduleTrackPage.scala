@@ -63,25 +63,18 @@ object ScheduleTrackPage extends Controller {
          println("scheduleTrack: trackName is " + trackName + " rule is " + rule + " pattern is " + pattern + " stoppable is " + stoppable)
 
     
-    
     implicit val holderTrack: Track= {
       rule match {
-        case cron if (rule.contains("cron") && (stoppable.contains("pause") || stoppable.contains("kill"))) =>
-          new Track(TrackDescriptor(trackName)) with Cronable with Stoppable {
-            override def cronString = pattern
-          }
-          
         case cron if rule.contains("cron") =>
           new Track(TrackDescriptor(trackName)) with Cronable {
             override def cronString = pattern
           }
-        case rec if (rule.contains("recur") && (stoppable.contains("pause") || stoppable.contains("kill"))) =>
-          new Track(TrackDescriptor(trackName)) with Recurring with Stoppable{
-            override def frequency = Recurring.period(pattern)
-          }
         case rec if rule.contains("recur") =>
           new Track(TrackDescriptor(trackName)) with Recurring {
             override def frequency = Recurring.period(pattern)
+          }
+        case const if rule.contains("constantly") => 
+           new Track(TrackDescriptor(trackName)) with Constantly {
           }
       }
     }

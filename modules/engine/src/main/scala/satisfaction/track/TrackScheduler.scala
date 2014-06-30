@@ -94,6 +94,10 @@ case class TrackScheduler( val proofEngine : ProofEngine ) {
     *  
     *  returns true if the track was successfully scheduled
     */
+   def scheduleTrack(track :Track) : Boolean = {
+     scheduleTrack(track, false)
+   }
+   
    def scheduleTrack( track : Track , pausable : Boolean) : Boolean = {
      val trackDesc = track.descriptor
      val mess = new StartGoalMessage( track.descriptor)
