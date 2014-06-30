@@ -121,7 +121,7 @@ case class TrackFactory(val trackFS : FileSystem,
           //// Check that scheduling flag isn't set to false          
           val checkDoSched = trackMap.getOrElse( "satisfaction.track.scheduleFlag", "true").toBoolean
           if( checkDoSched) {
-            scheduler.scheduleTrack( track)
+            scheduler.scheduleTrack( track, false)
           } else {
             warn(s" satisfaction.track.scheduleFlag set to false; not scheduling ${track.descriptor.trackName} ")
           }
@@ -308,7 +308,7 @@ case class TrackFactory(val trackFS : FileSystem,
     				 Some(track)
     	 } else {
     		 val trackOpt = generateTrack( trackDesc)
-    		 info(s" Generqting track again $trackDesc ; Found $trackOpt ") 
+    		 info(s" Generating track again $trackDesc ; Found $trackOpt ") 
     		 trackOpt match {
     		   case Some(track) =>
     		     trackMap.put( trackDesc, track)

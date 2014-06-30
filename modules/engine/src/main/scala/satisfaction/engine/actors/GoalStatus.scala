@@ -58,7 +58,14 @@ case class GoalStatus(track : TrackDescriptor, goalName: String, witness: Witnes
          state == GoalState.Aborted || 
          state == GoalState.DependencyFailed
     }
-
+    
+    /**
+     *  Return true if the actor's state can change
+     */
+      def canChange : Boolean = {
+        state == GoalState.WaitingOnDependencies || 
+        state == GoalState.Running
+      }
 }
 
 object GoalStatus {

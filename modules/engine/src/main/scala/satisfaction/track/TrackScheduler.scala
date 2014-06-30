@@ -3,22 +3,23 @@ package com.klout
 package satisfaction
 package track
 
-import org.joda.time.LocalTime
+import scala.concurrent.Await
+import scala.concurrent.duration._
+
+import org.joda.time.DateTime
 import org.joda.time.Period
-import engine.actors.ProofEngine
-////import us.theatr.akka.quartz._
-import akka.actor.Props
+
+import com.klout.satisfaction.Schedulable
+
 import akka.actor.Actor
 import akka.actor.ActorLogging
-import akka.pattern.ask
-import scala.concurrent.duration._
-import org.joda.time.DateTime
-import org.joda.time.format.DateTimeFormat
-import fs.Path
-import fs.FileSystem
-import scala.concurrent.Await
-import akka.util.Timeout
 import akka.actor.Cancellable
+import akka.actor.Props
+import akka.pattern.ask
+import akka.util.Timeout
+import engine.actors.ProofEngine
+import fs.FileSystem
+import satisfaction.engine.actors.GoalStatus
 
 /**
  *  Scheduler for different Tracks
@@ -32,27 +33,59 @@ case class TrackScheduler( val proofEngine : ProofEngine ) {
    private lazy val startGoalActor = proofEngine.akkaSystem.actorOf(Props( new StartGoalActor( trackFactory, proofEngine)) )
    implicit val timeout = Timeout(24 hours)
   
-   private val scheduleMap : collection.mutable.Map[TrackDescriptor,Tuple2[String,Cancellable]] = new collection.mutable.HashMap[TrackDescriptor,Tuple2[String,Cancellable]]
+   //trackDesk => [schedString, Cancellable, Pauseable]
+   private val scheduleMap : collection.mutable.Map[TrackDescriptor,Tuple3[String,Cancellable, Boolean]] = new collection.mutable.HashMap[TrackDescriptor,Tuple3[String,Cancellable,Boolean]]
    
       class StartGoalActor( trackFactory : TrackFactory, proofEngine : ProofEngine ) extends Actor with ActorLogging {
        def receive = {
          case mess : StartGoalMessage =>
-           log.info(" Starting Track " + mess.trackDesc +  " TrackFactory = " + trackFactory)
-           val trckOpt =  trackFactory.getTrack( mess.trackDesc )
-           trckOpt match {
-             case Some(trck) =>
-        	   val witness = generateWitness(trck, DateTime.now)
-        	   
-        	   trck.topLevelGoals.foreach( goal => { 
-        	      log.info(s" Satisfying Goal $goal.name with witness $witness ")
-        	      goal.variables.foreach( v => println( s"  Goal $goal.name has variable " + v))
-                  proofEngine.satisfyGoal( goal, witness)
-              } )
-             case None =>
-              println(" Track " + mess.trackDesc.trackName + " not found ")
+           log.info(" Starting Track " + mess.trackDesc /*+  " TrackFactory = " + trackFactory*/)
+           
+           val trackScheduling = scheduleMap.get(mess.trackDesc)
+           val pausable = {
+             trackScheduling match {
+               case Some(schedInfo) if (schedInfo._3) =>
+	               true
+               case _ =>
+                 false
+             }
            }
-         
+             
+           val trckOpt =  trackFactory.getTrack( mess.trackDesc )
+           /*
+            * to do:
+            *   - figure out expected behaviour
+            *   	- figure out what to return
+            */
+           trckOpt match {
+
+	             case Some(trck) if (pausable && isRunning(trck)) => // define "already running"
+	             	   	log.info("   this instance of me cannot run - going to discard now")
+	             case Some(trck) =>
+	               val witness = generateWitness(trck, DateTime.now)
+		        	  trck.topLevelGoals.foreach( goal => { 
+		        	      //log.info(s" Satisfying Goal $goal.name with witness $witness ")
+		        	      goal.variables.foreach( v => println( s"  Goal $goal.name has variable " + v))
+		                  proofEngine.satisfyGoal( goal, witness)
+		              } )
+	             case None =>
+	              println(" Track " + mess.trackDesc.trackName + " not found ")
+	           }
+           
+           
+           
+           
        } 
+   }
+   
+   /**
+    * Check if a job is currently running
+    */
+   
+   def isRunning(track: Track) : Boolean = {
+     val witness = generateWitness(track, DateTime.now) // how do I reference the correct witness??? - in the case of temporal variable - i have no idea how to match witnesses :/ 
+     val runningForTrack = track.topLevelGoals.filter(goal => proofEngine.getStatus(goal, witness).canChange)
+     !runningForTrack.isEmpty
    }
    
    
@@ -61,7 +94,7 @@ case class TrackScheduler( val proofEngine : ProofEngine ) {
     *  
     *  returns true if the track was successfully scheduled
     */
-   def scheduleTrack( track : Track ) : Boolean = {
+   def scheduleTrack( track : Track , pausable : Boolean) : Boolean = {
      val trackDesc = track.descriptor
      val mess = new StartGoalMessage( track.descriptor)
      var schedString : String  = null
@@ -72,24 +105,24 @@ case class TrackScheduler( val proofEngine : ProofEngine ) {
              Some(AddCronSchedule( startGoalActor,  cronable.cronString, mess, true))
           case recurring : Recurring => // in core
              schedString = recurring.scheduleString 
-             Some(AddPeriodSchedule( startGoalActor, recurring.frequency, DateTime.now , mess, true))
+             Some(AddPeriodSchedule( startGoalActor, recurring.frequency, DateTime.now, mess, true))
           case _  => None
         }
      }
      if(schedMess.isDefined) 
-       sendScheduleMessage( trackDesc, schedMess.get, schedString )
+       sendScheduleMessage( trackDesc, schedMess.get, schedString, pausable)
      else 
        false
    }
 
    
-   private def sendScheduleMessage( trackDesc : TrackDescriptor, schedMess : Any, schedString : String) : Boolean = {
+   private def sendScheduleMessage( trackDesc : TrackDescriptor, schedMess : Any, schedString : String, pausable : Boolean) : Boolean = {
          val addResultF =  quartzActor ? schedMess  //future
          val resultMess = Await.result( addResultF, 30 seconds )
          resultMess match { //able to schedule
             case yeah : AddScheduleSuccess => // these responses are from QuartzActor::scheduleJob
-              scheduleMap.put( trackDesc, Tuple2(schedString ,yeah.cancel ))
-              println(" Successfully scheduled job " + trackDesc.trackName)
+              scheduleMap.put( trackDesc, Tuple3(schedString ,yeah.cancel, pausable))
+              println(" Successfully scheduled job " + trackDesc.trackName + " is it pausable? " + pausable)
               true
            case boo : AddScheduleFailure =>
               /// XXX better logging 
@@ -114,6 +147,7 @@ case class TrackScheduler( val proofEngine : ProofEngine ) {
     *    
     */
    def getScheduledTracks : collection.Set[Tuple2[TrackDescriptor,String]] = {
+     //YY might have to refactor this - new pausable
        scheduleMap.keySet.map( td => { Tuple2(td,scheduleMap.get(td).get._1) } )
    }
    
