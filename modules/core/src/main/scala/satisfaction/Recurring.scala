@@ -59,6 +59,10 @@ trait Daily extends Recurring {
    override def frequency = Temporal.dailyPeriod
 }
 
+trait Constantly extends Recurring {
+  override def frequency = Temporal.continuousFrequency
+}
+
 object Recurring {
   
      /**
@@ -66,7 +70,6 @@ object Recurring {
       */
 
      def period(periodStr : String) : Period = {
-    		 //YI: FIND WAY TO CONVERT TO MORE THAN STANDARD!!!!
         ISOPeriodFormat.standard.parsePeriod(periodStr) 
     	//Period.parse(periodStr)
 
@@ -83,4 +86,12 @@ abstract trait Cronable extends Schedulable {
   
     def scheduleString  : String = { cronString }
 }
-  
+ 
+
+/**
+ *	A Stoppable is a trait which can be attached to a Track
+ *	If a job is running when it is scheduled to run, 
+ * 	don't run it ( in case something has been delayed ).
+ *  
+ *  Question: when this happens, do we delete this run, or just delay it?
+ */

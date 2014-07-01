@@ -41,29 +41,7 @@ object ScheduleTrackPage extends Controller {
      	Ok(views.html.scheduletrack( tdList, scList))
    }
      
-   def scheduleOneTrack(trackName: String, rule: String, pattern: String) = Action {
 
-     println("my rule is "+rule)
-    implicit val holderTrack: Track= {
-      rule match {
-        case cron if rule.contains("cron") =>
-          new Track(TrackDescriptor(trackName)) with Cronable {
-            override def cronString = pattern
-          }
-        case rec if rule.contains("recur") =>
-          new Track(TrackDescriptor(trackName)) with Recurring {
-            override def frequency = Recurring.period(pattern)
-          }
-      }
-    } 
-      scheduler.scheduleTrack(holderTrack)
-           println(" I've been scheduled!")
-
-     // Later: might want to add some live feedback for to the associated views....
-       val scList = scheduler.getScheduledTracks.map(_._1).toSeq
-       val tdList = trackFactory.getAllTracks.diff(scList)
-     Ok(views.html.scheduletrack(tdList, scList)) //FIXME: Reload, not new page
-   }
    
    /**
     * functions for scheduling a specific track.
@@ -72,18 +50,18 @@ object ScheduleTrackPage extends Controller {
    val scheduleTrackForm = Form {
      tuple(
          "rule" -> text,
-         "pattern" -> text
+         "pattern" -> text,
+         "stoppable" -> text
          )
    }
    
-   def scheduleTrack (trackName: String) = Action { implicit request =>
+   def scheduleTrack (trackName: String, forUser: String, version: String) = Action { implicit request =>
      
      
-    val (rule, pattern) = scheduleTrackForm.bindFromRequest.get
+    val (rule, pattern, stoppable) = scheduleTrackForm.bindFromRequest.get
     
-         println("scheduleTrack: trackName is " + trackName + " rule is " + rule + " pattern is " + pattern)
+         println("scheduleTrack: trackName is " + trackName + " rule is " + rule + " pattern is " + pattern + " stoppable is " + stoppable)
 
-    
     
     implicit val holderTrack: Track= {
       rule match {
@@ -95,16 +73,27 @@ object ScheduleTrackPage extends Controller {
           new Track(TrackDescriptor(trackName)) with Recurring {
             override def frequency = Recurring.period(pattern)
           }
+        case const if rule.contains("constantly") => 
+           new Track(TrackDescriptor(trackName)) with Constantly {
+          }
       }
     }
-    scheduler.scheduleTrack(holderTrack)
+    val pausable : Boolean = {
+      stoppable match {
+        case yes if (stoppable.contains("pause") || stoppable.contains("kill")) =>
+          true
+        case _ => 
+          false
+      }
+    }
+    scheduler.scheduleTrack(holderTrack, pausable)
      Ok(s"i got scheduled")
    }
    
    def unscheduleOneTrack(trackName: String) = Action {
      val desc = scheduler.getScheduledTracks.filter(_._1.trackName == trackName).last._1
      scheduler.unscheduleTrack(desc) //YY this is gonna be broken due to versioning!
-      println(" I've been unscheduled!")
+      println(" willrogers scheduler - I should be unscheduled!")
 
      val scList = scheduler.getScheduledTracks.map(_._1).toSeq
      val tdList = trackFactory.getAllTracks.diff(scList)

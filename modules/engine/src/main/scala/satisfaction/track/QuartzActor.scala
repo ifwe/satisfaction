@@ -199,20 +199,22 @@ class QuartzActor extends Actor { // receives msg from TrackScheduler
 			  period.getDays()+ " days\n" +
 			  period.getHours()+ " hours\n" +
 			  period.getMinutes()+ " minutes\n" +
+			  
 			  period.getSeconds()+ " seconds\n" +
 			  "for a total of " + seconds.toString() + " seconds\n"
 			  )
 		*/  
 			  CalendarIntervalScheduleBuilder.calendarIntervalSchedule
 			  .withIntervalInSeconds(seconds.getSeconds)
-
 	}
 	
 
 	// Largely imperative glue code to make quartz work :)
 	def receive = { // YY ? received here
 		case RemoveJob(cancel) => cancel match {
-			case cs: CancelSchedule => scheduler.deleteJob(cs.job);cs.cancelled = true
+			case cs: CancelSchedule => 
+			  println("deleted job!")
+			  scheduler.deleteJob(cs.job);cs.cancelled = true
 			case _ => log.error("Incorrect cancelable sent")
 		}
 		case AddCronSchedule(to, cron, message, reply, spigot) =>
@@ -224,6 +226,4 @@ class QuartzActor extends Actor { // receives msg from TrackScheduler
 		    scheduleJob(to,schedBuilder,message,reply,spigot) 
 		case _ => //
 	}
-
-
 }
