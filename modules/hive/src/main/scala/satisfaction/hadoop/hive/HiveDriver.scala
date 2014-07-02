@@ -108,11 +108,18 @@ class HiveLocalDriver( val hiveConf : HiveConf = Config.config)
     }
     
     def sourceFile( resourceName : String ) : Boolean = {
-       info(s" Sourcing resource $resourceName")
+       info(s" Sourcing resource ## $resourceName ##")
        if( track.hasResource( resourceName ) ) {
          val readFile= track.getResource( resourceName) 
-         
-          readFile.split(";").filter( _.startsWith("---")).forall( executeQuery(_) )
+         println(s" ## Processing SourceFile ## $readFile")
+        
+          /// XXX Add variable substitution 
+          ///readFile.split(";").forall( q => {
+          readFile.split(";").foreach( q => {
+           println(s" ## Executing sourced query $q") 
+           executeQuery(q)
+          } )
+          true
        } else {
           warn(s"No resource $resourceName available to source.") 
           false
@@ -133,6 +140,7 @@ class HiveLocalDriver( val hiveConf : HiveConf = Config.config)
         try {
 
             info(s"HIVE_DRIVER :: Executing Query $query")
+            println(s"HIVE_DRIVER :: Executing Query $query")
             if (query.trim.toLowerCase.startsWith("set")) {
                 val setExpr = query.trim.split(" ")(1)
                 val kv = setExpr.split("=")
@@ -146,7 +154,7 @@ class HiveLocalDriver( val hiveConf : HiveConf = Config.config)
                 warn(s" Unable to interpret source command $query ")
                 return false 
               } else {
-                 return sourceFile(cmdArr(1).trim)
+                 return sourceFile(cmdArr(1).replaceAll("'","").trim)
               }
             }
 
