@@ -32,14 +32,14 @@
 			</thead>
 			@scList.map { td =>
 				<tr>
-					<td> td.trackName </td>
+					<td> @td.trackName </td>
 					<td>- </td>
 					<td>- </td>
 					<td>- </td>
 					<td>- </td>
 					<td>- </td>
 					<td>- </td>
-					<td><button id ="unscheduleButton" onClick="window.location.href='/unscheduleonejob/@td.trackName'">Unschedule</button></td>
+					<td><button id ="unscheduleButton" onClick="window.location.href='/unscheduleonejob/@td.trackName/@td.forUser/@td.version'">Unschedule</button></td>
 				</tr>
 				}
 
