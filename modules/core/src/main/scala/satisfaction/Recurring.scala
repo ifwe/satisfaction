@@ -42,7 +42,8 @@ abstract trait Recurring  extends Schedulable {
      
      
      def scheduleString =  { ISOPeriodFormat.standard.print( frequency ) }
-
+     
+     def startTime = 123 // remember the initial start time. Maybe move this to Constantly only
 }
 
 /**

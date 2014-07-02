@@ -186,34 +186,21 @@ class QuartzActor extends Actor { // receives msg from TrackScheduler
 	def builderForPeriod( period : Period ) : ScheduleBuilder[ _ <: Trigger] = {
 		/*
 	   * notes: The standard ISO format - PyYmMwWdDThHmMsS; Substitute for lower-case; Granularity = S
-	   * YY- should revisit this calculation after TrackScheulder is tested.
+	   * YY- 
 	   * current limitations: cannot schedule anything that has bad precision ex// 1Month can be 30 or 31 days :(
 	   */	
 	  
 			val seconds=Seconds.standardSecondsIn(period)
-		/*	  println ("\nentering builderForPeriod\n" + 
-			  period.getPeriodType.toString() + " type\n" +
-			  period.getYears()+ " years\n" +
-			  period.getMonths()+ " months\n" +
-			  period.getWeeks()+ " weeks\n" +
-			  period.getDays()+ " days\n" +
-			  period.getHours()+ " hours\n" +
-			  period.getMinutes()+ " minutes\n" +
-			  
-			  period.getSeconds()+ " seconds\n" +
-			  "for a total of " + seconds.toString() + " seconds\n"
-			  )
-		*/  
+
 			  CalendarIntervalScheduleBuilder.calendarIntervalSchedule
 			  .withIntervalInSeconds(seconds.getSeconds)
 	}
 	
-
 	// Largely imperative glue code to make quartz work :)
 	def receive = { // YY ? received here
 		case RemoveJob(cancel) => cancel match {
 			case cs: CancelSchedule => 
-			  println("deleted job!")
+			  println("QuartzActor - deleted job successfully!")
 			  scheduler.deleteJob(cs.job);cs.cancelled = true
 			case _ => log.error("Incorrect cancelable sent")
 		}
@@ -224,6 +211,6 @@ class QuartzActor extends Actor { // receives msg from TrackScheduler
 		case AddPeriodSchedule(to, period, offsetTime, message, reply, spigot) =>
 		    val schedBuilder : ScheduleBuilder[_ <: Trigger] = builderForPeriod(period)
 		    scheduleJob(to,schedBuilder,message,reply,spigot) 
-		case _ => //
+		case _ => println("QuartzActor::receive unreconizable message")
 	}
 }

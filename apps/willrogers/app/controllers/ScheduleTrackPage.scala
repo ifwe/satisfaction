@@ -90,8 +90,13 @@ object ScheduleTrackPage extends Controller {
      Ok(s"i got scheduled")
    }
    
-   def unscheduleOneTrack(trackName: String) = Action {
-     val desc = scheduler.getScheduledTracks.filter(_._1.trackName == trackName).last._1
+   def unscheduleOneTrack(trackName: String, forUser:String, version:String) = Action {
+     
+     val wtf = scheduler.getScheduledTracks.map(_._1).map(td => println("      unscheduleOneTrack found:  " + td.trackName + " " + td.forUser + " " + td.version + " " + td.variant))
+     val desc = scheduler.getScheduledTracks.filter(_._1.trackName == trackName ).last._1
+     
+     
+     println("      this is the one we're going to unschedule: " + desc.trackName  + " " + desc.forUser + " " + desc.version + " " + desc.variant)
      scheduler.unscheduleTrack(desc) //YY this is gonna be broken due to versioning!
       println(" willrogers scheduler - I should be unscheduled!")
 
