@@ -80,7 +80,6 @@ object ApplicationBuild extends Build {
   )
 
 
-  val destDir = "/usr/local/satisfaction"
 
   def RpmSettings = packagerSettings ++ deploymentSettings ++  playScalaSettings ++ packageArchetype.java_server ++  Seq(
     maintainer in Linux := "Jerome Banks jbanks@tagged.com",
@@ -90,15 +89,28 @@ object ApplicationBuild extends Build {
     daemonGroup in Linux := "satisfaction",
     normalizedName in Linux := "satisfaction",
 
-    linuxPackageMappings <++= (projectDependencyArtifacts) map { artifactSeq : Seq[Attributed[File]] =>
-          artifactSeq map ( a => { packageMapping ( a.data -> s"${destDir}/lib/${a.data.name}" )  } )
-    },
-
 
     linuxPackageMappings <++= (mappings in Universal) map { universalDir => 
         universalDir.filter( {  _._2.toString.startsWith("/usr/share") } ).map { packageMapping( _ ) } 
     },
 
+
+    mappings in Universal <+= (packageBin in Compile, baseDirectory ) map { (_, base) =>
+       val conf = base / "conf" / "application.conf"
+       conf -> "conf/application.conf"
+    },
+
+    mappings in Universal <+= (packageBin in Compile, baseDirectory ) map { (_, base) =>
+       val conf = base / "conf" / "logger.xml"
+       conf -> "conf/logger.xml"
+    },
+
+    mappings in Universal <+= (packageBin in Compile, baseDirectory ) map { (_, base) =>
+       val conf = base / "conf" / "willrogers.conf"
+       conf -> "conf/willrogers.conf"
+    },
+
+    bashScriptConfigLocation := Some("$app_home/conf/willrogers.conf"),
 
     name in Rpm := "satisfaction-scheduler",
     version in Rpm := appVersion,

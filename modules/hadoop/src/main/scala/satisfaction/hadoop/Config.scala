@@ -84,7 +84,7 @@ object Config  extends Logging {
           if(sys.env.contains("HIVE_HOME")) {
               new File( sys.env("HIVE_HOME") + "/conf")   
           } else {
-            null
+            new File( "/usr/lib/hive" )
           }
        }
     }
