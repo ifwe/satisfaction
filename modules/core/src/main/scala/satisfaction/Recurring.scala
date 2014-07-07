@@ -5,7 +5,9 @@ import org.joda.time.Period
 import org.joda.time.ReadablePartial
 import org.joda.time.format.ISOPeriodFormat
 import org.joda.time.format.PeriodFormatter
-
+import org.quartz.JobExecutionContext
+import org.quartz.JobExecutionException
+import org.quartz.JobListener
 
 /**
  *   A Schedulable is a trait which can be attached to Trait
@@ -42,7 +44,6 @@ abstract trait Recurring  extends Schedulable {
      
      
      def scheduleString =  { ISOPeriodFormat.standard.print( frequency ) }
-
 }
 
 /**
@@ -61,6 +62,7 @@ trait Daily extends Recurring {
 
 trait Constantly extends Recurring {
   override def frequency = Temporal.continuousFrequency
+
 }
 
 object Recurring {
@@ -80,18 +82,29 @@ object Recurring {
  *  If one prefers to specify a cron string for the Track,
  *  One can schedule the job with
  */
-abstract trait Cronable extends Schedulable {
+abstract trait Cronable extends Schedulable  {
  
     def cronString : String
   
     def scheduleString  : String = { cronString }
 }
- 
+
+
 
 /**
- *	A Stoppable is a trait which can be attached to a Track
- *	If a job is running when it is scheduled to run, 
- * 	don't run it ( in case something has been delayed ).
- *  
- *  Question: when this happens, do we delete this run, or just delay it?
+ *	Job listener for Constantly running jobs - alerts subsequent 
+
+
+class ConstantlyRunningListener extends JobListener {
+	def name : String
+	def getName : String = { name }
+	def execute (content : JobExecutionContext) = {
+	  println ("teehee")
+	}
+	//wasExecuted
+	def wasExecuted (contenxt : JobExecutionContext, jobException : JobExecutionException)
+	//Vetoed
+} 
  */
+// this is how you add a scheduler that is of interest to a job
+//scheduler.getListenerManager().addJobListener(ConstantlyRunningListener, KeyMatcher.jobKeyEquals(new JobKey("myJobName", "myJobGroup")))

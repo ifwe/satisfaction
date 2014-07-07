@@ -80,7 +80,7 @@ object ScheduleTrackPage extends Controller {
     }
     val pausable : Boolean = {
       stoppable match {
-        case yes if (stoppable.contains("pause") || stoppable.contains("kill")) =>
+        case yes if (rule.contains("constantly") || stoppable.contains("pause") || stoppable.contains("kill")) =>
           true
         case _ => 
           false
@@ -90,9 +90,13 @@ object ScheduleTrackPage extends Controller {
      Ok(s"i got scheduled")
    }
    
-   def unscheduleOneTrack(trackName: String) = Action {
-     val desc = scheduler.getScheduledTracks.filter(_._1.trackName == trackName).last._1
-     scheduler.unscheduleTrack(desc) //YY this is gonna be broken due to versioning!
+   def unscheduleOneTrack(trackName: String, forUser:String, version:String) = Action {
+     
+     val wtf = scheduler.getScheduledTracks.map(_._1).map(td => println("      unscheduleOneTrack found:  " + td.trackName + " " + td.forUser + " " + td.version + " " + td.variant))
+     val desc = scheduler.getScheduledTracks.filter(_._1.trackName == trackName ).last._1
+     
+     
+     scheduler.unscheduleTrack(desc) 
       println(" willrogers scheduler - I should be unscheduled!")
 
      val scList = scheduler.getScheduledTracks.map(_._1).toSeq

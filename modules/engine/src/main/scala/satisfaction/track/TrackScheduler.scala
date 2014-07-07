@@ -20,7 +20,6 @@ import akka.util.Timeout
 import engine.actors.ProofEngine
 import fs.FileSystem
 import satisfaction.engine.actors.GoalStatus
-
 /**
  *  Scheduler for different Tracks
  *  
@@ -33,13 +32,13 @@ case class TrackScheduler( val proofEngine : ProofEngine ) {
    private lazy val startGoalActor = proofEngine.akkaSystem.actorOf(Props( new StartGoalActor( trackFactory, proofEngine)) )
    implicit val timeout = Timeout(24 hours)
   
-   //trackDesk => [schedString, Cancellable, Pauseable]
+   // Format trackDesc => [schedString, Cancellable, Pauseable]
    private val scheduleMap : collection.mutable.Map[TrackDescriptor,Tuple3[String,Cancellable, Boolean]] = new collection.mutable.HashMap[TrackDescriptor,Tuple3[String,Cancellable,Boolean]]
    
       class StartGoalActor( trackFactory : TrackFactory, proofEngine : ProofEngine ) extends Actor with ActorLogging {
        def receive = {
          case mess : StartGoalMessage =>
-           log.info(" Starting Track " + mess.trackDesc /*+  " TrackFactory = " + trackFactory*/)
+           log.info(" Starting an instance of Track " + mess.trackDesc /*+  " TrackFactory = " + trackFactory*/)
            
            val trackScheduling = scheduleMap.get(mess.trackDesc)
            val pausable = {
@@ -50,32 +49,22 @@ case class TrackScheduler( val proofEngine : ProofEngine ) {
                  false
              }
            }
-             
            val trckOpt =  trackFactory.getTrack( mess.trackDesc )
-           /*
-            * to do:
-            *   - figure out expected behaviour
-            *   	- figure out what to return
-            */
-           trckOpt match {
 
+           trckOpt match {
 	             case Some(trck) if (pausable && isRunning(trck)) => // define "already running"
 	             	   	log.info("   this instance of me cannot run - going to discard now")
 	             case Some(trck) =>
 	               val witness = generateWitness(trck, DateTime.now)
 		        	  trck.topLevelGoals.foreach( goal => { 
-		        	      //log.info(s" Satisfying Goal $goal.name with witness $witness ")
+		        	      log.info(s" Satisfying Goal $goal.name with witness $witness ")
 		        	      goal.variables.foreach( v => println( s"  Goal $goal.name has variable " + v))
 		                  proofEngine.satisfyGoal( goal, witness)
 		              } )
 	             case None =>
 	              println(" Track " + mess.trackDesc.trackName + " not found ")
 	           }
-           
-           
-           
-           
-       } 
+       }
    }
    
    /**
@@ -83,9 +72,17 @@ case class TrackScheduler( val proofEngine : ProofEngine ) {
     */
    
    def isRunning(track: Track) : Boolean = {
+     
+     !proofEngine.getGoalsInProgress.filter(running => track.topLevelGoals.map(_.name).contains(running.goalName)).isEmpty
+
+       //proofEngine.getGoalsInProgress.foreach(p => if (track.topLevelGoals.map(_.name).contains(p.goalName)) true)
+     /*
      val witness = generateWitness(track, DateTime.now) // how do I reference the correct witness??? - in the case of temporal variable - i have no idea how to match witnesses :/ 
+     
      val runningForTrack = track.topLevelGoals.filter(goal => proofEngine.getStatus(goal, witness).canChange)
      !runningForTrack.isEmpty
+      */
+     
    }
    
    
@@ -107,6 +104,8 @@ case class TrackScheduler( val proofEngine : ProofEngine ) {
           case  cronable :  Cronable =>
              schedString = cronable.scheduleString
              Some(AddCronSchedule( startGoalActor,  cronable.cronString, mess, true))
+          case constant : Constantly =>
+            Some(AddConstantSchedule(startGoalActor, constant.frequency, DateTime.now,  mess, true))
           case recurring : Recurring => // in core
              schedString = recurring.scheduleString 
              Some(AddPeriodSchedule( startGoalActor, recurring.frequency, DateTime.now, mess, true))
@@ -135,14 +134,15 @@ case class TrackScheduler( val proofEngine : ProofEngine ) {
        	     false
      }
    }
-   
+  
    
    /*
     *  Stop a scheduled Track 
     */
    def unscheduleTrack( trackDesc :TrackDescriptor ) = {
-     val tup2 = scheduleMap.remove( trackDesc).get
-     quartzActor ! tup2._2
+     val tup3 = scheduleMap.remove( trackDesc).get
+     println ("  unscheduleTrack: going to unschedule tuple: " + tup3._1 + " " + tup3._2 + " " + tup3._3)
+     quartzActor ! RemoveJob(tup3._2)
    }
    
    
@@ -152,7 +152,8 @@ case class TrackScheduler( val proofEngine : ProofEngine ) {
     */
    def getScheduledTracks : collection.Set[Tuple2[TrackDescriptor,String]] = {
      //YY might have to refactor this - new pausable
-       scheduleMap.keySet.map( td => { Tuple2(td,scheduleMap.get(td).get._1) } )
+       scheduleMap.keySet.map( td => { 
+         Tuple2(td,scheduleMap.get(td).get._1) } )
    }
    
 

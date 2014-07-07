@@ -108,7 +108,7 @@ class TrackSchedulerSpec extends Specification {// val mockFS = new LocalFileSys
         }
         
       	track.addTopLevelGoal(recurringGoal)
-        scheduler.scheduleTrack(track, false)
+        scheduler.scheduleTrack(track)
         
         Thread.sleep(6000)
         println(" x is equal to " + x)
