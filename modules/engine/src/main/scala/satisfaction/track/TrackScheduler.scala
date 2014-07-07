@@ -26,7 +26,7 @@ import satisfaction.engine.actors.GoalStatus
  *  
  */
 case class TrackScheduler( val proofEngine : ProofEngine ) {
-   private val schedulerName = "masterScheduler"
+   ///private val schedulerName = "masterScheduler"
 	var trackFactory :  TrackFactory = null
    
    private lazy val quartzActor = proofEngine.akkaSystem.actorOf(Props[QuartzActor])

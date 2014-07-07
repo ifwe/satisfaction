@@ -119,6 +119,23 @@ class WitnessSpec extends Specification {
             } 
           
         }
+        
+        
+        "parse dauDB" in {
+          val pageViewQuery = " use ${dauDB}; "
+            
+            val props= new java.util.Properties
+            
+            props.put("dauDB", "ramblas")
+            
+            val parsed = Substituter.substitute( pageViewQuery , props)
+            
+            parsed match {
+            case Left[missingVariables]
+            
+            }
+         
+        }
 
     }
 

@@ -22,7 +22,8 @@ object Config  extends Logging {
     def initHiveConf: HiveConf = {
         
      
-        info( s" Major Version is ${ShimLoader.getMajorVersion()}" )
+        info( s" Java Version is ${System.getProperty("java.version")}" )
+        info( s" Hadoop Major Version is ${ShimLoader.getMajorVersion()}" )
         val hc = new HiveConf(new Configuration(), this.getClass())
         
         val hadoopDir = hadoopConfDir 
@@ -84,7 +85,7 @@ object Config  extends Logging {
           if(sys.env.contains("HIVE_HOME")) {
               new File( sys.env("HIVE_HOME") + "/conf")   
           } else {
-            new File( "/usr/lib/hive" )
+            new File( "/usr/lib/hive/conf" )
           }
        }
     }

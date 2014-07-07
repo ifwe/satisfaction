@@ -20,10 +20,10 @@
  </appender>
 
  <logger name="play" level="INFO" />
- <logger name="application" level="DEBUG" />
+ <logger name="application" level="INFO" />
 
 
-  <root level="debug">
+  <root level="INFO">
     <appender-ref ref="STDOUT" />
     <appender-ref ref="FILE" />
   </root>
