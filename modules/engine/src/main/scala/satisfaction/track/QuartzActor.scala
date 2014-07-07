@@ -37,6 +37,7 @@ import org.joda.time.Period
 import org.joda.time.DateTime
 import org.joda.time.PeriodType
 import org.joda.time.Seconds
+import org.quartz.listeners.JobListenerSupport
 
 
 /**
@@ -48,6 +49,8 @@ import org.joda.time.Seconds
  */
 
 case class AddCronSchedule(to: ActorRef, cron: String, message: Any, reply: Boolean = false, spigot: Spigot = OpenSpigot)
+
+case class AddConstantSchedule(to: ActorRef, period: Period, offsetTime : DateTime, message: Any, reply: Boolean = false, spigot: Spigot = OpenSpigot)
 
 case class AddPeriodSchedule(to: ActorRef, period: Period, offsetTime : DateTime, message: Any, reply: Boolean = false, spigot: Spigot = OpenSpigot)
 
@@ -89,6 +92,7 @@ private class QuartzIsNotScalaExecutor() extends Job {
 		}
 	}
 }
+
 
 trait Spigot {
 	def open: Boolean
@@ -156,21 +160,22 @@ class QuartzActor extends Actor { // receives msg from TrackScheduler
 			jdm.put("spigot", spigot)
 			jdm.put("message", message)
 			jdm.put("actor", to)
+			jdm.put("jobname", jobkey.getName())
 			val job = jd.usingJobData(jdm).withIdentity(jobkey).build()
-
+			
 			try {
 			    val triggerBuilder : TriggerBuilder[_ <:Trigger]  = org.quartz.TriggerBuilder.newTrigger().withIdentity(trigkey).forJob(job).withSchedule(schedBuilder)
 			    offsetTime match {
 			      case None => 
 			        println("we don't have an offset!!!")
+			       
 			       scheduler.scheduleJob( job, triggerBuilder.startNow.build)
 			      case Some(offsetTime) =>
 			        			println("we have an offset!!!")
 
 			       scheduler.scheduleJob( job, triggerBuilder.startAt(offsetTime.toDate).build)
 			    }
-
-				if (reply) // success case
+			   	if (reply) // success case
 					context.sender ! AddScheduleSuccess(new CancelSchedule(jobkey, trigkey))
 
 			} catch { // Quartz will drop a throwable if you give it an invalid cron expression - pass that info on
@@ -178,7 +183,6 @@ class QuartzActor extends Actor { // receives msg from TrackScheduler
 					log.error("Quartz failed to add a task: ", e)
 					if (reply)
 						context.sender ! AddScheduleFailure(e)
-
 			}
 		// I'm relatively unhappy with the two message replies, but it works
 	}
@@ -200,17 +204,22 @@ class QuartzActor extends Actor { // receives msg from TrackScheduler
 	def receive = { // YY ? received here
 		case RemoveJob(cancel) => cancel match {
 			case cs: CancelSchedule => 
-			  println("QuartzActor - deleted job successfully!")
+
 			  scheduler.deleteJob(cs.job);cs.cancelled = true
 			case _ => log.error("Incorrect cancelable sent")
 		}
 		case AddCronSchedule(to, cron, message, reply, spigot) =>
 		    val schedBuilder : ScheduleBuilder[_ <: Trigger] = org.quartz.CronScheduleBuilder.cronSchedule(cron)
 		    scheduleJob(to,schedBuilder,message,reply,spigot)
+	
+		case AddConstantSchedule(to, period, offsetTime, message, reply, spigot) =>
+			val schedBuilder : ScheduleBuilder[_ <: Trigger] = org.quartz.SimpleScheduleBuilder.repeatSecondlyForever()
+			scheduleJob(to, schedBuilder, message, reply, spigot)
 			
 		case AddPeriodSchedule(to, period, offsetTime, message, reply, spigot) =>
 		    val schedBuilder : ScheduleBuilder[_ <: Trigger] = builderForPeriod(period)
 		    scheduleJob(to,schedBuilder,message,reply,spigot) 
-		case _ => println("QuartzActor::receive unreconizable message")
+		case _ => log.warning("QuartzActor::receive unreconizable message")
 	}
 }
+
