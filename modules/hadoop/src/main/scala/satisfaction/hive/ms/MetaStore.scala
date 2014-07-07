@@ -61,6 +61,7 @@ case class MetaStore(implicit val config: HiveConf)  extends Logging {
     private def _initDbList = {
         this.synchronized({
           try {
+            info(" Metastore URI  =  " + config.getVar( HiveConf.ConfVars.METASTOREURIS))
             info(" Init DB LIST !! hive =  " + _hive)
             val list = _hive.getAllDatabases().toList
             list.foreach( info(_))

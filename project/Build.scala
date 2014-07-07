@@ -76,11 +76,10 @@ object ApplicationBuild extends Build {
   ) 
 
   def AppSettings =  CommonSettings ++ playScalaSettings ++ Seq(
-     javacOptions in Compile ++= Seq("-source", "1.6", "-target", "1.6")
+     javacOptions in Compile ++= Seq("-source", "1.7", "-target", "1.7")
   )
 
 
-  val destDir = "/usr/local/satisfaction"
 
   def RpmSettings = packagerSettings ++ deploymentSettings ++  playScalaSettings ++ packageArchetype.java_server ++  Seq(
     maintainer in Linux := "Jerome Banks jbanks@tagged.com",
@@ -90,15 +89,28 @@ object ApplicationBuild extends Build {
     daemonGroup in Linux := "satisfaction",
     normalizedName in Linux := "satisfaction",
 
-    linuxPackageMappings <++= (projectDependencyArtifacts) map { artifactSeq : Seq[Attributed[File]] =>
-          artifactSeq map ( a => { packageMapping ( a.data -> s"${destDir}/lib/${a.data.name}" )  } )
-    },
-
 
     linuxPackageMappings <++= (mappings in Universal) map { universalDir => 
         universalDir.filter( {  _._2.toString.startsWith("/usr/share") } ).map { packageMapping( _ ) } 
     },
 
+
+    mappings in Universal <+= (packageBin in Compile, baseDirectory ) map { (_, base) =>
+       val conf = base / "conf" / "application.conf"
+       conf -> "conf/application.conf"
+    },
+
+    mappings in Universal <+= (packageBin in Compile, baseDirectory ) map { (_, base) =>
+       val conf = base / "conf" / "logger.xml"
+       conf -> "conf/logger.xml"
+    },
+
+    mappings in Universal <+= (packageBin in Compile, baseDirectory ) map { (_, base) =>
+       val conf = base / "conf" / "willrogers.conf"
+       conf -> "conf/willrogers.conf"
+    },
+
+    bashScriptConfigLocation := Some("$app_home/conf/willrogers.conf"),
 
     name in Rpm := "satisfaction-scheduler",
     version in Rpm := appVersion,
@@ -163,7 +175,8 @@ object ApplicationBuild extends Build {
 	  ("org.apache.hive" % "hive-metastore" % hiveVersion),
 	  ("org.apache.hive" % "hive-serde" % hiveVersion),
 	  ("org.apache.hive" % "hive-exec" % hiveVersion),
-	  ("org.apache.thrift" % "libfb303" % "0.7.0")
+	  ("org.apache.thrift" % "libfb303" % "0.7.0"),
+	  ("com.tagged.analytics" % "avro-serde" % "0.13.1-jdb")
   ).excluding( "log4j", "log4j" ).excluding("org.slf4j", "slf4j-log4j12")
 
   def hiveDependencies = Seq(
