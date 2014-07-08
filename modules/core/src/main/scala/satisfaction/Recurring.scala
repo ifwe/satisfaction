@@ -88,23 +88,3 @@ abstract trait Cronable extends Schedulable  {
   
     def scheduleString  : String = { cronString }
 }
-
-
-
-/**
- *	Job listener for Constantly running jobs - alerts subsequent 
-
-
-class ConstantlyRunningListener extends JobListener {
-	def name : String
-	def getName : String = { name }
-	def execute (content : JobExecutionContext) = {
-	  println ("teehee")
-	}
-	//wasExecuted
-	def wasExecuted (contenxt : JobExecutionContext, jobException : JobExecutionException)
-	//Vetoed
-} 
- */
-// this is how you add a scheduler that is of interest to a job
-//scheduler.getListenerManager().addJobListener(ConstantlyRunningListener, KeyMatcher.jobKeyEquals(new JobKey("myJobName", "myJobGroup")))
