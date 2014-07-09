@@ -18,8 +18,6 @@ case class Goal(
        println(" Creating a Goal !!! ") 
        /// track.add Goal this ...
     }
-  
-   ///implicit var track : Track = Track.trackForGoal( this)
 
     def addDependency(goal: Goal): Goal = {
         dependencies += Tuple2(Goal.Identity, goal)
@@ -83,8 +81,8 @@ object Goal {
      */
     def yesterday : ( Witness => Witness) = daysPrevious(1)
     
-    def daysPrevious(numDays: Int ) : ( Witness => Witness) = { w: Witness => {
-         val dtVar = Variable("dt")
+    def daysPrevious(numDays: Int )(implicit dateVarName : String = "dt") : ( Witness => Witness) = { w: Witness => {
+         val dtVar = Variable(dateVarName)
          val yyyymmdd = DateTimeFormat.forPattern("YYYYMMdd")
          if( w.contains( dtVar) ) {
            val dtYMD = w.get( dtVar)

@@ -1,4 +1,4 @@
-@(tdList : Seq[com.klout.satisfaction.TrackDescriptor], scList: Seq[com.klout.satisfaction.TrackDescriptor])
+@(tdList : Seq[com.klout.satisfaction.TrackDescriptor], scList: Seq[com.klout.satisfaction.TrackDescriptor] , messageOpt : Option[String] = None)
 
 
 @import helper._
@@ -17,7 +17,19 @@
 	</script>
 	
 		<h1> Scheduler</h1>
-		
+	@messageOpt match {
+	  case Some(message) => {
+	    <div id="messageBox">
+	    <table>
+	     <tr><td>@message</td></tr>
+	    </table>
+	    </div>
+	  }
+	  case None => {
+	  }
+    }
+		<table>
+		<table>
 		<h2> Scheduled Tracks</h2>
 		<table>
 			<thead>
