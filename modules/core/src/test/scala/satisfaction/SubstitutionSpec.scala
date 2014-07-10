@@ -215,7 +215,7 @@ class WitnessSpec extends Specification {
                                      VariableAssignment("hour" , "03" ),
                                      VariableAssignment("minute" , "43" )))
            
-           val mapVarFunc = Witness.mapVariables( Variable("dt"), Variable("date"))_
+           val mapVarFunc = Goal.mapVariables( Variable("dt"), Variable("date"))_
            val subst2 = mapVarFunc(subst1)
           
            println(s" Witness with mapped variable is $subst2")
@@ -226,6 +226,33 @@ class WitnessSpec extends Specification {
            subst2.variables must not contain( Variable("dt") )
            subst2.variables must contain( Variable("hour") )
            subst2.variables must contain( Variable("minute") )
+        }
+        
+        "toString function" in {
+           val subst1 = new Witness(Set(
+                                  VariableAssignment("alpha" , "first"),
+                                  VariableAssignment("dt" , "20140512"),
+                                     VariableAssignment("hour" , "03" ),
+                                     VariableAssignment("minute" , "43" ),
+                                  VariableAssignment("zed" , "last")))
+
+           
+           val toS1 = subst1.toString
+
+           val subst2 = new Witness(Set(
+                                  VariableAssignment("zed" , "last"),
+                                  VariableAssignment("alpha" , "first"),
+                                  VariableAssignment("dt" , "20140512"),
+                                     VariableAssignment("hour" , "03" ),
+                                     VariableAssignment("minute" , "43" ),
+                                  VariableAssignment("alpha" , "first")))
+
+           val toS2 = subst2.toString
+          
+           println(s"Witness 1 = $toS1 ")
+           println(s"Witness 2 = $toS2 ")
+           
+           toS1 mustEqual toS2
         }
 
     }

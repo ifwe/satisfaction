@@ -59,6 +59,13 @@ object VariableAssignment {
     def apply[T](name: String, value: T, desc: String)(implicit m: Manifest[T]): VariableAssignment[T] = {
         new VariableAssignment(new Variable[T](name, m.runtimeClass.asInstanceOf[Class[T]], Some(desc)), value)
     }
+    
+    val ordering = new Ordering[VariableAssignment[_]] {
+       override def compare( va1 : VariableAssignment[_], va2 : VariableAssignment[_]) : Int = {
+        va1.variable.name.compareTo( va2.variable.name)
+       }
+      
+    }
 }
 
 case class Witness(
@@ -105,12 +112,19 @@ case class Witness(
 
     def update[T](pair: VariableAssignment[T]): Witness = update(pair.variable, pair.value)
 
+    def mkString(start: String,  delim : String, end: String ) : String = {
+       val sortedSet = SortedSet[VariableAssignment[_]]()( ord =  VariableAssignment.ordering ) ++ assignments
+       sortedSet.mkString(start,delim,end)
+    }
+
+    def mkString( delim : String ) : String =  mkString( "", delim, "") 
+
     override def toString : String = {
-       assignments.mkString(";")
+      mkString(";")
     }
     
     def pathString : String = {
-      toString.replace(" ","_").replace("=>","@").replace("(","_").replace(")","_").replace(";","_")
+      mkString("_").replace(" ","_").replace("=>","@").replace("(","_").replace(")","_")
     }
 }
 

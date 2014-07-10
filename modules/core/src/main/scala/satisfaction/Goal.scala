@@ -198,6 +198,24 @@ object Goal {
     }
     
     def getPredicateString(goalName: String, w: Witness): String = {
-        (goalName + "(" + w.raw.mkString(",") + ")").replace(" ", "").replace("->", "=")
+        (goalName + "(" + w.mkString(",") + ")").replace(" ", "").replace("->", "=")
     }
+   
+       
+   /**
+    *   Define a function which maps one variable to another.
+    *   Useful for Goal dependencies, if one table refers to 
+    *    a variable by a different name.
+    */ 
+    def mapVariables[T]( vfrom : Variable[T], vto : Variable[T] )( fromWitness : Witness) : Witness = {
+      val oldValCheck = fromWitness.get( vfrom)
+      oldValCheck match {
+        case Some(oldVal) => {
+          fromWitness.exclude( Set(vfrom)) + ( vto, oldVal)
+        } 
+        case None => fromWitness
+      }
+   }
+    
+    
 }
