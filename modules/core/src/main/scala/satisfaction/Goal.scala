@@ -72,6 +72,19 @@ object Goal {
             w.update  (param, paramValue)
     }
     
+    
+    val  EmptySatisfier : Satisfier = new Satisfier {
+        override def name = "DoNothing"
+        override def satisfy( w: Witness )  =  robustly {
+           true
+        }
+        override def abort() = robustly {
+          true
+        }
+    }
+    val SomeEmptySatisfier = Some(EmptySatisfier)
+
+    
     /**
      *  Define a Witness mapping function which replaces
      *    the value in the 'dt' variable with a day previous.
@@ -94,7 +107,59 @@ object Goal {
       }
     }
     
-   
+    /**
+     * Return a Goal which satisfies another goal
+     *  according to witness variable mapping,
+     *  so that one can satisfy top-level goals 
+     *  with a mapped witness
+     */
+    def MappedGoal( goal : Goal )( mapping : ( Witness => Witness))
+        (implicit track : Track) : Goal = {
+       new Goal(
+           name = s"Mapped${goal.name}",
+           satisfier =  SomeEmptySatisfier,
+           dependencies = Set( ( mapping, goal) ),
+           variables = goal.variables
+       ) 
+    }
+    
+    /**
+     * Declare that this Goal should be satisfied for the previous hour,
+     *   rather than the current hour,
+     *  (Useful for processing results
+     */
+    def ForPreviousHour( goal : Goal )(implicit track: Track) : Goal = MappedGoal(goal) ( previousHour)
+
+    def ForPreviousDay( goal : Goal )(implicit track: Track) : Goal = MappedGoal(goal) ( yesterday)
+
+    /**
+     *  Define a witness mapping, replacing temporal variables "dt" and "hour"
+     *   with values for the previous hour.
+     */
+    def previousHour : ( Witness => Witness ) = hoursPrevious( 1 )
+    /**
+     *  Define a witness mapping which replaces
+     *    dt and hour to be for some previous hours
+     */
+    def hoursPrevious(numHours: Int )(implicit dateVarName : String = "dt",hourVarName : String = "hour") : ( Witness => Witness) = { w: Witness => {
+         val dtVar = Variable(dateVarName)
+         val hourVar = Variable(hourVarName)
+         val yyyymmddhh = DateTimeFormat.forPattern("YYYYMMddHH")
+         val yyyymmdd = DateTimeFormat.forPattern("YYYYMMdd")
+         val hh = DateTimeFormat.forPattern("HH")
+         if( w.contains( dtVar) && w.contains(hourVar) ) {
+           val dtYMD = w.get( dtVar).get
+           val dtHH : String = w.get( hourVar).get
+           val prevTime = yyyymmddhh.parseDateTime( dtYMD + dtHH).minusHours( numHours)
+           val yesterDT = yyyymmdd.print( prevTime)
+           val yesterHH = hh.print( prevTime)
+           w.update( dtVar -> yesterDT ).update( hourVar -> yesterHH )
+         } else {
+           w
+         }
+      }
+    }
+    
     /**
      *  Return a Witness mapping function 
      *    which increments a variable 
@@ -115,6 +180,7 @@ object Goal {
     def mostRecentPath( fs : FileSystem , path : Path, dtVar : Variable[String] ) : (Witness => Witness ) = { w: Witness => {
         /// XXX probably want to do some error checking 
         ///  that path exists and is of YYYYMMDD format
+      //// Also do for hourly
         val maxDt = fs.listFiles( path).map(  _.path.name ).max
         
         w.update( dtVar -> maxDt )
