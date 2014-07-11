@@ -9,43 +9,72 @@ case class Goal(
     val name: String,
     val satisfier: Option[Satisfier],
     val variables: List[Variable[_]] = List.empty,
-    var dependencies: Set[(Witness => Witness, Goal)] = Set.empty,
-    ///var evidence: Set[_ <: Evidence] = Set.empty)
-    var evidence: Set[Evidence] = Set.empty )
+    val dependencies: Set[(Witness => Witness, Goal)] = Set.empty,
+    val evidence: Set[Evidence] = Set.empty ) 
     (implicit val track : Track ) {
   
     locally {
        println(" Creating a Goal !!! ") 
-       /// track.add Goal this ...
     }
 
     def addDependency(goal: Goal): Goal = {
-        dependencies += Tuple2(Goal.Identity, goal)
-        return this
+      new Goal( name, satisfier, variables, 
+        dependencies +  Tuple2(Goal.Identity, goal),
+        evidence)
     }
     
     def addDataDependency( depData : DataOutput) : Goal = {
        addDependency( DataDependency(depData))
-       this
     }
     
     ///def addEvidence[E <: Evidence]( ev : E  ) : Goal = {
     def addEvidence( ev : Evidence  ) : Goal = {
-       ///evidence += ev
-      ///evidence = evidence + ev
-         
-      evidence += ev
-       this
+      new Goal( name, satisfier, variables, 
+        dependencies,
+        evidence + ev)
     }
 
+    /**
+     *  Add A Dependency rule for with an explicit Witness mapping function,
+     *    so that one can depend upon a Goal satisfied with a different set 
+     *     of witnesses.
+     */
     def addWitnessRule(rule: (Witness => Witness), goal: Goal): Goal = {
-        dependencies += Tuple2(rule, goal)
-        return this
+      new Goal( name, satisfier, variables, 
+        dependencies +  Tuple2(rule, goal),
+        evidence)
+    }
+    
+    /**
+     *  Depend upon yesterday's output of the specified Goal
+     */
+    def addYesterdayGoal( goal : Goal) : Goal = {
+        addWitnessRule( Goal.yesterday , goal)      
+    }
+
+    /**
+     *  Depend upon the output from a Goal
+     *   from the previous hour.
+     */
+    def addPreviousHourGoal( goal : Goal) : Goal = {
+        addWitnessRule( Goal.previousHour , goal)      
     }
     
     
-    def addYesterdayGoal( goal : Goal) : Goal = {
-        addWitnessRule( Goal.yesterday , goal)      
+    /**
+     *  Add dependencies on all previous days output of this Goal,
+     *   so that all unsatisfied output will be generated.
+     */
+    def reharvestDaily() : Goal = {
+       addYesterdayGoal( this) 
+    }
+
+    /**
+     *  Add dependencies on all previous hours of this Goal,
+     *    so that all unsatisfied output will be generated.
+     */
+    def reharvestHourly() : Goal = {
+       addPreviousHourGoal( this) 
     }
 
     def getPredicateString(w: Witness): String = {
@@ -60,13 +89,15 @@ case class Goal(
 }
 
 object Goal {
+  
+    /**
+     *  Identify function for Witness mapping
+     */
     val Identity: (Witness => Witness) = { w: Witness => w }
 
-    def qualifyWitness(param: Variable[String], paramValue: String): (Witness => Witness) = {
-        w: Witness =>
-            w.update(param, paramValue)
-    }
-    
+    /**
+     *  Add a variable and value to  a witness
+     */
     def qualifyWitness[T](param: Variable[T], paramValue : T): (Witness => Witness) = {
         w: Witness =>
             w.update  (param, paramValue)
@@ -94,6 +125,9 @@ object Goal {
      */
     def yesterday : ( Witness => Witness) = daysPrevious(1)
     
+    /**
+     *  Map a witness for the output from numDays ago.
+     */
     def daysPrevious(numDays: Int )(implicit dateVarName : String = "dt") : ( Witness => Witness) = { w: Witness => {
          val dtVar = Variable(dateVarName)
          val yyyymmdd = DateTimeFormat.forPattern("YYYYMMdd")
@@ -126,7 +160,8 @@ object Goal {
     /**
      * Declare that this Goal should be satisfied for the previous hour,
      *   rather than the current hour,
-     *  (Useful for processing results
+     *  (Useful for processing results at the beginning of an hour, using
+     *     data gathered in the last hour)
      */
     def ForPreviousHour( goal : Goal )(implicit track: Track) : Goal = MappedGoal(goal) ( previousHour)
 
@@ -137,6 +172,7 @@ object Goal {
      *   with values for the previous hour.
      */
     def previousHour : ( Witness => Witness ) = hoursPrevious( 1 )
+    
     /**
      *  Define a witness mapping which replaces
      *    dt and hour to be for some previous hours
@@ -198,7 +234,7 @@ object Goal {
     }
     
     def getPredicateString(goalName: String, w: Witness): String = {
-        (goalName + "(" + w.mkString(",") + ")").replace(" ", "").replace("->", "=")
+        (goalName + "(" + w.mkString(",") + ")").replaceAll(" ", "").replaceAll("=>", "=")
     }
    
        
@@ -215,6 +251,14 @@ object Goal {
         } 
         case None => fromWitness
       }
+   }
+
+   /**
+    *  Define a function which adds a predetermined Witness 
+    *    substitution
+    */
+   def addWitness( constWitness: Witness )( fromWitness : Witness) : Witness = {
+       fromWitness ++ constWitness
    }
     
     

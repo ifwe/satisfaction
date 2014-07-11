@@ -149,7 +149,7 @@ case class TrackScheduler( val proofEngine : ProofEngine ) extends Logging  {
               info(" Successfully scheduled job " + trackDesc.trackName + " is it pausable? " + pausable)
               Success(" Successfully scheduled job " + trackDesc.trackName + " is it pausable? " + pausable)
            case boo : AddScheduleFailure =>
-       	     info(" Problem trying to schedule cron " + boo.reason)
+       	     info(" Problem trying to schedule cron " + boo.reason,boo.reason)
        	     boo.reason.printStackTrace()
        	     Failure( boo.reason)
      }
@@ -206,12 +206,7 @@ case class TrackScheduler( val proofEngine : ProofEngine ) extends Logging  {
      info(" Temporal witness is " + subst)
      subst
    }
-     /**
-    *   Add TemporalVariable trait, 
-    *     and push to common...
-    *    for now, just check if "dt"
-    *    
-    */
+
    def isTemporalVariable( variable : Variable[_] ) : Boolean = {
       variable match {
         case temporal : TemporalVariable => true

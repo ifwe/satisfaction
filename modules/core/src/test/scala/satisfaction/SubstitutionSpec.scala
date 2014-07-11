@@ -18,6 +18,17 @@ class WitnessSpec extends Specification {
             vars must contain("networkAbbr")
             vars must contain("dateString")
         }
+        "handle underscores correctly" in {
+            val str = "hdfs://dhdp2/data/ramblas/event_log/${event_type}/${dt}/${hour}"
+
+            val vars = Substituter.findVariablesInString(str)
+            vars.foreach(str => println(str))
+
+            vars must contain("dt")
+            vars must contain("hour")
+            vars must contain("event_type")
+        }
+
         "substitute variables in string " in {
             val tempStr = " select * from my_view_${networkAbbr} where dt= ${dateString}"
 

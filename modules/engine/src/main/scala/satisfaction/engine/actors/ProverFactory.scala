@@ -67,7 +67,7 @@ class ProverFactory extends Actor with ActorLogging {
         case GetActor(track, goal, witnessArg) =>
             val witness = witnessArg.filter( goal.variables.toSet)
             
-            log.info(s"Getting ProverActor for goal $goal.name and witness $witness ")
+            log.info(s"Getting ProverActor for goal ${goal.name} and witness $witness vs $witnessArg ; Goal Variables are ${goal.variables}")
             checkVariables( goal, witness)
             val actorTuple: Tuple2[Goal, Witness] = (goal, witness)
             val actorTupleName = ProofEngine.getActorName(goal, witness)

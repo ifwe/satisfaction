@@ -16,20 +16,23 @@ import ch.qos.logback.classic.LoggerContext
 import ch.qos.logback.classic.encoder.PatternLayoutEncoder
 import ch.qos.logback.core.ConsoleAppender
 import org.slf4j.LoggerFactory
-import org.slf4j.Logger;
+import org.slf4j.Logger
 import ch.qos.logback.core.AppenderBase
+import java.io.PrintWriter
+import org.joda.time.DateTime
 
 
 /**
  *  Divert all output from STDOUT and STDERR to a defined log file
  *  
  */
-case class LogWrapper[T]( track : Track, goal : Goal, witness : Witness) {
+case class LogWrapper[T]( track : Track, goal : Goal, witness : Witness)  {
+  lazy val outStream = loggingOutput
+  lazy val printWriter = new PrintWriter(outStream)
 
   def log( functor :  () => T  ) : Try[T] = {
      val currOut = Console.out
      val currErr = Console.err
-     var outStream = loggingOutput
      try {
          Console.setOut(outStream)
          Console.setErr(outStream)
@@ -45,15 +48,24 @@ case class LogWrapper[T]( track : Track, goal : Goal, witness : Witness) {
        
         Failure( t)
     } finally {
-      outStream.flush()
-      outStream.close()
-      LogWrapper.uploadToHdfs(track, goal, witness)
+      close()
       
       Console.setOut(currOut)
       Console.setOut(currErr)
     }
   }
+ 
+  def info( st : String) = {
+    //// XXX Use standard log formatting
+    /// 
+    printWriter.println(s"LOGWRAPPER ${DateTime.now} $st")
+  }
   
+  def close() {
+      outStream.flush()
+      outStream.close()
+      LogWrapper.uploadToHdfs(track, goal, witness)
+  }
 
   def loggingOutput: OutputStream = {
      LogWrapper.localFS.create( LogWrapper.logPathForGoalWitness( track.descriptor, goal.name, witness) )

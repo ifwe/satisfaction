@@ -223,14 +223,14 @@ class QuartzActor extends Actor { // receives msg from TrackScheduler
 	      g(dt,rounded)
 	    }
 	    
-	     if( ft ==  DurationFieldType.days() ) {
+	     if( ft ==  DurationFieldType.days() && per.get(ft) != 0 ) {
 	        dtRound = roundFunc( dtRound, per.get(ft), _.getDayOfMonth, _.withDayOfMonth(_) )
 	     }
-	     if( ft ==  DurationFieldType.hours() ) {
+	     if( ft ==  DurationFieldType.hours() && per.get(ft) != 0 ) {
 	        dtRound = roundFunc( dtRound, per.get(ft), _.getHourOfDay, _.withHourOfDay(_) )
 	        hasHour = true
 	     }
-	     if( ft ==  DurationFieldType.minutes() ) {
+	     if( ft ==  DurationFieldType.minutes()  && per.get(ft) != 0) {
 	        dtRound = roundFunc( dtRound, per.get(ft), _.getMinuteOfHour, _.withMinuteOfHour(_) )
 	        hasMin = true
 	     }
@@ -247,7 +247,8 @@ class QuartzActor extends Actor { // receives msg from TrackScheduler
 	    f
 	  } catch {
 	    case unexpected : Throwable => {
-	      log.info("Unexepected error while scheduling job :: " + unexpected.getMessage, unexpected)
+	      log.warning("Unexpected error while scheduling job :: " + unexpected.getMessage, unexpected)
+	      unexpected.printStackTrace(System.out)
 		  if (doReply)
 				context.sender ! AddScheduleFailure(unexpected)
 	    } 
@@ -265,13 +266,14 @@ class QuartzActor extends Actor { // receives msg from TrackScheduler
 		}
 		case AddCronSchedule(to, cron, message, reply, spigot) => 
 		  replyError(reply) {
-	        log.info( "received schedule Job Message")
+	        log.info( "received schedule CronJob Message")
 		    val schedBuilder : ScheduleBuilder[_ <: Trigger] = org.quartz.CronScheduleBuilder.cronSchedule(cron)
 		    scheduleJob(to,Some(schedBuilder),message,reply,spigot)
 		  }
 	
 		case AddPeriodSchedule(to, period, offsetTime, message, reply, spigot) =>
 		  replyError(reply) {
+	        log.info( "received schedule Period Job Message")
 		    val schedBuilder : ScheduleBuilder[_ <: Trigger] = builderForPeriod(period)
 		    /// find offset time
             val nw = DateTime.now
@@ -295,6 +297,7 @@ class QuartzActor extends Actor { // receives msg from TrackScheduler
 		  }
 		case AddOneTimeSchedule(to, offsetTime,  message, reply, spigot) =>
 		  replyError(reply) {
+	        log.info( "received schedule OneTime1G Job Message")
 			scheduleJob(to, None, message, reply, spigot, Some(offsetTime))
 		  }
 			

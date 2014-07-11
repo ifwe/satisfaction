@@ -21,35 +21,12 @@ import org.joda.time.DateTime
  * rather than to call Thread.sleep(), hogging the thread.
  */
 
-/**
-case class WaitingSatisfier(val evidence : Set[Evidence]) extends Satisfier {
-  
-    var remainingEvidence : Set[Evidence]  = evidence
-    var execResult= new ExecutionResult("Waiting ", DateTime.now)
-    def satisfy(subst: Substitution): ExecutionResult = {
-     
-      while( { ! remainingEvidence.isEmpty } ) {
-                remainingEvidence foreach { evidenceToCheck =>
-                    if (evidenceToCheck.exists(new Witness(subst))) {
-                        remainingEvidence - evidenceToCheck
-                    }
-                }
-      
-                Thread.sleep(10000)
-      }
-      execResult.markSuccess
-    }
-    
-
-  
-}
-* **
-*/
 class DefaultGoalSatisfier(
-     evidence: Set[Evidence],
-    witness: Witness) extends Actor with ActorLogging {
+    val track : Track,
+    val goal : Goal, 
+    val evidence: Set[Evidence],
+    val witness: Witness) extends Actor with ActorLogging {
   
-   /// XXX Use LogWrapper to preserve time logs ???
 
     implicit val executionContext : ExecutionContext = ExecutionContext.global
     
@@ -57,10 +34,14 @@ class DefaultGoalSatisfier(
     var messageSender : ActorRef = null
     
     var execResult : ExecutionResult = null
+    
+    LogWrapper.modifyLogger( track)
+    LogWrapper.modifyLogger( goal)
+    val logger = new LogWrapper[ExecutionResult]( track, goal, witness)
+
 
     def receive = {
         case Satisfy =>
-            ///log.info(s"Asked to satisfy for params: $params")
           messageSender = sender
           execResult = new ExecutionResult( evidence.mkString("_"), DateTime.now)
           if( checkEvidence() ) {
@@ -82,13 +63,13 @@ class DefaultGoalSatisfier(
       if( remainingEvidence.isEmpty) {
         true
       } else {
-          log.info(s"Still waiting on evidence: $remainingEvidence")
+          logger.info(s"Still waiting on evidence: $remainingEvidence")
           remainingEvidence foreach { evidenceToCheck =>
              if (evidenceToCheck.exists(witness)) {
-                log.info(s" Evidence is Now  there !!! ${evidenceToCheck} ")
+                logger.info(s" Evidence is Now  there !!! ${evidenceToCheck} ")
                  remainingEvidence = remainingEvidence - evidenceToCheck
               } else {
-                log.info(s" Evidence not there yet ${evidenceToCheck} ")
+                logger.info(s" Evidence not there yet ${evidenceToCheck} ")
               }
           }
           remainingEvidence.isEmpty 
@@ -96,7 +77,8 @@ class DefaultGoalSatisfier(
     }
 
     def finish() {
-        log.info("No more evidence left.")
+        logger.info("No more evidence left.")
+        logger.close
         execResult.markSuccess
         if( messageSender != null) {
            messageSender !  new JobRunSuccess(execResult)
@@ -104,10 +86,7 @@ class DefaultGoalSatisfier(
     }
 
     def checkAgainLater() {
-        ///context.system.scheduler.scheduleOnce(1.minute, self, CheckEvidence)
-        log.info(" Check again LATER !!!")
         context.system.scheduler.scheduleOnce(30 second, self, CheckEvidence)
-      
     }
 
 }
