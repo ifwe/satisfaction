@@ -168,7 +168,7 @@ object SatisfyGoalPage extends Controller {
 
         if ( LocalFileSystem.exists( logFile )) {
           ///// XXXX 
-            Some( io.Source.fromFile(new java.io.File(logFile.toString)).getLines.mkString("<br>\n"))
+            Some( io.Source.fromFile(new java.io.File(logFile.toString)).getLines.mkString("\n"))
         } else {
             None
         }

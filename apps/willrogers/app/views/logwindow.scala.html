@@ -12,28 +12,35 @@
      <h1>Satisfaction !!! Log Window</h1>
     <h1>Project @trackName Goal @goalName @witness </h1>
     
-  <table>
-  <tr>
-  <td>
-	    <h3>Current Log Output</h3> 
- <div>
-  <iframe id="logFrame" style="width:600px;height:600px;overflow:scroll" src='/rawlog/@trackName/@goalName/@HtmlUtil.witnessPath(witness)' scrollTop="600px" onload="scrollDown()">
-  </iframe>
-   </div>
-   </td>
-   
-   </tr>
-   </table>
-   	  
-   	  <script type="text/javascript">
-   	    setInterval(function(){
-   	      document.getElementById('logFrame').contentWindow.location.reload(true);
-   	   		document.getElementById("logFrame").contentWindow.scrollTo(0,document.getElementById("logFrame").contentWindow.document.body.scrollHeight)
-    	},2000);
 
-    	function scrollDown() {
-    		 document.getElementById("logFrame").contentWindow.scrollTo(0,document.getElementById("logFrame").contentWindow.document.body.scrollHeight)
-       	}
-   	  </script>
-    
+      <h3>Current Log Output</h3> 
+<div>
+  <iframe id="logFrame" width="1750px" height ="800px" style="overflow:scroll" src='/rawlog/@trackName/@goalName/@HtmlUtil.witnessPath(witness)' onload="scrollDown()">
+  </iframe>
+</div>
+
+   
+
+      <script type="text/javascript">
+
+      
+      var frameHeight= parseInt($("#logFrame").get(0).height, 10)
+
+
+      setInterval(function(){
+
+          var frame = $("#logFrame").get(0).contentWindow.document.body
+          var scrollPosn = frame.scrollTop + frameHeight
+          var contentHeight = frame.scrollHeight
+
+          
+          if (scrollPosn  >= contentHeight) { 
+            $('#logFrame').get(0).contentWindow.location.reload(true);
+          } 
+      },2000);
+      
+      function scrollDown() {
+    	 $("#logFrame").get(0).contentWindow.scrollTo(0,$("#logFrame").get(0).contentWindow.document.body.scrollHeight)
+      }
+      </script>
 }
