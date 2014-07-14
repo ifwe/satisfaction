@@ -28,6 +28,7 @@ class ProofEngineSpec extends Specification {
 
     "ProofEngineSpec" should {
 
+      /**
         "get a goals status" in {
             val engine = new ProofEngine()
             val vars: List[Variable[_]] = List(NetworkAbbr, runDate)
@@ -358,6 +359,28 @@ class ProofEngineSpec extends Specification {
             val status = Await.result(resultFuture, Duration( 10 , SECONDS) )
            	status.state must_== GoalState.Aborted
 
+        }
+        
+        **/
+        
+        "Recursive Reharvest" in {
+            val engine = new ProofEngine()
+            val dtVar = Variable("dt")
+            
+            
+            val wit =  Witness((dtVar -> "20140711"))
+
+            println( s" Wit is $wit ")
+
+            
+            val reharvestGoal = TestGoal.ReharvestGoal( "20140701")
+            
+            val res = engine.satisfyGoalBlocking( reharvestGoal, wit, Duration(60, SECONDS))
+            ///val resFuture = engine.satisfyGoal( reharvestGoal, wit)
+          
+            
+            
+            true
         }
 
     }

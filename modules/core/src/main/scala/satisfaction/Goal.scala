@@ -134,7 +134,10 @@ object Goal {
          if( w.contains( dtVar) ) {
            val dtYMD = w.get( dtVar)
            val yesterDT = yyyymmdd.print( yyyymmdd.parseDateTime(dtYMD.get).minusDays(numDays))
-           w.update( dtVar -> yesterDT )
+           val yester  = w.update( dtVar -> yesterDT )
+           println( " YEster i = " + yester)
+
+           yester
          } else {
            w
          }
