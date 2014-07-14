@@ -10,6 +10,8 @@
 
 @main("Track History Page") {
 	
+	<script type="text/javascript" charset="utf8" src="@routes.Assets.at("javascripts/jquery.dataTables.js")"></script>
+	<link rel="stylesheet" type="text/css" href="@routes.Assets.at("stylesheets/jquery.dataTables.css")">
 	<script>
 	  $(function() {
 	    $( "#historyMenu" ).accordion({
@@ -18,6 +20,11 @@
 		    	collapsible: true
 		});
 	  });
+
+	  $(document).ready( function () {
+		    $('#historyTable').DataTable({"order": [4, 'desc']   });
+		    
+		} );
 	</script>
 	
 	<h1> Track History</h1>
@@ -59,7 +66,7 @@
 	
 	<div id ="historyListing">
 		<h2>History Listing</h2>
-		<table>
+		<table id = "historyTable">
 			<thead>
 				<td> ID </td>
 				<td>TrackDescriptor</td>
@@ -68,20 +75,30 @@
 				<td>Start Time</td>
 				<td> Finish Time</td>
 				<td> Status </td>
+				<td> Log File </td>
 			</thead>
 			@grList.map { gr =>
 				<tr>
 					<td>@gr.runId</td>
-					<td>@gr.trackDescriptor.trackName <br />
-						@gr.trackDescriptor.forUser <br />
-						@gr.trackDescriptor.version <br />
-						@gr.trackDescriptor.variant
+					<td>
+						<ul>
+							<li>@gr.trackDescriptor.trackName</li>
+							<li>@gr.trackDescriptor.forUser</li>
+							<li>@gr.trackDescriptor.version</li>
+							<li>@gr.trackDescriptor.variant</li>
+						</ul> 
 					</td>
 					<td>@gr.goalName</td>
-					<td>@Html(HtmlUtil.witnessTable( gr.witness)) </td> <!-- @Html(HtmlUtil.witnessTable( gr.witness)) -->
+					<td>@Html(HtmlUtil.witnessTable( gr.witness)) </td> 
 					<td>@gr.startTime</td>
 					<td>@gr.endTime</td>
 					<td>@gr.state</td>
+					<td>
+						@Html({
+							var logWindowUrl = "/logwindow/"+gr.trackDescriptor.trackName.replace(" ", "_")+"/"+gr.goalName.replace(" ", "_")+"/"+{HtmlUtil.witnessPath(gr.witness)}.replace(" ", "_")
+							s"<a href='$logWindowUrl'>Log File HTML</a>"
+						})
+					</td>
 				</tr>
 				}
 		</table>

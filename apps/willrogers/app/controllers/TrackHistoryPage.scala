@@ -29,6 +29,7 @@ object TrackHistoryPage extends Controller {
    */
   def loadHistoryPageAction() = Action {
     val grList = trackHistory.getAllHistory
+
     println("loading page history: I have "+ grList.length + " tracks")
    Ok(views.html.trackhistory(grList))
    
@@ -70,6 +71,7 @@ object TrackHistoryPage extends Controller {
 	    case name if name.length() > 0 => trackHistory.goalRunsForGoal(trackDesc, goalName, sTime, eTime)
 	    case _ => trackHistory.goalRunsForTrack(trackDesc, sTime, eTime)
 	  }
+	  
 	 Ok(views.html.trackhistory(grList))
   }
   

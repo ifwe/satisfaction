@@ -106,5 +106,3 @@ abstract trait Cronable extends Schedulable  {
   
     def scheduleString  : String = { cronString }
 }
-
-
