@@ -14,16 +14,18 @@ import scala.collection.JavaConversions._
  *    but creates the necessary partitions if they don't exist.
  */
 case class PartitionExistsSatisfier(
-    val table : HiveTable
+    val table : HiveTable,
+    val extraAssignments : Witness = Witness.empty
     )( implicit val track : Track )
       extends Satisfier  with Evidence with Logging {
     var w : Witness = null
   
-    override def name = "PartitionExists " + table.toString
+    override def name = "PartitionExists " + table.toString + " :: "  + extraAssignments.toString
+    
       
     override def satisfy(subst: Witness): ExecutionResult = robustly {
-        w = subst
-        val part = table.addPartition(subst)
+        w = subst ++ extraAssignments
+        val part = table.addPartition(w)
         info(" Added Partition " + part )
         true
     }
@@ -39,8 +41,9 @@ case class PartitionExistsSatisfier(
       true
     }
     
+    
     override def exists(w: Witness): Boolean = {
-      table.getPartition(w) match {
+      table.getPartition(w ++ extraAssignments) match {
         case Some(p) => true
         case None => false
       }
@@ -51,15 +54,18 @@ case class PartitionExistsSatisfier(
 
 object PartitionExists {
   
-      def apply( hiveTable : HiveTable )
+      def apply( hiveTable : HiveTable ,
+      		     extraAssignments : Witness = Witness.empty )
                (implicit  track : Track) : Goal
                 =  {
-         val partitionCreator = new PartitionExistsSatisfier(hiveTable)
+         val partitionCreator = new PartitionExistsSatisfier(hiveTable, extraAssignments)
          val dataPath = hiveTable.partitionPath
-         val goal = new Goal( name= s" ${hiveTable.tblName} Partition exists",
+         val goal = new Goal( name= s" Partition Exists ${hiveTable.tblName} $extraAssignments",
                satisfier=Some(partitionCreator),
-               variables=hiveTable.variables
-           ).addEvidence( partitionCreator).addDataDependency(dataPath)
+               variables= hiveTable.variables.filter( ! extraAssignments.variables.contains(_) )
+           ).addEvidence( partitionCreator).addWitnessRule( w => { val newW =  w ++ extraAssignments;
+               println(s"GGGG New Witness is $newW  extra = $extraAssignments ")
+               newW } , DataDependency(dataPath)) 
          goal
       }
   

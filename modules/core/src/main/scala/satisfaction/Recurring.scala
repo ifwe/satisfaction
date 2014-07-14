@@ -8,6 +8,7 @@ import org.joda.time.format.PeriodFormatter
 import org.quartz.JobExecutionContext
 import org.quartz.JobExecutionException
 import org.quartz.JobListener
+import org.joda.time.Duration
 
 /**
  *   A Schedulable is a trait which can be attached to Trait
@@ -40,7 +41,7 @@ abstract trait Recurring  extends Schedulable {
       *   e.g. new LocalTime( 3, 15 ) for daily frequencies
       *     to run 3 hours and fifteen minutes after midnight (offset from base hour)
       */
-     def timeOffset : Option[ReadablePartial] = None // this can get ugly. Work carefully.
+     def timeOffset : Option[ReadablePartial] = None 
      
      
      def scheduleString =  { ISOPeriodFormat.standard.print( frequency ) }
@@ -60,9 +61,26 @@ trait Daily extends Recurring {
    override def frequency = Temporal.dailyPeriod
 }
 
-trait Constantly extends Recurring {
-  override def frequency = Temporal.continuousFrequency
+/**
+ *  Constantly  occurs all the time
+ */
+trait Constantly extends Schedulable {
+    def scheduleString = "Constantly"
 
+    /**
+     *  Time to wait between job runs 
+     *    before starting up again
+     *    
+     *  By default, wait one minute  
+     */
+    def delayInterval : Duration = Duration.standardSeconds(30)
+    
+    /**
+     * If job fails, then job won't be 
+     *  launched again, unless retryOnFailure
+     *   is set to true
+     */
+    def retryOnFailure : Boolean = false
 }
 
 object Recurring {

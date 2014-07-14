@@ -38,6 +38,9 @@ import org.joda.time.DateTime
 import org.joda.time.PeriodType
 import org.joda.time.Seconds
 import org.quartz.listeners.JobListenerSupport
+import org.joda.time.Duration
+import org.joda.time.DateMidnight
+import org.joda.time.DurationFieldType
 
 
 /**
@@ -50,9 +53,9 @@ import org.quartz.listeners.JobListenerSupport
 
 case class AddCronSchedule(to: ActorRef, cron: String, message: Any, reply: Boolean = false, spigot: Spigot = OpenSpigot)
 
-case class AddConstantSchedule(to: ActorRef, period: Period, offsetTime : DateTime, message: Any, reply: Boolean = false, spigot: Spigot = OpenSpigot)
+case class AddOneTimeSchedule(to: ActorRef,  offsetTime : Duration, message: Any, reply: Boolean = false, spigot: Spigot = OpenSpigot)
 
-case class AddPeriodSchedule(to: ActorRef, period: Period, offsetTime : DateTime, message: Any, reply: Boolean = false, spigot: Spigot = OpenSpigot)
+case class AddPeriodSchedule(to: ActorRef, period: Period, offsetTime :  Option[org.joda.time.ReadablePartial], message: Any, reply: Boolean = false, spigot: Spigot = OpenSpigot)
 
 trait AddScheduleResult
 
@@ -94,6 +97,7 @@ private class QuartzIsNotScalaExecutor() extends Job {
 }
 
 
+
 trait Spigot {
 	def open: Boolean
 }
@@ -101,6 +105,7 @@ trait Spigot {
 object OpenSpigot extends Spigot {
   val open = true
 }
+
 
 /**
  * The base quartz scheduling actor. Handles a single quartz scheduler
@@ -145,7 +150,7 @@ class QuartzActor extends Actor { // receives msg from TrackScheduler
 		scheduler.shutdown()
 	}
 	
-	def scheduleJob(to:ActorRef, schedBuilder:org.quartz.ScheduleBuilder[_ <: Trigger], message:Any,reply:Boolean,spigot:Spigot, offsetTime: Option[DateTime] = None) = {
+	def scheduleJob(to:ActorRef, schedBuilder:Option[org.quartz.ScheduleBuilder[_ <: Trigger]], message:Any,reply:Boolean,spigot:Spigot, offsetTime: Option[Duration] = None) = {
 			// Try to derive a unique name for this job
 			// Using hashcode is odd, suggestions for something better?
 			//val jobkey = new JobKey("%X".format((to.toString() + message.toString + cron + "job").hashCode))
@@ -164,16 +169,19 @@ class QuartzActor extends Actor { // receives msg from TrackScheduler
 			val job = jd.usingJobData(jdm).withIdentity(jobkey).build()
 			
 			try {
-			    val triggerBuilder : TriggerBuilder[_ <:Trigger]  = org.quartz.TriggerBuilder.newTrigger().withIdentity(trigkey).forJob(job).withSchedule(schedBuilder)
+			    val tb = org.quartz.TriggerBuilder.newTrigger().withIdentity(trigkey).forJob(job)
+			    val triggerBuilder : TriggerBuilder[_ <:Trigger] = if(schedBuilder.isDefined) { tb.withSchedule( schedBuilder.get)} else { tb }
 			    offsetTime match {
 			      case None => 
 			        println("we don't have an offset!!!")
 			       
 			       scheduler.scheduleJob( job, triggerBuilder.startNow.build)
-			      case Some(offsetTime) =>
-			        			println("we have an offset!!!")
+			      case Some(offsetDuration) =>
+			       println("we have an offset!!!")
+			       
+			       val later : DateTime = DateTime.now.plus( offsetDuration)
 
-			       scheduler.scheduleJob( job, triggerBuilder.startAt(offsetTime.toDate).build)
+			       scheduler.scheduleJob( job, triggerBuilder.startAt(later.toDate).build)
 			    }
 			   	if (reply) // success case
 					context.sender ! AddScheduleSuccess(new CancelSchedule(jobkey, trigkey))
@@ -193,12 +201,60 @@ class QuartzActor extends Actor { // receives msg from TrackScheduler
 	   * YY- 
 	   * current limitations: cannot schedule anything that has bad precision ex// 1Month can be 30 or 31 days :(
 	   */	
-	  
+
 			val seconds=Seconds.standardSecondsIn(period)
 
 			  CalendarIntervalScheduleBuilder.calendarIntervalSchedule
 			  .withIntervalInSeconds(seconds.getSeconds)
 	}
+	
+	def dateRoundedToPeriod( dt: DateTime, per : Period ) : DateTime = {
+	  var dtRound = DateTime.now.withSecondOfMinute(0)
+	  val ftArr = per.getFieldTypes()
+	  /// XXX Not quite right ...
+	  /// For now, just support hours and days
+	  var hasMin : Boolean = false;
+	  var hasHour : Boolean = false;
+	  for( i <- (0 until ftArr.length - 1) ) {
+	    val ft : DurationFieldType = ftArr(i)
+
+	    def roundFunc( dt: DateTime, idx: Int, f:(DateTime) => Int, g : (DateTime,Int) => (DateTime) ) : DateTime = {
+	      val rounded = (f(dt)/idx).toInt * idx
+	      g(dt,rounded)
+	    }
+	    
+	     if( ft ==  DurationFieldType.days() && per.get(ft) != 0 ) {
+	        dtRound = roundFunc( dtRound, per.get(ft), _.getDayOfMonth, _.withDayOfMonth(_) )
+	     }
+	     if( ft ==  DurationFieldType.hours() && per.get(ft) != 0 ) {
+	        dtRound = roundFunc( dtRound, per.get(ft), _.getHourOfDay, _.withHourOfDay(_) )
+	        hasHour = true
+	     }
+	     if( ft ==  DurationFieldType.minutes()  && per.get(ft) != 0) {
+	        dtRound = roundFunc( dtRound, per.get(ft), _.getMinuteOfHour, _.withMinuteOfHour(_) )
+	        hasMin = true
+	     }
+	  }
+	  if( !hasMin) dtRound = dtRound.withMinuteOfHour(0)
+	  if( !hasHour && !hasMin) dtRound = dtRound.withHourOfDay(0)
+	    
+	  dtRound
+	}
+	
+	
+	def replyError( doReply : Boolean)( f: => Unit) = {
+	  try {
+	    f
+	  } catch {
+	    case unexpected : Throwable => {
+	      log.warning("Unexpected error while scheduling job :: " + unexpected.getMessage, unexpected)
+	      unexpected.printStackTrace(System.out)
+		  if (doReply)
+				context.sender ! AddScheduleFailure(unexpected)
+	    } 
+	  }
+	}
+	
 	
 	// Largely imperative glue code to make quartz work :)
 	def receive = { // YY ? received here
@@ -208,17 +264,43 @@ class QuartzActor extends Actor { // receives msg from TrackScheduler
 			  scheduler.deleteJob(cs.job);cs.cancelled = true
 			case _ => log.error("Incorrect cancelable sent")
 		}
-		case AddCronSchedule(to, cron, message, reply, spigot) =>
+		case AddCronSchedule(to, cron, message, reply, spigot) => 
+		  replyError(reply) {
+	        log.info( "received schedule CronJob Message")
 		    val schedBuilder : ScheduleBuilder[_ <: Trigger] = org.quartz.CronScheduleBuilder.cronSchedule(cron)
-		    scheduleJob(to,schedBuilder,message,reply,spigot)
+		    scheduleJob(to,Some(schedBuilder),message,reply,spigot)
+		  }
 	
-		case AddConstantSchedule(to, period, offsetTime, message, reply, spigot) =>
-			val schedBuilder : ScheduleBuilder[_ <: Trigger] = org.quartz.SimpleScheduleBuilder.repeatSecondlyForever()
-			scheduleJob(to, schedBuilder, message, reply, spigot)
-			
 		case AddPeriodSchedule(to, period, offsetTime, message, reply, spigot) =>
+		  replyError(reply) {
+	        log.info( "received schedule Period Job Message")
 		    val schedBuilder : ScheduleBuilder[_ <: Trigger] = builderForPeriod(period)
-		    scheduleJob(to,schedBuilder,message,reply,spigot) 
+		    /// find offset time
+            val nw = DateTime.now
+		    val offsetDuration : Option[Duration] = offsetTime match {
+		       /// XXX expose complex logic so that we can see when the next time
+		       /// we expect it to run ..
+		      case Some(partial) =>
+		         val nextTime = partial.toDateTime(nw)
+		         if( nextTime.isAfter( nw)) {
+		           Some(new Duration( nw, nextTime))
+		         } else {
+		            val nextPeriod = nextTime.plus(period)
+		            Some(new Duration( nw, nextPeriod))
+		         }
+		      case _ => 
+		         /// No Partial time ,, use roundd time
+		         val rounded = dateRoundedToPeriod( nw, period)
+		         Some( new Duration( rounded, nw))
+		    }
+	       scheduleJob(to,Some(schedBuilder),message,reply,spigot, offsetDuration) 
+		  }
+		case AddOneTimeSchedule(to, offsetTime,  message, reply, spigot) =>
+		  replyError(reply) {
+	        log.info( "received schedule OneTime1G Job Message")
+			scheduleJob(to, None, message, reply, spigot, Some(offsetTime))
+		  }
+			
 		case _ => log.warning("QuartzActor::receive unreconizable message")
 	}
 }

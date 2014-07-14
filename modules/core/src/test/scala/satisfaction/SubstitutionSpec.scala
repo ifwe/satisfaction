@@ -18,6 +18,17 @@ class WitnessSpec extends Specification {
             vars must contain("networkAbbr")
             vars must contain("dateString")
         }
+        "handle underscores correctly" in {
+            val str = "hdfs://dhdp2/data/ramblas/event_log/${event_type}/${dt}/${hour}"
+
+            val vars = Substituter.findVariablesInString(str)
+            vars.foreach(str => println(str))
+
+            vars must contain("dt")
+            vars must contain("hour")
+            vars must contain("event_type")
+        }
+
         "substitute variables in string " in {
             val tempStr = " select * from my_view_${networkAbbr} where dt= ${dateString}"
 
@@ -121,6 +132,7 @@ class WitnessSpec extends Specification {
         }
         
         
+        /**
         "parse dauDB" in {
           val pageViewQuery = " use ${dauDB}; "
             
@@ -136,6 +148,8 @@ class WitnessSpec extends Specification {
             }
          
         }
+        * 
+        */
 
     }
 
@@ -212,7 +226,7 @@ class WitnessSpec extends Specification {
                                      VariableAssignment("hour" , "03" ),
                                      VariableAssignment("minute" , "43" )))
            
-           val mapVarFunc = Witness.mapVariables( Variable("dt"), Variable("date"))_
+           val mapVarFunc = Goal.mapVariables( Variable("dt"), Variable("date"))_
            val subst2 = mapVarFunc(subst1)
           
            println(s" Witness with mapped variable is $subst2")
@@ -223,6 +237,33 @@ class WitnessSpec extends Specification {
            subst2.variables must not contain( Variable("dt") )
            subst2.variables must contain( Variable("hour") )
            subst2.variables must contain( Variable("minute") )
+        }
+        
+        "toString function" in {
+           val subst1 = new Witness(Set(
+                                  VariableAssignment("alpha" , "first"),
+                                  VariableAssignment("dt" , "20140512"),
+                                     VariableAssignment("hour" , "03" ),
+                                     VariableAssignment("minute" , "43" ),
+                                  VariableAssignment("zed" , "last")))
+
+           
+           val toS1 = subst1.toString
+
+           val subst2 = new Witness(Set(
+                                  VariableAssignment("zed" , "last"),
+                                  VariableAssignment("alpha" , "first"),
+                                  VariableAssignment("dt" , "20140512"),
+                                     VariableAssignment("hour" , "03" ),
+                                     VariableAssignment("minute" , "43" ),
+                                  VariableAssignment("alpha" , "first")))
+
+           val toS2 = subst2.toString
+          
+           println(s"Witness 1 = $toS1 ")
+           println(s"Witness 2 = $toS2 ")
+           
+           toS1 mustEqual toS2
         }
 
     }

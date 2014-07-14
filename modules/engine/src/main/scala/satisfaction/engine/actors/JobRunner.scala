@@ -47,7 +47,7 @@ class JobRunner(
             startTime = DateTime.now
 
                 val satisfierFuture = future {
-                    logger.log( { () => satisfier.satisfy(params) } ) match {
+                    logger.log { () => satisfier.satisfy(params) } match {
                       case Success(execResult) =>
                         execResult.hdfsLogPath = logger.hdfsLogPath.toString
                         execResult

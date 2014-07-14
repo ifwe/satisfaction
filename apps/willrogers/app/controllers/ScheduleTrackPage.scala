@@ -22,6 +22,9 @@ import models.PlumbGraph
 import models.VariableFormHandler
 import collection._
 import play.mvc.Results
+import scala.util.Try
+import scala.util.Success
+import scala.util.Failure
 
 /**
  *   Page for seeing which Tracks have been scheduled,
@@ -38,7 +41,7 @@ object ScheduleTrackPage extends Controller {
     	 val scList = scheduler.getScheduledTracks.map(_._1).toSeq
        val tdList = trackFactory.getAllTracks.diff(scList)
     
-     	Ok(views.html.scheduletrack( tdList, scList))
+     	Ok(views.html.scheduletrack(tdList, scList))
    }
      
 
@@ -63,7 +66,7 @@ object ScheduleTrackPage extends Controller {
          println("scheduleTrack: trackName is " + trackName + " rule is " + rule + " pattern is " + pattern + " stoppable is " + stoppable)
 
     
-    implicit val holderTrack: Track= {
+    val holderTrack: Track= {
       rule match {
         case cron if rule.contains("cron") =>
           new Track(TrackDescriptor(trackName)) with Cronable {
@@ -75,6 +78,7 @@ object ScheduleTrackPage extends Controller {
           }
         case const if rule.contains("constantly") => 
            new Track(TrackDescriptor(trackName)) with Constantly {
+             override def retryOnFailure = true
           }
       }
     }
@@ -86,8 +90,21 @@ object ScheduleTrackPage extends Controller {
           false
       }
     }
-    scheduler.scheduleTrack(holderTrack, pausable)
-     Ok(s"i got scheduled")
+    
+    
+   val result =    scheduler.scheduleTrack(holderTrack) 
+    
+    val scList = scheduler.getScheduledTracks.map(_._1).toSeq
+    val tdList = trackFactory.getAllTracks.diff(scList)
+   
+    result match {
+     
+     case Success(message) =>
+     	Ok(views.html.scheduletrack(tdList, scList, Some(message)))
+     case Failure(reason) =>
+     	Ok(views.html.scheduletrack(tdList, scList, Some(reason.getMessage)))
+    }
+      
    }
    
    def unscheduleOneTrack(trackName: String, forUser:String, version:String) = Action {

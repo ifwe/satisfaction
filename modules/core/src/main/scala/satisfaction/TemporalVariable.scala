@@ -68,7 +68,7 @@ trait TemporalVariable {
     val minutePeriod =  frequency("PT1M")
       
       
-    val timestampFormat = "YYYYMMDD hh:mm:ss"
+    val timestampFormat = "YYYYMMddhhmmss"
     val continuousFrequency = frequency("PT1S")
     
     /**

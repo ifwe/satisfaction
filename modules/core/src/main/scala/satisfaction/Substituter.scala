@@ -69,7 +69,7 @@ object Substituter {
   }
 
     def isValidCharacter(ch: Char): Boolean = {
-        ch.isLetterOrDigit
+        ch.isLetterOrDigit || ch == '_'
     }
 
     /**

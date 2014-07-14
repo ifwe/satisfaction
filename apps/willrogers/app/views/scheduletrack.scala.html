@@ -1,9 +1,10 @@
-@(tdList : Seq[com.klout.satisfaction.TrackDescriptor], scList: Seq[com.klout.satisfaction.TrackDescriptor])
+@(tdList : Seq[com.klout.satisfaction.TrackDescriptor], scList: Seq[com.klout.satisfaction.TrackDescriptor] , messageOpt : Option[String] = None)
 
 
 @import helper._
 @import scala.collection.JavaConversions._
 @import com.klout.satisfaction._
+@import com.klout.satisfaction.Schedulable
 @import com.klout.satisfaction.engine._
 @import com.klout.satisfaction.engine.actors._
 @import models.HtmlUtil
@@ -17,11 +18,26 @@
 	</script>
 	
 		<h1> Scheduler</h1>
-		
+	@messageOpt match {
+	  case Some(message) => {
+	    <div id="messageBox">
+	    <table>
+	     <tr><td>@message</td></tr>
+	    </table>
+	    </div>
+	  }
+	  case None => {
+	  }
+    }
+		<table>
+		<table>
 		<h2> Scheduled Tracks</h2>
 		<table>
 			<thead>
 				<td> Track </td>
+				<td> Track User </td>
+				<td> Track Variant </td>
+				<td> Track Version </td>
 				<td> Status </td>
 				<td> Type (cron vs rec) </td>
 				<td> schedule </td>
@@ -32,9 +48,13 @@
 			</thead>
 			@scList.map { td =>
 				<tr>
-					<td> @td.trackName </td>
+					<td>@td.trackName </td>
+					<td>@td.trackName</td>
+  	                <td>@td.forUser</td>
+  	                <td>@td.variant</td>
+  	                <td>@td.version</td>
 					<td>- </td>
-					<td>- </td>
+					<td>scheduleString </td>
 					<td>- </td>
 					<td>- </td>
 					<td>- </td>

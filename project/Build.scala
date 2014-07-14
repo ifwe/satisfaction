@@ -15,7 +15,7 @@ import play.Project._
 
 object ApplicationBuild extends Build {
 
-  val appVersion = "2.0.3"
+  val appVersion = "2.0.4"
 
   val hiveVersion = "0.13.0"
 
@@ -115,7 +115,7 @@ object ApplicationBuild extends Build {
     name in Rpm := "satisfaction-scheduler",
     version in Rpm := appVersion,
 
-    rpmRelease in Rpm:= "1",
+    rpmRelease in Rpm:= "2",
     packageSummary in Rpm := "lowenstein",
     packageSummary in Linux := "lowenstein",
     rpmVendor in Rpm := "Tagged.com",

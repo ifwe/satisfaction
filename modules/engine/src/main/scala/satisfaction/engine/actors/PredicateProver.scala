@@ -255,16 +255,9 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
                     }
                     jobRunner ! Satisfy
                 case None =>
-                    //// XXX Refactor names 
-                  /**
-                    val jobRunActor = Props(new JobRunner(new WaitingSatisfier( immutable.Set(goal.evidence.toSeq: _*)),
-                         track ,goal, witness, getWitness))
-                    this.jobRunner = context.system.actorOf((jobRunActor), "Satisfier_" + ProofEngine.getActorName(goal, witness))
-                    jobRunner ! Satisfy
-                    * 
-                    */
                     if( this.jobRunner == null) {
                        val jobRunActor = Props(new DefaultGoalSatisfier(
+                            track,goal,
                            immutable.Set(goal.evidence.toSeq: _*), witness))
                        this.jobRunner = context.system.actorOf(jobRunActor)
                     }
