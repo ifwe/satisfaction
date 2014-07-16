@@ -57,14 +57,14 @@ case class AddOneTimeSchedule(to: ActorRef,  offsetTime : Duration, message: Any
 
 case class AddPeriodSchedule(to: ActorRef, period: Period, offsetTime :  Option[org.joda.time.ReadablePartial], message: Any, reply: Boolean = false, spigot: Spigot = OpenSpigot)
 
-trait AddScheduleResult
+sealed trait AddScheduleResult
 
 /**
  * Indicates success for a scheduler add action.
  * @param cancel The cancellable allows the job to be removed later. Can be invoked directly -
  *               canceling will send an internal RemoveJob message
  */
-case class AddScheduleSuccess(cancel: Cancellable) extends AddScheduleResult
+case class AddScheduleSuccess(startTime: DateTime, cancel: Cancellable) extends AddScheduleResult
 
 /**
  * Indicates the job couldn't be added. Usually due to a bad cron expression.
@@ -171,9 +171,11 @@ class QuartzActor extends Actor { // receives msg from TrackScheduler
 			try {
 			    val tb = org.quartz.TriggerBuilder.newTrigger().withIdentity(trigkey).forJob(job)
 			    val triggerBuilder : TriggerBuilder[_ <:Trigger] = if(schedBuilder.isDefined) { tb.withSchedule( schedBuilder.get)} else { tb }
-			    offsetTime match {
+
+			    val schedDate = offsetTime match {
 			      case None => 
 			        println("we don't have an offset!!!")
+			        log.info(s" We don't have an offset; starting now at ${DateTime.now} ")
 			       
 			       scheduler.scheduleJob( job, triggerBuilder.startNow.build)
 			      case Some(offsetDuration) =>
@@ -184,7 +186,7 @@ class QuartzActor extends Actor { // receives msg from TrackScheduler
 			       scheduler.scheduleJob( job, triggerBuilder.startAt(later.toDate).build)
 			    }
 			   	if (reply) // success case
-					context.sender ! AddScheduleSuccess(new CancelSchedule(jobkey, trigkey))
+					context.sender ! AddScheduleSuccess(new DateTime(schedDate),new CancelSchedule(jobkey, trigkey))
 
 			} catch { // Quartz will drop a throwable if you give it an invalid cron expression - pass that info on
 				case e: Throwable =>
@@ -282,6 +284,7 @@ class QuartzActor extends Actor { // receives msg from TrackScheduler
 		       /// we expect it to run ..
 		      case Some(partial) =>
 		         val nextTime = partial.toDateTime(nw)
+		         log.info(s" Scheduling next time at $nextTime")
 		         if( nextTime.isAfter( nw)) {
 		           Some(new Duration( nw, nextTime))
 		         } else {

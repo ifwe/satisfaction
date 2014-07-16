@@ -13,8 +13,6 @@ case class VariablePath(pathTemplate: String)(implicit val hdfs : FileSystem, va
     }
 
     def exists(witness: Witness): Boolean = {
-        info(" VARIABLE PATH WITNESS = " + witness)
-        println(" VARIABLE PATH WITNESS = " + witness)
         getPathForWitness(witness) match {
             case None       => false
             case Some(path) =>  hdfs.exists(path)
@@ -29,7 +27,6 @@ case class VariablePath(pathTemplate: String)(implicit val hdfs : FileSystem, va
     }
 
     def getPathForWitness(witness: Witness): Option[Path] = {
-        info(" PATH Witness is " + witness.toString)
         val fullSubstituter = track.getTrackProperties(witness)
         var substPath = Substituter.substitute(pathTemplate, fullSubstituter)
         substPath match {

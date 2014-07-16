@@ -57,9 +57,43 @@ case class LogWrapper[T]( track : Track, goal : Goal, witness : Witness)  {
  
   def info( st : String) = {
     //// XXX Use standard log formatting
-    /// 
+    ///  include timestampe and thread information 
     printWriter.println(s"LOGWRAPPER ${DateTime.now} $st")
   }
+
+  def error( st : String) = {
+    //// XXX Use standard log formatting
+    /// 
+    printWriter.println(s"ERROR LOGWRAPPER ${DateTime.now} $st")
+
+  }
+  
+  def error( st : String, t:Throwable) = {
+    //// XXX Use standard log formatting
+    /// 
+    printWriter.println(s"ERROR LOGWRAPPER ${DateTime.now} $st")
+
+  }
+  
+  def debug( st : String) = {
+    //// XXX Use standard log formatting
+    /// 
+    printWriter.println(s"DEBUG LOGWRAPPER ${DateTime.now} $st")
+  }
+
+  def warn( st : String) = {
+    //// XXX Use standard log formatting
+    /// 
+    printWriter.println(s"WARN LOGWRAPPER ${DateTime.now} $st")
+  }
+  
+  
+  
+  
+  
+  
+  
+  
   
   def close() {
       outStream.flush()
@@ -94,7 +128,16 @@ object LogWrapper {
     
     
     def pathString( str : String ) : String = {
-      str.replace(" ","_").replace("=>","@").replace("(","_").replace(")","_")
+      str.replace(" ","_").
+      	replace("=>","@").
+      	replace("(","_").
+      	replace(")","_").
+      	replace("/","_sl_").
+      	replace(":","_colon_").
+      	replace("{","_c_").
+      	replace("}","_c_").
+      	replace("}","c").
+      	replace("$","dlr")
     }
     
     def logPathForGoalWitness( track: TrackDescriptor, goalName : String, witness : Witness ) : Path = {

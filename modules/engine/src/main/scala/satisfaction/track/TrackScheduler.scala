@@ -146,8 +146,8 @@ case class TrackScheduler( val proofEngine : ProofEngine ) extends Logging  {
          resultMess match { //able to schedule
             case yeah : AddScheduleSuccess => // these responses are from QuartzActor::scheduleJob
               scheduleMap.put( trackDesc, Tuple3(schedString ,yeah.cancel, pausable))
-              info(" Successfully scheduled job " + trackDesc.trackName + " is it pausable? " + pausable)
-              Success(" Successfully scheduled job " + trackDesc.trackName + " is it pausable? " + pausable)
+              info(" Successfully scheduled job " + trackDesc.trackName + " at " + yeah.startTime + " is it pausable? " + pausable)
+              Success(" Successfully scheduled job " + trackDesc.trackName + " at " + yeah.startTime + " is it pausable? " + pausable)
            case boo : AddScheduleFailure =>
        	     info(" Problem trying to schedule cron " + boo.reason,boo.reason)
        	     boo.reason.printStackTrace()

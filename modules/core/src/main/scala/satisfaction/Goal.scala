@@ -16,6 +16,17 @@ case class Goal(
     locally {
        println(" Creating a Goal !!! ") 
     }
+    
+    
+    /**
+     *  Why is hashcode so slow ???
+     *   XXX
+     *   TODO make better hash code
+     */
+    @Override
+    override def hashCode = {
+      name.hashCode + variables.mkString.hashCode
+    }
 
     def addDependency(goal: Goal): Goal = {
       new Goal( name, satisfier, variables, 
@@ -40,6 +51,7 @@ case class Goal(
      *     of witnesses.
      */
     def addWitnessRule(rule: (Witness => Witness), goal: Goal): Goal = {
+      println(" XXX Number of Dependencis is "+ dependencies.size )
       new Goal( name, satisfier, variables, 
         dependencies +  Tuple2(rule, goal),
         evidence)

@@ -11,6 +11,7 @@ import satisfaction.fs._
 import satisfaction.track.TrackFactory
 import satisfaction.track.TrackScheduler
 import satisfaction.Temporal
+import org.joda.time.DateTime
 
 
 
@@ -52,41 +53,16 @@ class TrackSchedulerSpec extends Specification {// val mockFS = new LocalFileSys
         //set up track
         implicit val track : Track = new Track ( TrackDescriptor("scheduleRecurringTrack") )  with Recurring  {  // might have bug; be careful (track properties might not be set; but we don't need it right now) 
     	 //P0Y0M0W0DT0H0M3S P1Y2M3W4DT5H6M7.008S PT1M
-      	  override def frequency = Recurring.period("P0Y0M0W0DT0H0M1S") //stick with the standard format! PyYmMwWdDThHmMsS
-      	}
-      	
-        //set up a mock TrackFactory
-      	implicit val trackFactory : TrackFactory = {
-      	  try{
-	      	  //val hadoopWitness: Witness = Config.Configuration2Witness(Config.config)
-		      var tf = new TrackFactory( mockFS, resourcePath, Some(scheduler)) {
-		        override def getTrack(trackDesc : TrackDescriptor) : Option[Track] = {
-		          Some(track)
-		        }
-		      }
-		      scheduler.trackFactory = tf
-		      tf  
-      	  } catch {
-      	    case unexpected: Throwable =>
-      	      unexpected.printStackTrace(System.out)
-      	      throw unexpected
-      	  }
-      	}
-
-      	var observedVar = new Variable[String]("timeLapse", classOf[String]) with TemporalVariable { // if not temporal: we will have to define a property file
-          override val formatString = "YYYYMMDD hh:mm:ss"
-          override val frequency = Temporal.frequency("PT1S")
-      	}
-        val vars: List[Variable[_]] = List(observedVar)
-
- 
-        implicit val recurringGoal : Goal = {
-          try {
+      	  override def frequency = Recurring.period("P0Y0M0W0DT0H2M0S") //stick with the standard format! PyYmMwWdDThHmMsS
+      	  
+      	  override def init = {
+            val recurringGoal : Goal = {
         	  //first, define custom satisfier
-        	  val satisfier = new MockSatisfier() {
+        	  val satisfier = new Satisfier() {
         	    override def name="recurringMockSatisfier"
   
         	    override def satisfy (witness:Witness) : ExecutionResult = robustly { // redefine satisfier
+        	      println(" Satisfier getting called at " + DateTime.now)
         	      if (x == oldValue + 1) {
         	        oldValue = x // replaces anon fn
         	        Thread.sleep(3000)
@@ -96,23 +72,31 @@ class TrackSchedulerSpec extends Specification {// val mockFS = new LocalFileSys
         	        false
         	      }
         	    } 
+        	    
+        	    override def abort()  = { null}
         	  }
+      	      val observedVar = new Variable[String]("timeLapse", classOf[String]) with TemporalVariable { // if not temporal: we will have to define a property file
+                 override val formatString = "YYYYMMDD hh:mm:ss"
+                 override val frequency = Temporal.frequency("PT1S")
+      	      }
+              val vars: List[Variable[_]] = List(observedVar)
+
+ 
         	  //now set up a goal
         	  var rg = new Goal("RecurringGoal", Some(satisfier), vars)
         	  rg
-          } catch{
-             case unexpected: Throwable =>
-		        unexpected.printStackTrace(System.out) 
-		        throw unexpected
-          }
-        }
-        
-      	track.addTopLevelGoal(recurringGoal)
+      	  }.declareTopLevel
+
+      	  }
+      	}
+      	
+
+ 
         scheduler.scheduleTrack(track)
         
-        Thread.sleep(6000)
+        Thread.sleep(60*1000*3)
         println(" x is equal to " + x)
-        //x mustEqual 3
+        x mustEqual 3
         /*
         while (true) {
           println("main thread: x is now "+ x)

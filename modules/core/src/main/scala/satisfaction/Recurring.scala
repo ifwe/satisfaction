@@ -80,7 +80,7 @@ trait Constantly extends Schedulable {
      *  launched again, unless retryOnFailure
      *   is set to true
      */
-    def retryOnFailure : Boolean = false
+    def retryOnFailure : Boolean = true
 }
 
 object Recurring {
