@@ -53,10 +53,12 @@ case class TrackScheduler( val proofEngine : ProofEngine ) extends Logging  {
                  false
              }
            }
-           val trckOpt =  trackFactory.getTrack( mess.trackDesc )
+           
+           val trckOpt =  if( trackFactory != null ) { trackFactory.getTrack( mess.trackDesc ) } else { None }
 
            trckOpt match {
 	             case Some(trck) if (pausable && isRunning(trck)) => // define "already running"
+	               //// XXX Add onto queue if done ...
                    log.info("   this instance of me cannot run - going to discard now")
 	             case Some(trck) =>
 	               val witness = generateWitness(trck, DateTime.now)
@@ -176,12 +178,9 @@ case class TrackScheduler( val proofEngine : ProofEngine ) extends Logging  {
          Tuple2(td,scheduleMap.get(td).get._1) } )
    }
    
-
-
     
    case class StartGoalMessage( val trackDesc : TrackDescriptor, val continuous : Boolean )
    
-  
    
    def generateWitness( track : Track, nowDt : DateTime ) : Witness = {
      var subst = Witness()

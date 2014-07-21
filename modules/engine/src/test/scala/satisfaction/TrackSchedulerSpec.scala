@@ -12,6 +12,7 @@ import satisfaction.track.TrackFactory
 import satisfaction.track.TrackScheduler
 import satisfaction.Temporal
 import org.joda.time.DateTime
+import org.joda.time.LocalTime
 
 
 
@@ -53,7 +54,8 @@ class TrackSchedulerSpec extends Specification {// val mockFS = new LocalFileSys
         //set up track
         implicit val track : Track = new Track ( TrackDescriptor("scheduleRecurringTrack") )  with Recurring  {  // might have bug; be careful (track properties might not be set; but we don't need it right now) 
     	 //P0Y0M0W0DT0H0M3S P1Y2M3W4DT5H6M7.008S PT1M
-      	  override def frequency = Recurring.period("P0Y0M0W0DT0H2M0S") //stick with the standard format! PyYmMwWdDThHmMsS
+      	  override def frequency = Recurring.period("P0Y0M0W0DT1H0M0S") //stick with the standard format! PyYmMwWdDThHmMsS
+      	  override def timeOffset = Some(new LocalTime( 0, 27))
       	  
       	  override def init = {
             val recurringGoal : Goal = {
@@ -90,6 +92,24 @@ class TrackSchedulerSpec extends Specification {// val mockFS = new LocalFileSys
       	  }
       	}
       	
+      	
+      	val trackFactory : TrackFactory = {
+      	  try{
+	      	  //val hadoopWitness: Witness = Config.Configuration2Witness(Config.config)
+		      var tf = new TrackFactory( mockFS, resourcePath, Some(scheduler)) {
+		        override def getTrack(trackDesc : TrackDescriptor) : Option[Track] = {
+		          Some(track)
+		        }
+		      }
+		      scheduler.trackFactory = tf
+		      tf  
+      	  } catch {
+      	    case unexpected: Throwable =>
+      	      unexpected.printStackTrace(System.out)
+      	      throw unexpected
+      	  }
+      	}
+
 
  
         scheduler.scheduleTrack(track)

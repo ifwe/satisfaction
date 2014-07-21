@@ -91,8 +91,6 @@ object Recurring {
 
      def period(periodStr : String) : Period = {
         ISOPeriodFormat.standard.parsePeriod(periodStr) 
-    	//Period.parse(periodStr)
-
      }
 }
 

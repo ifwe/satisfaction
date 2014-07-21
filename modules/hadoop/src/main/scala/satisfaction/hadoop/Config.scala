@@ -138,6 +138,12 @@ object Config  extends Logging {
       info(s" Seting AuxJars Path to $newAuxJars ")
       thisConf.setAuxJars(newAuxJars)
       
+      
+      //// set the user if there 
+      if( track.trackProperties.contains("satisfaction.track.user.name") ) {
+         thisConf.set("mapreduce.job.user.name", track.trackProperties.getProperty("satisfaction.track.user.name"))
+      }
+      
       thisConf
     }
     
