@@ -8,10 +8,10 @@
 
 <meta http-equiv="refresh" content="5">
 
-@main( s"Goal Status Project $projName Goal $goalName " ) {
+@main( s"Goal Status Project ${projName.replace("_sl_","/")} Goal ${goalName.replace("_sl_","/")} " ) {
     
      <h1>Satisfaction !!!</h1>
-    <h1>Project @projName Goal @goalName </h1>
+    <h1>Track @projName Goal @goalName </h1>
     <h2> Status of goal is <blink>@goalStatus.state</blink
     
   <table>

@@ -26,11 +26,12 @@ import fs._
 object SatisfyGoalPage extends Controller {
     val proofEngine : ProofEngine = Global.proofEngine
 
-    def satisfyGoalAction(trackName: String, goalName: String) = Action { implicit request =>
+    def satisfyGoalAction(trackNameSL: String, goalNameSL: String) = Action { implicit request =>
+        val goalName = goalNameSL.replace("_sl_","/")
+        val trackName = trackNameSL.replace("_sl_","/")
         println(s" Satisfying Goal  $trackName $goalName")
         //// Can't use standard Play Form object ...
         ////  because  witness can have different variables
-        //// XXX For now assume everything is "dt", and "network_abbr"
         println(request.body.asFormUrlEncoded)
         val goalOpt = getTrackGoalByName(trackName, goalName)
         goalOpt match {
@@ -41,11 +42,11 @@ object SatisfyGoalPage extends Controller {
                         val status: GoalStatus = this.satisfyGoal(goalTuple._1, goalTuple._2, witness)
                         println(" Got Goal Stqtus = " + status.state)
 
-                        Redirect(s"/goalstatus/$trackName/$goalName")
+                        Redirect(s"/goalstatus/$trackNameSL/$goalNameSL")
                     case Left(errorMessages) =>
                         /// Bring him back to the first page
                         val pg = ProjectPage.getFullPlumbGraphForGoal(goalTuple._2)
-                        Ok(views.html.satisfygoal(trackName, goalName, errorMessages.toList, goalTuple._2.variables.toList, Some(pg)))
+                        Ok(views.html.satisfygoal(trackNameSL, goalNameSL, errorMessages.toList, goalTuple._2.variables.toList, Some(pg)))
 
                 }
             case None =>
@@ -62,7 +63,9 @@ object SatisfyGoalPage extends Controller {
     }
     
 
-    def showSatisfyForm(trackName: String, goalName: String) = Action {
+    def showSatisfyForm(trackNameSL: String, goalNameSL: String) = Action {
+        val goalName = goalNameSL.replace("_sl_","/")
+        val trackName = trackNameSL.replace("_sl_","/")
         val goal = getTrackGoalByName(trackName, goalName)
         goal match {
             case Some(tuple) =>

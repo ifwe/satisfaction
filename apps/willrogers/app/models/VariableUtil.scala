@@ -41,6 +41,6 @@ object HtmlUtil {
     def witnessPath( witness : Witness ) : String = {
       witness.assignments.map( ass => {
            s"${ass.variable.name}=${ass.value}"
-      } ).mkString(";")
+      } ).mkString(";").replace("/","_sl_")
     }
 }
