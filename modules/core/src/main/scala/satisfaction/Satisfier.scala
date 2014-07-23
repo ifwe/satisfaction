@@ -62,7 +62,7 @@ object RobustRun extends Logging {
                }
             } catch {
               case unexpected : Throwable => {
-                error( s"Error which running satisfier $name ; ${unexpected.getMessage} ", unexpected)
+                error( s"Error while running satisfier $name ; ${unexpected.getMessage} ", unexpected)
                 execResult.markUnexpected(unexpected)
             } 
           }
