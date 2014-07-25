@@ -23,6 +23,7 @@ import satisfaction.engine.actors.GoalState
 import scala.util.Try
 import scala.util.Success
 import scala.util.Failure
+import org.quartz.JobKey
 
 
 /**
@@ -37,13 +38,15 @@ case class TrackScheduler( val proofEngine : ProofEngine ) extends Logging  {
    implicit val timeout = Timeout(24 hours)
   
    // Format trackDesc => [schedString, Cancellable, Pauseable]
-   private val scheduleMap : collection.mutable.Map[TrackDescriptor,Tuple3[String,Cancellable, Boolean]] = new collection.mutable.HashMap[TrackDescriptor,Tuple3[String,Cancellable,Boolean]]
+   private val scheduleMap : collection.mutable.Map[TrackDescriptor,JobKey] = new collection.mutable.HashMap[TrackDescriptor,JobKey]
    
       class StartGoalActor( trackFactory : TrackFactory, proofEngine : ProofEngine ) extends Actor with ActorLogging {
        def receive = {
          case mess : StartGoalMessage =>
-           log.info(" Starting an instance of Track " + mess.trackDesc /*+  " TrackFactory = " + trackFactory*/)
+           log.info(" Starting an instance of Track " + mess.trackDesc.trackName + " Version " + mess.trackDesc.version)
            
+           /**
+            * XXX refactor pausability ...
            val trackScheduling = scheduleMap.get(mess.trackDesc)
            val pausable = {
              trackScheduling match {
@@ -53,6 +56,9 @@ case class TrackScheduler( val proofEngine : ProofEngine ) extends Logging  {
                  false
              }
            }
+           * 
+           */
+           val pausable = false;
            
            val trckOpt =  if( trackFactory != null ) { trackFactory.getTrack( mess.trackDesc ) } else { None }
 
@@ -147,7 +153,7 @@ case class TrackScheduler( val proofEngine : ProofEngine ) extends Logging  {
          val resultMess = Await.result( addResultF, 30 seconds )
          resultMess match { //able to schedule
             case yeah : AddScheduleSuccess => // these responses are from QuartzActor::scheduleJob
-              scheduleMap.put( trackDesc, Tuple3(schedString ,yeah.cancel, pausable))
+              scheduleMap.put( trackDesc, yeah.jobKey)
               info(" Successfully scheduled job " + trackDesc.trackName + " at " + yeah.startTime + " is it pausable? " + pausable)
               Success(" Successfully scheduled job " + trackDesc.trackName + " at " + yeah.startTime + " is it pausable? " + pausable)
            case boo : AddScheduleFailure =>
@@ -162,9 +168,9 @@ case class TrackScheduler( val proofEngine : ProofEngine ) extends Logging  {
     *  Stop a scheduled Track 
     */
    def unscheduleTrack( trackDesc :TrackDescriptor ) = {
-     val tup3 = scheduleMap.remove( trackDesc).get
-     info("  unscheduleTrack: going to unschedule tuple: " + tup3._1 + " " + tup3._2 + " " + tup3._3)
-     quartzActor ! RemoveJob(tup3._2)
+     val jobKey = scheduleMap.remove( trackDesc).get
+     info("  unscheduleTrack: going to unschedule job : " + trackDesc.trackName + " with key " + jobKey)
+     quartzActor ! RemoveJob( jobKey)
    }
    
    
@@ -172,14 +178,22 @@ case class TrackScheduler( val proofEngine : ProofEngine ) extends Logging  {
     *  List out all the current Tracks which have been scheduled,
     *    
     */
-   def getScheduledTracks : collection.Set[Tuple2[TrackDescriptor,String]] = {
-     //YY might have to refactor this - new pausable
-       scheduleMap.keySet.map( td => { 
-         Tuple2(td,scheduleMap.get(td).get._1) } )
+   def getScheduledTracks : collection.Set[Tuple2[TrackDescriptor,ScheduleStatus]] = {
+      val future  = ( quartzActor ? new GetAllScheduleStatuses() )
+      val allStatuses = Await.result(future, timeout.duration).asInstanceOf[AllScheduleStatuses]
+
+      val statusMap : Map[JobKey,ScheduleStatus] = allStatuses.jobStatuses.map( schedStatus => ( schedStatus.jobKey, schedStatus)).toMap
+      
+      /// Map from JobKeys to ScheduleStatus ...
+      scheduleMap.mapValues(  jobKey => statusMap.get(jobKey).get).toSet
+      
    }
    
     
-   case class StartGoalMessage( val trackDesc : TrackDescriptor, val continuous : Boolean )
+   case class StartGoalMessage( val trackDesc : TrackDescriptor, val continuous : Boolean ) extends QuartzIdentifiable {
+     
+       override def identity : JobKey = new JobKey( trackDesc.trackName, trackDesc.trackName)  /// XXX Change to goal name
+   }
    
    
    def generateWitness( track : Track, nowDt : DateTime ) : Witness = {

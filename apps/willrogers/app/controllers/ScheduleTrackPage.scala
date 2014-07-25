@@ -38,10 +38,11 @@ object ScheduleTrackPage extends Controller {
    
    
    def showSchedulesAction() = Action { 
-    	 val scList = scheduler.getScheduledTracks.map(_._1).toSeq
-       val tdList = trackFactory.getAllTracks.diff(scList)
+    	 val scList = scheduler.getScheduledTracks
+       ///val tdList = trackFactory.getAllTracks.diff(scList)
+    	 val tdList = Seq()
     
-     	Ok(views.html.scheduletrack(tdList, scList))
+     	Ok(views.html.scheduletrack(tdList, scList.toSeq))
    }
      
 
@@ -94,8 +95,10 @@ object ScheduleTrackPage extends Controller {
     
    val result =    scheduler.scheduleTrack(holderTrack) 
     
-    val scList = scheduler.getScheduledTracks.map(_._1).toSeq
-    val tdList = trackFactory.getAllTracks.diff(scList)
+    val scList = scheduler.getScheduledTracks.toSeq
+    ///val tdList = trackFactory.getAllTracks.diff(scList)
+    val tdList = Seq()
+
    
     result match {
      

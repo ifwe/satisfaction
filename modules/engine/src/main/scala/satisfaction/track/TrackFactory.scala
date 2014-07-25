@@ -10,6 +10,8 @@ import com.klout.satisfaction.Recurring
 
 /**
  *  Class for Executor to access deployed Tracks (i.e Projects)
+  class TracksUnavailableException( exc : Throwable ) extends RuntimeException
+  class TracksUnavailableException( exc : Throwable ) extends RuntimeException
  *  
  *  Tracks are deployed in a well-defined directory on HDFS,
  *  where the Track Name is defined as a path relative to a 
@@ -31,6 +33,8 @@ case class TrackFactory(val trackFS : FileSystem,
   implicit val hdfs = trackFS
   val localFS = LocalFileSystem
    
+  
+  
   val initScheduler : Unit = {
      schedulerOpt match {
        case Some(sched) => sched.trackFactory = this
@@ -39,6 +43,8 @@ case class TrackFactory(val trackFS : FileSystem,
        }
      } 
   }
+  
+  
    
    private val trackMap : collection.mutable.Map[TrackDescriptor,Track] = collection.mutable.HashMap[TrackDescriptor,Track]()
    
@@ -48,7 +54,6 @@ case class TrackFactory(val trackFS : FileSystem,
     */
    def getAllTracks : Seq[TrackDescriptor] = {
      try {
-       /// XXX Have filesystem return path as well as uri 
       val trackRoot : Path =  baseTrackPath / "track" 
       
       val allPaths = trackFS.listFilesRecursively(trackRoot)
@@ -57,10 +62,20 @@ case class TrackFactory(val trackFS : FileSystem,
       }) 
      } catch {
        case exc: Exception => {
-         exc.printStackTrace()
-         throw exc;
+         error("Error while getting Tracks; Maybe HDFS is down? ", exc)
+         
+         notifyTrackUnavailable( exc)
+         throw new TrackFactory.TracksUnavailableException( exc);
        }
      }
+   }
+  
+  
+   /**
+    *  Do something if HDFS is down 
+    */
+   def notifyTrackUnavailable( exc : Throwable) {
+     
    }
    
    /**
@@ -113,7 +128,13 @@ case class TrackFactory(val trackFS : FileSystem,
      track.setTrackProperties(trackProps)
                 
      val trackPath = getTrackPath( track.descriptor )
+
+     track.setTrackPath( getTrackPath( track.descriptor))
+     /// XXX JDB FIXME
+     /// XXX Allow implicit to be set on object creation ...
+     track.hdfs = hdfs 
      
+     track.init
      
      schedulerOpt match {
        case Some(scheduler) =>
@@ -129,12 +150,6 @@ case class TrackFactory(val trackFS : FileSystem,
           warn(" No scheduler instantiated; not scheduling") 
      }
      
-     track.setTrackPath( getTrackPath( track.descriptor))
-     /// XXX JDB FIXME
-     /// XXX Allow implicit to be set on object creation ...
-     track.hdfs = hdfs 
-     
-     track.init
    }
    
    
@@ -150,8 +165,9 @@ case class TrackFactory(val trackFS : FileSystem,
     *  Get the actual  Track object, with the top level goals
     *     to be satisfied
     */
-   def generateTrack( trackDesc : TrackDescriptor ) : Option[Track] = {
+   private def generateTrack( trackDesc : TrackDescriptor ) : Option[Track] = {
      try {
+      info(s" Generating Track ${trackDesc.trackName} :: ${trackDesc.version} ")
       val trackPath = getTrackPath( trackDesc)
       if( !trackFS.exists(trackPath)) {
         throw new RuntimeException( s"No Track found under ${trackFS.uri}/${baseTrackPath} for descripter ${trackDesc} ")
@@ -186,6 +202,7 @@ case class TrackFactory(val trackFS : FileSystem,
          ////val track : Track =  trackClazz.getField("MODULE$").get(null).asInstanceOf[Track]
           
          track.descriptor = trackDesc
+         this.trackMap.put( trackDesc, track)
          initializeTrack( track,  trackProps)
       	 Some(track)
         case None => 
@@ -277,7 +294,6 @@ case class TrackFactory(val trackFS : FileSystem,
     *  From a track descriptor, generate the path corresponding to the deployment
     */
    def getTrackPath( td : TrackDescriptor ) : Path = {
-     /// XXX get Path from fs
       var tp = new Path( trackFS.uri.toString)
       tp = tp / baseTrackPath
       tp = tp /  "track" / td.trackName
@@ -323,4 +339,9 @@ case class TrackFactory(val trackFS : FileSystem,
        getTrack( latestId)
      }
    }
+}
+
+object TrackFactory {
+    class  TracksUnavailableException( reason : Throwable) extends RuntimeException(reason)
+  
 }

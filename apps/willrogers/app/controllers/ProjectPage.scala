@@ -13,6 +13,7 @@ import models._
 import collection._
 import com.klout.satisfaction.engine.actors.GoalStatus
 import com.klout.satisfaction.track._
+import com.klout.satisfaction.track.TrackFactory._
 import com.klout.satisfaction.TrackDescriptor
 
 object ProjectPage extends Controller {
@@ -21,10 +22,17 @@ object ProjectPage extends Controller {
   
   
     def allProjects = Action {
+      try {
         val projNames = trackFactory.getAllTracks.map( _.trackName ).toList.distinct
         println(" Project Names = " + projNames.mkString(" :: "))
 
         Ok(views.html.projtabs(projNames))
+      } catch {
+        case unavailable : TrackFactory.TracksUnavailableException  => {
+        Ok(views.html.trackunavailable(unavailable))
+        }
+        
+      }
     }
 
     def showProject(projName: String) = Action {

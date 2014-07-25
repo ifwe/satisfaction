@@ -1,4 +1,4 @@
-@(tdList : Seq[com.klout.satisfaction.TrackDescriptor], scList: Seq[com.klout.satisfaction.TrackDescriptor] , messageOpt : Option[String] = None)
+@( tdList : Seq[com.klout.satisfaction.TrackDescriptor], scList : Seq[Tuple2[com.klout.satisfaction.TrackDescriptor,com.klout.satisfaction.track.ScheduleStatus]] , messageOpt : Option[String] = None)
 
 
 @import helper._
@@ -38,28 +38,27 @@
 				<td> Track User </td>
 				<td> Track Variant </td>
 				<td> Track Version </td>
-				<td> Status </td>
+				<td> Status(Is Running?) </td>
 				<td> Type (cron vs rec) </td>
 				<td> schedule </td>
-				<td> readable schedule </td>
-				<td> scheduled on </td>
+				<td> first Run </td>
 				<td> recent run </td>
+				<td> next run </td>
 				<td> unschedule <td>
 			</thead>
 			@scList.map { td =>
 				<tr>
-					<td>@td.trackName </td>
-					<td>@td.trackName</td>
-  	                <td>@td.forUser</td>
-  	                <td>@td.variant</td>
-  	                <td>@td.version</td>
-					<td>- </td>
-					<td>scheduleString </td>
-					<td>- </td>
-					<td>- </td>
-					<td>- </td>
-					<td>- </td>
-					<td><button id ="unscheduleButton" onClick="window.location.href='/unscheduleonejob/@td.trackName/@td.forUser/@td.version'">Unschedule</button></td>
+			<td>@td._1.trackName</td>
+  	                <td>@td._1.forUser</td>
+  	                <td>@td._1.variant</td>
+  	                <td>@td._1.version</td>
+			<td>@td._2.schedStatus </td>
+			<td>@td._2.schedType </td>
+			<td>@td._2.description </td>
+			<td>@td._2.startOccurrence </td>
+			<td>@td._2.prevOccurrence </td>
+			<td>@td._2.nextOccurrence </td>
+			<td><button id ="unscheduleButton" onClick="window.location.href='/unscheduleonejob/@td._1.trackName/@td._1.forUser/@td._1.version'">Unschedule</button></td>
 				</tr>
 				}
 

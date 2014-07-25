@@ -76,6 +76,7 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
               unexpected.printStackTrace
               log.error( "Unexpected exception while attempting to satisfy Goal ", unexpected) 
               
+              status.state = GoalState.Failed
               status.errorMessage = unexpected.getMessage
               ///sender ! GoalFailure( status)
               publishFailure

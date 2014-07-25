@@ -66,6 +66,7 @@ object Global extends GlobalSettings {
       ///// XXX Why doesn't implicits automatically convert???
       try {
       val hadoopWitness : Witness = Config.Configuration2Witness( hiveConf)
+      println("XXXXXXXXXXXX Creating GLOBAL TrackFactory YYYYYYYYYYYY")
       var tf = new TrackFactory( hdfsFS, trackPath, Some(trackScheduler), Some(hadoopWitness))
       trackScheduler.trackFactory = tf
       tf
