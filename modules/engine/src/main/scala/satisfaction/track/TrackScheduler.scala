@@ -37,7 +37,6 @@ case class TrackScheduler( val proofEngine : ProofEngine ) extends Logging  {
    private lazy val startGoalActor = proofEngine.akkaSystem.actorOf(Props( new StartGoalActor( trackFactory, proofEngine)) )
    implicit val timeout = Timeout(24 hours)
   
-   // Format trackDesc => [schedString, Cancellable, Pauseable]
    private val scheduleMap : collection.mutable.Map[TrackDescriptor,JobKey] = new collection.mutable.HashMap[TrackDescriptor,JobKey]
    
       class StartGoalActor( trackFactory : TrackFactory, proofEngine : ProofEngine ) extends Actor with ActorLogging {
@@ -185,7 +184,8 @@ case class TrackScheduler( val proofEngine : ProofEngine ) extends Logging  {
       val statusMap : Map[JobKey,ScheduleStatus] = allStatuses.jobStatuses.map( schedStatus => ( schedStatus.jobKey, schedStatus)).toMap
       
       /// Map from JobKeys to ScheduleStatus ...
-      scheduleMap.mapValues(  jobKey => statusMap.get(jobKey).get).toSet
+
+      scheduleMap.filter(  entry => { statusMap.contains( entry._2) } ).mapValues(  jobKey => statusMap.get(jobKey).get).toSet
       
    }
    
