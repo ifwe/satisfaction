@@ -4,6 +4,9 @@
 @import scala.collection.JavaConversions._
 @import com.klout.satisfaction._
 
+@import models.HtmlUtil._
+@import models.HtmlUtil
+
 
 
 @main( s"Track ${trackDesc.trackName} ") {
@@ -20,7 +23,7 @@
    <td>
     <ul>
       @goalList.map { goal =>
-     	 <li><a href="satisfygoal/@{trackDesc.trackName.replace("/","_sl_")}/@{goal.replace("/","_sl_")}" target="_blank">@goal </a> </li> 	  
+     	 <li><a href="satisfygoal/@{urlEncode(trackDesc.trackName)}/@{urlEncode(goal)}" target="_blank">@goal</a> </li> 	  
       }
     </ul>
     </td>

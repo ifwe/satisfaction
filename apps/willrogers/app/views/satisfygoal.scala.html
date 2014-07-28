@@ -4,6 +4,9 @@
 @import scala.collection.JavaConversions._
 @import com.klout.satisfaction._
 
+@import models.HtmlUtil._
+@import models.HtmlUtil
+
 
 
 @main( "Satisfy Goal " + goalName + " for Project " + projName ) {
@@ -16,7 +19,7 @@
    	} 
    </ul>
     
-<form method="POST" action="/satisfygoal/@{projName.replace("/","_sl_")}/@{goalName.replace("/","_sl_")}">
+<form method="POST" action="/satisfygoal/@{urlEncode(projName)}/@{urlEncode(goalName)}">
   <table>  
    <tr><td><h3>Variables</h3></td>
     <td>

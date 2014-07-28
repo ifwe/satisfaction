@@ -27,7 +27,7 @@ object HtmlUtil {
        wit.assignments.map(  ass => { "<tr><td>" + ass.variable.name + "</td><td>" + ass.value + "</td>" } ).mkString  + "</table>"
     }
     
-      
+    
     def parseWitness( varString : String ) : Witness = {
       val vaSeq : Seq[VariableAssignment[String]] = varString.split(";").map( _.split("=") ).map( kvArr  => 
            { VariableAssignment[String](Variable( kvArr(0)), kvArr(1) ) } )
@@ -43,4 +43,5 @@ object HtmlUtil {
            s"${ass.variable.name}=${ass.value}"
       } ).mkString(";").replace("/","_sl_")
     }
+    
 }
