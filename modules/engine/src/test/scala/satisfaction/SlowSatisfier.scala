@@ -1,9 +1,8 @@
-package com.klout
 package satisfaction;
 package engine
 package actors
 
-import com.klout.satisfaction.Satisfier
+import satisfaction.Satisfier
 import org.joda.time.DateTime
 
 /**

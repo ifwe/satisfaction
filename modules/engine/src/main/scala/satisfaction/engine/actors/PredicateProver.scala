@@ -1,9 +1,8 @@
-package com.klout
 package satisfaction
 package engine
 package actors
 
-import com.klout.satisfaction.engine.actors.GoalStatus._
+import satisfaction.engine.actors.GoalStatus._
 import akka.actor.Actor
 import akka.actor.ActorLogging
 import akka.actor.ActorRef
@@ -16,7 +15,7 @@ import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
 import akka.util.Timeout
 import org.joda.time.DateTime
-import satisfaction.track.TrackHistory
+import track.TrackHistory
 
 
 /**

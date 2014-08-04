@@ -1,9 +1,8 @@
-package com.klout
 package satisfaction.fs
 
 /**
- *  Abstraction for paths ,
- *  to shield us from Hadoop
+ *  Abstraction for paths
+ *  to shield us from Hadoop dependencies
  */
 
 

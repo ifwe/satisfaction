@@ -1,4 +1,3 @@
-package com.klout
 package satisfaction
 package hadoop
 package hive.ms
@@ -21,9 +20,6 @@ import fs._
 import org.joda.time.format.DateTimeFormatter
 import org.joda.time.format.DateTimeFormat
 import org.apache.hadoop.hive.metastore.api.FieldSchema
-import com.klout.satisfaction.Variable
-import com.klout.satisfaction.DataInstance
-import com.klout.satisfaction.DataOutput
 import org.apache.hadoop.hive.metastore.api.MetaException
 import scala.collection._
 import hdfs.Hdfs

@@ -1,4 +1,3 @@
-package com.klout
 package satisfaction
 package hadoop
 package hive
@@ -8,7 +7,7 @@ import org.specs2.runner.JUnitRunner
 import org.junit.runner.RunWith
 import org.apache.log4j.Logger
 import org.apache.log4j.Level
-import com.klout.satisfaction.MetricsProducing
+import satisfaction.MetricsProducing
 import org.apache.hadoop.hive.conf.HiveConf
 import java.io.File
 import satisfaction.fs.Path

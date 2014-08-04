@@ -3,9 +3,9 @@ package controllers
 
 import java.text.SimpleDateFormat
 import scala.collection._
-import com.klout.satisfaction._
-import com.klout.satisfaction.track._
-import com.klout.satisfaction.track.TrackHistory
+import satisfaction._
+import satisfaction.track._
+import satisfaction.track.TrackHistory
 import models.VariableFormHandler
 import play.api._
 import play.api.data._

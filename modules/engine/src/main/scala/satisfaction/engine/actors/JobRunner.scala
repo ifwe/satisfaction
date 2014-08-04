@@ -1,10 +1,9 @@
-package com.klout
 package satisfaction
 package engine
 package actors
 
 
-import com.klout.satisfaction.ExecutionResult
+import satisfaction.ExecutionResult
 import akka.actor._
 import akka.pattern.{ ask, pipe }
 import akka.util.Timeout

@@ -1,12 +1,11 @@
-package com.klout
 package satisfaction
 package hadoop
 package hive.ms
 
 import org.specs2.mutable._
-import com.klout.satisfaction.Witness
+import satisfaction.Witness
 import org.joda.time._
-import com.klout.satisfaction._
+import satisfaction._
 import org.specs2.runner.JUnitRunner
 import org.junit.runner.RunWith
 import org.apache.hadoop.hive.metastore.api.Table

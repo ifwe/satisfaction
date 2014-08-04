@@ -1,18 +1,19 @@
 <classpath>
-  <classpathentry output="target/scala-2.10/classes" path="src/main/scala" kind="src"></classpathentry>
-  <classpathentry output="target/scala-2.10/classes" path="src/main/java" kind="src"></classpathentry>
-  <classpathentry output="target/scala-2.10/test-classes" path="src/test/scala" kind="src"></classpathentry>
-  <classpathentry output="target/scala-2.10/test-classes" path="src/test/java" kind="src"></classpathentry>
-  <classpathentry kind="con" path="org.scala-ide.sdt.launching.SCALA_CONTAINER"></classpathentry>
-  <classpathentry path="/Users/jeromebanks/.ivy2/local/com.klout.satisfaction/satisfaction-core_2.10/0.3/jars/satisfaction-core_2.10.jar" kind="lib"></classpathentry>
-  <classpathentry path="/Users/jeromebanks/.ivy2/cache/com.github.nscala-time/nscala-time_2.10/jars/nscala-time_2.10-0.4.2.jar" kind="lib"></classpathentry>
-  <classpathentry path="/Users/jeromebanks/.ivy2/cache/joda-time/joda-time/jars/joda-time-2.2.jar" kind="lib"></classpathentry>
-  <classpathentry path="/Users/jeromebanks/.ivy2/cache/org.joda/joda-convert/jars/joda-convert-1.2.jar" kind="lib"></classpathentry>
-  <classpathentry path="/Users/jeromebanks/.ivy2/cache/org.specs2/specs2_2.10/jars/specs2_2.10-1.14.jar" kind="lib"></classpathentry>
-  <classpathentry path="/Users/jeromebanks/.ivy2/cache/org.specs2/specs2-scalaz-core_2.10/jars/specs2-scalaz-core_2.10-7.0.0.jar" kind="lib"></classpathentry>
-  <classpathentry path="/Users/jeromebanks/.ivy2/cache/org.specs2/specs2-scalaz-concurrent_2.10/jars/specs2-scalaz-concurrent_2.10-7.0.0.jar" kind="lib"></classpathentry>
-  <classpathentry path="/Users/jeromebanks/.ivy2/cache/org.specs2/scalaz-effect_2.10/jars/scalaz-effect_2.10-7.0.0.jar" kind="lib"></classpathentry>
-  <classpathentry path="/Users/jeromebanks/.ivy2/cache/org.specs2/scalaz-core_2.10/jars/scalaz-core_2.10-7.0.0.jar" kind="lib"></classpathentry>
-  <classpathentry path="org.eclipse.jdt.launching.JRE_CONTAINER" kind="con"></classpathentry>
-  <classpathentry path="bin" kind="output"></classpathentry>
+  <classpathentry kind="src" path="src/main/scala" output="target/scala-2.10/classes"/>
+  <classpathentry kind="src" path="src/main/java" output="target/scala-2.10/classes"/>
+  <classpathentry kind="src" path="src/test/scala" output="target/scala-2.10/test-classes"/>
+  <classpathentry kind="src" path="src/test/java" output="target/scala-2.10/test-classes"/>
+  <classpathentry kind="lib" path="/Users/jbanks/.ivy2/local/com.klout.satisfaction/satisfaction-core_2.10/2.0.1/jars/satisfaction-core_2.10.jar"/>
+  <classpathentry kind="lib" path="/Users/jbanks/.ivy2/cache/org.slf4j/slf4j-api/jars/slf4j-api-1.7.7.jar"/>
+  <classpathentry kind="lib" path="/Users/jbanks/.ivy2/cache/com.github.nscala-time/nscala-time_2.10/jars/nscala-time_2.10-1.2.0.jar"/>
+  <classpathentry kind="con" path="org.scala-ide.sdt.launching.SCALA_CONTAINER"/>
+  <classpathentry kind="lib" path="/Users/jbanks/.ivy2/cache/joda-time/joda-time/jars/joda-time-2.3.jar"/>
+  <classpathentry kind="lib" path="/Users/jbanks/.ivy2/cache/org.joda/joda-convert/jars/joda-convert-1.2.jar"/>
+  <classpathentry kind="lib" path="/Users/jbanks/.ivy2/cache/org.specs2/specs2_2.10/jars/specs2_2.10-1.14.jar"/>
+  <classpathentry kind="lib" path="/Users/jbanks/.ivy2/cache/org.specs2/specs2-scalaz-core_2.10/jars/specs2-scalaz-core_2.10-7.0.0.jar"/>
+  <classpathentry kind="lib" path="/Users/jbanks/.ivy2/cache/org.specs2/specs2-scalaz-concurrent_2.10/jars/specs2-scalaz-concurrent_2.10-7.0.0.jar"/>
+  <classpathentry kind="lib" path="/Users/jbanks/.ivy2/cache/org.specs2/scalaz-effect_2.10/jars/scalaz-effect_2.10-7.0.0.jar"/>
+  <classpathentry kind="lib" path="/Users/jbanks/.ivy2/cache/org.specs2/scalaz-core_2.10/jars/scalaz-core_2.10-7.0.0.jar"/>
+  <classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+  <classpathentry kind="output" path="bin"/>
 </classpath>

@@ -1,13 +1,9 @@
-package com.klout
 package satisfaction
 
 import org.joda.time.Period
 import org.joda.time.ReadablePartial
 import org.joda.time.format.ISOPeriodFormat
 import org.joda.time.format.PeriodFormatter
-import org.quartz.JobExecutionContext
-import org.quartz.JobExecutionException
-import org.quartz.JobListener
 import org.joda.time.Duration
 import org.joda.time.Partial
 import org.joda.time.DateTimeFieldType

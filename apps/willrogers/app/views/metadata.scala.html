@@ -1,9 +1,9 @@
-@(dbName : String , tblName : String, ms : com.klout.satisfaction.hadoop.hive.ms.MetaStore, metadataForm: Form[MetaDataHolder] )
+@(dbName : String , tblName : String, ms : satisfaction.hadoop.hive.ms.MetaStore, metadataForm: Form[MetaDataHolder] )
 
 @import helper._
 @import org.apache.hadoop.hive.ql.metadata._
 @import scala.collection.JavaConversions._
-@import com.klout.satisfaction.hadoop.hive.ms._
+@import satisfaction.hadoop.hive.ms._
 
 
 @main( "MetaData for " + dbName + " " + tblName  ) {

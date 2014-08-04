@@ -1,4 +1,3 @@
-package com.klout
 package satisfaction
 package hadoop
 
@@ -12,7 +11,7 @@ import java.io.ByteArrayInputStream
 import java.io.FileNotFoundException
 import java.io.File
 import java.io.FileInputStream
-import satisfaction.hadoop.hdfs.Hdfs
+import hdfs.Hdfs
 
 /**
  *  Scala Object to handle initial configuration

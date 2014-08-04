@@ -1,4 +1,3 @@
-package com.klout
 package satisfaction
 package hadoop
 package hive
@@ -7,9 +6,9 @@ import org.apache.hadoop.hive.ql.parse.ParseDriver
 import org.apache.hadoop.hive.ql.parse._
 import org.apache.hadoop.hive.ql.parse.ParseException
 import scala.collection.JavaConversions._
-import com.klout.satisfaction.DataOutput
-import com.klout.satisfaction.DataInstance
-import com.klout.satisfaction.hadoop.hive.ms.HiveTablePartition
+import satisfaction.DataOutput
+import satisfaction.DataInstance
+import satisfaction.hadoop.hive.ms.HiveTablePartition
 import org.apache.hadoop.hive.ql.tools.LineageInfo
 import org.apache.hadoop.hive.ql.optimizer.index.RewriteParseContextGenerator
 import ms.MetaStore

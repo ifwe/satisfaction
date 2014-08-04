@@ -2,7 +2,7 @@ package willrogers
 package controllers
 
 import play.mvc.Controller
-import com.klout.satisfaction.track.SLA;
+import satisfaction.track.SLA;
 import play.api.data.Form
 import play.api.data.Forms._
 

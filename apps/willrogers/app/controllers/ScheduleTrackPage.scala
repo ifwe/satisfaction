@@ -11,11 +11,11 @@ import play.api.mvc.Action
 import play.api.Configuration
 import models.VariableHolder
 import play.api.mvc.Call
-import com.klout.satisfaction._
-import com.klout.satisfaction.engine._
-import com.klout.satisfaction.engine.actors.ProofEngine
-import com.klout.satisfaction.engine.actors._
-import com.klout.satisfaction.track._
+import satisfaction._
+import satisfaction.engine._
+import satisfaction.engine.actors.ProofEngine
+import satisfaction.engine.actors._
+import satisfaction.track._
 import java.io.FileInputStream
 import java.io.File
 import models.PlumbGraph

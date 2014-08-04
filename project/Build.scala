@@ -15,7 +15,7 @@ import play.Project._
 
 object ApplicationBuild extends Build {
 
-  val appVersion = "2.0.4"
+  val appVersion = "2.1.0"
 
   val hiveVersion = "0.13.0"
 
@@ -115,7 +115,7 @@ object ApplicationBuild extends Build {
     name in Rpm := "satisfaction-scheduler",
     version in Rpm := appVersion,
 
-    rpmRelease in Rpm:= "3",
+    rpmRelease in Rpm:= "4",
     packageSummary in Rpm := "lowenstein",
     packageSummary in Linux := "lowenstein",
     rpmVendor in Rpm := "Tagged.com",
@@ -162,7 +162,7 @@ object ApplicationBuild extends Build {
     ("org.slf4j" % "slf4j-api" % "1.7.7"),
     ("com.github.nscala-time" %% "nscala-time" % "1.2.0"),
     ("org.scala-lang" % "scala-library" % "2.10.2" ),
-    ("org.quartz-scheduler" % "quartz" % "2.2.1")
+    ("org.apache.commons" % "commons-email" % "1.3.3" )
   ) ++ testDependencies 
 
   def jsonDependencies = Seq(

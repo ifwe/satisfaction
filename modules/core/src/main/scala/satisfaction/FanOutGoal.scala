@@ -1,6 +1,5 @@
-package com.klout.satisfaction
+package satisfaction
 
-import com.klout.satisfaction._
 
 /**
  * XXX TODO

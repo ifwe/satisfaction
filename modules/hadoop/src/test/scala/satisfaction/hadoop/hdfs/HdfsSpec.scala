@@ -1,11 +1,10 @@
-package com.klout
 package satisfaction
 package hadoop
 package hdfs
 
 import org.specs2.mutable._
-import com.klout.satisfaction.Witness
-import com.klout.satisfaction._
+import satisfaction.Witness
+import satisfaction._
 import org.specs2.runner.JUnitRunner
 import org.junit.runner.RunWith
 import io._

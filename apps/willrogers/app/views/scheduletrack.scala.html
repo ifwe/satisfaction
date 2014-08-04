@@ -1,14 +1,12 @@
-@( tdList : Seq[com.klout.satisfaction.TrackDescriptor], scList : Seq[Tuple2[com.klout.satisfaction.TrackDescriptor,com.klout.satisfaction.track.ScheduleStatus]] , messageOpt : Option[String] = None)
+@( tdList : Seq[satisfaction.TrackDescriptor], scList : Seq[Tuple2[satisfaction.TrackDescriptor,satisfaction.track.ScheduleStatus]] , messageOpt : Option[String] = None)
 
 
 @import helper._
 @import scala.collection.JavaConversions._
-@import com.klout.satisfaction._
-@import com.klout.satisfaction.Schedulable
-@import com.klout.satisfaction.engine._
-@import com.klout.satisfaction.engine.actors._
-@import models.HtmlUtil._
-@import models.HtmlUtil
+@import satisfaction._
+@import satisfaction.Schedulable
+@import satisfaction.engine._
+@import satisfaction.engine.actors._
 
 @main( s"Satisfaction Scheduler Status" ) {
 	<script>
@@ -59,7 +57,7 @@
 			<td>@td._2.startOccurrence </td>
 			<td>@td._2.prevOccurrence </td>
 			<td>@td._2.nextOccurrence </td>
-			<td><button id ="unscheduleButton" onClick="window.location.href='/unscheduleonejob/@td._1.trackName/@td._1.forUser/@td._1.version'">Unschedule</button></td>
+			<td><button id ="unscheduleButton" onClick="window.location.href='/unscheduleonejob/@{urlEncode(td._1.trackName)}/@{urlEncode(td._1.forUser)}/@{urlEncode(td._1.version)}'">Unschedule</button></td>
 				</tr>
 				}
 
@@ -76,7 +74,7 @@
 					<td>@td.trackName</td>
 					<td>"NO!"</td>	
 					<td>
-						<form  method = "post" action="scheduletrack/@td.trackName/@td.forUser/@td.version">
+						<form  method = "post" action="scheduletrack/@{urlEncode(td.trackName)}/@@{urlEncode(td.forUser)}/@{urlEncode(td.version)}">
 							<b>Type</b>: <input type="radio" name="rule" value="cron" checked="checked">Cronable
 									<input type="radio" name="rule" value="recur">Recurring
 									<input type="radio" name="rule" value="constantly">Constantly

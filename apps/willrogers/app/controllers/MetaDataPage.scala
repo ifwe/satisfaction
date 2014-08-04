@@ -9,7 +9,7 @@ import play.api.mvc.Results._
 import play.api.data.validation.Constraints._
 import play.api.mvc.Action
 import models.MetaDataHolder
-import com.klout.satisfaction.hadoop.hive.ms._
+import satisfaction.hadoop.hive.ms._
 import play.api.mvc.Call
 
 object MetaDataPage extends Controller {

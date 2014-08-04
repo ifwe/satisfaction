@@ -1,6 +1,6 @@
 package models
 
-import com.klout.satisfaction._
+import satisfaction._
 import org.joda.time.DateTime
 
 object ProjectUtil {

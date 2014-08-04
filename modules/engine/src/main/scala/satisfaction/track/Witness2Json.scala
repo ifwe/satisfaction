@@ -1,4 +1,3 @@
-package com.klout
 package satisfaction
 package track
 
@@ -7,7 +6,7 @@ package track
 import org.json4s._
 import org.json4s.JsonDSL._
 import org.json4s.jackson.JsonMethods._
-import com.klout.satisfaction.Witness
+import satisfaction.Witness
 
 /**
  *  Provide simple bindings to JSON 

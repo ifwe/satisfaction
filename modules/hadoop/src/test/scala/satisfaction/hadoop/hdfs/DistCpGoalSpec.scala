@@ -1,4 +1,3 @@
-package com.klout
 package satisfaction
 package hadoop
 package hdfs
@@ -10,7 +9,7 @@ import org.specs2.runner.JUnitRunner
 import org.junit.runner.RunWith
 import org.apache.log4j.Logger
 import org.apache.log4j.Level
-import com.klout.satisfaction.engine.Satisfaction
+import satisfaction.engine.Satisfaction
 import satisfaction.fs.FileSystem
 import hive.ms.MetaStore
 import satisfaction.engine.actors.GoalState

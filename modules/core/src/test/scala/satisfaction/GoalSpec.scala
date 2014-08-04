@@ -1,4 +1,3 @@
-package com.klout
 package satisfaction
 
 import org.specs2.mutable._

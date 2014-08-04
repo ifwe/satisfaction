@@ -4,18 +4,18 @@ import play.api._
 import scala.slick.driver.H2Driver.simple._
 import play.api.GlobalSettings
 import scala.slick.driver.H2Driver.simple._
-import com.klout.satisfaction._
-import com.klout.satisfaction.track.TrackFactory
-import com.klout.satisfaction.track.TrackScheduler
-import com.klout.satisfaction.hadoop.hdfs.Hdfs
-import com.klout.satisfaction.hadoop.hive.ms._
-import com.klout.satisfaction.hadoop.Config
+import satisfaction._
+import satisfaction.track.TrackFactory
+import satisfaction.track.TrackScheduler
+import satisfaction.hadoop.hdfs.Hdfs
+import satisfaction.hadoop.hive.ms._
+import satisfaction.hadoop.Config
 import org.apache.hadoop.conf.{ Configuration => HadoopConfiguration }
-import com.klout.satisfaction.fs.Path
-import com.klout.satisfaction.hadoop.Config
-import com.klout.satisfaction.track.TrackHistory
-import com.klout.satisfaction.track.JDBCSlickTrackHistory
-import com.klout.satisfaction.engine.actors.ProofEngine
+import satisfaction.fs.Path
+import satisfaction.hadoop.Config
+import satisfaction.track.TrackHistory
+import satisfaction.track.JDBCSlickTrackHistory
+import satisfaction.engine.actors.ProofEngine
 
 
 object Global extends GlobalSettings {

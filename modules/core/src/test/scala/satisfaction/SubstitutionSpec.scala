@@ -1,4 +1,4 @@
-package com.klout.satisfaction
+package satisfaction
 
 import org.specs2.mutable._
 import scala.util.parsing.input.CharSequenceReader

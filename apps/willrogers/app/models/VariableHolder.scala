@@ -1,6 +1,6 @@
 package models
 
-import com.klout.satisfaction._
+import satisfaction._
 import collection._
 import play.api.mvc.Request
 import play.api.mvc.AnyContent

@@ -1,10 +1,10 @@
-package com.klout
 package satisfaction
 package hadoop
 package hive
 
 import ms.MetaStore
 import ms.HiveTable
+import satisfaction._
 import scala.io.Source
 import org.apache.hadoop.hive.conf.HiveConf
 

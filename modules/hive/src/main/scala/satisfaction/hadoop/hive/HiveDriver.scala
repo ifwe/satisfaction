@@ -1,4 +1,3 @@
-package com.klout
 package satisfaction
 package hadoop
 package hive
@@ -10,11 +9,11 @@ import org.apache.hadoop.hive.ql.session.SessionState
 import org.apache.hadoop.hive.shims.ShimLoader
 import org.apache.hadoop.util.VersionInfo
 import org.apache.hadoop.hive.ql.QueryPlan
-import com.klout.satisfaction.MetricsProducing
+import satisfaction.MetricsProducing
 import collection.JavaConversions._
 import org.apache.hadoop.hive.ql.MapRedStats
 import collection.mutable.{HashMap => MutableHashMap}
-import com.klout.satisfaction.MetricsCollection
+import satisfaction.MetricsCollection
 import scala.io.Source
 import java.net.URLClassLoader
 import java.io.File

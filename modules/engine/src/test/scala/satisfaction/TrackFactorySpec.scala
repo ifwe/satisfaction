@@ -1,4 +1,3 @@
-package com.klout
 package satisfaction
 package track
 
@@ -12,7 +11,7 @@ import org.specs2.runner.JUnitRunner
 import org.junit.runner.RunWith
 import scala.util.Success
 import scala.util.Failure
-import com.klout.satisfaction.engine._
+import satisfaction.engine._
 import fs._
 
 /**

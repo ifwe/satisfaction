@@ -6,14 +6,14 @@ import play.api.mvc._
 import Results._
 import play.api.libs.concurrent.Execution.Implicits._
 import scala.concurrent.duration._
-import com.klout.satisfaction.Track
-import com.klout.satisfaction.Goal
+import satisfaction.Track
+import satisfaction.Goal
 import models.PlumbGraph
 import models._
 import collection._
-import com.klout.satisfaction.engine.actors.GoalStatus
-import com.klout.satisfaction.track._
-import com.klout.satisfaction.TrackDescriptor
+import satisfaction.engine.actors.GoalStatus
+import satisfaction.track._
+import satisfaction.TrackDescriptor
 
 object EditPage extends Controller {
   val trackFactory : TrackFactory = Global.trackFactory

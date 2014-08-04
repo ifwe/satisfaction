@@ -1,10 +1,10 @@
-@(trackName : String,  goalName : String, witness : com.klout.satisfaction.Witness , logs : Option[String]  )
+@(trackName : String,  goalName : String, witness : satisfaction.Witness , logs : Option[String]  )
 
 @import helper._
 @import scala.collection.JavaConversions._
-@import com.klout.satisfaction._
-@import com.klout.satisfaction.engine._
-@import com.klout.satisfaction.engine.actors._
+@import satisfaction._
+@import satisfaction.engine._
+@import satisfaction.engine.actors._
 @import models.HtmlUtil
 
 @main( s"LogWindow  $trackName Goal $goalName $witness " ) {

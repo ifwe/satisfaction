@@ -1,4 +1,3 @@
-package com.klout
 package satisfaction
 package track
 
@@ -15,7 +14,7 @@ import java.sql.ResultSet
 import scala.slick.jdbc.meta.MTable
 import java.sql.Timestamp
 
-import com.klout.satisfaction.track.Witness2Json._
+import satisfaction.track.Witness2Json._
 
 
 

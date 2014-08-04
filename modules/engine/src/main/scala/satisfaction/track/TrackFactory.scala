@@ -1,11 +1,10 @@
-package com.klout
 package satisfaction
 package track
 
 import collection.JavaConversions._
 import fs._
 import java.util.Properties
-import com.klout.satisfaction.Recurring
+import satisfaction.Recurring
 
 
 /**

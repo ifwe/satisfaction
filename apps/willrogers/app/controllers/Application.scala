@@ -3,13 +3,13 @@ package controllers
 
 import play.api._
 
-import com.klout.satisfaction.hadoop.hive.ms._
-import com.klout.satisfaction.hadoop.hdfs._
+import satisfaction.hadoop.hive.ms._
+import satisfaction.hadoop.hdfs._
 import play.api.data._
 import play.api.data.Forms._
 
 import play.api.mvc._
-import com.klout.satisfaction._
+import satisfaction._
 
 
 object Application extends Controller {

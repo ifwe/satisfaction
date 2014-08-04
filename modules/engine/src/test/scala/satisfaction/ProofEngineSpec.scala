@@ -1,4 +1,3 @@
-package com.klout
 package satisfaction
 package engine
 package actors
@@ -13,7 +12,7 @@ import org.specs2.runner.JUnitRunner
 import org.junit.runner.RunWith
 import scala.util.Success
 import scala.util.Failure
-import com.klout.satisfaction.engine._
+import satisfaction.engine._
 import scala.concurrent.Await
 import akka.util.Timeout
 

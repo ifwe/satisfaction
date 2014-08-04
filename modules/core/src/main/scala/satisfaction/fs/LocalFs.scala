@@ -1,5 +1,3 @@
-
-package com.klout
 package satisfaction.fs
 
 import java.io._

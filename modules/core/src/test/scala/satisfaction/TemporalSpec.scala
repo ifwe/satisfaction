@@ -3,8 +3,7 @@ package satisfaction
 
 import org.specs2.mutable._
 import org.junit.runner.RunWith
-import com.klout.satisfaction.Temporal
-import com.klout.satisfaction.Temporal._
+import Temporal._
 import org.specs2.runner.JUnitRunner
 
 @RunWith(classOf[JUnitRunner])
