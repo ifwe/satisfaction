@@ -58,11 +58,11 @@ object ApplicationBuild extends Build {
 
       scalaVersion := "2.10.2",
 
-      organization := "com.klout.satisfaction",
+      organization := "com.tagged.satisfaction",
 
       version := appVersion,
 
-      packageSummary := "lowenstein",
+      packageSummary := "wyman",
 
       libraryDependencies ++= testDependencies,
 
@@ -116,8 +116,8 @@ object ApplicationBuild extends Build {
     version in Rpm := appVersion,
 
     rpmRelease in Rpm:= "4",
-    packageSummary in Rpm := "lowenstein",
-    packageSummary in Linux := "lowenstein",
+    packageSummary in Rpm := "wyman",
+    packageSummary in Linux := "wyman",
     rpmVendor in Rpm := "Tagged.com",
     rpmUrl in Rpm:= Some("http:/github.com/tagged/satisfaction"),
     rpmLicense in Rpm:= Some("Apache License Version 2"),

@@ -17,6 +17,10 @@ import scala.concurrent.Future
 import ExecutionContext.Implicits.global
 import satisfaction.track.TrackHistory
 import org.joda.time.DateTime
+import satisfaction.notifier.Notified
+import satisfaction.notifier.Notifier
+import akka.actor.Actor
+import akka.actor.ActorLogging
 
 class ProofEngine( val trackHistoryOpt : Option[TrackHistory] = None) extends  satisfaction.Logging{
 
@@ -28,7 +32,17 @@ class ProofEngine( val trackHistoryOpt : Option[TrackHistory] = None) extends  s
     implicit val timeout = Timeout(24 hours)
     
     
+    
     private def startGoal( goal : Goal , witness : Witness) : String = {
+      ///// Create a notifier if the track specifies a notifier
+      goal.track match {
+        case  notified : Notified => {
+           implicit val track : Track = goal.track
+           log.info(s" Setting up notification for goal ${goal.name} and witness " )
+           val notifierAgent : ActorRef = akkaSystem.actorOf(Props(new NotificationAgent(notified.notifier)))
+           addListener( goal, witness, notifierAgent)    
+        }
+      }
       trackHistoryOpt match {
         case Some(trackHistory)  => {
             //// XXX Record differently if it was top level goal
@@ -92,7 +106,7 @@ class ProofEngine( val trackHistoryOpt : Option[TrackHistory] = None) extends  s
                     completeGoal( runID, f.goalStatus.state )
                     f.goalStatus
             }
-        }
+       }
     }
     
     def restartGoal( goal : Goal, witness: Witness ) : Future[GoalStatus] = {
@@ -186,6 +200,10 @@ class ProofEngine( val trackHistoryOpt : Option[TrackHistory] = None) extends  s
         resultSet
     }
     
+    
+    def addListener(goal: Goal, witness: Witness, listener : ActorRef) = {
+        proverFactory ! new AddListener( goal.name, witness, listener)   
+    }
     
 
     /// sic ....

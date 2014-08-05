@@ -34,6 +34,7 @@ case class GetActiveActors()
 case class ReleaseActor(goalName : String, witness: Witness)
 case class KillActor( goalName : String, witness : Witness)
 case class GetListeners(goalName: String, witness: Witness)
+case class AddListener( goalName: String, witness: Witness, listener : ActorRef)
 
 class ProverFactory extends Actor with ActorLogging {
     ///val actorMap: mutable.Map[Tuple2[Goal, Witness], ActorRef] = mutable.Map()
@@ -112,6 +113,11 @@ class ProverFactory extends Actor with ActorLogging {
             val actorTuple = (goal, witness)
             val actorTupleName = ProofEngine.getActorName(goal, witness)
             sender ! listenerMap.get(actorTupleName).get
+        case AddListener(goal, witnessArg, listener) =>
+            val witness = witnessArg
+            val actorTuple = (goal, witness)
+            val actorTupleName = ProofEngine.getActorName(goal, witness)
+            listenerMap.get(actorTupleName).get.add( listener)
         case GoalFailure(goalStatus) =>
             publishMessageToListeners(goalStatus, new GoalFailure(goalStatus))
         case GoalSuccess(goalStatus) =>

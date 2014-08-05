@@ -16,7 +16,7 @@ trait EmailNotified  extends Notified {
     /**
      *  The hostname of the SMTP server 
      */ 
-    def hostname : String = track.trackProperties.getProperty("satifaction.smtp.host")
+    def hostname : String = track.trackProperties.getProperty("satisfaction.smtp.host")
     def smtpPort : Int =  track.trackProperties.getProperty("satisfaction.smtp.port", "567").toInt
         
     def from : String = track.trackProperties.getProperty("satisfaction.email.from", "satisfaction@tagged.com")
