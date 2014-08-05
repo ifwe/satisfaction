@@ -3,6 +3,8 @@ package hadoop
 package hive.ms
 
 import org.apache.hadoop.hive.ql.metadata._
+
+
 import org.apache.hadoop.hive.ql.metadata.{Table => ApacheTable}
 import org.apache.hadoop.fs.{Path => ApachePath}
 import collection.JavaConversions._
@@ -13,6 +15,8 @@ import hdfs.HdfsFactoryInit
 import hdfs.HdfsImplicits._
 import satisfaction.hadoop.hdfs.VariablePath
 
+trait HiveDataOutput extends DataOutput
+
 /**
  *  Implies a table with Partitions
  */
@@ -21,7 +25,7 @@ case class HiveTable (
     tblName: String,
     isPartitioned: Boolean = true)
     (implicit val ms : MetaStore,
-     implicit val hdfs : FileSystem) extends DataOutput  with Logging {
+     implicit val hdfs : FileSystem) extends HiveDataOutput  with Logging {
 
     
     val checkSuccessFile = true

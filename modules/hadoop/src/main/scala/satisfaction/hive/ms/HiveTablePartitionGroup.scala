@@ -19,7 +19,7 @@ case class HiveTablePartitionGroup(
     val grouping: List[Variable[_]],
     val requiredPartitions :Option[Set[VariableAssignment[_]]] = None)
     ( implicit val ms : MetaStore,
-      implicit val hdfs : FileSystem ) extends DataOutput {
+      implicit val hdfs : FileSystem ) extends HiveDataOutput {
 
 
     override def variables : List[Variable[_]] = {
