@@ -29,13 +29,6 @@ case class HiveTablePartitionGroup(
     def exists(w: Witness): Boolean = {
         getDataInstance(w).isDefined
         
-
-        val partSetPossible = getDataInstance(w)
-       
-        /// XXX 
-        
-        true
-        
     }
 
     def getDataInstance(w: Witness): Option[DataInstance] = {
