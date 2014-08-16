@@ -11,8 +11,8 @@ import org.joda.time._
  *   is a non-partitioned table.
  */
 case class NonPartitionedTable(
-      hiveTable : HiveTable)
-      (implicit val ms : MetaStore) extends DataInstance {
+      val hiveTable : HiveTable)
+      (implicit val ms : MetaStore) extends DataInstance with Markable {
   
     def size: Long = {
        ms.getSpaceUsed(hiveTable.dbName, hiveTable.tblName).toLong /// XXX Return size ??
@@ -30,8 +30,36 @@ case class NonPartitionedTable(
       null
     }
     
-    def exists: Boolean = {
-        ms.tableExists( hiveTable.dbName, hiveTable.tblName) 
+    def setMetaData( key: String, md : String ) : Unit = {
+       hiveTable.setMetaData( key, md) 
+    }
+
+    def getMetaData( key: String ) : Option[String] = {
+       hiveTable.getMetaData( key) 
+    }
+       /**
+     *  Mark that the producer of this
+     *   DataInstance fully completed .
+     */
+    def markCompleted : Unit = {
+       hiveTable.setMetaData("isComplete" , "true")  
+    }
+    
+    def markIncomplete : Unit = {
+       hiveTable.setMetaData("isComplete" , "false")  
+    } 
+
+    /**
+     *  Check that the Data instance has been Marked completed,
+     *    according to the test of the markable.
+     */
+    def isMarkedCompleted : Boolean = {
+      getMetaData("isComplete") match {
+        case Some( check) => {
+           check.toBoolean
+        }
+        case None => false
+      }
     }
 
 }

@@ -28,7 +28,7 @@ case class HiveTable (
      implicit val hdfs : FileSystem) extends HiveDataOutput  with Logging {
 
     
-    val checkSuccessFile = true
+    val checkMarkedComplete = true
     
     
     private lazy val _hiveTable : ApacheTable =   ms.getTableByName(dbName, tblName) 
@@ -63,14 +63,9 @@ case class HiveTable (
       val partitionOpt = getPartition( w)
       
       if(partitionOpt.isDefined ) {
-        if( checkSuccessFile) {
+        if(  this.checkMarkedComplete) {
         	val partition = partitionOpt.get
-        	if( hdfs.exists( partition.path)) {
-        	  /// Check metadata to see if table has a min partition size 
-        	   true 
-        	} else {
-        	  false
-        	}
+        	partition.isMarkedCompleted
         } else{
           true
         } 
@@ -133,6 +128,14 @@ case class HiveTable (
         HiveTablePartition(part)
     }
     
+    
+    def setMetaData( key : String, md : String ) : Unit = {
+       ms.setTableMetaData(this.dbName, this.tblName, key, md) 
+    }
+
+    def getMetaData( key : String) : Option[String] = {
+       ms.getTableMetaData(this.dbName, this.tblName, key) 
+    }
     
     /**
      * Path for the location of the top leve directory for this table

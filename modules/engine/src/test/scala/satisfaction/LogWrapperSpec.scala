@@ -40,7 +40,6 @@ class LogWrapperSpec extends Specification {
             doesExist
           }
           
-          override def exists : Boolean = { doesExist }
         
           override def variables = List( Variable("dt"), Variable("hour"))
         

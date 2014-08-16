@@ -24,7 +24,7 @@ class HdfsPathSpec extends Specification {
         "check if path exists " in {
             val pathTempl = "hdfs://nameservice1/data/hive/maxwell/actor_action/${dateString}/${networkAbbr}"
 
-            val varPath = new VariablePath(pathTempl)
+            val varPath = VariablePath(pathTempl)
 
             val witness = Witness((dtParam -> "20130821"),
                 (networkParam -> "tw"))
@@ -35,7 +35,7 @@ class HdfsPathSpec extends Specification {
         "check if path doesnt exists " in {
             val pathTempl = "hdfs://nameservice1/data/hive/maxwell/actor_action/${dateString}/${networkAbbr}"
 
-            val varPath = new VariablePath(pathTempl)
+            val varPath = VariablePath(pathTempl)
 
             val witness = Witness((dtParam -> "20150813"),
                 (networkParam -> "horsehead"))
@@ -46,7 +46,7 @@ class HdfsPathSpec extends Specification {
         "check get DataInstance " in {
             val pathTempl = "hdfs://nameservice1/data/hive/maxwell/actor_action/${dateString}/${networkAbbr}"
 
-            val varPath = new VariablePath(pathTempl)
+            val varPath = VariablePath(pathTempl)
 
             val witness = Witness((dtParam -> "20130813"),
                 (networkParam -> "tw"))
@@ -64,7 +64,7 @@ class HdfsPathSpec extends Specification {
         "check cant get bogus DataInstance " in {
             val pathTempl = "hdfs://nameservice1/data/hive/maxwell/actor_action/${dateString}/${networkAbbr}"
 
-            val varPath = new VariablePath(pathTempl)
+            val varPath = VariablePath(pathTempl)
 
             val witness = Witness((dtParam -> "20030813"),
                 (networkParam -> "booger"))

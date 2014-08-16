@@ -17,6 +17,11 @@ import org.apache.hadoop.mapred.RunningJob
 import org.apache.hadoop.tools.DistCpOptions
 import org.apache.hadoop.fs.{Path => ApachePath}
 
+/**
+ *  For now deprecate DistCP Satisfier, 
+ *   until we get a chance to better test it ..
+ */
+/***
 class DistCpSatisfier(val src: VariablePath, val dest: VariablePath)( implicit val hdfs : FileSystem , implicit val track: Track) extends Satisfier  {
 
     override def name = s"DistCp $src to $dest "
@@ -35,7 +40,6 @@ class DistCpSatisfier(val src: VariablePath, val dest: VariablePath)( implicit v
             val destPath: HdfsPath = dest.getDataInstance(projParams).get.asInstanceOf[HdfsPath]
            
 
-            if (destPath.exists) {
                 if (srcPath.path.equals(destPath)) {
                     true
                 } else {
@@ -50,8 +54,6 @@ class DistCpSatisfier(val src: VariablePath, val dest: VariablePath)( implicit v
                     println(s" Result of DistCp is $result")
                     result == 0
                 }
-            } else {
-            println(s"Distcp'ing ${srcPath} to ${destPath.path.toUri} ")
 
             val result = distcp(srcPath.path, destPath.path);
             //// Does DistCp have return codes ??
@@ -134,3 +136,4 @@ object DistCpGoal {
     }
 
 }
+ ***/

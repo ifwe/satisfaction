@@ -11,7 +11,7 @@ import hdfs.HdfsImplicits._
 case class HiveTablePartition(
     part: Partition)
     (implicit val ms : MetaStore,
-              val hdfs : FileSystem ) extends DataInstance {
+              val hdfs : FileSystem ) extends DataInstance  with Markable {
 
 
     def size: Long = {
@@ -54,10 +54,6 @@ case class HiveTablePartition(
         msDateTime(part.getLastAccessTime)
     }
 
-    def exists: Boolean = {
-      ///  XXX check metastore to make sure
-        true
-    }
     
     def path : fs.Path = {
        part.getDataLocation
@@ -68,12 +64,41 @@ case class HiveTablePartition(
     }
 
     def getMetaData(key: String): Option[String] = {
-        ms.getPartitionMetaData(part).get(key)
+        ms.getPartitionMetaData(part, key)
+    }
+    
+    def setMetaData( key: String, md : String ) : Unit = {
+       ms.setPartitionMetaData(part, key, md) 
     }
     
     def drop : Unit = {
       /// XXX expose on metastore
-      
     }
+    
+   /**
+     *  Mark that the producer of this
+     *   DataInstance fully completed .
+     */
+    def markCompleted : Unit = {
+       setMetaData("isComplete" , "true")  
+    }
+    
+    def markIncomplete : Unit = {
+       setMetaData("isComplete" , "false")  
+    } 
+
+    /**
+     *  Check that the Data instance has been Marked completed,
+     *    according to the test of the markable.
+     */
+    def isMarkedCompleted : Boolean = {
+      getMetaData("isComplete") match {
+        case Some( check) => {
+           check.toBoolean
+        }
+        case None => false
+      }
+    }
+  
 
 }

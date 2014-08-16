@@ -21,10 +21,11 @@ import satisfaction.notifier.Notified
 import satisfaction.notifier.Notifier
 import akka.actor.Actor
 import akka.actor.ActorLogging
+import satisfaction.retry.Retryable
 
 class ProofEngine( val trackHistoryOpt : Option[TrackHistory] = None) extends  satisfaction.Logging{
 
-    val akkaSystem = ActorSystem("satisfaction")
+    implicit val akkaSystem = ActorSystem("satisfaction")
     val proverFactory = {
        val actorRef = akkaSystem.actorOf(Props[ProverFactory], "ProverFactory")
        actorRef
@@ -38,19 +39,35 @@ class ProofEngine( val trackHistoryOpt : Option[TrackHistory] = None) extends  s
       goal.track match {
         case  notified : Notified => {
            implicit val track : Track = goal.track
-           log.info(s" Setting up notification for goal ${goal.name} and witness " )
+           info(s" Setting up notification for goal ${goal.name} and witness " )
            val notifierAgent : ActorRef = akkaSystem.actorOf(Props(new NotificationAgent(notified.notifier)))
            addListener( goal, witness, notifierAgent)    
         }
+        case _  => {
+          info( "No Notification setup for goal ${goalName} ")
+        }
+      }
+      goal match {
+        case retryable : Retryable => {
+           info(s" Goal ${goal.name} is retryable ; creating RetryAgent to listen to status ")
+           implicit val track : Track = goal.track
+           val retryAgent : ActorRef = akkaSystem.actorOf(Props(new RetryAgent(retryable)))
+           addListener( goal, witness, retryAgent)    
+        }
+        case _  => {
+          info( "No Retry setup for goal ${goalName} ")
+        }
+        
       }
       trackHistoryOpt match {
         case Some(trackHistory)  => {
             //// XXX Record differently if it was top level goal
             ////   versus sub goal runs
+           info(s" Track History start Run  ${goal.name} ${witness} " )
         	trackHistory.startRun(goal.track.descriptor, goal.name, witness, new DateTime)
         }
         case None => {
-           debug(" No TrackHistory Specified" ) 
+           info(" No TrackHistory Specified" ) 
            null
         }
       }

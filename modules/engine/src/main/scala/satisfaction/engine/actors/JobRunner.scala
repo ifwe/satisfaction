@@ -60,6 +60,7 @@ class JobRunner(
                 }
                 messageSender = sender
                 satisfierFuture onComplete {
+                    log.info(s" Job Runner :: Future OnComplete ${goal.name} ${witness}")
                     checkResults(_)
                 }
         case Abort =>
@@ -70,6 +71,7 @@ class JobRunner(
           //// TODO Wait for abort result, and send to parents
 
           val abortResult : ExecutionResult = satisfier.abort()
+          markEvidence( _.markIncomplete )
           log.info( "Result of Abort Attempt is " + abortResult)
           Console.println( "Result of Abort Attempt is " + abortResult)
           /**
@@ -84,15 +86,37 @@ class JobRunner(
           */
           
     }
-
+    
+    /**
+     * If our DataInstances implement the "Markable" trait,
+     *   Mark them as either completed or incomplete,
+     *    based on the outcome of the job
+     */
+    def markEvidence( f: ( Markable => Unit)) = {
+      goal.evidence.filter( _.isInstanceOf[DataOutput]).
+          map( _.asInstanceOf[DataOutput].getDataInstance(witness) ).
+          filter( _.isDefined).map( _.get ).
+           foreach( di => {
+             log.info(s" Check Markable !!! DataInstance ${di} with witness $witness ")
+             di  match {
+               case mk : Markable =>
+                   f(mk)
+               case _  =>
+                   log.info(" IS NOT MARKABLE !!!")
+             }          
+          })
+    }
+    
 
     def checkResults(result: Try[ExecutionResult]) = {
         if (result.isSuccess) {
             val execResult = result.get
             execResult.hdfsLogPath = logger.hdfsLogPath.toString
             if (execResult.isSuccess ) {
+                markEvidence( _.markCompleted )
                 messageSender ! new JobRunSuccess(execResult)
             } else {
+                markEvidence( _.markIncomplete)
                 messageSender ! new JobRunFailed(execResult)
             }
         } else {

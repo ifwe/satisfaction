@@ -101,6 +101,18 @@ case class Goal(
 
 object Goal {
   
+  
+    /**
+     *  Copy Constructor 
+     */
+    def apply( g : Goal )( implicit track : Track) : Goal = {
+       new Goal( g.name,
+    		   	g.satisfier,
+    		   	g.variables,
+    		   	g.dependencies,
+    		   	g.evidence ) 
+    }
+
     /**
      *  Identify function for Witness mapping
      */
