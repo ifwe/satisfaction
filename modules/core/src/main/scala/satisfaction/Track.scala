@@ -152,12 +152,6 @@ case class Track(
        _trackPath /  "lib"
      }
    }
-
-   /*
-   	def lastPartitionDate(dt : DateTime, hour : ) : Tuple2[String, String] {
-   	  
-   	}
-   	*/
    	
     def getTrackProperties(witness: Witness): Witness = {
       println(s"YY ENTERED GETTRACKPROPERTIES")
