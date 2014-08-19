@@ -153,18 +153,40 @@ case class Track(
      }
    }
 
-   
+   /*
+   	def lastPartitionDate(dt : DateTime, hour : ) : Tuple2[String, String] {
+   	  
+   	}
+   	*/
+   	
     def getTrackProperties(witness: Witness): Witness = {
-      
+      println(s"YY ENTERED GETTRACKPROPERTIES")
          val YYYYMMDD = DateTimeFormat.forPattern("YYYYMMdd")
-    
+         val YYYYMMDDH = DateTimeFormat.forPattern("YYYYMMDDH")
+         val H = DateTimeFormat.forPattern("H")
+         
         var projProperties : Witness =  trackProperties
 
         ///// Some munging logic to translate between camel case 
         //// and  underscores
         ////   and to do some simple date logic
 
+       if (witness.contains(Variable("dt")) && witness.contains(Variable("hour"))) { 
+         println(s"YY has hour")
+
+         
+         var jodaDate = YYYYMMDD.parseDateTime(witness.get(Variable("dt")).get)
+         var jodaHour = (((witness.get(Variable("hour")).get.toInt -1) % 24 + 24) % 24)
+
+         projProperties = projProperties ++ Witness(
+             (Variable("lastPartitionHour") -> (if (jodaHour < 10) "0".concat(jodaHour.toString) else jodaHour.toString) ),
+             (Variable("lastPartitionDate") -> (if (jodaHour == 23) YYYYMMDD.print(jodaDate.minusDays(1)) else YYYYMMDD.print(jodaDate) ))
+         );
+       	}
+      
+      
         if (witness.contains(Variable("dt"))) {
+          println(s"YY has dt")
             //// convert to Date typed variables... 
             //// not just strings 
             var jodaDate = YYYYMMDD.parseDateTime(witness.get(Variable("dt")).get)
@@ -173,18 +195,17 @@ case class Track(
                 (Variable("yesterdayString") -> YYYYMMDD.print(jodaDate.minusDays(1))),
                 (Variable("prevdayString") -> YYYYMMDD.print(jodaDate.minusDays(2))),
                 (Variable("weekAgoString") -> YYYYMMDD.print(jodaDate.minusDays(7))),
-                (Variable("monthAgoString") -> YYYYMMDD.print(jodaDate.minusDays(30))));
+                (Variable("monthAgoString") -> YYYYMMDD.print(jodaDate.minusDays(30)))
+            );
 
             println(s" Adding Date variables ${dateVars.raw.mkString}")
             projProperties = projProperties ++ dateVars
             projProperties = projProperties.update(VariableAssignment("dateString", witness.get(Variable("dt")).get))
         }
-
+        
         projProperties ++ witness
 
     }
-
-
 }
 
 object Track {
