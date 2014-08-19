@@ -23,6 +23,7 @@ import org.apache.hadoop.hive.metastore.api.FieldSchema
 import org.apache.hadoop.hive.metastore.api.MetaException
 import scala.collection._
 import hdfs.Hdfs
+import org.apache.hadoop.hive.metastore.api.AlreadyExistsException
 
 
 /**
@@ -277,7 +278,8 @@ case class MetaStore(implicit val config: HiveConf)  extends Logging {
     }
 
     def getSpaceUsed(db: String, tblName: String): String = {
-        getTableMetaData(db, tblName, MetaDataProps.SPACE_USED.toString())
+      /// XXX 
+        getTableMetaData(db, tblName, MetaDataProps.SPACE_USED.toString()).get
     }
     
     
@@ -364,11 +366,6 @@ case class MetaStore(implicit val config: HiveConf)  extends Logging {
 
     def getPartition(db: String, tblName: String, partMap: Map[String, String]): Partition = {
         this.synchronized({
-         println(" METASTORE  -- Property dfs.client.failover.proxy.provider.dhdp2 = "  + config.get("dfs.client.failover.proxy.provider.dhdp2") );
-         info(" METASTORE  -- Property dfs.client.failover.proxy.provider.dhdp2 = "  + config.get("dfs.client.failover.proxy.provider.dhdp2") );
-         info(" METASTORE  CONF -- Property dfs.client.failover.proxy.provider.dhdp2 = "  + _hive.getConf().get("dfs.client.failover.proxy.provider.dhdp2") );
-         println(" METASTORE  CONF -- Property dfs.client.failover.proxy.provider.dhdp2 = "  + _hive.getConf().get("dfs.client.failover.proxy.provider.dhdp2") );
-
             val tbl = _hive.getTable(db, tblName)
             _hive.getPartition(tbl, partMap, false)
         })
@@ -377,8 +374,19 @@ case class MetaStore(implicit val config: HiveConf)  extends Logging {
     
     def addPartition(db: String, tblName: String, partMap: Map[String, String]): Partition = {
         this.synchronized({
-          val tbl = _hive.getTable( db, tblName)
-           _hive.createPartition( tbl, partMap)
+          try { 
+            val tbl = _hive.getTable( db, tblName)
+            _hive.createPartition( tbl, partMap)
+          } catch {
+            case alreadyExists : AlreadyExistsException => {
+              /// Handle race condition, if some other job tried to create partition
+              info(s" Race condition while trying to create partition on table $db $tblName ; Already Exists !!!")
+              getPartition( db, tblName, partMap )
+            } 
+            case unexpected : Throwable => {
+              throw unexpected
+            }
+          }
         })
     }
     
@@ -451,11 +459,15 @@ case class MetaStore(implicit val config: HiveConf)  extends Logging {
      *   Get the MetaData property on a table
      *
      */
-    def getTableMetaData(db: String, tblName: String, key: String) = {
+    def getTableMetaData(db: String, tblName: String, key: String) : Option[String] = {
         this.synchronized({
             val tbl = _hive.getTable(db, tblName)
             val map = tbl.getParameters
-            map.get(key)
+            if ( map.containsKey(key)  ) {
+              Some(map.get(key))
+            } else {
+              None
+            }
         })
     }
 
@@ -465,7 +477,13 @@ case class MetaStore(implicit val config: HiveConf)  extends Logging {
         })
     }
 
-    def setPartitionMetaData(part: Partition, key: String, md: String) = {
+    def getPartitionMetaData(part: Partition, key : String): Option[String] = {
+        this.synchronized ({
+            part.getParameters.toMap.get( key)
+        })
+    }
+
+    def setPartitionMetaData(part: Partition, key: String, md: String) : Unit = {
         this.synchronized({
             val map = part.getParameters
             map.put(key, md)
@@ -492,12 +510,6 @@ case class MetaStore(implicit val config: HiveConf)  extends Logging {
         }
     }
 
-    /**
-     *  Set MetaData for abstract outputs
-     */
-    def setOutputMetaData(dataOut: DataOutput): Unit = {
-
-    }
 
     /**
      *  Search the MetaStore to find all the views which depend upon a table

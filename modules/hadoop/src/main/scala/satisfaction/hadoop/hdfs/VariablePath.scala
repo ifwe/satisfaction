@@ -4,7 +4,7 @@ package hdfs
 
 import fs._
 
-case class VariablePath(pathTemplate: String)(implicit val hdfs : FileSystem, val track : Track)
+case class VariablePath(pathTemplate: String, checkMarked : Boolean , minSize : Long )(implicit val hdfs : FileSystem, val track : Track)
       extends DataOutput with Logging {
 
     def variables = {
@@ -14,7 +14,24 @@ case class VariablePath(pathTemplate: String)(implicit val hdfs : FileSystem, va
     def exists(witness: Witness): Boolean = {
         getPathForWitness(witness) match {
             case None       => false
-            case Some(path) =>  hdfs.exists(path)
+            case Some(path) => {
+               if(hdfs.exists(path) ) {
+                  val hdfsPath = new HdfsPath( path)
+                  if( checkMarked) {
+                    if ( ! hdfsPath.isMarkedCompleted ) {
+                      return false
+                    }
+                  }
+                  if( minSize > 0 ) {
+                    if ( hdfsPath.size < minSize) {
+                      return false
+                    }
+                  }
+                  true
+               } else {
+                 false
+               }
+            }
         }
     }
 
@@ -60,7 +77,17 @@ object VariablePath {
           sb.append("}")
       })
       
-      new VariablePath( sb.toString() )
+      new VariablePath( sb.toString(), false, 0 )
+    }
+
+    def apply( strPath : Path )
+         ( implicit hdfs: FileSystem, track : Track): VariablePath = {
+      new VariablePath( strPath.toString, false, 0 )
+    }
+
+    def apply( str : String )
+         ( implicit hdfs: FileSystem, track : Track): VariablePath = {
+      new VariablePath( str, false, 0 )
     }
   
 }

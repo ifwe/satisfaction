@@ -251,7 +251,7 @@ class HiveLocalDriver( val hiveConf : HiveConf = Config.config)
 
 object HiveDriver extends Logging {
 
-  def apply(hiveConf: HiveConf): HiveDriver = {
+  def apply(hiveConf: HiveConf)(implicit track : Track): HiveDriver = {
     try {
       val parentLoader = if (Thread.currentThread.getContextClassLoader != null) {
         Thread.currentThread.getContextClassLoader
@@ -266,9 +266,11 @@ object HiveDriver extends Logging {
         hiveConf.setClassLoader(urlClassLoader)
       }
 
+      //// XXX Move to Scala reflection ...
       val localDriverClass: Class[HiveLocalDriver] = hiveConf.getClass("com.klout.satisfaction.hadoop.hive.HiveLocalDriver", classOf[HiveLocalDriver]).asInstanceOf[Class[HiveLocalDriver]]
       val constructor = localDriverClass.getConstructor(hiveConf.getClass())
       val hiveDriver = constructor.newInstance(hiveConf).asInstanceOf[HiveLocalDriver]
+      hiveDriver.track = track
 
       hiveDriver
 

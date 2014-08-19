@@ -11,9 +11,10 @@ import org.joda.time._
  *   which were probably created by a Hive query
  *   with dynamic partitioning
  */
+/// XXX Better name ??? HivePartitionGroup vs HivePartitinSet ????
 case class HivePartitionSet(
     val partitionSet: Set[HiveTablePartition])
-    extends DataInstance {
+    extends DataInstance with Markable {
 
     def size: Long = {
         partitionSet.map(_.size).sum
@@ -34,12 +35,30 @@ case class HivePartitionSet(
         partitionSet.toSeq.head.lastModifiedTime
     }
 
-    def exists: Boolean = {
-        partitionSet.forall( _.exists)
-    }
 
     def lastModifiedBy: String = {
         partitionSet.toSeq.head.lastModifiedBy
     }
+    
+    /**
+     *  Mark that the producer of this
+     *   DataInstance fully completed .
+     */
+    def markCompleted : Unit = {
+      partitionSet.foreach( _.markCompleted)
+    }
+    
+    def markIncomplete : Unit = {
+        partitionSet.foreach( _.markIncomplete ) 
+    }
+    
+    /**
+     *  Check that the Data instance has been Marked completed,
+     *    according to the test of the markable.
+     */
+    def isMarkedCompleted : Boolean = {
+       partitionSet.forall( _.isMarkedCompleted ) 
+    }
+  
 
 }

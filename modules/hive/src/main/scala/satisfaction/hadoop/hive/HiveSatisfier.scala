@@ -7,12 +7,18 @@ import org.joda.time.Days
 import org.joda.time.DateTime
 import scala.io.Source
 import org.apache.hadoop.hive.ql.metadata.HiveException
+import org.apache.hadoop.hive.conf.HiveConf
 
-case class HiveSatisfier(queryResource: String, driver: HiveDriver)( implicit val track : Track) extends Satisfier with MetricsProducing with Logging {
+case class HiveSatisfier(val queryResource: String, val conf : HiveConf)( implicit val track : Track) extends Satisfier with MetricsProducing with Logging {
 
    override def name = s"Hive( $queryResource )" 
   
    val execResult = new ExecutionResult( queryTemplate, new DateTime)
+   
+   lazy val driver : HiveDriver = {
+	   HiveDriver(conf)
+   } 
+   
 
     def executeMultiple(hql: String): Boolean = {
         val multipleQueries = hql.split(";")

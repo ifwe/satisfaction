@@ -27,12 +27,17 @@ class NotificationAgent( notifier : Notifier )(implicit val track : Track ) exte
         case GoalFailure(goalStatus) =>
           if( notified.notifyOnFailure)
             notify( goalStatus)
+         /// Continue to listen on failure, 
+         /// in case there are retries ...
         case GoalSuccess(goalStatus) =>
           if( notified.notifyOnSuccess)
             notify( goalStatus)
+          /// No need to notify if job was successful ...
+          stop()
      } 
+
      
-     def notify( gs : GoalStatus ) {
+     def notify( gs : GoalStatus ) = {
        log.info(s" Notifying result of ${gs.goalName} is ${gs.state} ")
        //// XXXX Do retry logic for notification errors ...
        //// XXX If email is temporarily down because of network issues,
@@ -44,7 +49,9 @@ class NotificationAgent( notifier : Notifier )(implicit val track : Track ) exte
            log.error("Unexpected error while notifying job status ", unexpected)
          } 
        }
-       //// Set up for just one notification 
+     }
+     
+     def stop() = {
         context.stop( context.self)
      }
 

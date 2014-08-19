@@ -15,6 +15,7 @@ import hive.ms.MetaStore
 import satisfaction.engine.actors.GoalState
 
 
+/**
 @RunWith(classOf[JUnitRunner])
 class DistCpGoalSpec extends Specification {
   
@@ -41,3 +42,4 @@ class DistCpGoalSpec extends Specification {
 
     }
 }
+**/
