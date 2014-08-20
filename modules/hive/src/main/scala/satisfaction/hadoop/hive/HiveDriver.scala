@@ -59,7 +59,7 @@ trait HiveDriver {
  */
 
 class HiveLocalDriver( val hiveConf : HiveConf = Config.config)
-      extends HiveDriver with MetricsProducing with Logging {
+      extends HiveDriver with MetricsProducing with Progressable with Logging {
   
     implicit var track : Track = null
   
@@ -77,6 +77,11 @@ class HiveLocalDriver( val hiveConf : HiveConf = Config.config)
         info(" RPC port is " + shims.getJobLauncherRpcAddress(hiveConf))
         info(" Shims version is " + shims.getClass)
         dr
+    }
+    
+    
+    override lazy val progressCounter : ProgressCounter  = {
+        new HiveProgress( driver.getPlan() ) 
     }
 
 

@@ -17,7 +17,27 @@ import org.apache.hadoop.conf.Configuration
 
 class HadoopJobProgress( val hadoopJob : RunningJob ) extends ProgressCounter {
   
-  
+    /**
+     *  Use the name of the the job 
+     */
+    override def taskName = {
+        hadoopJob.getJobName 
+    } 
+    
+    
+    /**
+     *  For single map-reduce job, say there are no 
+     *   sub tasks 
+     *   XXX Define subtasks as Map/Sort/Reduce
+     */
+    override def subtasks = List.empty
+    
+    
+    /**
+     *   TODO -- define in terms of Map/Reduce
+     */
+    override def runningSubTasks = Set.empty
+    
     /**
      *  Define the total progress as the 
      *    mapper progress*0.45 + reducer progress *0.45
@@ -30,7 +50,7 @@ class HadoopJobProgress( val hadoopJob : RunningJob ) extends ProgressCounter {
      *    and we don't say 100% right after reducers have completed.
      */
     @Override
-    def progressPercent = {
+    override def progressPercent = {
         hadoopJob.mapProgress*0.45 + hadoopJob.reduceProgress*0.45 + 
         hadoopJob.setupProgress*0.05 + hadoopJob.cleanupProgress*0.05
     }
@@ -44,6 +64,10 @@ class HadoopJobProgress( val hadoopJob : RunningJob ) extends ProgressCounter {
       /// XXX TODO.. filter out only the counters we care about 
       /// XXX Make scala wrapper around hadoop counters ...
        hadoopJob.getCounters.write( new java.io.DataOutputStream(System.out))
+       
+       ///
+      /// XXX Add Task Completion Events ...
+       
        val counters = hadoopJob.getCounters
        Set( ProgressUnit( counters.getCounter( MAP_INPUT_RECORDS) , "Map Input Records") ,
             ProgressUnit( counters.getCounter( MAP_OUTPUT_RECORDS), "Map Output Records") ,

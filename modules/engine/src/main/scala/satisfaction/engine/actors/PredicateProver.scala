@@ -2,7 +2,7 @@ package satisfaction
 package engine
 package actors
 
-import satisfaction.engine.actors.GoalStatus._
+import GoalStatus._
 import akka.actor.Actor
 import akka.actor.ActorLogging
 import akka.actor.ActorRef
@@ -254,6 +254,13 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
                        this.jobRunner = context.system.actorOf((jobRunActor), "Satisfier_" + ProofEngine.getActorName(goal, witness))
                     }
                     jobRunner ! Satisfy
+                    satisfier match {
+                      case progressable : Progressable =>
+                        log.info(s" Grabbing Progress for current satisfier for $goal.name -- progress $progressable.progressCounter ")
+                       this.status._progressCounter = Some(progressable.progressCounter)
+                      case _ =>
+                        log.info(s" Unable to determine progress for goal $goal.name ")
+                    }
                 case None =>
                     if( this.jobRunner == null) {
                        val jobRunActor = Props(new DefaultGoalSatisfier(

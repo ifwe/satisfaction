@@ -14,6 +14,8 @@ import scala.concurrent.ExecutionContext
 import akka.util.Timeout
 import satisfaction.track.TrackFactory
 import satisfaction.track.TrackHistory
+import satisfaction.notifier.Notified
+import satisfaction.retry.Retryable
 
 
 /**
@@ -63,6 +65,44 @@ class ProverFactory extends Actor with ActorLogging {
        true
     }
     
+    
+    def pimpMyActor( track : Track, goal : Goal, witness : Witness)  = {
+       //// want to be able to add "plugins" around the prover actor         
+      //// So that we can do more complex logic around it
+       track match {
+           case  notified : Notified => {
+             implicit val track : Track = goal.track
+              log.info(s" Setting up notification for goal ${goal.name} and witness " )
+              val notifierAgent : ActorRef = context.system.actorOf(Props(new NotificationAgent(notified.notifier)))
+              addListener( goal.name, witness, notifierAgent)    
+           }
+           case _  => {
+             log.info( "No Notification setup for goal ${goalName} ")
+           }
+      }
+      goal match {
+        case retryable : Retryable => {
+           log.info(s" Goal ${goal.name} is retryable ; creating RetryAgent to listen to status ")
+           val retryAgent : ActorRef = context.system.actorOf(Props(new RetryAgent(retryable)(track)))
+           addListener( goal.name, witness, retryAgent)    
+        }
+        case _  => {
+          log.info( "No Retry setup for goal ${goalName} ")
+        }
+      }
+      if( trackHistory != null) {
+                  
+      }
+        
+    }
+    
+    def addListener( goalName : String, witness :  Witness, actorRef: ActorRef ) = {
+        val actorTuple = (goalName, witness)
+        val actorTupleName = ProofEngine.getActorName(goalName, witness)
+      
+        listenerMap.get(actorTupleName).get.add( actorRef)
+    }
+    
     def receive = {
         case GetActor(track, goal, witnessArg) =>
             val witness = witnessArg.filter( goal.variables.toSet)
@@ -88,6 +128,9 @@ class ProverFactory extends Actor with ActorLogging {
                 val listenerList = mutable.Set[ActorRef]()
                 listenerList += sender
                 listenerMap.put(actorTupleName, listenerList)
+                
+                
+                pimpMyActor( track, goal, witnessArg)
                 sender ! actorRef
             }
         case ReleaseActor(goalName, witnessArg) =>
@@ -114,10 +157,7 @@ class ProverFactory extends Actor with ActorLogging {
             val actorTupleName = ProofEngine.getActorName(goal, witness)
             sender ! listenerMap.get(actorTupleName).get
         case AddListener(goal, witnessArg, listener) =>
-            val witness = witnessArg
-            val actorTuple = (goal, witness)
-            val actorTupleName = ProofEngine.getActorName(goal, witness)
-            listenerMap.get(actorTupleName).get.add( listener)
+            addListener( goal, witnessArg, listener)
         case GoalFailure(goalStatus) =>
             publishMessageToListeners(goalStatus, new GoalFailure(goalStatus))
         case GoalSuccess(goalStatus) =>

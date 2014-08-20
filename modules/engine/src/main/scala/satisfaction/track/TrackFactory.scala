@@ -5,6 +5,7 @@ import collection.JavaConversions._
 import fs._
 import java.util.Properties
 import satisfaction.Recurring
+import satisfaction.track.TrackFactory.MajorMinorPatch
 
 
 /**
@@ -310,10 +311,9 @@ case class TrackFactory(val trackFS : FileSystem,
    }
    
    
+   
    def versionSort( lft : TrackDescriptor , rt : TrackDescriptor ) : Boolean = {
-     //// XXX  parse to get integral value 
-     /// of the version string
-       lft.version.compareTo( rt.version) > 0
+       MajorMinorPatch( lft.version )  < MajorMinorPatch( rt.version)
    }
    
    def getTrack( trackDesc : TrackDescriptor ) : Option[Track] = {
@@ -342,5 +342,52 @@ case class TrackFactory(val trackFS : FileSystem,
 
 object TrackFactory {
     class  TracksUnavailableException( reason : Throwable) extends RuntimeException(reason)
+    
+
+    /**
+     *  Class representing a Track Version number
+     *     XXX Use in trackDescriptor
+     */    
+    case class MajorMinorPatch( val majorVersion : Int, val minorVersion : Int , val patchNumber :Int )  extends Ordered[MajorMinorPatch] {
+        override def toString() = {
+           Seq( majorVersion, minorVersion, patchNumber).mkString(".")
+        }
+        
+        override def compare( that : MajorMinorPatch) : Int = {
+            val mj = majorVersion - that.majorVersion
+            if( mj == 0) {
+               val mn = minorVersion - that.minorVersion 
+               if( mn == 0) {
+                  patchNumber - that.patchNumber 
+               } else {
+                 mn
+               }
+            } else {
+              mj
+            }
+        }
+          
+    }
+    
+    object MajorMinorPatch {
+      
+        def apply(ver : String) = {
+           var _major, _minor, _patch : Int = 0
+           val verSplit = if(ver.startsWith("version_")) {
+              ver.substring("version_".length).split('.')
+           } else {  ver.split('.')  }
+           if( verSplit.size > 1) {
+             _major = verSplit( 0).toInt
+             _minor = verSplit( 1).toInt
+             if( verSplit.size > 2) {
+              _patch = verSplit(2).toInt
+             } 
+           } else {
+             _major = ver.toInt
+           }
+           new MajorMinorPatch( _major, _minor,_patch)
+        }
+    }
+    
   
 }

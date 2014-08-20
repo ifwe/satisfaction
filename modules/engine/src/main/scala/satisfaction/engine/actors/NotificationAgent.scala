@@ -1,10 +1,14 @@
-package satisfaction.engine.actors
+package satisfaction
+package engine
+package actors
 
 import satisfaction.notifier.Notifier
 import akka.actor.Actor
 import akka.actor.ActorLogging
 import satisfaction.Track
 import satisfaction.notifier.Notified
+import GoalStatus._
+
 
 /**
  *   First pass at notification 

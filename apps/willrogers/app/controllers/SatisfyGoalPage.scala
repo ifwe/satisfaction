@@ -109,9 +109,17 @@ object SatisfyGoalPage extends Controller with Logging {
         pg.divWidth = 2000
         pg.divHeight = 500
         val nodeMap: mutable.Map[String, PlumbGraph.NodeDiv] = mutable.Map()
+        
+        val progTracker = status.getProgress
+        val pctStr = progTracker match {
+          case Some(progress) => {
+            f" ${progress.progressPercent*100%2.2f} %%"
+          }
+          case None => { "" }
+        }
 
         val topNodeDiv = new PlumbGraph.NodeDiv(
-            divContent = status.goalName
+            divContent = status.goalName + pctStr
         )
         topNodeDiv.width = 10
         topNodeDiv.height = 10
@@ -264,6 +272,23 @@ object SatisfyGoalPage extends Controller with Logging {
       val goalLogMap = LogWrapper.getGoalLogMap( trackName)
       
       Ok(views.html.loghistory(trackName, goalLogMap))
+    }
+    
+    
+    def goalProgress(trackName : String, goalName: String) = Action {
+      
+       getStatusForGoal( trackName, goalName )  match {
+          case Some(status) => 
+             status.getProgress match {
+               case Some(progress) =>
+                 Ok(views.html.goalprogress(trackName, goalName, status.witness, progress ))
+               case None =>
+                 NotFound(s"Dude, can't determine progress for the goal ${goalName} in Track ${trackName}")
+             }
+            case None => 
+              println( " NO STATUS FOUND -- DISPlaying history ")
+              NotFound(s"Dude, we can't find the goal ${goalName} in Track ${trackName}")
+       }
     }
 
     def getStatusForGoal(trackName: String, goalName: String): Option[GoalStatus] = {

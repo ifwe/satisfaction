@@ -1,6 +1,4 @@
 package satisfaction
-package engine
-package actors
 
 import org.joda.time.DateTime
 
@@ -15,8 +13,16 @@ import org.joda.time.DateTime
 
 object GoalState extends Enumeration {
     type State = Value
-    val Unstarted, AlreadySatisfied, WaitingOnDependencies, Running, DependencyFailed, Failed, Success, Aborted = Value
-
+    val Unstarted, 
+    	AlreadySatisfied, 
+    	WaitingOnDependencies,
+    	Running, 
+    	DependencyFailed, 
+    	Failed, 
+    	Success, 
+    	Aborted,
+    	Queued, 
+    	Forced = Value
 }
 
 case class GoalStatus(track : TrackDescriptor, goalName: String, witness: Witness) {
@@ -25,6 +31,8 @@ case class GoalStatus(track : TrackDescriptor, goalName: String, witness: Witnes
     var state: GoalState.Value = GoalState.Unstarted
 
     var dependencyStatus = scala.collection.mutable.Map[String, GoalStatus]()
+    
+    var _progressCounter : Option[ProgressCounter] = None
 
     val timeStarted: DateTime = DateTime.now
     var timeFinished: DateTime = null
@@ -39,6 +47,13 @@ case class GoalStatus(track : TrackDescriptor, goalName: String, witness: Witnes
     
     def numReceivedStatuses = {
        dependencyStatus.size
+    }
+    
+    /**
+     *  Return the current progress
+     */
+    def getProgress : Option[ProgressCounter] = {
+        _progressCounter      
     }
     
     def canProceed = {

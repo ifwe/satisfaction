@@ -7,6 +7,7 @@ import org.joda.time.format.PeriodFormatter
 import org.joda.time.Duration
 import org.joda.time.Partial
 import org.joda.time.DateTimeFieldType
+import org.joda.time.LocalTime
 
 /**
  *   A Schedulable is a trait which can be attached to Trait
@@ -49,7 +50,8 @@ abstract trait Recurring  extends Schedulable {
       *  Convenience function to generate partial 
       *    for minutes past the hour
       */
-     def minutesOfHour( minutes : Int) = {  new Partial( Array[DateTimeFieldType]( DateTimeFieldType.minuteOfHour()), Array[Int]( minutes) ) }
+     def minuteOfHour( minutes : Int) : Option[ReadablePartial] = { Some( new Partial( Array[DateTimeFieldType]( DateTimeFieldType.minuteOfHour()), Array[Int]( minutes) ) ) }
+     def timeOfDay(  hourOfDay : Int , minuteOfHour : Int) : Option[ReadablePartial] = { Some( new LocalTime(hourOfDay, minuteOfHour)  ) }
 
 }
 

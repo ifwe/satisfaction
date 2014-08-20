@@ -2,8 +2,7 @@ package satisfaction
 package track
 
 import org.joda.time._
-import engine.actors.GoalStatus
-import engine.actors.GoalState
+import GoalStatus._
 
 /**
  *  Interface to a persistent DB implementation which will store 
