@@ -313,7 +313,7 @@ case class TrackFactory(val trackFS : FileSystem,
    
    
    def versionSort( lft : TrackDescriptor , rt : TrackDescriptor ) : Boolean = {
-       MajorMinorPatch( lft.version )  < MajorMinorPatch( rt.version)
+       MajorMinorPatch( lft.version )  > MajorMinorPatch( rt.version)
    }
    
    def getTrack( trackDesc : TrackDescriptor ) : Option[Track] = {
