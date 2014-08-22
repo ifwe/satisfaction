@@ -8,7 +8,6 @@ import org.joda.time.Period
 import satisfaction.fs._
 import satisfaction.track
 import org.joda.time._
-import satisfaction.engine.actors.GoalState
 import org.joda.time.format.DateTimeFormatter
 import java.text.SimpleDateFormat
 import Witness2Json._

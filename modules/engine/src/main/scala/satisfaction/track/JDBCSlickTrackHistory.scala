@@ -2,8 +2,7 @@ package satisfaction
 package track
 
 import org.joda.time._
-import engine.actors.GoalStatus
-import engine.actors.GoalState
+import GoalStatus._
 import scala.slick.driver.H2Driver.simple._
 import scala.slick.jdbc.{GetResult, StaticQuery => Q}
 import scala.slick.jdbc.JdbcBackend.Database

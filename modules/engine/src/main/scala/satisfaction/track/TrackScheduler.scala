@@ -13,11 +13,10 @@ import akka.pattern.ask
 import akka.util.Timeout
 import engine.actors.ProofEngine
 import fs.FileSystem
-import satisfaction.engine.actors.GoalStatus
+import GoalStatus._
 import akka.dispatch.OnSuccess
 import concurrent._
 import ExecutionContext.Implicits.global
-import satisfaction.engine.actors.GoalState
 import scala.util.Try
 import scala.util.Success
 import scala.util.Failure

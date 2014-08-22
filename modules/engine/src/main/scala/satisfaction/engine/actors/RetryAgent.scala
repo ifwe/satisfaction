@@ -18,7 +18,7 @@ import ExecutionContext.Implicits.global
  *    and sends a Retry message
  */
 class RetryAgent(  val retryable : Retryable )
-      (implicit val track : Track, implicit val akkaSystem : ActorSystem) extends Actor with ActorLogging {
+      (implicit val track : Track) extends Actor with ActorLogging {
  
       
      def receive = {
@@ -29,7 +29,7 @@ class RetryAgent(  val retryable : Retryable )
             log.warning(s" Retrying ${goalStatus.goalName} in ${waitTime} ") 
             retryable.currentRetry += 1
             //// Use akka system to schedule
-            akkaSystem.scheduler.scheduleOnce( waitTime ) {
+            context.system.scheduler.scheduleOnce( waitTime ) {
                log.warning(s" Sending RestartJob to ${goalStatus.goalName} ") 
                sender ! RestartJob 
             }

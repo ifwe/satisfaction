@@ -2,7 +2,7 @@ package satisfaction
 package engine
 
 import actors.ProofEngine
-import actors.GoalStatus
+import GoalStatus._
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 import scala.concurrent.duration._

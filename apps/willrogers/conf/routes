@@ -20,6 +20,7 @@ POST     /addmetadata/:db/:tblName                   willrogers.controllers.Meta
 GET     /satisfygoal/:projName/:goalName                   willrogers.controllers.SatisfyGoalPage.showSatisfyForm(projName: String, goalName: String)
 POST     /satisfygoal/:projName/:goalName                   willrogers.controllers.SatisfyGoalPage.satisfyGoalAction(projName: String, goalName: String)
 GET     /goalstatus/:projName/:goalName                   willrogers.controllers.SatisfyGoalPage.goalStatus(projName: String, goalName: String)
+GET     /goalprogress/:projName/:goalName                   willrogers.controllers.SatisfyGoalPage.goalProgress(projName: String, goalName: String)
 GET     /schedules/                   willrogers.controllers.ScheduleTrackPage.showSchedulesAction()
 GET     /listfiles/:trackName                  willrogers.controllers.EditPage.listFiles(trackName: String)
 GET     /editfile/:trackName/:fileName          willrogers.controllers.EditPage.editFile(trackName: String, fileName: String)

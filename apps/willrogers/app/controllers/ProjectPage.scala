@@ -11,7 +11,6 @@ import satisfaction.Goal
 import models.PlumbGraph
 import models._
 import collection._
-import satisfaction.engine.actors.GoalStatus
 import satisfaction.track._
 import satisfaction.track.TrackFactory._
 import satisfaction.TrackDescriptor

@@ -36,6 +36,9 @@ class ProofEngine( val trackHistoryOpt : Option[TrackHistory] = None) extends  s
     
     private def startGoal( goal : Goal , witness : Witness) : String = {
       ///// Create a notifier if the track specifies a notifier
+      //// Create All Notifiers at ProverFactory layer ...
+
+      /***
       goal.track match {
         case  notified : Notified => {
            implicit val track : Track = goal.track
@@ -59,10 +62,13 @@ class ProofEngine( val trackHistoryOpt : Option[TrackHistory] = None) extends  s
         }
         
       }
+      * 
+      */
       trackHistoryOpt match {
         case Some(trackHistory)  => {
             //// XXX Record differently if it was top level goal
             ////   versus sub goal runs
+          /// XXX Move to proverFactory pimpMyActor
            info(s" Track History start Run  ${goal.name} ${witness} " )
         	trackHistory.startRun(goal.track.descriptor, goal.name, witness, new DateTime)
         }
@@ -106,7 +112,7 @@ class ProofEngine( val trackHistoryOpt : Option[TrackHistory] = None) extends  s
                 f.goalStatus
         }
     }
-
+    
     def satisfyGoal( goal: Goal, witness: Witness): Future[GoalStatus] = {
         future {
             val f = getProver(goal, witness) ? Satisfy
@@ -176,6 +182,7 @@ class ProofEngine( val trackHistoryOpt : Option[TrackHistory] = None) extends  s
     def isSatisfied( goal: Goal, witness: Witness): Boolean = {
         getStatus( goal, witness).state == GoalState.AlreadySatisfied
     }
+    
 
     /**
      *  Status should return immediately

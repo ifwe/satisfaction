@@ -9,7 +9,8 @@ import scala.io.Source
 import org.apache.hadoop.hive.ql.metadata.HiveException
 import org.apache.hadoop.hive.conf.HiveConf
 
-case class HiveSatisfier(val queryResource: String, val conf : HiveConf)( implicit val track : Track) extends Satisfier with MetricsProducing with Logging {
+case class HiveSatisfier(val queryResource: String, val conf : HiveConf)( implicit val track : Track) 
+      extends Satisfier with MetricsProducing with Progressable with Logging {
 
    override def name = s"Hive( $queryResource )" 
   
@@ -35,6 +36,22 @@ case class HiveSatisfier(val queryResource: String, val conf : HiveConf)( implic
         true
     }
     
+    
+    
+    
+    /**
+     *  Return the progressCounter from the HiveLocalDriver
+     *   
+     *  XXX Split up into multiple query and determine approximate runtime
+     *    from track history
+     *  XXX For now progress of currently running query is returned ...
+     */
+    def progressCounter : ProgressCounter = {
+       driver match {
+         case pr : Progressable => pr.progressCounter
+         case _  => { throw new RuntimeException(" HiveDriver needs to implement Progressable !!! ") }
+      }
+    }
     
     def queryTemplate : String = {
        if( queryResource.endsWith(".hql"))  { 
