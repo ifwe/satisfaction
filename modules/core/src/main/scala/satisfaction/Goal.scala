@@ -97,8 +97,7 @@ case class Goal(
       this
     }
     
-}
-
+} 
 object Goal {
   
   

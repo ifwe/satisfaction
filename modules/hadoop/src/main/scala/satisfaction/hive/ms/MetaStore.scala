@@ -447,7 +447,8 @@ case class MetaStore(implicit val config: HiveConf)  extends Logging {
      *
      */
     def setTableMetaData(db: String, tblName: String, key: String, md: String) = {
-        this.synchronized({
+      println(s"YY: entered SetTableMetaData ".concat(key))
+      this.synchronized({
             val tbl = _hive.getTable(db, tblName)
             val map = tbl.getParameters()
             map.put(key, md)
@@ -488,7 +489,10 @@ case class MetaStore(implicit val config: HiveConf)  extends Logging {
             val map = part.getParameters
             map.put(key, md)
             val tblName: String = part.getTable().getTableName()
-            _hive.alterPartition(tblName, part)
+            
+                  println(s"YYYYY setPartitionMetaData tblName=$tblName" )
+            //_hive.alterPartition(tblName, part)
+                  _hive.alterPartition(part.getTable().getDbName(), tblName, part)
         })
     }
 

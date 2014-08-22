@@ -166,21 +166,20 @@ case class Track(
         ////   and to do some simple date logic
 
        if (witness.contains(Variable("dt")) && witness.contains(Variable("hour"))) { 
-         println(s"YY has hour")
 
-         
          var jodaDate = YYYYMMDD.parseDateTime(witness.get(Variable("dt")).get)
          var jodaHour = (((witness.get(Variable("hour")).get.toInt -1) % 24 + 24) % 24)
-
+         var twoHoursAgo = (((witness.get(Variable("hour")).get.toInt -2) % 24 + 24) % 24)
+         
          projProperties = projProperties ++ Witness(
-             (Variable("lastPartitionHour") -> (if (jodaHour < 10) "0".concat(jodaHour.toString) else jodaHour.toString) ),
-             (Variable("lastPartitionDate") -> (if (jodaHour == 23) YYYYMMDD.print(jodaDate.minusDays(1)) else YYYYMMDD.print(jodaDate) ))
+             (Variable("lastPartitionHour") -> ( if (jodaHour < 10) "0".concat(jodaHour.toString) else jodaHour.toString )),
+             (Variable("lastPartitionDate") -> ( if (jodaHour == 23) YYYYMMDD.print(jodaDate.minusDays(1)) else YYYYMMDD.print(jodaDate) )),
+             (Variable("TwoPartitionAgoHour") -> ( if (twoHoursAgo < 10) "0".concat(twoHoursAgo.toString) else twoHoursAgo.toString )),
+             (Variable("TwoPartitionAgoDate") -> ( if (twoHoursAgo == 23) YYYYMMDD.print(jodaDate.minusDays(1)) else YYYYMMDD.print(jodaDate) ))
          );
        	}
       
-      
         if (witness.contains(Variable("dt"))) {
-          println(s"YY has dt")
             //// convert to Date typed variables... 
             //// not just strings 
             var jodaDate = YYYYMMDD.parseDateTime(witness.get(Variable("dt")).get)
