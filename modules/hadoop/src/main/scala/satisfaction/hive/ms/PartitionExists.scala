@@ -25,6 +25,7 @@ case class PartitionExistsSatisfier(
     override def satisfy(subst: Witness): ExecutionResult = robustly {
         w = subst ++ extraAssignments
         val part = table.addPartition(w)
+        part.markCompleted
         info(" Added Partition " + part )
         true
     }
@@ -62,9 +63,8 @@ object PartitionExists {
          val goal = new Goal( name= s" Partition Exists ${hiveTable.tblName} $extraAssignments",
                satisfier=Some(partitionCreator),
                variables= hiveTable.variables.filter( ! extraAssignments.variables.contains(_) )
-           ).addEvidence( partitionCreator).addWitnessRule( w => { val newW =  w ++ extraAssignments;
-               println(s"GGGG New Witness is $newW  extra = $extraAssignments ")
-               newW } , DataDependency(dataPath)) 
+           ).addEvidence( partitionCreator).addWitnessRule( w => {  w ++ extraAssignments }
+                , DataDependency(dataPath)) 
          goal
       }
   
