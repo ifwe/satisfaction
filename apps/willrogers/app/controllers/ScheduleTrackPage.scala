@@ -39,8 +39,8 @@ object ScheduleTrackPage extends Controller {
    
    def showSchedulesAction() = Action { 
     	 val scList = scheduler.getScheduledTracks
-       ///val tdList = trackFactory.getAllTracks.diff(scList)
-    	 val tdList = Seq()
+    	 val tdList = trackFactory.getAllTracks
+    	 //val tdList = Seq()
     
      	Ok(views.html.scheduletrack(tdList, scList.toSeq))
    }
@@ -58,7 +58,6 @@ object ScheduleTrackPage extends Controller {
          "stoppable" -> text
          )
    }
-   
    def scheduleTrack (trackName: String, forUser: String, version: String) = Action { implicit request =>
      
      
