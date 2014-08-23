@@ -28,8 +28,8 @@
      <td>@gs.state</td>
      <td>@HtmlUtil.formatWitness( gs.witness )</td>
      <td>@HtmlUtil.formatDate( gs.timeStarted )</td>
-     <td> <button id="logWindowButton" onClick="window.open('/logwindow/@gs.track.trackName/@gs.goalName/@{HtmlUtil.witnessPath(gs.witness)}')">Show Log</button></td>
-     <td> <button id="abortButton" onClick="window.location.href='/abort/@gs.track.trackName/@gs.goalName/@{HtmlUtil.witnessPath(gs.witness)}'">Abort</button></td>
+     <td> <button id="logWindowButton" onClick="window.open('/logwindow/@helper.urlEncode(gs.track.trackName)/@helper.urlEncode(gs.goalName)/@helper.urlEncode(HtmlUtil.witnessPath(gs.witness))')">Show Log</button></td>
+     <td> <button id="abortButton" onClick="window.location.href='/abort/@helper.urlEncode(gs.track.trackName)/@helper.urlEncode(gs.goalName)/@helper.urlEncode(HtmlUtil.witnessPath(gs.witness))'">Abort</button></td>
      </tr>
   }
    </table>
