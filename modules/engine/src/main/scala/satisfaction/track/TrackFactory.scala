@@ -237,8 +237,8 @@ case class TrackFactory(val trackFS : FileSystem,
    }
    
    def trackClassLoader( jarPath: Path) : ClassLoader = {
-      val urlClassloader = new java.net.URLClassLoader(jarURLS( jarPath), this.getClass.getClassLoader)
-      Thread.currentThread.setContextClassLoader(urlClassloader)
+      ///val urlClassloader = new java.net.URLClassLoader(jarURLS( jarPath), this.getClass.getClassLoader)
+      val urlClassloader = new java.net.URLClassLoader(jarURLS( jarPath))
       
       urlClassloader.getURLs.foreach( earl => {
          System.out.println(s" using jar URL $earl ")

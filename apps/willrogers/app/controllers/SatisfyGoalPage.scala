@@ -28,10 +28,7 @@ import fs._
 object SatisfyGoalPage extends Controller with Logging {
     val proofEngine : ProofEngine = Global.proofEngine
 
-    def satisfyGoalAction(trackNameNC: String, goalNameNC: String) = Action { implicit request =>
-        val trackName =  trackNameNC.replace('+',' ')
-        ///val goalName = URLDecoder.decode( goalNameNC)
-        val goalName =  goalNameNC.replace('+',' ')
+    def satisfyGoalAction(trackName: String, goalName: String) = Action { implicit request =>
         info(s" Satisfying Goal  $trackName $goalName")
         //// Can't use standard Play Form object ...
         ////  because  witness can have different variables
@@ -44,7 +41,7 @@ object SatisfyGoalPage extends Controller with Logging {
                         val status: GoalStatus = this.satisfyGoal(goalTuple._1, goalTuple._2, witness)
                         println(" Got Goal Stqtus = " + status.state)
 
-                        Redirect(s"/goalstatus/$trackNameNC/$goalNameNC")
+                        Redirect(s"/goalstatus/$trackName/$goalName")
                     case Left(errorMessages) =>
                         /// Bring him back to the first page
                         val pg = ProjectPage.getFullPlumbGraphForGoal(goalTuple._2)
@@ -66,7 +63,7 @@ object SatisfyGoalPage extends Controller with Logging {
     
 
     def showSatisfyForm(trackName: String, goalName: String) = Action {
-        val goal = getTrackGoalByName(trackName, goalName.replace('+',' '))
+        val goal = getTrackGoalByName(trackName, goalName)
         goal match {
             case Some(tuple) =>
                 ///val pg = ProjectPage.getPlumbGraphForGoal(goal.get)
@@ -77,9 +74,7 @@ object SatisfyGoalPage extends Controller with Logging {
         }
     }
 
-    def goalStatus(trackNameNC: String, goalNameNC: String) = Action {
-        val trackName = trackNameNC.replace('+', ' ')
-        val goalName = goalNameNC.replace('+', ' ')
+    def goalStatus(trackName: String, goalName: String) = Action {
         println(s" GOAL STATUS $trackName :: $goalName ")
         getStatusForGoal(trackName, goalName) match {
             case Some(status) =>

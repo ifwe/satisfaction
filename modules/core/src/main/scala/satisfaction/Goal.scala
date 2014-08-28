@@ -3,6 +3,7 @@ package satisfaction
 import collection._
 import org.joda.time.format.DateTimeFormat
 import fs._
+import satisfaction.Satisfier
 
 case class Goal(
     val name: String,
@@ -286,5 +287,21 @@ object Goal {
        fromWitness ++ constWitness
    }
     
+   
+   /**
+    *  Convenience method for running arbitrary blocks of code
+    */
+   def RunThis( runName: String,  codeBlock : (Witness=> Boolean) )(implicit track : Track) : Goal = {
+     val runThisSatisfier= new Satisfier {
+         override def name = runName
+         override def satisfy( w : Witness) = robustly { codeBlock( w) }
+         override def abort() = {  null } 
+     }
+     
+     new Goal( name = runName,
+               satisfier = Some(runThisSatisfier)
+          ) (  track )
+     
+   }
     
 }

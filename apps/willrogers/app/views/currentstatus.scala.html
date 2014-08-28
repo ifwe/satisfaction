@@ -82,9 +82,10 @@
     }
       </td>
      <td>@HtmlUtil.formatDate( gs.timeFinished )</td>
-     <td> <button id="logWindowButton" onClick="window.open('/logwindow/@gs.track.trackName/@gs.goalName/@{HtmlUtil.witnessPath(gs.witness)}')">Show Log</button></td>
+     <td> <button id="logWindowButton" onClick="window.open('/logwindow/@helper.urlEncode(gs.track.trackName)/@helper.urlEncode(gs.goalName)/@helper.urlEncode(HtmlUtil.witnessPath(gs.witness))')">Show Log</button></td>
       @if( gs.state == GoalState.Failed || gs.state == GoalState.Aborted) {
-          <td> <button id="restartButton" onClick="window.location.href='/restart/@gs.track.trackName/@gs.goalName/@{HtmlUtil.witnessPath(gs.witness)}'">Restart</button></td>
+          <td> <button id="restartButton" onClick="window.location.href='/restart/@helper.urlEncode(gs.track.trackName)/@helper.urlEncode(gs.goalName)/@helper.urlEncode(HtmlUtil.witnessPath(gs.witness))'">Restart</button></td>
+          <td> <button id="abortButton" onClick="window.location.href='/abort/@helper.urlEncode(gs.track.trackName)/@helper.urlEncode(gs.goalName)/@helper.urlEncode(HtmlUtil.witnessPath(gs.witness))'">Abort</button></td>
        }
      </tr>
   }

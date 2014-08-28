@@ -62,33 +62,6 @@
 				}
 
 		</table>
-		<h2> Unscheduled Tracks</h2>
-		<table>
-			<thead>
-				<td> Track </td>
-				<td> Status </td>
-				<td>Scheduling Option</td>
-			</thead>
-			@tdList.map { td =>
-				<tr>
-					<td>@td.trackName</td>
-					<td>"NO!"</td>	
-					<td>
-						<form  method = "post" action="scheduletrack/@{urlEncode(td.trackName)}/@@{urlEncode(td.forUser)}/@{urlEncode(td.version)}">
-							<b>Type</b>: <input type="radio" name="rule" value="cron" checked="checked">Cronable
-									<input type="radio" name="rule" value="recur">Recurring
-									<input type="radio" name="rule" value="constantly">Constantly
-							<b>Pattern</b>:<input type="text" name="pattern" title="If Recurring: format must be standard: PyYmMwWdDThHmMsS">
-							<b>Stoppable</b>:<input type="radio" name="stoppable" value="no" checked="checked">No
-										<input type="radio" name="stoppable" value="pause">pause
-										<input type="radio" name="stoppable" value="die">kill
-		
-							<input type="submit">
-						</form>
-					</td>
-				</tr>
-				}
-		</table>
 
   
 

@@ -128,6 +128,7 @@ object LogWrapper {
     
     def pathString( str : String ) : String = {
       str.replace(" ","_").
+      	replace("+","_").
       	replace("=>","@").
       	replace("(","_").
       	replace(")","_").
