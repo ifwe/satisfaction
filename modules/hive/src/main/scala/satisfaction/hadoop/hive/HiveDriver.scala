@@ -29,6 +29,7 @@ import org.apache.hadoop.hive.ql.HiveDriverRunHook
 import org.apache.hadoop.hive.ql.hooks.ExecuteWithHookContext
 import org.apache.hadoop.hive.ql.hooks.HookContext
 import org.apache.hadoop.hive.ql.exec.mr.HadoopJobExecHelper
+import org.apache.hadoop.hive.ql.CommandNeedRetryException
 
 /**
  * Executes jobs locally
@@ -64,14 +65,11 @@ class HiveLocalDriver( val hiveConf : HiveConf = Config.config)
     implicit var track : Track = null
   
     lazy val driver = {
-      
         info("Version :: " + VersionInfo.getBuildVersion)
 
         val dr = new org.apache.hadoop.hive.ql.Driver(hiveConf)
-
         dr.init
         sessionState ///initials the Hive Session state
-
         
         val shims = ShimLoader.getHadoopShims
         info(" RPC port is " + shims.getJobLauncherRpcAddress(hiveConf))
@@ -79,11 +77,9 @@ class HiveLocalDriver( val hiveConf : HiveConf = Config.config)
         dr
     }
     
-    
     override lazy val progressCounter : ProgressCounter  = {
         new HiveProgress( driver.getPlan() ) 
     }
-
 
     override def useDatabase(dbName: String) : Boolean = {
         info(" Using database " + dbName)
@@ -92,16 +88,14 @@ class HiveLocalDriver( val hiveConf : HiveConf = Config.config)
     
     def getQueryPlan( query: String ) : QueryPlan = {
        val retCode = driver.compile(query)
-       info(" Compiling " + query + " has return Code " + retCode)
-       
+       info(s" Compiling $query  has return Code $retCode ")
        
        driver.getPlan()
-      
     }
     
     
     
-    def sessionState : SessionState  = {
+    lazy val sessionState : SessionState  = {
        var ss1 : SessionState = SessionState.get  
        if( ss1 == null) {
            ss1 = SessionState.start( hiveConf) 
@@ -115,13 +109,12 @@ class HiveLocalDriver( val hiveConf : HiveConf = Config.config)
        info(s" Sourcing resource ## $resourceName ##")
        if( track.hasResource( resourceName ) ) {
          val readFile= track.getResource( resourceName) 
-         println(s" ## Processing SourceFile ## $readFile")
+           info(s" ## Processing SourceFile ## $readFile")
         
           /// XXX Add variable substitution 
-          ///readFile.split(";").forall( q => {
           readFile.split(";").foreach( q => {
-           println(s" ## Executing sourced query $q") 
-           executeQuery(q)
+           info(s" ## Executing sourced query $q") 
+             if( !executeQuery(q) ) { return false }
           } )
           true
        } else {
@@ -131,25 +124,22 @@ class HiveLocalDriver( val hiveConf : HiveConf = Config.config)
     }
     
     
-    def abort() = {
-      
+    override def abort() = {
        /// Not sure this works with multiple Hive Goals ...
        /// Hive Driver is somewhat opaque
        info(" Aborting all jobs for Hive Query ")
        HadoopJobExecHelper.killRunningJobs()
-      
     }
 
     override def executeQuery(query: String): Boolean = {
         try {
-
             info(s"HIVE_DRIVER :: Executing Query $query")
-            println(s"HIVE_DRIVER :: Executing Query $query")
             if (query.trim.toLowerCase.startsWith("set")) {
                 val setExpr = query.trim.split(" ")(1)
                 val kv = setExpr.split("=")
-                info(s" Setting configuration ${kv(0)} to ${kv(1)} ")
-                sessionState.getConf.set(kv(0), kv(1))
+                //// add escaping ???
+                info(s" Setting configuration ${kv(0).trim} to ${kv(1)} ")
+                sessionState.getConf.set(kv(0).trim, kv(1))
                 return true
             }
             if( query.trim.toLowerCase.startsWith("source") ) {
@@ -163,13 +153,15 @@ class HiveLocalDriver( val hiveConf : HiveConf = Config.config)
             }
 
             sessionState.setIsVerbose(true)
-            val response = driver.run(query)
-            println(s"Response Code ${response.getResponseCode} :: SQLState ${response.getSQLState} ")
+            val response : CommandProcessorResponse = HiveLocalDriver.retry (5) {
+                driver.run(query)
+            }
+            info(s"Response Code ${response.getResponseCode} :: SQLState ${response.getSQLState} ")
             if (response.getResponseCode() != 0) {
-                println("Error while processing statement: " + response.getErrorMessage(), response.getSQLState(), response.getResponseCode());
+                error("Error while processing statement: " + response.getErrorMessage(), response.getSQLState(), response.getResponseCode());
                 if(sessionState.getStackTraces != null)
                    sessionState.getStackTraces.foreach( { case( stackName , stackTrace) => {
-                     println( s"## Stack $stackName ")
+                     info( s"## Stack $stackName ")
                      stackTrace.foreach { ln => println(s"      ##${ln}")  }
                     }
                   })
@@ -177,17 +169,15 @@ class HiveLocalDriver( val hiveConf : HiveConf = Config.config)
             } else {
             	readResults( response, 500)
             }
-
             true
         } catch {
             ///case sqlExc: HiveSQLException =>
-            case sqlExc: Exception =>
-                error("Dammit !!! Caught Hive SQLException " + sqlExc.getMessage())
-                sqlExc.printStackTrace
-                sqlExc.printStackTrace(System.out)
-                sqlExc.printStackTrace(System.err)
+            case sqlExc: Exception  =>
+                error(s"Dammit !!! Caught Hive SQLException ${sqlExc.getLocalizedMessage} ", sqlExc)
                 return false
-
+            case unexpected : Throwable => 
+                error(s"Dammit !!! Unexpected SQLException ${unexpected.getLocalizedMessage} ", unexpected)
+                throw unexpected
         }
     }
     
@@ -251,7 +241,7 @@ class HiveLocalDriver( val hiveConf : HiveConf = Config.config)
      
    }
 
-}
+}    
 
 
 object HiveDriver extends Logging {
@@ -272,7 +262,7 @@ object HiveDriver extends Logging {
       }
 
       //// XXX Move to Scala reflection ...
-      val localDriverClass: Class[HiveLocalDriver] = hiveConf.getClass("com.klout.satisfaction.hadoop.hive.HiveLocalDriver", classOf[HiveLocalDriver]).asInstanceOf[Class[HiveLocalDriver]]
+      val localDriverClass: Class[HiveLocalDriver] = hiveConf.getClass("satisfaction.hadoop.hive.HiveLocalDriver", classOf[HiveLocalDriver]).asInstanceOf[Class[HiveLocalDriver]]
       val constructor = localDriverClass.getConstructor(hiveConf.getClass())
       val hiveDriver = constructor.newInstance(hiveConf).asInstanceOf[HiveLocalDriver]
       hiveDriver.track = track
@@ -288,6 +278,9 @@ object HiveDriver extends Logging {
 
   }
   
+}
+
+object HiveLocalDriver {
   val HiveCommentDelimiter = "---"
 
   /**
@@ -305,6 +298,31 @@ object HiveDriver extends Logging {
      }
     ).mkString("\n")
   }
-
   
+  
+  
+  /**
+   * Logic for retrying a command 
+   */
+  def retry[T <: AnyRef]( numRetries: Int = 3)( f: => T) : T = {
+    var cnt = 0;
+     while( true ) {
+      try {
+         return f
+      }  catch {
+        case  retry : CommandNeedRetryException => {
+           println(s" Number of retries = $cnt")
+           cnt += 1
+           if( cnt == numRetries) {
+             if( retry.getCause != null)
+                throw retry.getCause
+              else 
+                throw retry
+           }
+        } 
+        case unexpected : Throwable => throw unexpected
+      }
+    }
+    null.asInstanceOf[T]
+  }
 }

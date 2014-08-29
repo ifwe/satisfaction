@@ -26,18 +26,13 @@ case class HiveSatisfier(val queryResource: String, val conf : HiveConf)( implic
         multipleQueries.foreach(query => {
             if (query.trim.length > 0) {
                 info(s" Executing query $query")
-                val results = driver.executeQuery(query)
+                val results = driver.executeQuery(query.trim)
                 if (!results)
                     return results
-
             }
-
         })
         true
     }
-    
-    
-    
     
     /**
      *  Return the progressCounter from the HiveLocalDriver
@@ -103,19 +98,17 @@ case class HiveSatisfier(val queryResource: String, val conf : HiveConf)( implic
         return execResult 
       } catch { 
         case unexpected : Throwable =>
-          System.out.println(" Unexpected !!! "+ unexpected)
-          unexpected.printStackTrace( System.out)
-          unexpected.printStackTrace( System.err)
+          error(s" Unexpected Error :: ${unexpected.getLocalizedMessage} ", unexpected)
           execResult.markUnexpected( unexpected)
       }
     }
     
     @Override 
-    override def abort() : ExecutionResult =  {
-      
-      driver.abort
-      execResult.markFailure 
+    override def abort() : ExecutionResult =  robustly {
+       driver.abort
+       true
     }
+
       
     
    ///
