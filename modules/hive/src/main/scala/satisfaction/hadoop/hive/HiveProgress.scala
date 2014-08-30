@@ -63,12 +63,12 @@ class HiveProgress(val queryPlan : QueryPlan )  extends ProgressCounter {
      *  For example Hadoop counters ,
      *   number of query subtasks.
      */
-    def progressUnits : Set[ProgressUnit] =  {
+    def progressUnits : MetricsCollection =  {
       /// ??? TODO 
       ////  Should we aggregate counters ????
-       Set.empty 
+      //// XXXX Number of steps passed ???
+       new MetricsCollection(s"HiveQuery:: ${queryPlan.getQueryId}" )
     }
       
-             /// XXX chop it done into a smaller string
 
 }

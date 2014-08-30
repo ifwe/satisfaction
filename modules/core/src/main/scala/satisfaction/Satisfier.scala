@@ -55,9 +55,9 @@ object RobustRun extends Logging {
             try {
                val result = func
                if( result) {
-                 execResult.markSuccess
+                 execResult.markSuccess()
                } else {
-                 execResult.markFailure
+                 execResult.markFailure()
                }
             } catch {
               case unexpected : Throwable => {
@@ -82,6 +82,10 @@ case class MetricsCollection( val collectionName : String  ) {
   
   def setMetric( metric : String, metVal : Any ) = {
       metrics.put( metric, metVal)  
+  }
+  
+  def getMetric( metric: String ) : Any = {
+     metric 
   }
   
   def incrMetric( metric : String, numVal : Long) : Number = {

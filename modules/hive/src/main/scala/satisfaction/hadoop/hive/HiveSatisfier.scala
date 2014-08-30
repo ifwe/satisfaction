@@ -77,16 +77,15 @@ case class HiveSatisfier(val queryResource: String, val conf : HiveConf)( implic
             case Left(badVars) =>
                 error(" Missing variables in query Template ")
                 badVars.foreach { s => error(s"   Missing variable ${s} ") }
-                execResult.markFailure
-                execResult.errorMessage = "Missing variables in queryTemplate " + badVars.mkString(",")
+                execResult.markFailure( s"Missing variables in queryTemplate ${badVars.mkString(",")} ")
             case Right(query) =>
                 val startTime = new DateTime
                 try {
                     loadSetup
-                    println(" Beginning executing Hive queries ..")
+                    info(" Beginning executing Hive queries ..")
                     val result=  executeMultiple(query)
                     execResult.metrics.mergeMetrics( jobMetrics)
-                    if( result ) { execResult.markSuccess } else { execResult.markFailure }
+                    if( result ) { execResult.markSuccess() } else { execResult.markFailure() }
                 } catch {
                     case unexpected : Throwable =>
                         println(s" Unexpected error $unexpected")

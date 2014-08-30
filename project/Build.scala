@@ -115,7 +115,7 @@ object ApplicationBuild extends Build {
     name in Rpm := "satisfaction-scheduler",
     version in Rpm := appVersion,
 
-    rpmRelease in Rpm:= "7",
+    rpmRelease in Rpm:= "8",
     packageSummary in Rpm := "wyman",
     packageSummary in Linux := "wyman",
     rpmVendor in Rpm := "Tagged.com",

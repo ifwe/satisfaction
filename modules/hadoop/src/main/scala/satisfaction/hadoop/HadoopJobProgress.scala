@@ -60,7 +60,7 @@ class HadoopJobProgress( val hadoopJob : RunningJob ) extends ProgressCounter {
      *  Include a bunch of counters, so that more accurate progress may be measured ..
      */
     @Override
-    override def progressUnits : Set[ProgressUnit] = {
+    override def progressUnits : MetricsCollection= {
       /// XXX TODO.. filter out only the counters we care about 
       /// XXX Make scala wrapper around hadoop counters ...
        hadoopJob.getCounters.write( new java.io.DataOutputStream(System.out))
@@ -69,16 +69,17 @@ class HadoopJobProgress( val hadoopJob : RunningJob ) extends ProgressCounter {
       /// XXX Add Task Completion Events ...
        
        val counters = hadoopJob.getCounters
-       Set( ProgressUnit( counters.getCounter( MAP_INPUT_RECORDS) , "Map Input Records") ,
-            ProgressUnit( counters.getCounter( MAP_OUTPUT_RECORDS), "Map Output Records") ,
-            ProgressUnit( counters.getCounter( MAP_INPUT_BYTES), "Map Input Bytes") ,
-            ProgressUnit( counters.getCounter( MAP_OUTPUT_BYTES), "Map Output Bytes") ,
-            ProgressUnit( counters.getCounter( REDUCE_INPUT_RECORDS), "Reduce Input Records") ,
-            ProgressUnit( counters.getCounter( REDUCE_OUTPUT_RECORDS), "Reduce Output Records") ,
-            ProgressUnit( counters.getCounter( REDUCE_INPUT_GROUPS), "Reduce Input Groups") ,
-            ProgressUnit( counters.getCounter( CPU_MILLISECONDS), "CPU Milliseconds") 
-           )
-           
+       val mc = new MetricsCollection("Hadoop Counters")
+       mc.setMetric( "Map Input Records",  counters.getCounter( MAP_INPUT_RECORDS))
+       mc.setMetric( "Map Output Records",  counters.getCounter( MAP_OUTPUT_RECORDS))
+       mc.setMetric( "Map Input Bytes",  counters.getCounter( MAP_INPUT_BYTES))
+       mc.setMetric( "Map Output Bytes",  counters.getCounter( MAP_OUTPUT_BYTES))
+       mc.setMetric( "Reduce Input Records",  counters.getCounter( REDUCE_INPUT_RECORDS))
+       mc.setMetric( "Reduce Output Records",  counters.getCounter( REDUCE_OUTPUT_RECORDS))
+       mc.setMetric( "Reduce Input Groups",  counters.getCounter( REDUCE_INPUT_GROUPS))
+       mc.setMetric( "CPU Milliseconds",  counters.getCounter( CPU_MILLISECONDS))
+       
+       mc
     }
 
 }

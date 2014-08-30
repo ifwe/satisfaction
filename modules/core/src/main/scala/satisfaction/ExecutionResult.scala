@@ -10,10 +10,14 @@ import org.joda.time.DateTime
  */
 case class ExecutionResult(
     val executionName : String,
-    val timeStarted: DateTime) {
+    val timeStarted: DateTime = DateTime.now) {
   
-   var timeEnded : DateTime = null //// XXX make stateless 
-   var isSuccess : Boolean = false /// XXX make stateless .. Add is running ???
+   private var _timeEnded : DateTime = null 
+   def timeEnded : DateTime = _timeEnded
+
+   var _isSuccess : Boolean = false /// XXX make stateless .. Add is running ???
+   def isSuccess = _isSuccess
+   
    
    val metrics = new MetricsCollection( executionName)
    
@@ -25,22 +29,23 @@ case class ExecutionResult(
    }
    
    def markSuccess() :ExecutionResult = {
-      isSuccess = true
-      timeEnded = DateTime.now 
+      _isSuccess = true
+      _timeEnded = DateTime.now 
       this
    }
   
-   def markFailure() : ExecutionResult = {
-      isSuccess = false 
-      timeEnded = DateTime.now
+   def markFailure( errMess : String = null) : ExecutionResult = {
+      _isSuccess = false 
+      _timeEnded = DateTime.now
+      _errorMessage = errMess
       this
    }
    
    def markUnexpected( exc : Throwable ) : ExecutionResult = {
-     isSuccess = false
-     timeEnded = DateTime.now
-     errorMessage = exc.getMessage
-     stackTrace = exc.getStackTrace 
+     _isSuccess = false
+     _timeEnded = DateTime.now
+     _errorMessage = exc.getMessage
+     _stackTrace = exc.getStackTrace 
      this
    }
    
@@ -48,19 +53,22 @@ case class ExecutionResult(
    /**
     *  Provide a path of where on HDFS the logs are stored 
     *  XXX Change to URI
+    *  XXXX decouple from ExecResult ...
     */
    var hdfsLogPath : String = null
    
    /**
     * An error message if the result was successful
     */
-   var errorMessage : String  = null
+   private var _errorMessage : String  = null
+   def errorMessage = _errorMessage
    
    
    /**
     *  Possible stack trace for something which went wrong 
     */
-   var stackTrace : Array[StackTraceElement] = null
+   private var _stackTrace : Array[StackTraceElement] = null
+   def stackTrace = _stackTrace
   
 }
 

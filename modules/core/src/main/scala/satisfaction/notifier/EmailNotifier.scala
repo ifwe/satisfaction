@@ -56,6 +56,8 @@ class EmailNotifier( val host: String, val port : Int, from : String, recipients
     msg.append(s" StartTime ${result.timeStarted} :: EndTime ${result.timeEnded} \n")
     msg.append(s" Witness  ${witness.toString} ")
     msg.append(s"  ${result.errorMessage} ")
+    msg.append(s"\n\n\n")
+    msg.append(s"\n\n\n")
     
     email.setMsg( msg.toString)
     

@@ -2,16 +2,6 @@ package satisfaction
 
 
 
-/**
- *  counters for units which may measure amount of progress 
- *   which has occurred so for,
- *  For example, number of seconds elapsed, number of mappers completed,
- *    number of steps in a Query accomplished, number of units in oozie flow
- *  XXX
- *  XXX Use Metrics  ...
- *  XXXX Consolidate with MetricsProducing 
- */
-case class ProgressUnit( val amount : Double, val units : String)
         
     
 /**
@@ -54,7 +44,7 @@ trait ProgressCounter {
      *  For example Hadoop counters ,
      *   number of query subtasks.
      */
-    def progressUnits : Set[ProgressUnit]
+    def progressUnits : MetricsCollection
     
     
     /**

@@ -28,39 +28,77 @@ object GoalState extends Enumeration {
 case class GoalStatus(track : TrackDescriptor, goalName: String, witness: Witness) {
 
     // XXX Make immutable ... ????
-    var state: GoalState.Value = GoalState.Unstarted
-
-    var dependencyStatus = scala.collection.mutable.Map[String, GoalStatus]()
+    private var _state: GoalState.Value = GoalState.Unstarted
     
-    var _progressCounter : Option[ProgressCounter] = None
+    def state : GoalState.Value = { _state }
+
+    private var _dependencyStatus = scala.collection.mutable.Map[String, GoalStatus]()
+    
+    private var _progressCounter : Option[ProgressCounter] = None
+    def progressCounter : Option[ProgressCounter] =  _progressCounter
+    def setProgressCounter( pc : ProgressCounter) = { _progressCounter = Some(pc) }
 
     val timeStarted: DateTime = DateTime.now
-    var timeFinished: DateTime = null
 
-    var errorMessage: String = null
+    def timeFinished =  _timeFinished 
+    private var _timeFinished: DateTime = null
+
+    private var _execResult : ExecutionResult = null
+    def execResult : ExecutionResult = _execResult
+
+    
+    def errorMessage : String = _errorMessage
+    private var _errorMessage: String = null
 
     def addChildStatus(child: GoalStatus): GoalStatus = {
         val predName = Goal.getPredicateString(child.goalName, child.witness)
-        dependencyStatus.put(predName, child)
+        _dependencyStatus.put(predName, child)
         this
     }
     
     def numReceivedStatuses = {
-       dependencyStatus.size
-    }
-    
-    /**
-     *  Return the current progress
-     */
-    def getProgress : Option[ProgressCounter] = {
-        _progressCounter      
+       _dependencyStatus.size
     }
     
     def canProceed = {
-      dependencyStatus.values.forall( stat => {GoalStatus.canProceed( stat.state )  } )
+      _dependencyStatus.values.forall( stat => {GoalStatus.canProceed( stat.state )  } )
     }
     
-    var execResult : ExecutionResult = null
+    def markTerminal( state : GoalState.Value, finish : DateTime = DateTime.now) = {
+       _state = state 
+       _timeFinished = finish
+    }
+    
+    def markExecution( execResult : ExecutionResult ) = {
+      _execResult = execResult
+      _timeFinished = DateTime.now
+      if(execResult.isSuccess ) {
+        _state = GoalState.Success
+      } else {
+        if(_state != GoalState.Aborted)
+           _state = GoalState.Failed
+           
+        if( execResult.errorMessage != null) 
+          _errorMessage = execResult.errorMessage
+      }
+    }
+    
+    def markUnexpected( error : Throwable) = {
+       _state = GoalState.Failed
+       _errorMessage = s"Unexpected Exception ${error.getLocalizedMessage()} " 
+         /// XXX Catch the stack Trace??? 
+    }
+    
+    def markError( error : String ) = {
+       _state = GoalState.Failed
+       _errorMessage = error
+    }
+    
+    def transitionState( state: GoalState.Value ) = {
+      _state = state
+    }
+
+    
    
     /**
      *  Return true if the actor's state

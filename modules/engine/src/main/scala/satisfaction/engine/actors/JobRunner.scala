@@ -33,8 +33,12 @@ class JobRunner(
   
     implicit val executionContext : ExecutionContext = ExecutionContext.global
     
-    var messageSender: ActorRef = null
-    var startTime : DateTime = null;
+    private var _messageSender: ActorRef = null
+    def messageSender = _messageSender
+
+    private var _startTime : DateTime = null;
+    def startTime = _startTime
+
     LogWrapper.modifyLogger( track)
     LogWrapper.modifyLogger( goal)
     LogWrapper.modifyLogger( satisfier)
@@ -43,7 +47,7 @@ class JobRunner(
     def receive = {
         case Satisfy =>
             log.info(s"Asked to satisfy ${track.descriptor.trackName} :: ${goal.name} for params: ${params}")
-            startTime = DateTime.now
+            _startTime = DateTime.now
 
                 val satisfierFuture = future {
                     logger.log { () => satisfier.satisfy(params) } match {
@@ -53,12 +57,12 @@ class JobRunner(
                       case Failure(throwable) =>
                         //// Error occurred somehow because of logging,
                         ///   or from satisfier throwing unexpected exception
-                        val execResult = new ExecutionResult(goal.name, startTime )
+                        val execResult = new ExecutionResult(goal.name, _startTime )
                         execResult.hdfsLogPath = logger.hdfsLogPath.toString
                         execResult.markUnexpected( throwable)
                     }
                 }
-                messageSender = sender
+                _messageSender = sender
                 satisfierFuture onComplete {
                     log.info(s" Job Runner :: Future OnComplete ${goal.name} ${witness}")
                     checkResults(_)

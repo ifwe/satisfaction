@@ -28,10 +28,13 @@ import track.TrackHistory
  */
 class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, val proverFactory: ActorRef) extends Actor with ActorLogging {
 
-    val dependencies: mutable.Map[String, ActorRef] = scala.collection.mutable.Map[String, ActorRef]()
-    var jobRunner: ActorRef = null
+    private val dependencies: mutable.Map[String, ActorRef] = scala.collection.mutable.Map[String, ActorRef]()
+    private var jobRunner: ActorRef = null
+
     val status: GoalStatus = new GoalStatus(track.descriptor, goal.name, witness)
-    var listenerList: Set[ActorRef] = mutable.Set[ActorRef]()
+
+    private var listenerList: Set[ActorRef] = mutable.Set[ActorRef]()
+
     implicit val ec: ExecutionContext = ExecutionContext.global /// ???
     implicit val timeout = Timeout(5 minutes)
     
@@ -48,8 +51,7 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
                 goal.evidence.size != 0 &&
                 goal.evidence.forall(e => e.exists(witness))) {
                 log.info(" Check Already satisfied ?? ")
-                status.state = GoalState.AlreadySatisfied
-                status.timeFinished = DateTime.now
+                status.markTerminal( GoalState.AlreadySatisfied )
                 ///sender ! GoalSuccess(status)
                 publishSuccess
             } else {
@@ -64,7 +66,7 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
                             case (pred, actor) =>
                                 actor ! Satisfy
                         }
-                        status.state = GoalState.WaitingOnDependencies
+                        status.transitionState ( GoalState.WaitingOnDependencies)
                     } else {
                         runLocalJob()
                     }
@@ -75,9 +77,8 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
               unexpected.printStackTrace
               log.error( "Unexpected exception while attempting to satisfy Goal ", unexpected) 
               
-              status.state = GoalState.Failed
-              status.errorMessage = unexpected.getMessage
-              ///sender ! GoalFailure( status)
+              status.markUnexpected( unexpected)
+
               publishFailure
           }
 
@@ -126,7 +127,7 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
                                   /// don't restart if job hasn't failed 
                               }
                     }
-                status.state = GoalState.WaitingOnDependencies
+                status.transitionState( GoalState.WaitingOnDependencies )
             case _ =>
               log.error( s"Invalid Request ; Job in state ${status.state} can not be restarted." )
               sender ! InvalidRequest(status,"Job needs to have failed in order to be restarted")
@@ -145,7 +146,7 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
                /// If our job is running ... kill it 
               //// Check to see if abort was able to succeed ...
               log.info(" Received Abort message while Job is running; Killing Job ")
-               status.state = GoalState.Aborted
+               status.markTerminal(GoalState.Aborted )
                jobRunner ! Abort
                /**
                val abortResultF = jobRunner ? Abort
@@ -181,7 +182,7 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
             //// 
             log.info(s" ${goal.name} Received Goal FAILURE ${failedStatus.state} from goal ${failedStatus.goalName}   ")
             status.addChildStatus(failedStatus)
-            status.state = GoalState.DependencyFailed
+            status.markTerminal(GoalState.DependencyFailed )
             publishFailure
         //// Add a flag to see if we want to 
         //// abort sibling jobs which may be running 
@@ -190,8 +191,8 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
             if (depStatus != null)
                 status.addChildStatus(depStatus)
             //// Determine if all jobs completed
-            log.info( s" Received Deps = ${status.dependencyStatus.size} :: num Deps = ${dependencies.size} ")
-            if (status.dependencyStatus.size == dependencies.size) {
+            log.info( s" Received Deps = ${status.numReceivedStatuses} :: num Deps = ${dependencies.size} ")
+            if (status.numReceivedStatuses  == dependencies.size) {
                if(status.canProceed) {
                   runLocalJob()
                } else {
@@ -201,16 +202,11 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
             }
         case JobRunSuccess(result) =>
             log.info(s" ${goal.name} Received Goal Satisfied from ${result.executionName} , send to our parent  ")
-            status.state = GoalState.Success
-            status.execResult  = result
-            status.timeFinished = DateTime.now
+            status.markExecution(result)
             publishSuccess 
         case JobRunFailed(result) =>
             log.info(s" ${goal.name} Received Goal Failed from ${result.executionName} , send to our parent  ")
-            if( status.state != GoalState.Aborted)
-               status.state = GoalState.Failed
-            status.execResult = result
-            status.timeFinished = DateTime.now
+            status.markExecution(result)
             publishFailure
 
         case InvalidRequest =>
@@ -246,18 +242,18 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
 
     def runLocalJob() {
         if (status.state != GoalState.Running) {
-            status.state = GoalState.Running
+            status.transitionState( GoalState.Running )
             goal.satisfier match {
                 case Some(satisfier) =>
                     if( this.jobRunner == null) {
-                       val jobRunActor = Props(new JobRunner(satisfier, track ,goal, witness, getWitness))
+                       val jobRunActor = Props(new JobRunner(satisfier, track ,goal, witness, witness))
                        this.jobRunner = context.system.actorOf((jobRunActor), "Satisfier_" + ProofEngine.getActorName(goal, witness))
                     }
                     jobRunner ! Satisfy
                     satisfier match {
                       case progressable : Progressable =>
                         log.info(s" Grabbing Progress for current satisfier for $goal.name -- progress $progressable.progressCounter ")
-                       this.status._progressCounter = Some(progressable.progressCounter)
+                       this.status.setProgressCounter( progressable.progressCounter )
                       case _ =>
                         log.info(s" Unable to determine progress for goal $goal.name ")
                     }
@@ -273,9 +269,6 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
         }
     }
 
-    def getWitness: Witness = {
-        witness
-    }
 
     override def preStart() = {
 

@@ -101,7 +101,13 @@ case class LogWrapper[T]( track : Track, goal : Goal, witness : Witness)  {
   }
 
   def loggingOutput: OutputStream = {
-     LogWrapper.localFS.create( LogWrapper.logPathForGoalWitness( track.descriptor, goal.name, witness) )
+    val checkPath =  LogWrapper.logPathForGoalWitness( track.descriptor, goal.name, witness) 
+    if( LogWrapper.localFS.exists( checkPath)) {
+       val prevAttempts = LogWrapper.numAttemptsForGoalWitness( track.descriptor, goal.name, witness ) 
+       LogWrapper.localFS.create( LogWrapper.logPathForGoalWitnessAndAttempt( track.descriptor, goal.name, witness, prevAttempts) )
+    } else {
+       LogWrapper.localFS.create( LogWrapper.logPathForGoalWitness( track.descriptor, goal.name, witness) )
+    }
   }
   
   def hdfsLogPath : Path  = {
@@ -142,6 +148,15 @@ object LogWrapper {
     
     def logPathForGoalWitness( track: TrackDescriptor, goalName : String, witness : Witness ) : Path = {
         rootedPathForGoalWitness( LogWrapper.rootDirectory ,track, goalName, witness)
+    }
+
+    def logPathForGoalWitnessAndAttempt( track: TrackDescriptor, goalName : String, witness : Witness, attemptNum: Int ) : Path = {
+        Path(s"${rootedPathForGoalWitness( LogWrapper.rootDirectory ,track, goalName, witness)}__ATTEMPT_${attemptNum}" )
+    }
+
+    def numAttemptsForGoalWitness( track: TrackDescriptor, goalName : String, witness : Witness ) : Int = {
+       val checkPath = logPathForGoalWitness(track,goalName, witness).parent
+       localFS.listFiles(checkPath.parent).count( _.path.name.startsWith( checkPath.name) )
     }
     
     def hdfsPathForGoalWitness( track: TrackDescriptor, goalName : String, witness : Witness ) : Path = {

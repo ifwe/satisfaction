@@ -103,15 +103,14 @@ case class HadoopSatisfier[KeyIn,ValIn,MapKeyOut,MapValOut,KeyOut,ValOut]( name 
      val execResult = new ExecutionResult(job.getJobID, new DateTime( job.getJobStatus.getStartTime()))
      job.getJobStatus.getRunState match {
        case JobStatus.SUCCEEDED =>
-        execResult.isSuccess  = true
+         execResult.markSuccess
       case JobStatus.FAILED  =>
-        execResult.isSuccess  = false
-        execResult.errorMessage = job.getJobStatus.getFailureInfo
+         execResult.markFailure( job.getJobStatus().getFailureInfo())
       case JobStatus.KILLED  =>
-        execResult.isSuccess  = false
-        execResult.errorMessage = job.getJobStatus.getFailureInfo
+        /// XXX Is there GoalState Killed???
+        //// Or do we want to  mark somehow ??
+         execResult.markFailure( job.getJobStatus.getFailureInfo())
      }
-     execResult.timeEnded = new DateTime()
      execResult.metrics.mergeMetrics( getMetricsFromCounters( job.getCounters ))
      
      execResult
