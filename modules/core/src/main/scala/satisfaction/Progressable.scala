@@ -1,8 +1,6 @@
 package satisfaction
 
 
-
-        
     
 /**
  * Some satisfiers may be able to get insight into how much progress

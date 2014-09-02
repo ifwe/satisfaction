@@ -27,12 +27,12 @@ object GoalState extends Enumeration {
 
 case class GoalStatus(track : TrackDescriptor, goalName: String, witness: Witness) {
 
-    // XXX Make immutable ... ????
     private var _state: GoalState.Value = GoalState.Unstarted
     
     def state : GoalState.Value = { _state }
 
-    private var _dependencyStatus = scala.collection.mutable.Map[String, GoalStatus]()
+    private val _dependencyStatus = scala.collection.mutable.Map[String, GoalStatus]()
+    def dependencyStatus : collection.immutable.Map[String,GoalStatus] = { _dependencyStatus.toMap } 
     
     private var _progressCounter : Option[ProgressCounter] = None
     def progressCounter : Option[ProgressCounter] =  _progressCounter
