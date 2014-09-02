@@ -105,7 +105,7 @@ object SatisfyGoalPage extends Controller with Logging {
         pg.divHeight = 500
         val nodeMap: mutable.Map[String, PlumbGraph.NodeDiv] = mutable.Map()
         
-        val progTracker = status.getProgress
+        val progTracker = status.progressCounter
         val pctStr = progTracker match {
           case Some(progress) => {
             f" ${progress.progressPercent*100%2.2f} %%"
@@ -274,7 +274,7 @@ object SatisfyGoalPage extends Controller with Logging {
       
        getStatusForGoal( trackName, goalName )  match {
           case Some(status) => 
-             status.getProgress match {
+             status.progressCounter match {
                case Some(progress) =>
                  Ok(views.html.goalprogress(trackName, goalName, status.witness, progress ))
                case None =>
