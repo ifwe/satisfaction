@@ -54,9 +54,9 @@
 			<td>@td._2.schedStatus </td>
 			<td>@td._2.schedType </td>
 			<td>@td._2.description </td>
-			<td>@td._2.startOccurrence </td>
-			<td>@td._2.prevOccurrence </td>
-			<td>@td._2.nextOccurrence </td>
+			<td>@HtmlUtil.formatDate(td._2.startOccurrence)</td>
+			<td>@HtmlUtil.formatDate(td._2.prevOccurrence)</td>
+			<td>@HtmlUtil.formatDate(td._2.nextOccurrence)</td>
 			<td><button id ="unscheduleButton" onClick="window.location.href='/unscheduleonejob/@{urlEncode(td._1.trackName)}/@{urlEncode(td._1.forUser)}/@{urlEncode(td._1.version)}'">Unschedule</button></td>
 				</tr>
 				}

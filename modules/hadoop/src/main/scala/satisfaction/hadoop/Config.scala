@@ -57,8 +57,15 @@ object Config  extends Logging {
        if(nameService != null) {
          hc.set("fs.defaultFS", s"hdfs://$nameService")
        }
-        
-        hc
+       
+       //// Override Retries    
+       hc.setVar(HiveConf.ConfVars.HMSHANDLERATTEMPTS, "10")
+       hc.setVar(HiveConf.ConfVars.HMSHANDLERINTERVAL, "3000ms")
+       hc.setVar(HiveConf.ConfVars.METASTORETHRIFTCONNECTIONRETRIES, "5")
+       hc.setVar(HiveConf.ConfVars.METASTORETHRIFTFAILURERETRIES, "6")
+       
+       
+       hc
     }
     
     

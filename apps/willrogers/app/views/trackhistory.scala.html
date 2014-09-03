@@ -90,8 +90,8 @@
 					</td>
 					<td>@gr.goalName</td>
 					<td>@Html(HtmlUtil.witnessTable( gr.witness)) </td> 
-					<td>@gr.startTime</td>
-					<td>@gr.endTime</td>
+					<td>@HtmlUtil.formatDate(gr.startTime)</td>
+					<td>@HtmlUtil.formatDate(gr.endTime)</td>
 					<td>@gr.state</td>
 					<td>
 						@Html({

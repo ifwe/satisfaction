@@ -10,10 +10,11 @@ import collection.JavaConversions._
 import org.apache.hadoop.hive.ql.exec.mr.MapRedTask
 import org.apache.hadoop.hive.ql.exec.mr.HadoopJobExecHelper
 
-class HiveProgress(val queryPlan : QueryPlan )  extends ProgressCounter {
+class HiveProgress( val localDriver : HiveLocalDriver )  extends ProgressCounter {
   
     override def taskName  = {
-        queryPlan.getQueryString()
+      /// XXXX
+       "Hive Progress Counter"
     }
     
     
@@ -23,15 +24,25 @@ class HiveProgress(val queryPlan : QueryPlan )  extends ProgressCounter {
     override def progressPercent =  { super.progressPercentFromSubtasks( None) } 
     
     
+    /** 
+     *   Get the query
+     */
+    def queryPlan : QueryPlan = {
+       localDriver.queryPlan
+    }
+    
     /**
      *  The subtasks of a given Hive Query, are all the individual 
      *   map reduce tasks found in the query plan
      */
     def subtasks : List[(String,GoalState.State)] = {
-      queryPlan.getRootTasks.filter( _.isInstanceOf[MapRedTask] ).map( tsk => {
-        ( tsk.getName, getStateOfMapRedTask(tsk.asInstanceOf[MapRedTask])  )
-      } ).toList
-      
+      if( queryPlan == null ) {
+         List.empty  
+      } else { 
+          queryPlan.getRootTasks.filter( _.isInstanceOf[MapRedTask] ).map( tsk => {
+             ( tsk.getName, getStateOfMapRedTask(tsk.asInstanceOf[MapRedTask])  ) 
+        } ).toList
+      }
     }
     
     private def getStateOfMapRedTask( mrt : MapRedTask) : GoalState.State = {

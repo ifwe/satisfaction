@@ -1,0 +1,33 @@
+@(ex : Throwable  )
+
+@import helper._
+@import scala.collection.JavaConversions._
+@import satisfaction._
+
+
+
+@main( "Something Horrible has happened !!!!" ) {
+    
+    <h2>Something Horrible has happened !!!! </h2>
+    
+    <h3>Received an Error @ex -- @{ex.getLocalizedMessage} </h3>
+    
+    <table>
+    @ex.getStackTrace.map { elem => 
+      <tr> <td>@(elem.getFileName)</td> <td>Line @elem.getLineNumber</td>
+        <td>@elem.getMethodName</td>
+      </tr> 
+    } 
+    </table>
+    
+    <h3>Caused by </h3>
+    <table>
+    @ex.getCause.getStackTrace.map { stElement => 
+      <tr> <td>@stElement.getFileName</td>
+        <td>Line @stElement.getLineNumber</td>
+        <td>@stElement.getMethodName</td>
+      </tr> 
+    } 
+    </table>
+    
+}

@@ -30,6 +30,7 @@ import org.apache.hadoop.hive.ql.hooks.ExecuteWithHookContext
 import org.apache.hadoop.hive.ql.hooks.HookContext
 import org.apache.hadoop.hive.ql.exec.mr.HadoopJobExecHelper
 import org.apache.hadoop.hive.ql.CommandNeedRetryException
+import org.apache.hadoop.hive.ql.HiveDriverRunHookContext
 
 /**
  * Executes jobs locally
@@ -64,12 +65,23 @@ class HiveLocalDriver( val hiveConf : HiveConf = Config.config)
   
     implicit var track : Track = null
   
-    lazy val driver = {
+    lazy val driver : org.apache.hadoop.hive.ql.Driver = {
         info("Version :: " + VersionInfo.getBuildVersion)
 
         val dr = new org.apache.hadoop.hive.ql.Driver(hiveConf)
+        /**
+        if(hiveConf.getVar( HiveConf.ConfVars.HIVE_DRIVER_RUN_HOOKS ) != null )  {
+          hiveConf.setVar( HiveConf.ConfVars.HIVE_DRIVER_RUN_HOOKS , 
+            hiveConf.getVar(HiveConf.ConfVars.HIVE_DRIVER_RUN_HOOKS) + ",satifaction.hadoop.hive.HiveDriverHook" );
+        } else {
+          hiveConf.setVar( HiveConf.ConfVars.HIVE_DRIVER_RUN_HOOKS , "satisfaction.hadoop.hive.HiveDriverHook");
+        }
+        * *
+        */
+          ////hiveConf.setVar( HiveConf.ConfVars.HIVE_DRIVER_RUN_HOOKS , "satisfaction.hadoop.hive.HiveDriverHook");
         dr.init
         sessionState ///initials the Hive Session state
+        
         
         val shims = ShimLoader.getHadoopShims
         info(" RPC port is " + shims.getJobLauncherRpcAddress(hiveConf))
@@ -78,7 +90,7 @@ class HiveLocalDriver( val hiveConf : HiveConf = Config.config)
     }
     
     override lazy val progressCounter : ProgressCounter  = {
-        new HiveProgress( driver.getPlan() ) 
+        new HiveProgress( this ) 
     }
 
     override def useDatabase(dbName: String) : Boolean = {
@@ -91,6 +103,10 @@ class HiveLocalDriver( val hiveConf : HiveConf = Config.config)
        info(s" Compiling $query  has return Code $retCode ")
        
        driver.getPlan()
+    }
+    
+    def queryPlan : QueryPlan = {
+      driver.getPlan()
     }
     
     
@@ -113,8 +129,12 @@ class HiveLocalDriver( val hiveConf : HiveConf = Config.config)
         
           /// XXX Add variable substitution 
           readFile.split(";").foreach( q => {
-           info(s" ## Executing sourced query $q") 
-             if( !executeQuery(q) ) { return false }
+            if( q.trim.length > 0) {
+               info(s" ## Executing sourced query $q") 
+               if( !executeQuery(q) ) { 
+                  return false
+               }
+            }
           } )
           true
        } else {
@@ -127,12 +147,16 @@ class HiveLocalDriver( val hiveConf : HiveConf = Config.config)
     override def abort() = {
        /// Not sure this works with multiple Hive Goals ...
        /// Hive Driver is somewhat opaque
-       info(" Aborting all jobs for Hive Query ")
+       info("HIVE_DRIVER Aborting all jobs for Hive Query ")
        HadoopJobExecHelper.killRunningJobs()
     }
 
-    override def executeQuery(query: String): Boolean = {
+    override def executeQuery(queryUnclean: String): Boolean = {
         try {
+            val query : String = HiveLocalDriver.stripComments( queryUnclean)
+            if(query.length == 0 ) {
+              return true;
+            }
             info(s"HIVE_DRIVER :: Executing Query $query")
             if (query.trim.toLowerCase.startsWith("set")) {
                 val setExpr = query.trim.split(" ")(1)
@@ -153,12 +177,29 @@ class HiveLocalDriver( val hiveConf : HiveConf = Config.config)
             }
 
             sessionState.setIsVerbose(true)
+            val checkCompile =  driver.compile(query)
+            info(s"HIVE_DRIVER Result of Compile = $checkCompile ")
+            if( checkCompile != 0) {
+               error(s"HIVE_DRIVER -- Unable to compile $query ; Return Code $checkCompile ") 
+               return false
+            }
             val response : CommandProcessorResponse = HiveLocalDriver.retry (5) {
                 driver.run(query)
             }
             info(s"Response Code ${response.getResponseCode} :: SQLState ${response.getSQLState} ")
             if (response.getResponseCode() != 0) {
+                error("HIVE_DRIVER Driver Has error Message " + driver.getErrorMsg())
                 error("Error while processing statement: " + response.getErrorMessage(), response.getSQLState(), response.getResponseCode());
+                
+                val driverClass = driver.getClass
+                
+                val errorMember =  driverClass.getDeclaredFields.filter( _.getName().endsWith("Error"))(0)
+               
+                errorMember.setAccessible(true)
+                
+                val errorStack : Throwable = errorMember.get( driver).asInstanceOf[Throwable]
+                error("HIVE ERROR :: ERROR STACK IS ", errorStack)
+                
                 if(sessionState.getStackTraces != null)
                    sessionState.getStackTraces.foreach( { case( stackName , stackTrace) => {
                      info( s"## Stack $stackName ")
@@ -280,6 +321,29 @@ object HiveDriver extends Logging {
   
 }
 
+class HiveDriverHook extends HiveDriverRunHook with Logging {
+     /**
+   * Invoked before Hive begins any processing of a command in the Driver,
+   * notably before compilation and any customizable performance logging.
+   */
+   def preDriverRun(hookContext : HiveDriverRunHookContext)  = {
+     
+      info("HIVE_DRIVER :: PRE DRIVER RUN :: " + hookContext.getCommand())
+      SessionState.getConsole.printInfo("HIVE_DRIVER :: PRE DRIVER RUN :: " + hookContext.getCommand())
+   }
+
+  /**
+   * Invoked after Hive performs any processing of a command, just before a
+   * response is returned to the entity calling the Driver.
+   */
+   def postDriverRun( hookContext : HiveDriverRunHookContext) = {
+     info(" HIVE DRIVER POST RUN " + hookContext.getCommand() )
+     SessionState.get.getLastMapRedStatsList()
+     SessionState.getConsole().printInfo("HIVE DRVER POST RUN " + hookContext.getCommand() )
+   }
+    
+}
+  
 object HiveLocalDriver {
   val HiveCommentDelimiter = "---"
 
@@ -296,11 +360,10 @@ object HiveLocalDriver {
           line  
        }
      }
-    ).mkString("\n")
+    ).mkString("\n").trim
   }
   
-  
-  
+
   /**
    * Logic for retrying a command 
    */

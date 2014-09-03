@@ -2,6 +2,7 @@ package models
 
 import satisfaction._
 import org.joda.time.DateTime
+import org.joda.time.format.DateTimeFormat
 
 object ProjectUtil {
 
@@ -9,12 +10,30 @@ object ProjectUtil {
 
 
 object HtmlUtil {
+    val defaultTimeFormat = DateTimeFormat.forPattern("YYYY/MM/DD HH:mm ; EEE MMM hh:mm aa")
     
     def formatDate( dt : DateTime ) : String = {
        dt match {
          case null => "N/A"
          case d => 
-           d.toString
+           defaultTimeFormat.print(d)
+       } 
+    }
+    def formatDate( dtStr : String) : String = {
+      if(dtStr != null) {
+         val parseDate = new DateTime(dtStr)
+         defaultTimeFormat.print(parseDate)
+      } else {
+        "N/A" 
+      }
+
+    }
+    def formatDate( dtOpt : Option[DateTime] ) : String = {
+       dtOpt match {
+         case null => "N/A"
+         case None => "N/A"
+         case Some(d) => 
+           defaultTimeFormat.print(d)
        } 
     }
     
