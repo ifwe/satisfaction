@@ -23,12 +23,15 @@ import org.joda.time.DateTime
 object TrackHistoryPage extends Controller {
   lazy val trackHistory = Global.trackHistory
   
-
+  private var grList = trackHistory.getAllHistory
+  private var listIndex = grList.length
+  private val listLength = 50
+  
   /**
    * default loader
    */
   def loadHistoryPageAction() = Action {
-    val grList = trackHistory.getAllHistory
+    //val grList = trackHistory.getAllHistory
 
     println("loading page history: I have "+ grList.length + " tracks")
    Ok(views.html.trackhistory(grList))

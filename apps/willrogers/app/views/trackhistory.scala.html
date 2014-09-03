@@ -10,97 +10,61 @@
 
 @main("Track History Page") {
 	
-	<script type="text/javascript" charset="utf8" src="@routes.Assets.at("javascripts/jquery.dataTables.js")"></script>
-	<link rel="stylesheet" type="text/css" href="@routes.Assets.at("stylesheets/jquery.dataTables.css")">
-	<script>
-	  $(function() {
-	    $( "#historyMenu" ).accordion({
-		    	header: "h2",
-	    		active: false,
-		    	collapsible: true
-		});
-	  });
+	<table width="100%">
+		<tr>
+			<td valign="top" width="60%">
+				<h2>Track History</h2>
+				<div id="trackHistory" style="width:700px;height:600px;"></div>
+			</td>
+			<td valign="top">
+				<h2>Filtering Menu for Track History</h2>
+			</td>
+		</tr>
+	</table>
+	
+	<script type="text/javascript" charset="utf8" src="@routes.Assets.at("javascripts/jquery.event.drag-2.2.js")"></script>
+	<script type="text/javascript" charset="utf8" src="@routes.Assets.at("javascripts/slick.core.js")"></script>
+   <script type="text/javascript" charset="utf8" src="@routes.Assets.at("javascripts/slick.grid.js")"></script>
+ 	
+ 	<script>
+ 		var grid;
+ 		var columns = [
+ 	                   {id: "id", name: "ID", field: "id"},
+ 	                   {id: "trackName", name: "Track Name", field: "trackName"},
+ 	                   {id: "goalName", name: "GoalName", field: "goalName"},
+ 	                   {id: "witness", name: "Witness", field: "witness"},
+ 	                   {id: "startTime", name: "Start Time", field: "startTime"},
+ 	                   {id: "endTime", name: "End Time", field: "endTime"},
+ 	                   {id: "status", name: "Status", field: "status"},
+ 	                   {id: "log", name: "Log File", field: "log"}
+ 	              ];
 
-	  $(document).ready( function () {
-		    $('#historyTable').DataTable({"order": [4, 'desc']   });
-		    
-		} );
-	</script>
-	
-	<h1> Track History</h1>
-	
-	<div id = "historyMenu" >
-		<h2>Filter</h2>
-		<form method = "get" autocomplete="on" action="filterJobHistory">
-			Track Name: <input type="text" name="trackName"><br />
-			Owner(optional): <input type="text" name="forUser"><br />
-			Track Version: <input type="text" name="version"><br />
-			Track Version Variant: <input type="text" name="variant"><br />
-			Goal Name: <input type="text" name="goalName"><br />
-			Start Time (yyyy-mm-dd HH:mm:ss): <input type="text" name="startTime"><br />
-			End Time (yyyy-mm-dd HH:mm:ss): <input type="text" name="endTime"><br />
-		<input type="submit">
-		</form>
-			
-		<h2>Lookup</h2>
-			<div>
-				<h3>Look up by Id</h3>
-				<form method = "get" autocomplete="on" action="lookupGoalHistoryID">
-					runID:<input type="text" name="runId"> <br />
-					<input type="submit">
-				</form>
-				
-				<h3>Look up by description</h3>
-				<form method = "get" autocomplete="on" action="lookupJobHistoryGoal">
-					Track Name: <input type="text" name="trackName"><br />
-					Owner (optional): <input type="text" name="forUser"><br />
-					Track Version: <input type="text" name="version"><br />
-					Track Version Variant: <input type="text" name="variant"><br />
-					Goal Name: <input type="text" name="goalName"><br />
-					Witness(String - not sure what to do with this for now...): <input type="text" name="witness"><br />
-					<input type="submit">
-				</form>
-			</div>
-	</div>
-	
-	
-	<div id ="historyListing">
-		<h2>History Listing</h2>
-		<table id = "historyTable">
-			<thead>
-				<td> ID </td>
-				<td>TrackDescriptor</td>
-				<td>Goal Name</td>
-				<td>Witness </td>
-				<td>Start Time</td>
-				<td> Finish Time</td>
-				<td> Status </td>
-				<td> Log File </td>
-			</thead>
-			@grList.map { gr =>
-				<tr>
-					<td>@gr.runId</td>
-					<td>
-						<ul>
-							<li>@gr.trackDescriptor.trackName</li>
-							<li>@gr.trackDescriptor.forUser</li>
-							<li>@gr.trackDescriptor.version</li>
-							<li>@gr.trackDescriptor.variant</li>
-						</ul> 
-					</td>
-					<td>@gr.goalName</td>
-					<td>@Html(HtmlUtil.witnessTable( gr.witness)) </td> 
-					<td>@HtmlUtil.formatDate(gr.startTime)</td>
-					<td>@HtmlUtil.formatDate(gr.endTime)</td>
-					<td>@gr.state</td>
-					<td>
-						@Html({
-							var logWindowUrl = "/logwindow/"+gr.trackDescriptor.trackName.replace(" ", "_")+"/"+gr.goalName.replace(" ", "_")+"/"+{HtmlUtil.witnessPath(gr.witness)}.replace(" ", "_")
-							s"<a href='$logWindowUrl'>Log File HTML</a>"
-						})
-					</td>
-				</tr>
-				}
-		</table>
-	</div>
+ 	    var options = {
+ 	    	    enableCellNavigation: true,
+ 	            enableColumnReorder :false
+ 	            };
+ 	   $(function () {
+ 	      var data = [];
+		@grList.map { gr => 
+			data[@grList.length - @gr.runId] = {
+				id: @gr.runId,
+				trackName: "@gr.trackDescriptor.trackName",
+  	          	goalName: "@gr.goalName",
+  	          	witness: "need DOM for witness variable",
+  	          	startTime: "@gr.startTime", 
+  	          	endTime: "@gr.endTime",
+  	          	status: "@gr.state",
+  	          	log: "need DOM for log file link"
+			};
+		}
+
+
+ 	     
+ 	      
+ 	      grid = new Slick.Grid("#trackHistory", data, columns, options);
+ 	        })
+        
+ 	</script>
+  
+
 	}

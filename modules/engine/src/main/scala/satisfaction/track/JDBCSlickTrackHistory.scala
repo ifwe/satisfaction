@@ -61,6 +61,7 @@ class JDBCSlickTrackHistory( val driverInfo : DriverInfo)   extends TrackHistory
 		}
 	
 	  val table : TableQuery[TrackHistoryTable] = TableQuery[TrackHistoryTable]
+	  
 	  val mainTable : String = "TrackHistoryTable"
 	  val db = Database.forURL(driverInfo.dbURI,
 	          driver = driverInfo.jdbcDriver, 
@@ -216,6 +217,7 @@ class JDBCSlickTrackHistory( val driverInfo : DriverInfo)   extends TrackHistory
 	
 	
 	def getAllHistory() : Seq[GoalRun] = {
+	  // println("grabbing all tracks") takes about 2 seconds :/
 	  var returnList : Seq[GoalRun] = null.asInstanceOf[Seq[GoalRun]]
 	  db.withSession {
 		   implicit session =>
@@ -228,6 +230,7 @@ class JDBCSlickTrackHistory( val driverInfo : DriverInfo)   extends TrackHistory
 														gr
 		   			 							}).seq
 			}
+	  //println("I got all the tracks!")
 	  returnList
 	}
 	
