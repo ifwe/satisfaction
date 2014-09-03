@@ -1,15 +1,15 @@
 package willrogers
 package controllers
 
+import willrogers.Global
 import play.api._
-
 import satisfaction.hadoop.hive.ms._
 import satisfaction.hadoop.hdfs._
 import play.api.data._
 import play.api.data.Forms._
-
 import play.api.mvc._
 import satisfaction._
+import satisfaction.hadoop.Config
 
 
 object Application extends Controller {

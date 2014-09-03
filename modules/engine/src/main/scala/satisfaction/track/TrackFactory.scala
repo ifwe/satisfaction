@@ -5,7 +5,7 @@ import collection.JavaConversions._
 import fs._
 import java.util.Properties
 import satisfaction.Recurring
-import satisfaction.track.TrackFactory.MajorMinorPatch
+import satisfaction.Track.MajorMinorPatch
 
 
 /**
@@ -32,7 +32,6 @@ case class TrackFactory(val trackFS : FileSystem,
   
   implicit val hdfs = trackFS
   val localFS = LocalFileSystem
-   
   
   
   val initScheduler : Unit = {
@@ -43,10 +42,17 @@ case class TrackFactory(val trackFS : FileSystem,
        }
      } 
   }
-  
-  
    
-   private val trackMap : collection.mutable.Map[TrackDescriptor,Track] = collection.mutable.HashMap[TrackDescriptor,Track]()
+ private val _trackMap : collection.mutable.Map[TrackDescriptor,Track] = collection.mutable.HashMap[TrackDescriptor,Track]()
+ def trackMap : collection.immutable.Map[TrackDescriptor,Track] =  _trackMap.toMap
+  
+   def initializeAllTracks =  {
+      getLatestTracks.foreach( track => {
+        val tr = generateTrack( track)
+         //_trackMap.put( track, tr)
+      })
+  }
+  
    
    /** 
     *  Get all the tracks which have been deployed to HDFS under the
@@ -70,6 +76,32 @@ case class TrackFactory(val trackFS : FileSystem,
      }
    }
   
+   def getLatestTracks : Seq[TrackDescriptor] = {
+      val trackDescMap: Map[TrackDescriptor,MajorMinorPatch] = getAllTracks.foldLeft(  Map[TrackDescriptor,MajorMinorPatch]() )( (map,td) => {
+        val lookup = td.latest
+        if( map.contains( lookup)) {
+          val latestTD = map.get( td.latest).get
+          if( MajorMinorPatch( td.version).compareTo( latestTD) >0  ) {
+             map updated( lookup, MajorMinorPatch(td.version))
+          } else {
+            map
+          }
+        } else {
+          map + ( lookup -> MajorMinorPatch(td.version) )
+        }
+      })
+      
+      trackDescMap.map( { case (td,mmp) => {
+           td.withVersion( mmp.toString )
+       }  }).toSeq
+   }
+   
+   def getLatestTrack( trackDesc : TrackDescriptor ) = {
+       val latestTD = getAllTracks.filter( _.equalsWoVersion(trackDesc)  ).
+           toList.sortWith( versionSort )(0)
+       info( s"Getting track ${trackDesc.trackName} with latest version ${latestTD.version} ")     
+       getTrack( latestTD)
+   }
   
    /**
     *  Do something if HDFS is down 
@@ -201,8 +233,8 @@ case class TrackFactory(val trackFS : FileSystem,
           //// FIXME ???
          ////val track : Track =  trackClazz.getField("MODULE$").get(null).asInstanceOf[Track]
           
-         track.descriptor = trackDesc
-         this.trackMap.put( trackDesc, track)
+         track.setDescriptor( trackDesc )
+         this._trackMap.put( trackDesc, track)
          initializeTrack( track,  trackProps)
       	 Some(track)
         case None => 
@@ -310,8 +342,6 @@ case class TrackFactory(val trackFS : FileSystem,
       tp
    }
    
-   
-   
    def versionSort( lft : TrackDescriptor , rt : TrackDescriptor ) : Boolean = {
        MajorMinorPatch( lft.version )  > MajorMinorPatch( rt.version)
    }
@@ -320,74 +350,25 @@ case class TrackFactory(val trackFS : FileSystem,
      if( !trackDesc.version.equals("LATEST")) {
     	 if( trackMap.contains(trackDesc)) {
     		 val track = trackMap.get( trackDesc ).get
-    				 Some(track)
+    		 Some(track)
     	 } else {
     		 val trackOpt = generateTrack( trackDesc)
     		 info(s" Generating track again $trackDesc ; Found $trackOpt ") 
     		 trackOpt match {
     		   case Some(track) =>
-    		     trackMap.put( trackDesc, track)
+    		     _trackMap.put( trackDesc, track)
     		     Some(track)   
     		   case None => None
     		 }
     	 }
      } else {
-       val latestId = getAllTracks.filter( _.trackName.equals(trackDesc.trackName)  ).
-           toList.sortWith( versionSort )(0)
-       info( s"Getting track ${trackDesc.trackName} with latest version ${latestId.version} ")     
-       getTrack( latestId)
+       getLatestTrack( trackDesc)
      }
    }
 }
 
 object TrackFactory {
     class  TracksUnavailableException( reason : Throwable) extends RuntimeException(reason)
-    
-
-    /**
-     *  Class representing a Track Version number
-     *     XXX Use in trackDescriptor
-     */    
-    case class MajorMinorPatch( val majorVersion : Int, val minorVersion : Int , val patchNumber :Int )  extends Ordered[MajorMinorPatch] {
-        override def toString() = {
-           Seq( majorVersion, minorVersion, patchNumber).mkString(".")
-        }
-        
-        override def compare( that : MajorMinorPatch) : Int = {
-            val mj = majorVersion - that.majorVersion
-            if( mj == 0) {
-               val mn = minorVersion - that.minorVersion 
-               if( mn == 0) {
-                  patchNumber - that.patchNumber 
-               } else {
-                 mn
-               }
-            } else {
-              mj
-            }
-        }
-          
-    }
-    
-    object MajorMinorPatch {
-      
-        def apply(ver : String) = {
-           var _major, _minor, _patch : Int = 0
-           val verSplit = if(ver.startsWith("version_")) {
-              ver.substring("version_".length).split('.')
-           } else {  ver.split('.')  }
-           if( verSplit.size > 1) {
-             _major = verSplit( 0).toInt
-             _minor = verSplit( 1).toInt
-             if( verSplit.size > 2) {
-              _patch = verSplit(2).toInt
-             } 
-           } else {
-             _major = ver.toInt
-           }
-           new MajorMinorPatch( _major, _minor,_patch)
-        }
-    }
     
   
 }

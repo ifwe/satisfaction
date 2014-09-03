@@ -14,7 +14,8 @@ import collection._
 import satisfaction.track._
 import satisfaction.TrackDescriptor
 
-object EditPage extends Controller {
+
+object EditPage extends play.api.mvc.Controller {
   val trackFactory : TrackFactory = Global.trackFactory
 
   

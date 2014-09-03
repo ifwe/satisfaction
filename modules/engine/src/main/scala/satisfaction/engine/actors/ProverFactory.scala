@@ -200,7 +200,7 @@ class ProverFactory extends Actor with ActorLogging {
 }
 object ProverFactory {
 
-    implicit val timeout = Timeout( 30 seconds )
+    implicit val timeout = Timeout( 3000 seconds )
     
     def getProver(proverFactory: ActorRef, track : Track, goal: Goal, witness: Witness): ActorRef = {
         val f = proverFactory ? GetActor(track, goal, witness)

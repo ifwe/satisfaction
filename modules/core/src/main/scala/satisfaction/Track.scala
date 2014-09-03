@@ -10,6 +10,7 @@ import satisfaction.fs.Path
 import scala.io.Source
 import satisfaction.fs.FileSystem
 import satisfaction.fs.LocalFileSystem
+import satisfaction.Track.MajorMinorPatch
 
 /**
    *  Case class describing how a track can be deployed.
@@ -26,6 +27,59 @@ import satisfaction.fs.LocalFileSystem
      override def toString() = {
        s"TrackDescriptor::name=$trackName forUser=$forUser Version=$version Variant=$variant"
      }
+     
+     def withVersion( ver : String) = {
+       new TrackDescriptor( trackName, forUser, ver , variant )
+     }
+
+     def withVersion( mmp : MajorMinorPatch) = {
+       new TrackDescriptor( trackName, forUser, mmp.toString , variant )
+     }
+     
+     def majorMinorPatch : MajorMinorPatch = {
+       MajorMinorPatch(version) 
+     }
+     
+     def latest() = {
+       new TrackDescriptor( trackName, forUser, "LATEST" , variant )
+     }
+
+     def withUser( user : String) = {
+       new TrackDescriptor( trackName, user, "LATEST" , variant )
+     }
+
+     def withVariant( variant : String) = {
+       new TrackDescriptor( trackName, forUser, "LATEST" , Some(variant) )
+     }
+     
+     /**
+      *  The track descriptors are the same ,
+      *    except that they might be different versions 
+      */
+     def equalsWoVersion( other : Any) : Boolean = {
+        if( other.isInstanceOf[TrackDescriptor])  {
+          val otherTD = other.asInstanceOf[TrackDescriptor]
+          if(otherTD.trackName.equals( trackName)  &&
+              otherTD.forUser.equals( forUser) ) {
+              if( !otherTD.variant.isDefined &&
+                  ! variant.isDefined ) {
+                true
+              }  else {
+                 if( otherTD.variant.isDefined &&
+                    variant.isDefined ) {
+                   otherTD.variant.equals( variant) 
+                 } else {
+                   false     
+                 }
+              }
+          } else {
+            false
+          }
+        } else {
+          false
+        }
+     }
+
  }
   
   object TrackDescriptor  {  
@@ -41,8 +95,10 @@ import satisfaction.fs.LocalFileSystem
   *     dependencies
   */
 case class Track( 
-    var descriptor : TrackDescriptor )(implicit var hdfs : FileSystem = LocalFileSystem)  {
+    private var _descriptor : TrackDescriptor )(implicit var hdfs : FileSystem = LocalFileSystem)  {
 
+    def descriptor = _descriptor
+    def setDescriptor( td : TrackDescriptor ) = { _descriptor = td }
   
     /// XXX Track initialization
     def init : Unit = { }
@@ -234,5 +290,52 @@ object Track {
     def apply( trackName : String, topLevelGoal : Goal) : Track = {
        new Track( TrackDescriptor(trackName) ).addTopLevelGoal(topLevelGoal) 
     }
+    
+    
+    /**
+     *  Class representing a Track Version number
+     *     XXX Use in trackDescriptor
+     */    
+    case class MajorMinorPatch( val majorVersion : Int, val minorVersion : Int , val patchNumber :Int )  extends Ordered[MajorMinorPatch] {
+        override def toString() = {
+           Seq( majorVersion, minorVersion, patchNumber).mkString(".")
+        }
+        
+        override def compare( that : MajorMinorPatch) : Int = {
+            val mj = majorVersion - that.majorVersion
+            if( mj == 0) {
+               val mn = minorVersion - that.minorVersion 
+               if( mn == 0) {
+                  patchNumber - that.patchNumber 
+               } else {
+                 mn
+               }
+            } else {
+              mj
+            }
+        }
+          
+    }
+    
+    object MajorMinorPatch {
+      
+        def apply(ver : String) = {
+           var _major, _minor, _patch : Int = 0
+           val verSplit = if(ver.startsWith("version_")) {
+              ver.substring("version_".length).split('.')
+           } else {  ver.split('.')  }
+           if( verSplit.size > 1) {
+             _major = verSplit( 0).toInt
+             _minor = verSplit( 1).toInt
+             if( verSplit.size > 2) {
+              _patch = verSplit(2).toInt
+             } 
+           } else {
+             _major = ver.toInt
+           }
+           new MajorMinorPatch( _major, _minor,_patch)
+        }
+    }
+    
 }
 
