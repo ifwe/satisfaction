@@ -155,7 +155,7 @@ object LogWrapper {
     }
 
     def numAttemptsForGoalWitness( track: TrackDescriptor, goalName : String, witness : Witness ) : Int = {
-       val checkPath = logPathForGoalWitness(track,goalName, witness).parent
+       val checkPath = logPathForGoalWitness(track,goalName, witness)
        localFS.listFiles(checkPath.parent).count( _.path.name.startsWith( checkPath.name) )
     }
     

@@ -1,4 +1,4 @@
-@(trackName : String,  goalName : String, witness : satisfaction.Witness , logs : Option[String]  )
+@(trackName : String,  goalName : String, witness : satisfaction.Witness , logs : Option[String] , attemptNum : Option[Int] )
 
 @import helper._
 @import scala.collection.JavaConversions._
@@ -12,6 +12,10 @@
      <h1>Satisfaction !!! Log Window</h1>
     <h1>Project @trackName Goal @goalName @witness </h1>
     
+     @attemptNum match {
+        case Some(n) => { <h2>Attempt Number @n</h2> }
+        case None => {}
+     }
 
       <h3>Current Log Output</h3> 
 <div>
