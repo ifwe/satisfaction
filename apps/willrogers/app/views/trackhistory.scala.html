@@ -9,59 +9,74 @@
 
 
 @main("Track History Page") {
+	<div id="filterMenu">
+		<h2> Filtering Menu for Track History</h2>
+		<p>slider slider>
+		</p>
+		<p> aoidsjfoajgoafsd</p>
+	</div>
 	
-	<table width="100%">
-		<tr>
-			<td valign="top" width="60%">
-				<h2>Track History</h2>
-				<div id="trackHistory" style="width:700px;height:600px;"></div>
-			</td>
-			<td valign="top">
-				<h2>Filtering Menu for Track History</h2>
-			</td>
-		</tr>
-	</table>
+	<div id="trackHistoryContainer">
+		<h2>Track History</h2>
+		<div id="trackHistory" style="height:600px;"></div>
+	</div>
 	
+
 	<script type="text/javascript" charset="utf8" src="@routes.Assets.at("javascripts/jquery.event.drag-2.2.js")"></script>
 	<script type="text/javascript" charset="utf8" src="@routes.Assets.at("javascripts/slick.core.js")"></script>
    <script type="text/javascript" charset="utf8" src="@routes.Assets.at("javascripts/slick.grid.js")"></script>
  	
  	<script>
+ 	   //to display HTML content in cell.      
+ 	   function formatter(row, cell, value, columnDef, dataContext) {
+        	return value;
+        }
+    
+    	var dataView;
  		var grid;
+ 		var data = [];
  		var columns = [
  	                   {id: "id", name: "ID", field: "id"},
  	                   {id: "trackName", name: "Track Name", field: "trackName"},
  	                   {id: "goalName", name: "GoalName", field: "goalName"},
- 	                   {id: "witness", name: "Witness", field: "witness"},
+ 	                   {id: "witness", name: "Witness", field: "witness", formatter: formatter},
  	                   {id: "startTime", name: "Start Time", field: "startTime"},
  	                   {id: "endTime", name: "End Time", field: "endTime"},
  	                   {id: "status", name: "Status", field: "status"},
- 	                   {id: "log", name: "Log File", field: "log"}
+ 	                   {id: "log", name: "Log File", field: "log", formatter: formatter}
  	              ];
 
  	    var options = {
  	    	    enableCellNavigation: true,
- 	            enableColumnReorder :false
+ 	            enableColumnReorder :false,
+ 	            forceFitColumns: true
  	            };
+ 	            
+ 	            
+
+		var sortColumn = "startTime"
+		var sortdir =1;
  	   $(function () {
- 	      var data = [];
-		@grList.map { gr => 
-			data[@grList.length - @gr.runId] = {
-				id: @gr.runId,
-				trackName: "@gr.trackDescriptor.trackName",
-  	          	goalName: "@gr.goalName",
-  	          	witness: "need DOM for witness variable",
-  	          	startTime: "@gr.startTime", 
-  	          	endTime: "@gr.endTime",
-  	          	status: "@gr.state",
-  	          	log: "need DOM for log file link"
-			};
-		}
+ 	   
+ 	   //load data
+			@grList.map { gr => 
+				data[@grList.length - @gr.runId] = {
+					id: @gr.runId,
+					trackName: "@gr.trackDescriptor.trackName",
+	  	          	goalName: "@gr.goalName",
+	  	          	witness: "@Html(HtmlUtil.witnessTable( gr.witness))",
+	  	          	startTime: "@HtmlUtil.formatDate(gr.startTime)", 
+	  	          	endTime: "@HtmlUtil.formatDate(gr.endTime)",
+	  	          	status: "@gr.state",
+	  	          	log:"@Html({
+								var logWindowUrl = "/logwindow/"+gr.trackDescriptor.trackName.replace(" ", "_")+"/"+gr.goalName.replace(" ", "_")+"/"+{HtmlUtil.witnessPath(gr.witness)}.replace(" ", "_")
+								s"<a href='$logWindowUrl'>View Log for Goal</a>"
+							})"
+				};
+			}
 
-
- 	     
- 	      
  	      grid = new Slick.Grid("#trackHistory", data, columns, options);
+ 	      
  	        })
         
  	</script>
