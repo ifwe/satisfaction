@@ -44,6 +44,8 @@ class JDBCSlickTrackHistory( val driverInfo : DriverInfo)   extends TrackHistory
            val endTime:Option[Timestamp], String)
            * 
            */
+  
+  // ADD ANOTHER COLUMN FOR PARENT ID!!!!!!
 
 	class TrackHistoryTable (tag: Tag) extends Table[(Int, String, String, String, String, String, String, Timestamp, Option[Timestamp], String)](tag, "TrackHistoryTable") {
   		  def id : Column[Int]= column[Int]("id", O.PrimaryKey, O.AutoInc)
@@ -87,6 +89,8 @@ class JDBCSlickTrackHistory( val driverInfo : DriverInfo)   extends TrackHistory
 	 }
 	  insertedID.toString
 	}
+
+	
 	
 	override def completeRun( id : String, state : GoalState.State) : String = {
 	  db withSession {
