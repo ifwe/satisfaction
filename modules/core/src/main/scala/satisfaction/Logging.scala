@@ -33,7 +33,8 @@ trait Logging {
  def error(message:String, error:Throwable) = {
     log.error(message, error)
     Console.println( s"ERROR - SATISFACTION $message ")
-    error.printStackTrace( Console.out)
+    if(error!= null)
+       error.printStackTrace( Console.out)
  }
 
 }

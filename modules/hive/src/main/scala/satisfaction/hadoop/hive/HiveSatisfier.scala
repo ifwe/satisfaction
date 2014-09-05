@@ -22,8 +22,7 @@ case class HiveSatisfier(val queryResource: String, val conf : HiveConf)( implic
    
 
     def executeMultiple(hql: String): Boolean = {
-        val multipleQueries = hql.split(";")
-        multipleQueries.foreach(query => {
+        queries(hql).foreach(query => {
             if (query.trim.length > 0) {
                 info(s" Executing query $query")
                 val results = driver.executeQuery(query.trim)
@@ -64,6 +63,11 @@ case class HiveSatisfier(val queryResource: String, val conf : HiveConf)( implic
             throw new HiveException("Trouble loading setup.hql")
          }
        }
+    }
+    
+    
+    def queries( hql: String) : Seq[String] = {
+       hql.split(";")
     }
     
 

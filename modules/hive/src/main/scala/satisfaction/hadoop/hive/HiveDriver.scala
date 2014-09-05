@@ -69,6 +69,7 @@ class HiveLocalDriver( val hiveConf : HiveConf = Config.config)
         info("Version :: " + VersionInfo.getBuildVersion)
 
         val dr = new org.apache.hadoop.hive.ql.Driver(hiveConf)
+        dr.init
         /**
         if(hiveConf.getVar( HiveConf.ConfVars.HIVE_DRIVER_RUN_HOOKS ) != null )  {
           hiveConf.setVar( HiveConf.ConfVars.HIVE_DRIVER_RUN_HOOKS , 
@@ -78,9 +79,6 @@ class HiveLocalDriver( val hiveConf : HiveConf = Config.config)
         }
         * *
         */
-          ////hiveConf.setVar( HiveConf.ConfVars.HIVE_DRIVER_RUN_HOOKS , "satisfaction.hadoop.hive.HiveDriverHook");
-        dr.init
-        sessionState ///initials the Hive Session state
         
         
         val shims = ShimLoader.getHadoopShims
@@ -110,15 +108,19 @@ class HiveLocalDriver( val hiveConf : HiveConf = Config.config)
     }
     
     
-    
-    lazy val sessionState : SessionState  = {
-       var ss1 : SessionState = SessionState.get  
+    def sessionState : SessionState  = {
+       val ss1 : SessionState = SessionState.get  
        if( ss1 == null) {
-           ss1 = SessionState.start( hiveConf) 
-           ss1.out = Console.out
-           ss1.info = Console.out
+          val  ss2 = SessionState.start( hiveConf) 
+           ss2.out = Console.out
+           ss2.info = Console.out
+           ss2.childErr = Console.out
+           ss2.childOut = Console.out
+           ss2.err = Console.out
+           ss2
+       } else {
+         ss1
        }
-       ss1
     }
     
     def sourceFile( resourceName : String ) : Boolean = {
@@ -150,6 +152,25 @@ class HiveLocalDriver( val hiveConf : HiveConf = Config.config)
        info("HIVE_DRIVER Aborting all jobs for Hive Query ")
        HadoopJobExecHelper.killRunningJobs()
     }
+    
+    
+    /**
+     *  Check that the  threadlocal SessionState
+     *   has not been closed since last call
+     */
+    def checkSessionState() : Boolean = {
+       if(SessionState.get() == null)  {
+          val  ss2 = SessionState.start( hiveConf) 
+           ss2.out = Console.out
+           ss2.info = Console.out
+           ss2.childErr = Console.out
+           ss2.childOut = Console.out
+           ss2.err = Console.out
+           false
+       } else {
+         true 
+       }
+    }
 
     override def executeQuery(queryUnclean: String): Boolean = {
         try {
@@ -177,13 +198,10 @@ class HiveLocalDriver( val hiveConf : HiveConf = Config.config)
             }
 
             sessionState.setIsVerbose(true)
-            val checkCompile =  driver.compile(query)
-            info(s"HIVE_DRIVER Result of Compile = $checkCompile ")
-            if( checkCompile != 0) {
-               error(s"HIVE_DRIVER -- Unable to compile $query ; Return Code $checkCompile ") 
-               return false
-            }
             val response : CommandProcessorResponse = HiveLocalDriver.retry (5) {
+                if( !checkSessionState ) {
+                   warn(s"HIVE_DRIVER -- SessionState was closed after previous call ") 
+                }
                 driver.run(query)
             }
             info(s"Response Code ${response.getResponseCode} :: SQLState ${response.getSQLState} ")
@@ -226,12 +244,10 @@ class HiveLocalDriver( val hiveConf : HiveConf = Config.config)
     /// XXX FIX ME
     /// output is not being returned 
     def readResults( response : CommandProcessorResponse, maxRows : Int ) = {
-      println(" Reading results")
       if(response.getSchema != null) {
         response.getSchema.getFieldSchemas.foreach( field => {
             print(s"${field.getName}\t")
         })
-      }
       
       val tmpFile = sessionState.getTmpOutputFile
       val resultReader = new BufferedReader( new FileReader(tmpFile))
@@ -244,17 +260,17 @@ class HiveLocalDriver( val hiveConf : HiveConf = Config.config)
          }
         }
       }
+      }
 
     }
     
-    val SumCounters = List[String]()
+   val SumCounters = List[String]()
         
    override def jobMetrics() : MetricsCollection = {
-      
        val mc = new MetricsCollection("HiveQuery")
         updateJobMetrics( mc.metrics )
        mc
-    }
+  }
     
   def updateJobMetrics( metricsMap : collection.mutable.Map[String,Any]) : Unit = {
     val lastMapRedStats = sessionState.getLastMapRedStatsList

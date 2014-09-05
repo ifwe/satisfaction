@@ -136,34 +136,22 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
         case Abort(killChildren) =>
           log.info(" Received ABORT Message; State is " + status.state)
           status.state match {
-            case GoalState.Unstarted |
-                 GoalState.AlreadySatisfied |
-                 GoalState.Success |
-            	 GoalState.Failed =>
-              ///sender ! GoalSuccess( status)
-            	  log.warning(s" Received Abort message, but state is ${status.state} ; Ignoring ." )
+            case GoalState.Success |
+                 GoalState.AlreadySatisfied =>
+           	  log.warning(s" Received Abort message, but state is ${status.state} ; Ignoring ." )
+            case GoalState.Failed =>
+               log.warning(s" Received Abort message after failure,  Killing self." )
+               status.markTerminal(GoalState.Aborted )
+               proverFactory ! ReleaseActor( goal.name, witness)
             case GoalState.Running =>
                /// If our job is running ... kill it 
               //// Check to see if abort was able to succeed ...
               log.info(" Received Abort message while Job is running; Killing Job ")
                status.markTerminal(GoalState.Aborted )
                jobRunner ! Abort
-               /**
-               val abortResultF = jobRunner ? Abort
-               val abortResult = Await.result( abortResultF, Duration( 30, SECONDS))
-               abortResult match {
-                 case JobRunSuccess(abortSuccess) => {
-                    /// XXX Should we have abort fail ???
-                   sender ! GoalSuccess( status)
-                 }
-                 case JobRunFailed(abortFail) => {
-                   sender ! GoalFailure( status)
-                 }
-               }
-               * 
-               */
             //// check the status after attempting to abort the job
             case GoalState.DependencyFailed  |
+            	 GoalState.Unstarted |
             	 GoalState.WaitingOnDependencies =>
             	   log.info("Received Abort while DependenciesFailed, or WaitingOnDependencies ")
             	   if(killChildren) {

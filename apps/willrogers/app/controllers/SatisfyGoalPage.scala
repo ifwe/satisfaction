@@ -177,6 +177,7 @@ object SatisfyGoalPage extends Controller with Logging {
     def getLogFile(track : TrackDescriptor, goalName: String, witness: Witness, attemptNum : Option[Int] = None): Option[Path] = {
         val numAttempts = attemptNum match {
           case None => LogWrapper.numAttemptsForGoalWitness(track, goalName, witness)
+          case Some(0) => LogWrapper.numAttemptsForGoalWitness(track, goalName, witness)
           case Some(n) => n
         }
         log.info(" Number of Attempts is " + numAttempts + " AttemptOpt = " + attemptNum)

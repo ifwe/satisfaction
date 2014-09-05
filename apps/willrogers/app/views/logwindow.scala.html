@@ -13,16 +13,25 @@
     <h1>Project @trackName Goal @goalName @witness </h1>
     
      @attemptNum match {
-        case Some(n) => { <h2>Attempt Number @n</h2> }
+        case Some(n) => { 
+           <h2>Attempt Number @n</h2>
+        }
         case None => {}
      }
+     
 
-      <h3>Current Log Output</h3> 
 <div>
-  <iframe id="logFrame" width="1750px" height ="800px" style="overflow:scroll" src='/rawlog/@helper.urlEncode(trackName)/@helper.urlEncode(goalName)/@helper.urlEncode(HtmlUtil.witnessPath(witness))' onload="scrollDown()">
+ 
+ @defining( attemptNum match {
+          case Some(n) => s"?attempt=$n"
+          case None => ""
+  } ) { attemptQuery =>
+  <iframe id="logFrame" width="1750px" height ="800px" style="overflow:scroll"
+      src='/rawlog/@helper.urlEncode(trackName)/@helper.urlEncode(goalName)/@helper.urlEncode(HtmlUtil.witnessPath(witness))@attemptQuery' onload="scrollDown()">
   </iframe>
 </div>
 
+}
    
 
       <script type="text/javascript">
