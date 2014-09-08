@@ -2,6 +2,7 @@ package satisfaction
 package retry
 
 import org.joda.time.Duration
+import scala.annotation._
 import satisfaction.notifier.Notifier
 import satisfaction.Goal
 
@@ -24,6 +25,7 @@ trait Retryable {
     
     def notifier : Option[Notifier] = None
 }
+
 
 /**
  *  Some Scala magic to add the trait 

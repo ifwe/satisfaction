@@ -14,11 +14,12 @@ trait Evidence {
 
 }
 
+object Evidence {
 
 /**
  *  An Evidence which would never be satisfied
  */
-object NeverSatisfied extends Evidence {
+  object  NeverSatisfied extends Evidence {
     override def exists(w: Witness) : Boolean = { false }
 }
 
@@ -26,3 +27,4 @@ object AlwaysSatisfied extends Evidence {
     override def exists(w: Witness) : Boolean = { true }
 }
 
+}

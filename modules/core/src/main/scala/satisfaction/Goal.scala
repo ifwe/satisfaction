@@ -17,7 +17,6 @@ case class Goal(
        println(" Creating a Goal !!! ") 
     }
     
-    
     /**
      *  Why is hashcode so slow ???
      *   XXX
@@ -29,9 +28,7 @@ case class Goal(
     }
 
     def addDependency(goal: Goal): Goal = {
-      new Goal( name, satisfier, variables, 
-        dependencies +  Tuple2(Goal.Identity, goal),
-        evidence)
+      copy( dependencies = dependencies + Tuple2(Goal.Identity,goal))
     }
     
     def addDataDependency( depData : DataOutput) : Goal = {
@@ -40,9 +37,7 @@ case class Goal(
     
     ///def addEvidence[E <: Evidence]( ev : E  ) : Goal = {
     def addEvidence( ev : Evidence  ) : Goal = {
-      new Goal( name, satisfier, variables, 
-        dependencies,
-        evidence + ev)
+       copy( evidence = evidence + ev)
     }
 
     /**
@@ -52,9 +47,7 @@ case class Goal(
      */
     def addWitnessRule(rule: (Witness => Witness), goal: Goal): Goal = {
       println(" XXX Number of Dependencis is "+ dependencies.size )
-      new Goal( name, satisfier, variables, 
-        dependencies +  Tuple2(rule, goal),
-        evidence)
+      copy( dependencies =  dependencies +  Tuple2(rule, goal) )
     }
     
     /**
@@ -100,7 +93,6 @@ case class Goal(
     
 } 
 object Goal {
-  
   
     /**
      *  Copy Constructor 

@@ -80,18 +80,23 @@ class ProverFactory extends Actor with ActorLogging {
              log.info( "No Notification setup for goal ${goalName} ")
            }
       }
+       goal
       goal match {
+        /**
         case retryable : Retryable => {
+
            log.info(s" Goal ${goal.name} is retryable ; creating RetryAgent to listen to status ")
            val retryAgent : ActorRef = context.system.actorOf(Props(new RetryAgent(retryable)(track)))
            addListener( goal.name, witness, retryAgent)    
         }
+        * 
+        */
         case _  => {
           log.info( "No Retry setup for goal ${goalName} ")
         }
       }
       if( trackHistory != null) {
-                  
+         //// 
       }
         
     }

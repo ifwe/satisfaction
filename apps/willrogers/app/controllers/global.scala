@@ -25,7 +25,6 @@ object Global extends play.api.GlobalSettings {
 
     lazy val hdfsFS = Hdfs.fromConfig( hiveConf )
 
-    ///lazy val trackPath : Path = new Path("/user/jerome/satisfaction") /// XXX Get From appconfig
     var trackPath : Path = new Path("/user/satisfation")
 
 
