@@ -235,10 +235,10 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
             status.transitionState( GoalState.Running )
             goal.satisfier match {
                 case Some(satisfier) =>
-                    if( this.jobRunner == null) {
-                       val jobRunActor = Props(new JobRunner(satisfier, track ,goal, witness, witness))
-                       this.jobRunner = context.system.actorOf((jobRunActor), "Satisfier_" + ProofEngine.getActorName(goal, witness))
-                    }
+                  if( jobRunner == null) {
+                    val jobRunActor = Props(new JobRunner(satisfier, track ,goal, witness, witness))
+                    this.jobRunner = context.system.actorOf((jobRunActor), "Satisfier_" + ProofEngine.getActorName(goal, witness))
+                  }
                     jobRunner ! Satisfy
                     satisfier match {
                       case progressable : Progressable =>
@@ -248,12 +248,12 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
                         log.info(s" Unable to determine progress for goal $goal.name ")
                     }
                 case None =>
-                    if( this.jobRunner == null) {
-                       val jobRunActor = Props(new DefaultGoalSatisfier(
+                   if( jobRunner == null) {
+                    val jobRunActor = Props(new DefaultGoalSatisfier(
                             track,goal,
                            immutable.Set(goal.evidence.toSeq: _*), witness))
-                       this.jobRunner = context.system.actorOf(jobRunActor)
-                    }
+                    this.jobRunner = context.system.actorOf(jobRunActor)
+                   }
                     jobRunner ! Satisfy
             }
         }
