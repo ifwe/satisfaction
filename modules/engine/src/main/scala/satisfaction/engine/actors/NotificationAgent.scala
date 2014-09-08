@@ -29,15 +29,22 @@ class NotificationAgent( notifier : Notifier )(implicit val track : Track ) exte
       
      def receive = {
         case GoalFailure(goalStatus) =>
-          if( notified.notifyOnFailure)
-            notify( goalStatus)
+          if( notified.notifyOnFailure) {
+            if( goalStatus.state == GoalState.Failed
+                || goalStatus.state == GoalState.Aborted) {
+              notify( goalStatus)
+            }
+          }
          /// Continue to listen on failure, 
          /// in case there are retries ...
-        case GoalSuccess(goalStatus) =>
-          if( notified.notifyOnSuccess)
-            notify( goalStatus)
-          /// No need to notify if job was successful ...
-          stop()
+        case GoalSuccess(goalStatus) => {
+            if( notified.notifyOnSuccess) {
+               if( goalStatus.state == GoalState.Success) {
+                  notify( goalStatus)
+               }
+             }
+            stop()
+        }
      } 
 
      

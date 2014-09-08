@@ -66,13 +66,13 @@ class ProverFactory extends Actor with ActorLogging {
     }
     
     
-    def pimpMyActor( track : Track, goal : Goal, witness : Witness)  = {
+    def pimpMyActor( actor : ActorRef, track : Track, goal : Goal, witness : Witness)  = {
        //// want to be able to add "plugins" around the prover actor         
       //// So that we can do more complex logic around it
        track match {
            case  notified : Notified => {
              implicit val track : Track = goal.track
-              log.info(s" Setting up notification for goal ${goal.name} and witness " )
+              log.info(s" Setting up notification for goal ${goal.name} and witness  $witness" )
               val notifierAgent : ActorRef = context.system.actorOf(Props(new NotificationAgent(notified.notifier)))
               addListener( goal.name, witness, notifierAgent)    
            }
@@ -80,17 +80,16 @@ class ProverFactory extends Actor with ActorLogging {
              log.info( "No Notification setup for goal ${goalName} ")
            }
       }
-       goal
-      goal match {
-        /**
+      track match {
         case retryable : Retryable => {
-
-           log.info(s" Goal ${goal.name} is retryable ; creating RetryAgent to listen to status ")
-           val retryAgent : ActorRef = context.system.actorOf(Props(new RetryAgent(retryable)(track)))
-           addListener( goal.name, witness, retryAgent)    
+          if( retryable.shouldRetry( goal)) {
+             log.info(s" Goal ${goal.name} is retryable ; creating RetryAgent to listen to status ")
+             val retryAgent : ActorRef = context.system.actorOf(Props(new RetryAgent(retryable,actor )(track)))
+             addListener( goal.name, witness, retryAgent)    
+          } else {
+            log.warning(" Retryable says we should not retry goal ${goal.name}; Not creating RetryAgent ")
+          }
         }
-        * 
-        */
         case _  => {
           log.info( "No Retry setup for goal ${goalName} ")
         }
@@ -135,7 +134,7 @@ class ProverFactory extends Actor with ActorLogging {
                 listenerMap.put(actorTupleName, listenerList)
                 
                 
-                pimpMyActor( track, goal, witnessArg)
+                pimpMyActor( actorRef, track, goal, witnessArg)
                 sender ! actorRef
             }
         case ReleaseActor(goalName, witnessArg) =>

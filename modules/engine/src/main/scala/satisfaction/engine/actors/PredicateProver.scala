@@ -167,7 +167,9 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
 
         /// Messages which can be sent from children
         case GoalFailure(failedStatus) =>
-            //// 
+            //// XXX 
+            //// Should we try tp retry now ??? 
+            //// or wait or rety agent to get back to us ???
             log.info(s" ${goal.name} Received Goal FAILURE ${failedStatus.state} from goal ${failedStatus.goalName}   ")
             status.addChildStatus(failedStatus)
             status.markTerminal(GoalState.DependencyFailed )
@@ -180,7 +182,7 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
                 status.addChildStatus(depStatus)
             //// Determine if all jobs completed
             log.info( s" Received Deps = ${status.numReceivedStatuses} :: num Deps = ${dependencies.size} ")
-            if (status.numReceivedStatuses  == dependencies.size) {
+            if (status.numReceivedStatuses  >= dependencies.size) {
                if(status.canProceed) {
                   runLocalJob()
                } else {
