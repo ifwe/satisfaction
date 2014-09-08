@@ -28,7 +28,8 @@ import track.TrackHistory
  */
 class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, val proverFactory: ActorRef) extends Actor with ActorLogging {
 
-    private val dependencies: mutable.Map[String, ActorRef] = scala.collection.mutable.Map[String, ActorRef]()
+    ///private val dependencies: mutable.Map[String, ActorRef] = scala.collection.mutable.Map[String, ActorRef]()
+    private val dependencies: mutable.Map[(Goal,Witness), ActorRef] = scala.collection.mutable.Map[(Goal,Witness), ActorRef]()
     private var jobRunner: ActorRef = null
 
     val status: GoalStatus = new GoalStatus(track.descriptor, goal.name, witness)
@@ -50,9 +51,12 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
             if (goal.evidence != null &&
                 goal.evidence.size != 0 &&
                 goal.evidence.forall(e => e.exists(witness))) {
-                log.info(" Check Already satisfied ?? ")
+                log.info(s" Check Already satisfied ${goal.name} $witness ?? ")
                 status.markTerminal( GoalState.AlreadySatisfied )
-                ///sender ! GoalSuccess(status)
+                //// Tell our Children 
+                dependencies.foreach { 
+                      case (predTuple, actor) =>  proverFactory ! new KillActor( predTuple._1.name, predTuple._2 ) 
+                }
                 publishSuccess
             } else {
                 if (status.state != GoalState.Unstarted) {
@@ -268,9 +272,9 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
                 case (wmap: (Witness => Witness), subGoal: Goal) =>
                     //// Generate different witness, based on the mapping function
                     val newWitness = wmap(witness)
-                    val depPredicate = subGoal.getPredicateString(newWitness)
+                    ///val depPredicate = subGoal.getPredicateString(newWitness)
                     val depProverRef = ProverFactory.getProver(proverFactory, track, subGoal, newWitness)
-                    dependencies += (depPredicate -> depProverRef)
+                    dependencies += ( (subGoal,newWitness) -> depProverRef)
             }
         }
 

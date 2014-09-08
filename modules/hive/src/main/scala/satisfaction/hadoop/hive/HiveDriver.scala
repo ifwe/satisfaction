@@ -159,7 +159,8 @@ class HiveLocalDriver( val hiveConf : HiveConf = Config.config)
      *   has not been closed since last call
      */
     def checkSessionState() : Boolean = {
-       if(SessionState.get() == null)  {
+       val ss1 = SessionState.get()
+       if(ss1 == null)  {
           val  ss2 = SessionState.start( hiveConf) 
            ss2.out = Console.out
            ss2.info = Console.out
@@ -168,6 +169,12 @@ class HiveLocalDriver( val hiveConf : HiveConf = Config.config)
            ss2.err = Console.out
            false
        } else {
+           ss1.out = Console.out
+           ss1.info = Console.out
+           ss1.childErr = Console.out
+           ss1.childOut = Console.out
+           ss1.err = Console.out
+           false
          true 
        }
     }
@@ -198,6 +205,7 @@ class HiveLocalDriver( val hiveConf : HiveConf = Config.config)
             }
 
             sessionState.setIsVerbose(true)
+            sessionState
             val response : CommandProcessorResponse = HiveLocalDriver.retry (5) {
                 if( !checkSessionState ) {
                    warn(s"HIVE_DRIVER -- SessionState was closed after previous call ") 
