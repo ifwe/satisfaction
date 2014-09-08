@@ -28,7 +28,8 @@ object Global extends play.api.GlobalSettings {
     ///lazy val trackPath : Path = new Path("/user/jerome/satisfaction") /// XXX Get From appconfig
     lazy val trackPath : Path = new Path(
             configuration.getString("satisfaction.track.path").getOrElse(
-           "/user/jerome/satisfaction")) 
+                "/user/yyin/satisfaction"))
+           //"/user/jerome/satisfaction")) 
 
 
     override def onStart(app: Application) {

@@ -38,10 +38,7 @@
  	 <script type="text/javascript" charset="utf8" src="@routes.Assets.at("javascripts/slick.dataview.js")"></script>
  	
  	<script>
- 	   //to display HTML content in cell.      
- 	   function formatter(row, cell, value, columnDef, dataContext) {
-        	return value;
-        }
+ 	  
     
     	var dataView = new Slick.Data.DataView();
  		var grid;
@@ -67,6 +64,21 @@
 
 		var sortcol = "startTime"
 		var sortdir =1;
+		trackNameSearchString="";
+		
+		//to display HTML content in cell.      
+ 	   function formatter(row, cell, value, columnDef, dataContext) {
+        	return value;
+        }
+        
+       //put all filtering conds in this function
+       function myFilter(item, args) {
+       	if(args.trackNameSearchString != "" && item["trackName"].indexOf(args.trackNameSearchString) == -1) {
+       		return false;
+       	}
+       	return true;
+       }
+ 	   
  	   $(function () {
  	   
  	   		//load data
@@ -89,12 +101,6 @@
  	      	grid = new Slick.Grid("#trackHistory", dataView, columns, options);
  	      	
  	      	//listeners and functions for sorting
- 	      	function dateTimeComparer(a,b) {
- 	      		
- 	      		return (x == y ? 0 : (x > y ? 1 : -1));
- 	      		
- 	      		
- 	      	}
  	      	function comparer(a,b) {
  	      		if (sortcol == "startTime" || sortcol=="endTime") {
  	      			var x = Date(a[sortcol]).parse();
@@ -111,24 +117,57 @@
                 sortcol = args.sortCol.field;
                 dataView.sort(comparer, args.sortAsc);
             });
-            
-            dataView.onRowsChanged.subscribe(function(e,args) {
+
+			//filtering wires
+            dataView.onRowsChanged.subscribe(function (e,args) {
 			    grid.invalidateRows(args.rows);
 			    grid.render();
 			});
 			
+			dataView.onRowsChanged.subscribe(function (e, args) {
+			    grid.invalidateRows(args.rows);
+			    grid.render();
+			  });
+			  
+			$('#trackNameSearch').keyup(function (e) {
+				Slick.GlobalEditorLock.cancelCurrentEdit();
+				
+				if (e.which == 27) {
+					this.value = "";
+				}
+				trackNameSearchString=this.value;
+				updateFilter();
+				
+			});
+			
+			function updateFilter() {
+				dataView.setFilterArgs({
+					trackNameSearchString: trackNameSearchString
+				});
+				render();
+				
+				
+				
+			}
+			
 			
 			//it's rendering time
-            dataView.beginUpdate();
-            dataView.setItems(data);
-            dataView.endUpdate();
-            grid.invalidate();
+            function render() {
+            	dataView.beginUpdate();
+	            dataView.setItems(data);
+	            dataView.setFilterArgs({
+	            	trackNameSearchString: trackNameSearchString
+	            });
+	            dataView.setFilter(myFilter);
+	            dataView.endUpdate();
+	            dataView.refresh();
+				grid.invalidate();
+				$("#myGrid").show();
+	            $('.slick-header-columns').children().eq(4).trigger('dblclick');
+	            console.log(dataView.getLength() +" tracks to display")
+            }
             
-            grid.render();
-	
-            $("#myGrid").show();
-            $('.slick-header-columns').children().eq(4).trigger('dblclick');
-            
+            render();
  	        })
         
  	</script>
