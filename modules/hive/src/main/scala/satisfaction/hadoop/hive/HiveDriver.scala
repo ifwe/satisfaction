@@ -174,7 +174,6 @@ class HiveLocalDriver( val hiveConf : HiveConf = Config.config)
            ss1.childErr = Console.out
            ss1.childOut = Console.out
            ss1.err = Console.out
-           false
          true 
        }
     }

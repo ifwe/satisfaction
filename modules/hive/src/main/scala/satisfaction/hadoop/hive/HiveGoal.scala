@@ -9,8 +9,6 @@ import ms.HiveTablePartitionGroup
 import satisfaction._
 import scala.io.Source
 import org.apache.hadoop.hive.conf.HiveConf
-import satisfaction.retry.Retryable
-import satisfaction.notifier.Notifier
 
 /** 
  *   A Hive Goal executes a Hive Query
@@ -44,11 +42,7 @@ object HiveGoal {
             satisfier = Some(hiveSatisfier),
             variables = tblVariables,
             depends,
-            evidence = tblOutputs) with Retryable {
-            //// For now, assume that all Hive tracks can be retried
-            //// Use the implied notifier for the track to send email
-            override def notifier = Some( Notifier( track))
-        } 
+            evidence = tblOutputs) 
     }
 
 }

@@ -6,6 +6,7 @@ package hive.ms
 import satisfaction._
 import satisfaction.Satisfier
 import scala.collection.JavaConversions._
+import org.apache.hadoop.hive.metastore.api.AlreadyExistsException
 
 
 /**
@@ -24,7 +25,20 @@ case class PartitionExistsSatisfier(
       
     override def satisfy(subst: Witness): ExecutionResult = robustly {
         w = subst ++ extraAssignments
-        val part = table.addPartition(w)
+        val part = try { 
+            table.addPartition(w)
+        } catch {
+          //// In a race condition, if another track wants to check
+          //// for the same partition at the same time, 
+          ////  A "AlreadyExistsPartition may be thrown
+          case alreadyExists : AlreadyExistsException => {
+             warn(s" Partition on table ${table.dbName}::${table.tblName} already exists for witness $w ; Possible race condition with other Track ??")
+             table.getPartition(w).get
+          }
+          case unexpected : Throwable =>
+             throw unexpected
+        }
+
         part.markCompleted
         info(" Added Partition " + part )
         true

@@ -14,7 +14,6 @@ case class HiveSatisfier(val queryResource: String, val conf : HiveConf)( implic
 
    override def name = s"Hive( $queryResource )" 
   
-   val execResult = new ExecutionResult( queryTemplate, new DateTime)
    
    lazy val driver : HiveDriver = {
 	   HiveDriver(conf)
@@ -55,14 +54,11 @@ case class HiveSatisfier(val queryResource: String, val conf : HiveConf)( implic
        }
     }
     
-    def loadSetup = {
-      if( track.hasResource("setup.hql")) {
+    def loadSetup( allProps : Witness ) : ExecutionResult = {
          val setupScript = track.getResource("setup.hql")
          info(s" Running setup script $setupScript")
-         if ( !executeMultiple( setupScript) ) {
-            throw new HiveException("Trouble loading setup.hql")
-         }
-       }
+         /// XXX Merge multiple Execution results together ...
+         substituteAndExecQueries( setupScript, allProps) 
     }
     
     
@@ -70,40 +66,44 @@ case class HiveSatisfier(val queryResource: String, val conf : HiveConf)( implic
        hql.split(";")
     }
     
-
-    @Override
-    override def satisfy(params: Witness): ExecutionResult = {
-      try {
-
-        val allProps = track.getTrackProperties(params)
-        info(s" Track Properties is $allProps ; Witness is $params ")
-        val queryMatch = Substituter.substitute(queryTemplate, allProps) match {
+    def substituteAndExecQueries( queryString : String, allProps : Witness) : ExecutionResult = {
+      /// XXX If source statements 
+      ///  propagate variables to driver ...
+        val execResult = new ExecutionResult(queryString)
+        val queryMatch = Substituter.substitute(queryString, allProps) match {
             case Left(badVars) =>
                 error(" Missing variables in query Template ")
                 badVars.foreach { s => error(s"   Missing variable ${s} ") }
                 execResult.markFailure( s"Missing variables in queryTemplate ${badVars.mkString(",")} ")
             case Right(query) =>
-                val startTime = new DateTime
                 try {
-                    loadSetup
                     info(" Beginning executing Hive queries ..")
                     val result=  executeMultiple(query)
+                    //// XXX refactor to get each individual query
                     execResult.metrics.mergeMetrics( jobMetrics)
                     if( result ) { execResult.markSuccess() } else { execResult.markFailure() }
                 } catch {
                     case unexpected : Throwable =>
                         println(s" Unexpected error $unexpected")
+                        error(s" Unexpected error $unexpected", unexpected)
                         unexpected.printStackTrace()
-                        val execResult = new ExecutionResult(query, startTime)
                         execResult.markUnexpected(unexpected)
                 }
         }
-        return execResult 
-      } catch { 
-        case unexpected : Throwable =>
-          error(s" Unexpected Error :: ${unexpected.getLocalizedMessage} ", unexpected)
-          execResult.markUnexpected( unexpected)
-      }
+        return execResult
+    }
+
+    @Override
+    override def satisfy(params: Witness): ExecutionResult = {
+        val allProps = track.getTrackProperties(params)
+        info(s" Track Properties is $allProps ; Witness is $params ")
+        if( track.hasResource("setup.hql")) {
+           val setupResult = loadSetup(allProps)
+           if( ! setupResult.isSuccess) {
+              return setupResult
+           }
+        }
+        substituteAndExecQueries( queryTemplate, allProps)
     }
     
     @Override 
