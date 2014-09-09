@@ -11,7 +11,7 @@ object ProjectUtil {
 
 object HtmlUtil {
     val defaultTimeFormat = DateTimeFormat.forPattern("YYYY/MM/dd HH:mm ; EEE MMM hh:mm aa")
-    val simpleTimeFormat = DateTimeFormat.forPattern("YYYY/MM/dd HH:mm:ss")
+    val simpleTimeFormat = DateTimeFormat.forPattern("YYYY-MM-dd HH:mm:ss")
     
     def formatDate( dt : DateTime ) : String = {
        dt match {

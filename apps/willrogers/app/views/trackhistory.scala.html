@@ -10,22 +10,17 @@
 
 @main("Track History Page") {
 	<div id="filterMenu">
-		<h2> Filtering Menu for Track History</h2>
-		<p> Ideas - each bullet is an "AND" </p>
-		<ul>
-			<li>start time filtering (beginning and end)</li>
-			<li> ditto for end time </li>
-			<li> track name contains </li>
-			<li> goal name contains </li>
-			<li> percentage complete (want a 2 way slider - if possible)</li>
-		</ul>
-		
-		
-		<label style="width:200px;float:left">Track Name contains : </label>
-		<input type=text id="trackNameSearch">
-		
+		<h2> Filtering Menu</h2>
+
+		<form>
+			<label>Track Name contains :</label> <input type=text id="trackNameSearch"> <br />
+			<label>Goal Name contains :</label> <input type=text id="goalNameSearch"> <br />
+			<label>Started* by :</label> <input type=text id="startTimeSearch"> <br />
+			<label>Finished* by :</label> <input type=text id="endTimeSearch"> <br />
+		</form>
+		<p>* = must be in the format of "YYYY-MM-dd HH:mm:ss"</p>
 	</div>
-	
+
 	<div id="trackHistoryContainer">
 		<h2>Track History</h2>
 		<div id="trackHistory" style="height:600px;"></div>
@@ -60,11 +55,16 @@
  	            forceFitColumns: true
  	            };
  	            
- 	            
-
+		//sorting variables
 		var sortcol = "startTime"
 		var sortdir =1;
+		
+		//filtering variables
 		trackNameSearchString="";
+		goalNameSearchString="";
+		startTimeSearchString="";
+		endTimeSearchString="";
+		
 		
 		//to display HTML content in cell.      
  	   function formatter(row, cell, value, columnDef, dataContext) {
@@ -76,7 +76,32 @@
        	if(args.trackNameSearchString != "" && item["trackName"].indexOf(args.trackNameSearchString) == -1) {
        		return false;
        	}
+       	
+ 		if(args.goalNameSearchString != "" && item["goalName"].indexOf(args.goalNameSearchString) == -1) {
+       		return false;
+       	}
+       	
+       	if(Date.parse(item["startTime"]) < Date.parse(args.startTimeSearchString)) {
+       		return false;
+       	}
+       	
+       	if(item["endTime"].length == 19  && Date.parse(item["endTime"]) > Date.parse(args.endTimeSearchString)) {
+       		return false;
+       	}
+       	
        	return true;
+       }
+       
+       //validate datetime strings "YYYY-MM-dd HH:mm:ss"
+       function validateDateTime(str) {
+       	if (str=="") {
+       		return true;
+       	}
+       	if(str=="" || str==null || str.length != 19){
+       		return false;
+       	}
+       	var dateRegTest = /^\d{4}-(0[1-9]|1[0-2])-([0-2]\d|3[01]) (0\d|1[01]):[0-5]\d:[0-5]\d$/;
+       	return dateRegTest.test(str);	
        }
  	   
  	   $(function () {
@@ -119,36 +144,40 @@
             });
 
 			//filtering wires
-            dataView.onRowsChanged.subscribe(function (e,args) {
-			    grid.invalidateRows(args.rows);
-			    grid.render();
-			});
-			
-			dataView.onRowsChanged.subscribe(function (e, args) {
-			    grid.invalidateRows(args.rows);
-			    grid.render();
-			  });
-			  
+            
 			$('#trackNameSearch').keyup(function (e) {
 				Slick.GlobalEditorLock.cancelCurrentEdit();
 				
-				if (e.which == 27) {
-					this.value = "";
-				}
 				trackNameSearchString=this.value;
-				updateFilter();
+				render();
 				
 			});
 			
-			function updateFilter() {
-				dataView.setFilterArgs({
-					trackNameSearchString: trackNameSearchString
-				});
+			$('#goalNameSearch').keyup(function (e) {
+				Slick.GlobalEditorLock.cancelCurrentEdit();
+				
+				goalNameSearchString=this.value;
 				render();
 				
+			});
+			
+			$('#startTimeSearch').keyup(function (e) {
+				Slick.GlobalEditorLock.cancelCurrentEdit();
 				
+				if(validateDateTime(this.value)) {
+					startTimeSearchString=this.value;
+					render();
+				}
+			});
+			
+			$('#endTimeSearch').keyup(function (e) {
+				Slick.GlobalEditorLock.cancelCurrentEdit();
 				
-			}
+				if(validateDateTime(this.value)) {
+					endTimeSearchString=this.value;
+					render();
+				}
+			});
 			
 			
 			//it's rendering time
@@ -156,10 +185,14 @@
             	dataView.beginUpdate();
 	            dataView.setItems(data);
 	            dataView.setFilterArgs({
-	            	trackNameSearchString: trackNameSearchString
+	            	trackNameSearchString: trackNameSearchString,
+	            	goalNameSearchString: goalNameSearchString,
+	            	startTimeSearchString: startTimeSearchString,
+	            	endTimeSearchString: endTimeSearchString
 	            });
 	            dataView.setFilter(myFilter);
 	            dataView.endUpdate();
+	            
 	            dataView.refresh();
 				grid.invalidate();
 				$("#myGrid").show();
@@ -167,10 +200,8 @@
 	            console.log(dataView.getLength() +" tracks to display")
             }
             
-            render();
+            render(); // initial call
  	        })
         
  	</script>
-  
-
-	}
+  	}
