@@ -82,6 +82,11 @@ trait TrackHistory {
     */
    def getAllHistory() : Seq[GoalRun]
    
+   /**
+    * get entries for the last week
+    */
+   def getRecentHistory() : Seq[GoalRun]
+   
   /**
    *  Lookup a specific goal run, 
    *   given the runID

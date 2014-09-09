@@ -107,8 +107,10 @@
  	   $(function () {
  	   
  	   		//load data
+			var dataCounter = @grList.length;
+
 			@grList.map { gr => 
-				data[@grList.length - @gr.runId] = {
+				data[--dataCounter] = {
 					id: @gr.runId,
 					trackName: "@gr.trackDescriptor.trackName",
 	  	          	goalName: "@gr.goalName",
@@ -122,7 +124,6 @@
 							})"
 				};
 			}
-
  	      	grid = new Slick.Grid("#trackHistory", dataView, columns, options);
  	      	
  	      	//listeners and functions for sorting

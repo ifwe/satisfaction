@@ -23,9 +23,8 @@ import org.joda.time.DateTime
 object TrackHistoryPage extends Controller {
   lazy val trackHistory = Global.trackHistory
   
-  private var grList = trackHistory.getAllHistory
-  private var listIndex = grList.length
-  private val listLength = 50
+  //private var grList = trackHistory.getAllHistory
+  private var grList = trackHistory.getRecentHistory; // by default - only grab recent tracks
   
   /**
    * default loader
@@ -120,4 +119,14 @@ object TrackHistoryPage extends Controller {
       case None => Ok(views.html.trackhistory(Seq()))
     }
   }
+	
+	
+	/**
+	 * If you want to see everything that ever ran
+	 */
+	def getAllHistoryRuns() = Action {
+		//val grList = trackHistory.getAllHistory
+		grList=trackHistory.getAllHistory
+				Ok(views.html.trackhistory(grList))
+	}
 }

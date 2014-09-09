@@ -1,18 +1,16 @@
 package satisfaction
 package track
 
-import org.joda.time._
-import GoalStatus._
-import scala.slick.driver.H2Driver.simple._
-import scala.slick.jdbc.{GetResult, StaticQuery => Q}
-import scala.slick.jdbc.JdbcBackend.Database
-import scala.slick.lifted.ProvenShape
-import java.sql.Connection
-import java.sql.DriverManager
-import java.sql.ResultSet
-import scala.slick.jdbc.meta.MTable
 import java.sql.Timestamp
 
+import scala.slick.driver.H2Driver.simple._
+import scala.slick.jdbc.JdbcBackend.Database
+import scala.slick.jdbc.meta.MTable
+import scala.slick.lifted.ProvenShape
+
+import org.joda.time._
+
+import GoalStatus._
 import satisfaction.track.Witness2Json._
 
 
@@ -31,20 +29,7 @@ case class DriverInfo(
 
 
 class JDBCSlickTrackHistory( val driverInfo : DriverInfo)   extends TrackHistory{
-	/**
-	 * class for database formatting
-	 */
-  /**
-    case class TrackHistoryTableType( val id :Int,
-           val trackName:String,
-           val forUser:String,
-           val version:String,
-           val variant:String,val goalName:String,
-           val witness:String,val startTime:Timestamp, 
-           val endTime:Option[Timestamp], String)
-           * 
-           */
-  
+
   // ADD ANOTHER COLUMN FOR PARENT ID!!!!!!
 
 	class TrackHistoryTable (tag: Tag) extends Table[(Int, String, String, String, String, String, String, Timestamp, Option[Timestamp], String)](tag, "TrackHistoryTable") {
@@ -131,6 +116,7 @@ class JDBCSlickTrackHistory( val driverInfo : DriverInfo)   extends TrackHistory
 													 gr
 		   			 							}).seq
 			}
+	  
 	  returnList
 	}
 	
@@ -221,7 +207,6 @@ class JDBCSlickTrackHistory( val driverInfo : DriverInfo)   extends TrackHistory
 	
 	
 	def getAllHistory() : Seq[GoalRun] = {
-	  // println("grabbing all tracks") takes about 2 seconds :/
 	  var returnList : Seq[GoalRun] = null.asInstanceOf[Seq[GoalRun]]
 	  db.withSession {
 		   implicit session =>
@@ -232,9 +217,31 @@ class JDBCSlickTrackHistory( val driverInfo : DriverInfo)   extends TrackHistory
 															       	    			 case None => null}, GoalState.withName(g._10))
 														gr.runId=g._1.toString
 														gr
-		   			 							}).seq
+		   			 							}).seq		   			 							
 			}
-	  //println("I got all the tracks!")
+	  returnList
+	}
+	
+	def getRecentHistory(): Seq[GoalRun] = {
+	
+	  val daysAgo = 7;
+	  val dt = new DateTime();
+	  val tsThreshold = new Timestamp(dt.minusDays(daysAgo).toDateMidnight().getMillis())
+	    	
+	  var returnList : Seq[GoalRun] = null.asInstanceOf[Seq[GoalRun]]
+	  db.withSession {
+	    implicit session =>
+	      
+	    	returnList = table.list.filter(_._8.after(tsThreshold)).map(g => {
+		   			 		 val gr = GoalRun(TrackDescriptor(g._2, g._3, g._4, Some(g._5)), 
+										g._6, parseWitness(g._7), new DateTime(g._8), 
+										g._9 match { case Some(timestamp) => Some(new DateTime(timestamp))
+													 case None => null}, 
+										GoalState.withName(g._10))
+													 gr.runId=g._1.toString
+													 gr
+		   			 							}).seq
+	  	}
 	  returnList
 	}
 	
