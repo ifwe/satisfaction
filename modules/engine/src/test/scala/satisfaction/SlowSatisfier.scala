@@ -32,8 +32,7 @@ class SlowSatisfier(progressCount: Int, sleepTime: Long) extends MockSatisfier w
       retCode = false
       runningThread.interrupt
       val abortResult = new ExecutionResult("MockSatisfier", startTime);
-      abortResult.isSuccess = true 
-      abortResult.timeEnded = DateTime.now
+      abortResult.markSuccess
       abortResult
     }
 

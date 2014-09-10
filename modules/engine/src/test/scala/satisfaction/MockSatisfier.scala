@@ -26,8 +26,7 @@ class MockSatisfier extends Satisfier with Evidence {
         varMap ++= params.raw.keySet
         println("  Returning code " + retCode)
         val execResult = new ExecutionResult("MockSatisfier", startTime )
-        execResult.isSuccess = retCode
-        execResult.timeEnded  = new DateTime
+        execResult.markSuccess
         
         
         execResult
@@ -37,8 +36,7 @@ class MockSatisfier extends Satisfier with Evidence {
     override def abort() : ExecutionResult = {
       retCode = false 
       val abortResult = new ExecutionResult("MockSatisfier", startTime);
-      abortResult.isSuccess = true;
-      abortResult.timeEnded = DateTime.now
+      abortResult.markSuccess
       abortResult
     }
 
