@@ -19,14 +19,19 @@ class TrackHistorySpec extends Specification {
   "TrackHistorySpec" should {
     //set ups
     val trackHistory =  JDBCSlickTrackHistory
-    val trackDesc : TrackDescriptor = TrackDescriptor ("testTrackName")
-    val goalName : String = "testGoalName"
-    val witness : Witness = Witness( (Variable("date") -> "20140522" ),( Variable("hour") -> "02"))
+    val trackDesc : TrackDescriptor = TrackDescriptor ("DAU")
+    val goalName : String = "calcDAU"
+    val witness : Witness = Witness( (Variable("date") -> "20140910" ),( Variable("hour") -> "02"))
     
     val dt : DateTime = new DateTime(System.currentTimeMillis())
 
    
-    
+    "show all tracks" in {
+      
+      val resultList = trackHistory.getAllHistory
+      resultList.foreach(gr => gr.printGoalRun)
+    }
+    /*
     "insert started job into table" in  {
     
       val runId  = trackHistory.startRun(trackDesc, goalName, witness, dt)
@@ -40,6 +45,8 @@ class TrackHistorySpec extends Specification {
       //result.toString must be 
      // H2DriverInfo.USER must be_==("sa") // NO
     }
+    
+    
      
     "update a running jobhistory" in { 
      //val result : String = trackHistory.completeRun("29", GoalState.Success)
@@ -64,7 +71,6 @@ class TrackHistorySpec extends Specification {
 
     }
     
-    /**
     "get Goals by time spans" in {
     	
       //set up custom start and end DateTimes; then toggle 
@@ -113,7 +119,7 @@ class TrackHistorySpec extends Specification {
          val hour = witness.get(Variable("hour")).get
          
          hour must_== "08"
-           
+
       }
 
 **/
