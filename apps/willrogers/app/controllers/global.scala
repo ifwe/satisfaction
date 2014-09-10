@@ -24,15 +24,12 @@ object Global extends play.api.GlobalSettings {
     implicit val metaStore : MetaStore  = new MetaStore()( hiveConf)
 
     lazy val hdfsFS = Hdfs.fromConfig( hiveConf )
+    var trackPath : Path = new Path("/user/yyin/satisfation")
 
-    ///lazy val trackPath : Path = new Path("/user/jerome/satisfaction") /// XXX Get From appconfig
-    lazy val trackPath : Path = new Path(
-            configuration.getString("satisfaction.track.path").getOrElse(
-                "/user/yyin/satisfaction"))
-           //"/user/jerome/satisfaction")) 
 
 
     override def onStart(app: Application) {
+        super.onStart( app)
         /// XXX initialize name-node, job-tracker, and metastore 
         //// with values from app.configuration 
         
@@ -41,23 +38,15 @@ object Global extends play.api.GlobalSettings {
         Logger.info(" Starting the Akka Actors")
         
         val initPe = proofEngine
-        trackFactory.initializeAllTracks
 
-        /**
-        initTf.foreach( tr => { 
-          try {
-           println(" Track " + tr.trackName + " User " + tr.forUser + " with variant " + tr.variant + " :: Version " + tr.version)
-           val loadTr = trackFactory.generateTrack(tr)
-           println(" Loaded Track " + loadTr.get)
-          } catch {
-            case e: Throwable =>
-              println(" Unable to load track " +tr + " Exc = " + e)
-              e.printStackTrace
-          }
-        })
-        * 
-        */
-        ////lazy val database = Database.forDataSource(DB.getDataSource())
+        trackPath = Path(app.configuration.getString("satisfaction.track.path").getOrElse("/user/satisfaction"))
+        Logger.info(s" Using TrackPath $trackPath ")
+        val hadoopWitness : Witness = Config.Configuration2Witness( hiveConf)
+        Logger.info("XXXXXXXXXXXX Creating GLOBAL TrackFactory YYYYYYYYYYYY")
+        var tf = new TrackFactory( hdfsFS, trackPath, Some(trackScheduler), Some(hadoopWitness))
+        trackFactory =tf
+        trackScheduler.trackFactory = tf
+        trackFactory.initializeAllTracks
 
     }
     
@@ -67,23 +56,8 @@ object Global extends play.api.GlobalSettings {
     lazy val proofEngine = new ProofEngine(Some(trackHistory))
     
     lazy val trackScheduler = new TrackScheduler(proofEngine)
-      
-    implicit val trackFactory : TrackFactory = {
-      ///// XXX Why doesn't implicits automatically convert???
-      try {
-        val hadoopWitness : Witness = Config.Configuration2Witness( hiveConf)
-        println("XXXXXXXXXXXX Creating GLOBAL TrackFactory YYYYYYYYYYYY")
-        var tf = new TrackFactory( hdfsFS, trackPath, Some(trackScheduler), Some(hadoopWitness))
-        trackScheduler.trackFactory = tf
-        ///tf.initializeAllTracks
-        tf
-      } catch {
-        case unexpected : Throwable => 
-           unexpected.printStackTrace(System.out) 
-           throw unexpected
-      }
-    }
     
+    var trackFactory : TrackFactory = null
     
     override def onError(request: RequestHeader, ex: Throwable) = {
        Future.successful(

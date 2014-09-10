@@ -26,10 +26,20 @@ import org.joda.time.DateTime
  *  
  */
 case class LogWrapper[T]( track : Track, goal : Goal, witness : Witness)  {
-  lazy val outStream = loggingOutput
+  private var _outStream : OutputStream = null
+
+  def outStream = { 
+     if( _outStream == null ) {
+       _outStream = loggingOutput
+    }
+     _outStream
+  }
+  def resetOutStream = { _outStream = null } 
+  
   lazy val printWriter = new PrintWriter(outStream)
 
   def log( functor :  () => T  ) : Try[T] = {
+     resetOutStream
      val currOut = Console.out
      val currErr = Console.err
      try {
@@ -85,13 +95,6 @@ case class LogWrapper[T]( track : Track, goal : Goal, witness : Witness)  {
     /// 
     printWriter.println(s"WARN LOGWRAPPER ${DateTime.now} $st")
   }
-  
-  
-  
-  
-  
-  
-  
   
   
   def close() {
@@ -155,7 +158,7 @@ object LogWrapper {
     }
 
     def numAttemptsForGoalWitness( track: TrackDescriptor, goalName : String, witness : Witness ) : Int = {
-       val checkPath = logPathForGoalWitness(track,goalName, witness).parent
+       val checkPath = logPathForGoalWitness(track,goalName, witness)
        localFS.listFiles(checkPath.parent).count( _.path.name.startsWith( checkPath.name) )
     }
     

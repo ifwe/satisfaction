@@ -10,9 +10,10 @@ object ProjectUtil {
 
 
 object HtmlUtil {
-    val defaultTimeFormat = DateTimeFormat.forPattern("YYYY/MM/dd HH:mm ; EEE MMM hh:mm aa")
+
+    val defaultTimeFormat = DateTimeFormat.forPattern("EEE YYYY/MM/dd hh:mm aa")
     val simpleTimeFormat = DateTimeFormat.forPattern("YYYY-MM-dd HH:mm:ss")
-    
+
     def formatDate( dt : DateTime ) : String = {
        dt match {
          case null => "N/A"

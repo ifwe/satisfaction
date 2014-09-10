@@ -13,7 +13,7 @@ import scala.util.Success
 import scala.util.Failure
 import satisfaction.engine._
 import fs._
-import satisfaction.track.TrackFactory.MajorMinorPatch
+import satisfaction.MajorMinorPatch
 
 /**
  *  Test that we're able to sort versions correctly

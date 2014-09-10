@@ -203,7 +203,7 @@ class ProofEngine( val trackHistoryOpt : Option[TrackHistory] = None) extends  s
 
         val activeActors = Await.result(activeActorsF, timeout.duration).asInstanceOf[Set[ActorRef]]
         val allActors = activeActors.map( _.path  ).mkString(",")
-        info(" Active actors are ${allActors}")
+        info(s" Active actors are ${allActors}")
 
         /// Get a set of futures for every actor, and ask their status
         val listOfRequests: Set[Future[StatusResponse]] = activeActors.map(ask(_, WhatsYourStatus).mapTo[StatusResponse])

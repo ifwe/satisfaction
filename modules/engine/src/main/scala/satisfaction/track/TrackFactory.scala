@@ -270,40 +270,34 @@ case class TrackFactory(val trackFS : FileSystem,
    
    def trackClassLoader( jarPath: Path) : ClassLoader = {
       ///val urlClassloader = new java.net.URLClassLoader(jarURLS( jarPath), this.getClass.getClassLoader)
-      val urlClassloader = new java.net.URLClassLoader(jarURLS( jarPath))
-      
-      urlClassloader.getURLs.foreach( earl => {
-         System.out.println(s" using jar URL $earl ")
-      } ) 
-     
-      Thread.currentThread().setContextClassLoader(urlClassloader);
-      urlClassloader
-   }
-
-   
-  def loadTrackClass( jarPath : Path , trackClassName : String ) : Option[Class[_ <: Track]]  = {
-  ////def loadTrackClass( jarPath : Path , trackClassName : String ) : Option[Class[_]]  = {
-     try {
-      
-      val urlClassloader = new java.net.URLClassLoader(jarURLS( jarPath), this.getClass.getClassLoader)
+      val urlClassloader = new java.net.URLClassLoader(jarURLS( jarPath),this.getClass.getClassLoader)
       Thread.currentThread.setContextClassLoader(urlClassloader)
       
       urlClassloader.getURLs.foreach( earl => {
-         System.out.println(s" using jar URL $earl ")
+         info(s" using jar URL $earl ")
       } ) 
+     
+      urlClassloader
+   }
+
+  def loadTrackClass( jarPath : Path , trackClassName : String ) : Option[Class[_ <: Track]]  = {
+     try {
+      
+      val trackClassloader = trackClassLoader( jarPath)
+      
       
       //// Accessing object instances 
       ///val scalaName = if (trackClassName endsWith "$") trackClassName else (trackClassName + "$")
       //// XXX allow scala companion objects 
       val scalaName = trackClassName
       
-      val scalaClass = urlClassloader.loadClass( scalaName)
-      println( " Scala Class is " + scalaClass.getCanonicalName())
+      val scalaClass = trackClassloader.loadClass( scalaName)
+      info( " Scala Class is " + scalaClass.getCanonicalName())
       
-      println(" Scala Parent class = " + scalaClass.getSuperclass() + " :: " + scalaClass.getSuperclass.getCanonicalName())
+      info(" Scala Parent class = " + scalaClass.getSuperclass() + " :: " + scalaClass.getSuperclass.getCanonicalName())
       
       val t1Class = classOf[Track]
-      println(" Track class = " + t1Class + " :: " + t1Class.getCanonicalName())
+      info(" Track class = " + t1Class + " :: " + t1Class.getCanonicalName())
       
       val tClass = scalaClass.asSubclass( classOf[Track])
       val cons = tClass.getDeclaredConstructors(); 
