@@ -26,7 +26,7 @@ trait TrackHistory {
      var runId : String = null
      
      def printGoalRun = {
-       val formatted : String = "trackName: " + trackDescriptor.trackName +
+       val formatted : String = "A goalRun trackName: " + trackDescriptor.trackName +
     		   			" goalName: " + goalName +
     		   			" witness: " + witness +
     		   			" startTime: " + startTime + 
@@ -50,6 +50,8 @@ trait TrackHistory {
    /**
     *   Mark that a Track has been completed with a certain state ( Either Succeeded or Failed )
     *   update record of id
+    *   
+    *   TODO : should record tracking here (such as how long it took to finish etc)
     */
    def completeRun( id : String, state : GoalState.State) : String
    

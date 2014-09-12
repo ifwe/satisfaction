@@ -2,21 +2,19 @@ package willrogers
 package controllers
 
 import java.text.SimpleDateFormat
-import scala.collection._
-import satisfaction._
-import satisfaction.track._
-import satisfaction.track.TrackHistory
-import models.VariableFormHandler
-import play.api._
-import play.api.data._
-import play.api.data.Forms._
-import play.api.data.validation.Constraints._
-import play.api.mvc
-import play.api.mvc.Action
-import play.api.mvc.Results._
-import play.mvc.Controller
-import play.mvc.Results
+
+import scala.collection.Seq
+
 import org.joda.time.DateTime
+
+import play.api.data.Form
+import play.api.data.Forms.text
+import play.api.data.Forms.tuple
+import play.api.mvc.Action
+import play.api.mvc.Results.Ok
+import play.mvc.Controller
+import satisfaction.TrackDescriptor
+import willrogers.Global
 
 
 
@@ -24,13 +22,12 @@ object TrackHistoryPage extends Controller {
   lazy val trackHistory = Global.trackHistory
   
   //private var grList = trackHistory.getAllHistory
-  private var grList = trackHistory.getRecentHistory; // by default - only grab recent tracks
-  
+  var grList = trackHistory.getRecentHistory // by default - only grab recent tracks
+
   /**
    * default loader
    */
   def loadHistoryPageAction() = Action {
-    //val grList = trackHistory.getAllHistory
 
     println("loading page history: I have "+ grList.length + " tracks")
    Ok(views.html.trackhistory(grList))

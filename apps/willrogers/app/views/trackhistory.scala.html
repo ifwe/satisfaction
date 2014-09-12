@@ -29,24 +29,26 @@
 
 	<script type="text/javascript" charset="utf8" src="@routes.Assets.at("javascripts/jquery.event.drag-2.2.js")"></script>
 	<script type="text/javascript" charset="utf8" src="@routes.Assets.at("javascripts/slick.core.js")"></script>
+	<script type="text/javascript" charset="utf8" src="@routes.Assets.at("javascripts/slick.formatters.js")"></script>
    	<script type="text/javascript" charset="utf8" src="@routes.Assets.at("javascripts/slick.grid.js")"></script>
  	 <script type="text/javascript" charset="utf8" src="@routes.Assets.at("javascripts/slick.dataview.js")"></script>
  	
  	<script>
  	  
     
-    	var dataView = new Slick.Data.DataView();
+    	var dataView;
  		var grid;
  		var data = [];
  		var columns = [
- 	                   {id: "id", name: "ID", field: "id", sortable: true},
- 	                   {id: "trackName", name: "Track Name", field: "trackName", sortable: true},
- 	                   {id: "goalName", name: "GoalName", field: "goalName", sortable: true},
+ 	                   {id: "trackName", name: "Track Name", field: "trackName", sortable: true, width: 50},
+ 	                   {id: "goalName", name: "GoalName", field: "goalName", sortable: true, width: 50},
  	                   {id: "witness", name: "Witness", field: "witness", formatter: formatter, sortable: true},
  	                   {id: "startTime", name: "Start Time", field: "startTime", sortable: true},
  	                   {id: "endTime", name: "End Time", field: "endTime", sogrtable: true},
- 	                   {id: "status", name: "Status", field: "status", sortable: true},
- 	                   {id: "log", name: "Log File", field: "log", formatter: formatter, sortable: true}
+ 	                   {id: "status", name: "Status", field: "status", sortable: true, width: 15},
+ 	                   {id: "id", name: "ID", field: "id", sortable: true, width:15},
+ 	                   {id: "parentId", name: "Parent ID", field: "parentId", sortable: true, width: 15},
+ 	                   {id: "log", name: "Log File", field: "log", formatter: formatter, sortable: true, width: 10}
  	              ];
 
  	    var options = {
@@ -104,6 +106,28 @@
        	return dateRegTest.test(str);	
        }
  	   
+ 	   
+ 	   //nesting variables/functions
+ 	   
+		var TaskNameFormatter = function (row, cell, value, columnDef, dataContext) {
+		  value = value.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+		  var spacer = "<span style='display:inline-block;height:1px;width:" + (15 * dataContext["indent"]) + "px'></span>";
+		  var idx = dataView.getIdxById(dataContext.id);
+		  if (data[idx + 1] && data[idx + 1].indent > data[idx].indent) {
+		    if (dataContext._collapsed) {
+		      return spacer + " <span class='toggle expand'></span>&nbsp;" + value;
+		    } else {
+		      return spacer + " <span class='toggle collapse'></span>&nbsp;" + value;
+		    }
+		  } else {
+		    return spacer + " <span class='toggle'></span>&nbsp;" + value;
+		  }
+		};
+		
+		
+		
+		
+		
  	   $(function () {
  	   
  	   		//load data
@@ -112,6 +136,7 @@
 			@grList.map { gr => 
 				data[--dataCounter] = {
 					id: @gr.runId,
+					parentId: "@gr.parentRunId",
 					trackName: "@gr.trackDescriptor.trackName",
 	  	          	goalName: "@gr.goalName",
 	  	          	witness: "@Html(HtmlUtil.witnessTable( gr.witness))",
@@ -124,6 +149,7 @@
 							})"
 				};
 			}
+			dataView = new Slick.Data.DataView();
  	      	grid = new Slick.Grid("#trackHistory", dataView, columns, options);
  	      	
  	      	//listeners and functions for sorting
@@ -179,6 +205,24 @@
 					render();
 				}
 			});
+			
+			
+			//nesting hooks
+			grid.onClick.subscribe(function (e, args) {
+			    if ($(e.target).hasClass("toggle")) {
+			      var item = dataView.getItem(args.row);
+			      if (item) {
+			        if (!item._collapsed) {
+			          item._collapsed = true;
+			        } else {
+			          item._collapsed = false;
+			        }
+			
+			        dataView.updateItem(item.id, item);
+			      }
+			      e.stopImmediatePropagation();
+			    }
+			  });
 			
 			
 			//it's rendering time

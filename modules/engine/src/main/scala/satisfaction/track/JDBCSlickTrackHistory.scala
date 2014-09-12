@@ -21,7 +21,7 @@ import satisfaction.track.Witness2Json._
 
 case class DriverInfo(
 	  val jdbcDriver : String =  "org.h2.Driver",
-	  val dbURI : String = "jdbc:h2:file:data/sample", //change this to a file url, for persistence!
+	  val dbURI : String = "jdbc:h2:file:data/jdbcTrackHistory", //change this to a file url, for persistence!
 	  val user : String = "sa",
 	  val passwd : String = "",
 	  val props : java.util.Properties = new java.util.Properties
@@ -281,7 +281,7 @@ class JDBCSlickTrackHistory( val driverInfo : DriverInfo)   extends TrackHistory
 	}
 	
 
-  
+
 }
 
 object JDBCSlickTrackHistory extends JDBCSlickTrackHistory( new DriverInfo) {
