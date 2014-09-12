@@ -10,8 +10,10 @@ object ProjectUtil {
 
 
 object HtmlUtil {
+
     val defaultTimeFormat = DateTimeFormat.forPattern("EEE YYYY/MM/dd hh:mm aa")
-    
+    val simpleTimeFormat = DateTimeFormat.forPattern("YYYY-MM-dd HH:mm:ss")
+
     def formatDate( dt : DateTime ) : String = {
        dt match {
          case null => "N/A"
@@ -35,6 +37,15 @@ object HtmlUtil {
          case Some(d) => 
            defaultTimeFormat.print(d)
        } 
+    }
+    
+    def formatTrackHistoryDate(dtOpt: Option[DateTime]) : String = {
+      dtOpt match {
+        case null => "N/A"
+        case None => "N/A"
+        case Some(d) =>
+        	simpleTimeFormat.print(d)
+      }
     }
     
     def formatWitness( wit : Witness ) : String = {

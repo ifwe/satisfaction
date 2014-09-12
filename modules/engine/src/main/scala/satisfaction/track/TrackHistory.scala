@@ -17,13 +17,24 @@ trait TrackHistory {
          val witness : Witness, 
          val startTime : DateTime, 
          val endTime : Option[DateTime],
-         val state : GoalState.State) {
+         val state : GoalState.State,
+         val parentRunId: Option[String]) {
     
      /**
       *  DB Identifier for the run
       */
      var runId : String = null
      
+     def printGoalRun = {
+       val formatted : String = "A goalRun trackName: " + trackDescriptor.trackName +
+    		   			" goalName: " + goalName +
+    		   			" witness: " + witness +
+    		   			" startTime: " + startTime + 
+    		   			" endTime: " + endTime + 
+    		   			" state: " + state +
+    		   			" parentID: " + parentRunId
+       println(formatted)
+     }
   }
          
    /**
@@ -33,10 +44,14 @@ trait TrackHistory {
     *  return a string id GoalState.state to running
     */
    def startRun( trackDesc: TrackDescriptor, goalName : String, witness: Witness, startTime : DateTime) : String
+   
+   def startSubGoalRun ( trackDesc: TrackDescriptor, goalName : String, witness: Witness, startTime : DateTime, parentRunId: String) : String
   
    /**
     *   Mark that a Track has been completed with a certain state ( Either Succeeded or Failed )
     *   update record of id
+    *   
+    *   TODO : should record tracking here (such as how long it took to finish etc)
     */
    def completeRun( id : String, state : GoalState.State) : String
    
@@ -79,6 +94,11 @@ trait TrackHistory {
     */
    def getAllHistory() : Seq[GoalRun]
    
+   /**
+    * get entries for the last week
+    */
+   def getRecentHistory() : Seq[GoalRun]
+   
   /**
    *  Lookup a specific goal run, 
    *   given the runID
@@ -86,6 +106,12 @@ trait TrackHistory {
    *   by runID only
    */
    def lookupGoalRun( runID : String ) : Option[GoalRun]
+
+   
+   def getParentRunId(runID: String) : Option[String]
+   
+   //def getChildrenRunId(runID : String) : Seq[GoalRun]
+   
    
 }
 

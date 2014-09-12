@@ -14,3 +14,17 @@ div#gridPanel th
   position: relative;
   z-index: 20;
 }
+
+
+label
+{
+	float:left;
+	display:block;
+	clear:both;
+	width:200px;
+}
+
+
+.slick-row:hover {
+	background-color:#cdcdcd;
+}

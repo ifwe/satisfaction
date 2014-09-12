@@ -24,8 +24,8 @@ object Global extends play.api.GlobalSettings {
     implicit val metaStore : MetaStore  = new MetaStore()( hiveConf)
 
     lazy val hdfsFS = Hdfs.fromConfig( hiveConf )
+    var trackPath : Path = new Path("/user/jerome/satisfation")
 
-    var trackPath : Path = new Path("/user/satisfation")
 
 
     override def onStart(app: Application) {
