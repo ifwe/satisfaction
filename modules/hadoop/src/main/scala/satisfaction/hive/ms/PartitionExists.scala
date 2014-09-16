@@ -7,6 +7,7 @@ import satisfaction._
 import satisfaction.Satisfier
 import scala.collection.JavaConversions._
 import org.apache.hadoop.hive.metastore.api.AlreadyExistsException
+import org.apache.hadoop.hive.ql.metadata.HiveException
 
 
 /**
@@ -31,6 +32,16 @@ case class PartitionExistsSatisfier(
           //// In a race condition, if another track wants to check
           //// for the same partition at the same time, 
           ////  A "AlreadyExistsPartition may be thrown
+          case hiveExc  : HiveException => {
+             hiveExc.getCause match {
+               case alreadyExists : AlreadyExistsException => {
+                 warn(s" Partition on table ${table.dbName}::${table.tblName} already exists for witness $w ; Possible race condition with other Track ??")
+                 table.getPartition(w).get
+               }
+               case unexpected : Throwable => 
+                   throw unexpected
+             }
+          }
           case alreadyExists : AlreadyExistsException => {
              warn(s" Partition on table ${table.dbName}::${table.tblName} already exists for witness $w ; Possible race condition with other Track ??")
              table.getPartition(w).get

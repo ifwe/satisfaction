@@ -3,8 +3,6 @@ package hadoop
 package hive.ms
 
 import org.apache.hadoop.hive.ql.metadata._
-
-
 import org.apache.hadoop.hive.ql.metadata.{Table => ApacheTable}
 import org.apache.hadoop.fs.{Path => ApachePath}
 import collection.JavaConversions._
@@ -14,6 +12,7 @@ import hdfs.HdfsPath
 import hdfs.HdfsFactoryInit
 import hdfs.HdfsImplicits._
 import satisfaction.hadoop.hdfs.VariablePath
+import org.joda.time.Period
 
 trait HiveDataOutput extends DataOutput
 
@@ -94,6 +93,7 @@ case class HiveTable (
        }
     }
     
+    
     def getPartition(witness: Witness): Option[HiveTablePartition] =  {
         try {
             
@@ -114,6 +114,10 @@ case class HiveTable (
         
     }
     
+    def partitions : Seq[HiveTablePartition] = {
+      ms.getPartitionsForTable(this._hiveTable).map( HiveTablePartition(_))
+    }
+    
     def addPartition(witness : Witness)( implicit track : Track) : HiveTablePartition = {
         val varWit = witness.assignments.filter( va => { variables.contains( va.variable ) } )
         val part = ms.addPartition( dbName, tblName , Witness(varWit).raw  )    
@@ -127,6 +131,16 @@ case class HiveTable (
         }
         HiveTablePartition(part)
     }
+
+    def dropPartition(witness : Witness)( implicit track : Track) : Unit = {
+       getPartition( witness ) match {
+         case Some( part) => { part.drop }
+         
+         case None => { }
+       }
+    }
+    
+    
     
     
     def setMetaData( key : String, md : String ) : Unit = {
@@ -150,6 +164,16 @@ case class HiveTable (
      */
     def partitionPath()(implicit track : Track) : VariablePath = {
        VariablePath( dataLocation, variables) 
+    }
+    
+    def setRetentionPolicy( howLongToKeep : Period  ) : Unit = {
+      setMetaData( MetaStore.RetentionMetaDataKey, howLongToKeep.toString() )
+    }
+    def getRetentionPolicy : Option[Period] = {
+        getMetaData( MetaStore.RetentionMetaDataKey)  match {
+          case Some(periodStr) =>  Some(Period.parse(periodStr))
+          case None => None
+        }
     }
 
 }

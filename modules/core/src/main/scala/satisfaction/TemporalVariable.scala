@@ -5,12 +5,17 @@ import org.joda.time.format.DateTimeFormat
 import org.joda.time.format.DateTimeFormatter
 import org.joda.time.format.ISOPeriodFormat
 import org.joda.time.Period
+import org.joda.time.Partial
+import org.joda.time.LocalDate
+import org.joda.time.LocalTime
+import org.joda.time.LocalDateTime
 
 
 /**
  *  Associate a notion of Time for certain variables
  */
-trait TemporalVariable {
+trait TemporalVariable { self : Variable[String] => 
+
     val formatString :String
     val frequency : Period
   
@@ -18,12 +23,35 @@ trait TemporalVariable {
        formatter.print(dt)
     }
    
+    def parsed( str : String ) : DateTime = {
+       formatter.parseDateTime(str) 
+    }
+    
     lazy val formatter : DateTimeFormatter = DateTimeFormat.forPattern( formatString)
+    
+    {
+       TemporalVariable.register( this)
+    }
     
 }
     
  object TemporalVariable {
     import Temporal._
+    
+    private val _tvMap : scala.collection.mutable.Map[String,TemporalVariable]  =  scala.collection.mutable.HashMap.empty
+
+    def register( tv :TemporalVariable ) = {
+      _tvMap.put(tv.asInstanceOf[Variable[_]].name, tv)
+    }
+    
+    def isTemporalVariable( v : Variable[_] ) : Option[TemporalVariable] = {
+      v match {
+        case tv : TemporalVariable => Some(tv) 
+        case vStr : Variable[String] => _tvMap.get( vStr.name)
+        case _ => None
+      }
+    }
+    
     
     object Dt extends Variable[String]("dt", classOf[String], Some("Daily Frequency")) with TemporalVariable {
        override val formatString =  dailyFormat
@@ -41,7 +69,7 @@ trait TemporalVariable {
        override val frequency = hourlyPeriod
     }
 
-    object Minute extends Variable[String]("minute", classOf[String], Some("Hourly Frequency")) with TemporalVariable {
+    object Minute extends Variable[String]("minute", classOf[String], Some("Minute Frequency")) with TemporalVariable {
        override val formatString =  minuteFormat
        override val frequency =  minutePeriod
     }
@@ -51,6 +79,27 @@ trait TemporalVariable {
        override val frequency =  continuousFrequency
     }
     
+    
+    def dateTimeForWitness( w: Witness ) : DateTime = {
+      val localDates : Seq[LocalDateTime] = w.variables.map( v => {
+        isTemporalVariable(v) match { 
+          case Some(tv) => {
+            val dtStr : String = w.get( tv.asInstanceOf[Variable[String]]).get.toString
+            val formatter = DateTimeFormat.forPattern( tv.formatString)
+            Some(formatter.parseLocalDateTime( dtStr))
+          } 
+          case None => None
+        }
+      } ).filter( _.isDefined).map( _.get).toSeq
+     
+      
+      val mergeDate : LocalDateTime = localDates.foldLeft( new LocalDateTime() )( (ldt, mdt) => {
+        ldt.withFields( mdt)
+      } )
+        
+      mergeDate.toDateTime
+   }
+
 }
 
  object Temporal {

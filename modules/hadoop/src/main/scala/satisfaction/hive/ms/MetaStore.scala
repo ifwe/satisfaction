@@ -2,8 +2,6 @@ package satisfaction
 package hadoop
 package hive.ms
 
-import org.apache.hadoop.hive.metastore.HiveMetaStoreClient
-import org.apache.hadoop.hive.ql.metadata._
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.hive._
 import org.apache.hadoop.hive.conf._
@@ -146,11 +144,11 @@ case class MetaStore(implicit val config: HiveConf)  extends Logging {
         })
     }
 
-    def getPartitionsForTable(tbl: Table): List[Partition] = {
+    def getPartitionsForTable(tbl: Table): Seq[Partition] = {
         this.synchronized({ _hive.getPartitions(tbl).toList })
     }
 
-    def getPartitionSetForTable(tbl: Table, partialVars: Map[String, String]) : List[Partition] = {
+    def getPartitionSetForTable(tbl: Table, partialVars: Map[String, String]) : Seq[Partition] = {
         this.synchronized({ _hive.getPartitions(tbl, partialVars).toList })
     }
 
@@ -396,6 +394,11 @@ case class MetaStore(implicit val config: HiveConf)  extends Logging {
       }
     }
     
+    def dropPartition( db: String, tblName: String , part: Partition , deleteData : Boolean = true)  = {
+      this.synchronized {
+        _hive.dropPartition(db, tblName, part.getValues , deleteData)
+      }
+    }
 
     def getPartition(db: String, tblName: String, partSpec: List[String]): Partition = {
         this.synchronized({
@@ -418,19 +421,6 @@ case class MetaStore(implicit val config: HiveConf)  extends Logging {
         })
     }
 
-    /*
-   *  delete  any partitions which are older than a given retention policy
-   */
-    ///def retainPartitions( db : String, tblName : String, dt : Date ) = {
-
-    ///}
-
-    /**
-     *  Define a retention policy on a table to delete after a certain number of days
-     *
-     */
-    def setRetentionPolicy(db: String, tblName: String, numDays: Int) = {
-    }
 
     /**
      * Scan _hdfs at the table location, and add partition matching certain
@@ -611,4 +601,9 @@ object MetaStore  {
 
     val YYYYMMDD : DateTimeFormatter = DateTimeFormat.forPattern("YYYYMMdd")
 
+   
+    val RetentionMetaDataKey = "satisfaction_retention"
+    val LastModifiedMetaDataKey = "satisfaction_last_modified"
+    val IsCompleteMetaDataKey = "satisfaction_is_complete"
+    
 }

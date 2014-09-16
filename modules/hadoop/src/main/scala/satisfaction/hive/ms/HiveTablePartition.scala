@@ -7,6 +7,7 @@ import hive.ms._
 import org.joda.time._
 import fs._
 import hdfs.HdfsImplicits._
+import collection.JavaConversions._
 
 case class HiveTablePartition(
     part: Partition)
@@ -35,8 +36,7 @@ case class HiveTablePartition(
     def lastAccessedTime: DateTime = lastModifiedTime
 
     def lastModifiedTime: DateTime = {
-        val createdMetaData = getMetaData("last_modified_time")
-        println(" created MetaData is  " + createdMetaData)
+        val createdMetaData = getMetaData(MetaStore.LastModifiedMetaDataKey)
         createdMetaData match {
             case Some(secCount) =>
                 msDateTime(secCount.toLong)
@@ -45,8 +45,11 @@ case class HiveTablePartition(
     }
 
     def msDateTime(msLong: Long): DateTime = {
-        println(" MS LONG = " + msLong)
         new DateTime(msLong * 1000)
+    }
+    
+    def witness : Witness = {
+       Witness( part.getParameters )
     }
     
 
@@ -72,7 +75,7 @@ case class HiveTablePartition(
     }
     
     def drop : Unit = {
-      /// XXX expose on metastore
+      ms.dropPartition( part.getTable().getDbName, part.getTable().getTableName(), part , true )
     }
     
    /**
@@ -80,11 +83,11 @@ case class HiveTablePartition(
      *   DataInstance fully completed .
      */
     def markCompleted : Unit = {
-       setMetaData("isComplete" , "true")  
+       setMetaData( MetaStore.IsCompleteMetaDataKey , "true")  
     }
     
     def markIncomplete : Unit = {
-       setMetaData("isComplete" , "false")  
+       setMetaData(MetaStore.IsCompleteMetaDataKey , "false")  
     } 
 
     /**
@@ -92,7 +95,7 @@ case class HiveTablePartition(
      *    according to the test of the markable.
      */
     def isMarkedCompleted : Boolean = {
-      getMetaData("isComplete") match {
+      getMetaData(MetaStore.IsCompleteMetaDataKey) match {
         case Some( check) => {
            check.toBoolean
         }
