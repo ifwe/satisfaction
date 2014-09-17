@@ -98,8 +98,8 @@ class ProofEngine( val trackHistoryOpt : Option[TrackHistory] = None) extends  s
      *  Blocking call to satisfy Goal
      */
     def satisfyGoalBlocking( goal: Goal, witness: Witness, duration: Duration): GoalStatus = {
-        val f = getProver(goal, witness) ? Satisfy
         val runID = startGoal( goal, witness )
+        val f = getProver(goal, witness) ? Satisfy(runID)
         val response = Await.result(f, duration)
         response match {
             case s: GoalSuccess =>
@@ -115,9 +115,9 @@ class ProofEngine( val trackHistoryOpt : Option[TrackHistory] = None) extends  s
     
     def satisfyGoal( goal: Goal, witness: Witness): Future[GoalStatus] = {
         future {
-            val f = getProver(goal, witness) ? Satisfy
             val runID = startGoal( goal, witness )
-            val response = Await.result(f, Duration(6, HOURS))
+            val f = getProver(goal, witness) ? Satisfy(runId=runID)
+            val response = Await.result(f, Duration(6, HOURS)) /// XXX Allow for really long jobs ... put in config somehow ..
             response match {
                 case s: GoalSuccess =>
                     info(s" Goal ${goal.name} Was Satisfied")
@@ -135,8 +135,8 @@ class ProofEngine( val trackHistoryOpt : Option[TrackHistory] = None) extends  s
     def restartGoal( goal : Goal, witness: Witness ) : Future[GoalStatus] = {
        future {
             info(s" Restarting Goal ${goal.name} ( ${witness} )")
-            val f = getProver( goal, witness) ? RestartJob
             val runID = startGoal( goal, witness )
+            val f = getProver( goal, witness) ? RestartJob(runID)
             val response = Await.result(f, Duration(6, HOURS))
             response match {
                 case s: GoalSuccess =>

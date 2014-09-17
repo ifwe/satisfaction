@@ -114,7 +114,7 @@ object Config  extends Logging {
             thisConf.addResource( new ByteArrayInputStream( track.getResource( res).getBytes() ), res) 
          } catch {
            case unexpected : Throwable => 
-             println(s"Trouble finding resource $res")
+             println(s"Couldn't find resource $res")
          }
         }
       }

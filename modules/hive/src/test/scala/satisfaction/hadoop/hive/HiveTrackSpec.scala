@@ -15,6 +15,7 @@ import satisfaction.hadoop.hdfs.Hdfs
 import satisfaction.engine.Satisfaction
 import satisfaction.engine.actors.GoalState
 import satisfaction.track._
+import satisfaction.hive.ms.HiveTrack
 
 /**
  *  Test that Hive Goals work with HiveGoals which have been loaded from

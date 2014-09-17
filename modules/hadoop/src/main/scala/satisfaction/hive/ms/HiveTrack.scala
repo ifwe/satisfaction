@@ -1,9 +1,9 @@
 package satisfaction
 package hadoop
-package hive
+package hive.ms
 
 import satisfaction.Track
-import ms.MetaStore
+import satisfaction.TrackDescriptor
 
 /**
  *  Allow the track to access the currently configured Hive MetaStore

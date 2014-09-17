@@ -213,8 +213,8 @@ class HiveLocalDriver( val hiveConf : HiveConf = Config.config)
             }
             info(s"Response Code ${response.getResponseCode} :: SQLState ${response.getSQLState} ")
             if (response.getResponseCode() != 0) {
-                error("HIVE_DRIVER Driver Has error Message " + driver.getErrorMsg())
-                error("Error while processing statement: " + response.getErrorMessage(), response.getSQLState(), response.getResponseCode());
+                error(s"HIVE_DRIVER Driver Has error Message ${driver.getErrorMsg()}")
+                error(s"Error while processing statement: ${response.getErrorMessage()} ${response.getSQLState()} ${response.getResponseCode()}" );
                 
                 val driverClass = driver.getClass
                 
@@ -223,14 +223,29 @@ class HiveLocalDriver( val hiveConf : HiveConf = Config.config)
                 errorMember.setAccessible(true)
                 
                 val errorStack : Throwable = errorMember.get( driver).asInstanceOf[Throwable]
-                error("HIVE ERROR :: ERROR STACK IS ", errorStack)
+                if( errorStack !=null) {
+                   error(s"HIVE ERROR :: ERROR STACK IS $errorStack :: ${errorStack.getLocalizedMessage()} ")
+                   if(errorStack.getCause != null) 
+                      error(s"HIVE ERROR ::   CAUSE IS ${errorStack.getCause} :: ${errorStack.getCause.getLocalizedMessage()} ")
+                } else {
+                  error("HIVE ERROR :: ErrorStack is not set ") 
+                }
                 
-                if(sessionState.getStackTraces != null)
-                   sessionState.getStackTraces.foreach( { case( stackName , stackTrace) => {
-                     info( s"## Stack $stackName ")
-                     stackTrace.foreach { ln => println(s"      ##${ln}")  }
+                if(sessionState.getStackTraces != null) {
+                   sessionState.getStackTraces.foreach { case( stackName , stackTrace) => {
+                     error( s"## Stack $stackName ")
+                     stackTrace.foreach { ln => error(s"      ##${ln}")  }
                     }
-                  })
+                  }
+                }
+                if(sessionState.getLocalMapRedErrors() != null) {
+                	val localErrs = sessionState.getLocalMapRedErrors()
+                	localErrs.foreach { case(key,errLines)  => {
+                	    error(s"## LocalError  $key")
+                	    errLines.foreach { ln => error(s"     ##${ln}") } 
+                	 }
+                	}
+                }
                 return false
             } else {
             	readResults( response, 500)

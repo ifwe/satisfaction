@@ -15,16 +15,21 @@ import play.api.mvc.RequestHeader
 import play.api.mvc.Results._
 import scala.concurrent.Future
 import satisfaction.track.TrackHistory
+import java.io.BufferedOutputStream
+import java.io.ByteArrayOutputStream
+import java.io.DataOutputStream
+import satisfaction.track.TrackFactory.TracksUnavailableException
 
 
 
 object Global extends play.api.GlobalSettings {
 
-    implicit val hiveConf = Config.config
-    implicit val metaStore : MetaStore  = new MetaStore()( hiveConf)
+    implicit lazy val hiveConf = Config.config
+    implicit lazy val metaStore : MetaStore  = new MetaStore()( hiveConf)
 
     lazy val hdfsFS = Hdfs.fromConfig( hiveConf )
-    var trackPath : Path = new Path("/user/satisfation")
+
+     var trackPath : Path = null;
 
 
 
@@ -39,15 +44,58 @@ object Global extends play.api.GlobalSettings {
         
         val initPe = proofEngine
 
-        trackPath = Path(app.configuration.getString("satisfaction.track.path").getOrElse("/user/satisfaction"))
+
+        trackPath = trackPath( app.configuration)
         Logger.info(s" Using TrackPath $trackPath ")
+        
+
+        
+        
         val hadoopWitness : Witness = Config.Configuration2Witness( hiveConf)
+        ///  Looking for failover values
+        Logger.info(" HA Failover Provider is :: ")
+        hadoopWitness.assignments.filter( _.variable.name.startsWith("dfs.client.failover.proxy.provider")).foreach { ass => {
+              Logger.info(s"   ${ass.variable.name} = ${ass.value} ")
+           }
+        }
+       
+        Logger.info(s"Hadoop Configuration is $hiveConf")
+
+        /**
+        val buffer = new ByteArrayOutputStream
+        hiveConf.writeXml( new DataOutputStream(buffer))
+        Logger.info( buffer.toString) 
+        * 
+        */
+        
+        
         Logger.info("XXXXXXXXXXXX Creating GLOBAL TrackFactory YYYYYYYYYYYY")
         var tf = new TrackFactory( hdfsFS, trackPath, Some(trackScheduler), Some(hadoopWitness))
         trackFactory =tf
         trackScheduler.trackFactory = tf
-        trackFactory.initializeAllTracks
+        try {
+          trackFactory.initializeAllTracks
+          Logger.info(" Tracks initialized.")
+        } catch {
+          case noTracks : TracksUnavailableException =>
+            Logger.warn(s" Unable to load tracks ${noTracks.getLocalizedMessage()} ")
+          case unexpected : Throwable => throw unexpected
+        }
 
+    }
+    
+    def trackPath( playConfig  : Configuration) : Path = {
+        playConfig.getString("satisfaction.track.path") match {
+          case Some(trackPath) => Path(trackPath)
+          case None => {
+             val user = System.getProperty("user.name")
+             user match {
+               case "satisfaction" => Path("/user/satisfaction")
+               case "root" => Path("/user/satisfaction")
+               case _ => Path(s"/user/${user}/satisfaction")
+             }
+          }
+        }
     }
     
     //// XXX Add Driver info ...

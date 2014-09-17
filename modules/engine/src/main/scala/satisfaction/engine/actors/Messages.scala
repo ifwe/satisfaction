@@ -15,7 +15,7 @@ case class JobRunSuccess( val result : ExecutionResult )
 case class JobRunFailed( val result : ExecutionResult )
 
 //// Satisfy the current goal for the specified witness
-case class Satisfy(forceSatisfy: Boolean)
+case class Satisfy(runId:String,forceSatisfy: Boolean = false)
 /// Query whether the evidence already exists, and the goal 
 ///   has actually been completed
 case class IsSatisfied(doRecursive: Boolean)
@@ -25,7 +25,7 @@ case class Abort( killChildren: Boolean=true)
 case class WhatsYourStatus()
 
 /// Re-run a job which has previously been marked as failure 
-case class RestartJob()
+case class RestartJob(runId:String)
 
 ///  Respond with your currrent status
 case class StatusResponse(goalStatus: GoalStatus)
