@@ -1,4 +1,4 @@
-@(trackDesc : satisfaction.TrackDescriptor,  goalList : List[String], dependList : List[String]  )
+@(trackDesc : satisfaction.TrackDescriptor,  goalList : List[String], dependList : List[String], goalLogMap : List[String] )
 
 @import helper._
 @import scala.collection.JavaConversions._
@@ -6,13 +6,12 @@
 
 @import models.HtmlUtil._
 @import models.HtmlUtil
+@import play.api.libs.json.Json
 
 
 
 @main( s"Track ${trackDesc.trackName} ") {
-    
-     <h1>Satisfaction !!!</h1>
-    <h1>Track @trackDesc.trackName  </h1>
+	<h1>Track @trackDesc.trackName  </h1>
     <h2>Version @trackDesc.version </h2>
   <table>  
    <tr><td><h3>Goals</h3></td>
@@ -40,8 +39,88 @@
     </tr>
  </table>    
  
+
  <button id="listFiles" onClick="window.open('/listfiles/@trackDesc.trackName')">List Files</button>
  <button id="logHistory" onClick="window.open('/loghistory/@trackDesc.trackName')">Log History</button>
  
-    
+ 
+ <div id = "trackFiles">
+ 	<h2>Files for @trackDesc.trackName</h2>
+ 	<p>
+ 		blah <br />
+ 		blah <br />
+ 		blah <br />
+ 		blah <br />
+ 		blah
+ 	</p>
+ </div>
+ 
+ 
+<div class="inLineDivContainer" id="logHistoryContainer">
+	<h2>History for @trackDesc.trackName</h2>
+	
+	<div class="inLineDiv" id="logHistoryMenu">
+		<h3> Goals</h3>
+ 		@goalLogMap.map{goal =>
+ 			<button type="button" onclick="changeTrack('@goal')">@goal</button> <br />
+ 		}
+	</div>
+	
+ 	<div class="inLineDiv" id="logHistoryDisplay@trackDesc.trackName" style="height:600px;">
+ 		<p>@trackDesc.trackName</p>
+ 	</div>
+</div>
+ 
+
+
+
+<script type="text/javascript" charset="utf8" src="@routes.Assets.at("javascripts/jquery.event.drag-2.2.js")"></script>
+<script type="text/javascript" charset="utf8" src="@routes.Assets.at("javascripts/slick.core.js")"></script>
+<script type="text/javascript" charset="utf8" src="@routes.Assets.at("javascripts/slick.formatters.js")"></script>
+<script type="text/javascript" charset="utf8" src="@routes.Assets.at("javascripts/slick.grid.js")"></script>
+<script type="text/javascript" charset="utf8" src="@routes.Assets.at("javascripts/slick.dataview.js")"></script>
+ 	
+<script>
+	var goalRunJson;
+	
+	var dataView;
+	var grid;
+	var data=[];
+	var columns = [
+		{id: "witness", name: "Witness", field: "witness", sortable:true}
+		];
+	var options = {
+		enableCellNavigation: true,
+		enableColumnReorder :false,
+		forceFitColumns: true
+	};
+	
+	//to display HTML content in cell.      
+	 function formatter(row, cell, value, columnDef, dataContext) {
+	 	return value;
+	 }
+
+ 
+ 	            
+	function changeTrack(goal) {
+	
+	$('#logHistoryDisplay@trackDesc.trackName').html("<p>" + goal + "</p>");
+	
+		var witnessApiCall = "showprojectGoalRuns/@trackDesc.trackName/" + goal
+		
+		$.get(witnessApiCall, function(data){
+			console.log (" results should be: " + data);
+			$.each(data, function(index, witness){
+				console.log (" my witness is " + witness);
+				$('#logHistoryDisplay@trackDesc.trackName').append("<a href='"+witness[1]+"'>"+witness[0]+"</a>")
+			});
+		});
+	
+		// parse it (probably with a map)
+	}
+	
+   $(function (){
+		
+	});
+ </script>
 }

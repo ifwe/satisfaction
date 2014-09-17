@@ -8,6 +8,7 @@ import satisfaction.fs.LocalFileSystem
 import org.joda.time.DateTime
 
 class LogWrapperSpec extends Specification {
+
   "The 'Cheese' string" should {
     "contain 6 characters" in {
       "Cheese" must have size(6)
@@ -16,6 +17,8 @@ class LogWrapperSpec extends Specification {
   }
   
   "LogWrapper" should {
+    
+    
       "Produces proper paths" in {
          val pathStr = "hdfs://hdp2/data/ramblas/event_log/${event_type}/${dt}/${hour}" 
            
@@ -93,6 +96,17 @@ class LogWrapperSpec extends Specification {
          println(s" HDFS PATH is $hdfsPath ")
          
          true
-      } 
+      }
+
+      
+     
+      "get list of goals for a track" in {
+        LogWrapper.getGoalLogName("UserSession").foreach(goal => println("myGoals: "+goal))
+      }
+      
+      "get runs for a track and goal " in {
+        LogWrapper.getGoalLogRuns("UserSession", "_Partition_Exists_event_log__event_type_@_login_detail_", None).foreach(
+            run => println("forOneGoal " + run))
+      }
   }
 }

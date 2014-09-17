@@ -15,6 +15,16 @@ div#gridPanel th
   z-index: 20;
 }
 
+div.inLineDivContainer {
+	width: 100%;
+	overflow:hidden;
+	margin:auto;
+}
+
+div.inLineDiv {
+	float:left;
+	overflow:hidden;
+}
 
 label
 {
@@ -24,6 +34,9 @@ label
 	width:200px;
 }
 
+.ui-logHistoryMenu { 
+	width: 150px; 
+}
 
 .slick-row:hover {
 	background-color:#cdcdcd;
