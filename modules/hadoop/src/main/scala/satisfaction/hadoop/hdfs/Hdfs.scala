@@ -33,7 +33,7 @@ object HdfsFactoryInit extends Logging {
          
          val fsFactory : FsUrlStreamHandlerFactory  =  {
             
-              val newFactory = new org.apache.hadoop.fs.FsUrlStreamHandlerFactory();
+              val newFactory = new org.apache.hadoop.fs.FsUrlStreamHandlerFactory( Config.config);
               try { 
                   java.net.URL.setURLStreamHandlerFactory(newFactory);
                   newFactory
