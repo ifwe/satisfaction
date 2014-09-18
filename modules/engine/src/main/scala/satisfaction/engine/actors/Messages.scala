@@ -2,20 +2,24 @@ package satisfaction
 package engine
 package actors
 
-case class AddProject(jarPath: String, name: String)
-case class RemoveProject(name: String)
-case class GetProject(name: String)
-case object GetProjects
-
-case class ProjectResult(project: Option[Track])
-case class ProjectList(names: Set[String])
 
 case object CheckEvidence
 case class JobRunSuccess( val result : ExecutionResult )
 case class JobRunFailed( val result : ExecutionResult )
 
 //// Satisfy the current goal for the specified witness
-case class Satisfy(runId:String,forceSatisfy: Boolean = false)
+case class Satisfy(runID: String, parentRunID: String, forceSatisfy: Boolean = false) {
+   def apply() = {
+     Satisfy(null,null,false)
+   } 
+}
+
+object Satisfy {
+   def apply() = {
+      new Satisfy(null,null,false)
+   } 
+}
+
 /// Query whether the evidence already exists, and the goal 
 ///   has actually been completed
 case class IsSatisfied(doRecursive: Boolean)
@@ -25,7 +29,14 @@ case class Abort( killChildren: Boolean=true)
 case class WhatsYourStatus()
 
 /// Re-run a job which has previously been marked as failure 
-case class RestartJob(runId:String)
+case class RestartJob(runID: String, parentRunID: String)
+object RestartJob {
+   def apply() = {
+      new RestartJob(null,null)
+   } 
+  
+}
+
 
 ///  Respond with your currrent status
 case class StatusResponse(goalStatus: GoalStatus)

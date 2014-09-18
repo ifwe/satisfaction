@@ -16,6 +16,7 @@ import satisfaction.track.TrackFactory
 import satisfaction.track.TrackHistory
 import satisfaction.notifier.Notified
 import satisfaction.retry.Retryable
+import org.joda.time.DateTime
 
 
 /**
@@ -34,18 +35,15 @@ import satisfaction.retry.Retryable
 case class GetActor(track : Track, goal: Goal, witness: Witness)
 case class GetActiveActors()
 case class ReleaseActor(goalName : String, witness: Witness)
-case class KillActor( goalName : String, witness : Witness)
-case class GetListeners(goalName: String, witness: Witness)
-case class AddListener( goalName: String, witness: Witness, listener : ActorRef)
+case class KillActor(actorRef:ActorRef)
 
-class ProverFactory extends Actor with ActorLogging {
+class ProverFactory( trackHistoryOpt : Option[TrackHistory] = None) extends Actor with ActorLogging {
     ///val actorMap: mutable.Map[Tuple2[Goal, Witness], ActorRef] = mutable.Map()
     ///val listenerMap: mutable.Map[Tuple2[Goal, Witness], mutable.Set[ActorRef]] = mutable.Map[Tuple2[Goal, Witness], mutable.Set[ActorRef]]()
-    val actorMap: mutable.Map[String, ActorRef] = mutable.Map()
+    private val _actorMap: mutable.Map[String, ActorRef] = mutable.Map()
     val listenerMap: mutable.Map[String, mutable.Set[ActorRef]] = mutable.Map[String, mutable.Set[ActorRef]]()
     
-    var trackHistory : TrackHistory = null
-    
+    val trackHistory : TrackHistory = trackHistoryOpt.getOrElse(null)
     
     
     implicit val ec = ExecutionContext.Implicits.global
@@ -73,7 +71,8 @@ class ProverFactory extends Actor with ActorLogging {
            case  notified : Notified => {
              implicit val track : Track = goal.track
               log.info(s" Setting up notification for goal ${goal.name} and witness  $witness" )
-              val notifierAgent : ActorRef = context.system.actorOf(Props(new NotificationAgent(notified.notifier)))
+              val notifierAgent : ActorRef = context.system.actorOf(Props(classOf[NotificationAgent], notified),
+                  "NOTIFIER_" + actor.path.name)
               addListener( goal.name, witness, notifierAgent)    
            }
            case _  => {
@@ -94,19 +93,57 @@ class ProverFactory extends Actor with ActorLogging {
           log.info( "No Retry setup for goal ${goalName} ")
         }
       }
-      if( trackHistory != null) {
-         //// 
-      }
         
     }
     
     def addListener( goalName : String, witness :  Witness, actorRef: ActorRef ) = {
+      /**
         val actorTuple = (goalName, witness)
         val actorTupleName = ProofEngine.getActorName(goalName, witness)
-      
-        listenerMap.get(actorTupleName).get.add( actorRef)
+        val checkList = listenerMap.get( actorTupleName)
+        checkList match {
+          case Some(list) => {
+             if( !list.contains( actorRef))  {
+                 list.add(actorRef) 
+             }
+          } 
+          case None => {
+             val newList = mutable.Set[ActorRef]()
+             newList.add( actorRef)
+             listenerMap.put(actorTupleName, newList)
+          }
+        }
+        * 
+        */
     }
     
+    
+    def createProverActor(track : Track, goal : Goal, witness : Witness) : ActorRef = {
+       val actorTupleName = ProofEngine.getActorName(goal, witness)
+       val actorRef = context.system.actorOf(Props(classOf[PredicateProver],track, goal, witness, context.self),
+            actorTupleName)
+       addListener( goal.name, witness, sender)
+                    
+       /// XXX build actor pimping framework
+        pimpMyActor( actorRef, track, goal, witness)
+       if( trackHistory != null) {
+          val historyRef = context.system.actorOf(Props(classOf[HistoryAgent], actorRef,  track.descriptor, goal.name, witness,trackHistory),
+             "History_" + actorTupleName)
+          _actorMap.put(actorTupleName,historyRef)
+           addListener(goal.name, witness, historyRef)
+                
+
+          historyRef      
+       } else {
+          _actorMap.put(actorTupleName,actorRef)
+          actorRef 
+       }
+    }
+    
+    def containsActor( actorTupleName : String ) : Boolean = {
+       _actorMap.contains(actorTupleName) 
+    }
+
     def receive = {
         case GetActor(track, goal, witnessArg) =>
             val witness = witnessArg.filter( goal.variables.toSet)
@@ -115,26 +152,13 @@ class ProverFactory extends Actor with ActorLogging {
             checkVariables( goal, witness)
             val actorTuple: Tuple2[Goal, Witness] = (goal, witness)
             val actorTupleName = ProofEngine.getActorName(goal, witness)
-            println("Before check for Tuple map is  " + actorMap)
             println("Before check for Tuple " + ProofEngine.getActorName(goal, witness))
-            if (actorMap.contains(actorTupleName)) {
-                val listenerList = listenerMap.get(actorTupleName).get
-                if (!listenerList.contains(sender))
-                    listenerList += sender
-                sender ! actorMap.get(actorTupleName).get
+            if (containsActor(actorTupleName)) {
+                addListener( goal.name, witness, sender)
+                sender ! _actorMap.get(actorTupleName).get
             } else {
-                val actorRef = context.system.actorOf(Props(new PredicateProver(track, goal, witness, context.self)),
-                    ProofEngine.getActorName(goal, witness))
-                if( trackHistory != null) {
-                  
-                }
-                actorMap.put(actorTupleName, actorRef)
-                val listenerList = mutable.Set[ActorRef]()
-                listenerList += sender
-                listenerMap.put(actorTupleName, listenerList)
-                
-                
-                pimpMyActor( actorRef, track, goal, witnessArg)
+                val actorRef = createProverActor( track, goal, witness)
+               
                 sender ! actorRef
             }
         case ReleaseActor(goalName, witnessArg) =>
@@ -148,38 +172,26 @@ class ProverFactory extends Actor with ActorLogging {
                 listenerList.remove(sender)
                 if (listenerList.size == 0) {
                     listenerMap.remove(actorTupleName)
-                    val deadRef = actorMap.remove(actorTupleName).get
+                    val deadRef = _actorMap.remove(actorTupleName).get
                     log.info( s"Stopping actor $actorTupleName with no more listener " )
-                    context.stop(deadRef)
+                    //// Tell him to stop all h
+                    deadRef ! ReleaseActor(goalName,witness)
+                    context.system.scheduler.scheduleOnce( 10 seconds, self, new KillActor( deadRef) )
+                } else {
+                  log.info(s" ${listenerList.size} actors remaining !!!  ${listenerList.mkString(";")}" )
                 }
             }
-        case GetListeners(goal, witnessArg) =>
-            //// XXX Do we need to filter witness variables somehow ???
-            ////val witness = witnessArg.filter( goal.variables.toSet)
-            val witness = witnessArg
-            val actorTuple = (goal, witness)
-            val actorTupleName = ProofEngine.getActorName(goal, witness)
-            sender ! listenerMap.get(actorTupleName).get
-        case AddListener(goal, witnessArg, listener) =>
-            addListener( goal, witnessArg, listener)
         case GoalFailure(goalStatus) =>
             publishMessageToListeners(goalStatus, new GoalFailure(goalStatus))
         case GoalSuccess(goalStatus) =>
             publishMessageToListeners(goalStatus, new GoalSuccess(goalStatus))
             //// Schedule a message to release this actor after a while
-            context.system.scheduler.scheduleOnce( 30 seconds, self, new KillActor( goalStatus.goalName, goalStatus.witness) )
-        case KillActor( goalName,witness) =>
-            log.info(s" Killing Actor for goal ${goalName} $witness") 
-            val actorTupleName = ProofEngine.getActorName(goalName, witness)
-            actorMap .remove( actorTupleName ) match {
-              case Some(actorRef : ActorRef) =>
-                context.stop( actorRef)
-              case None =>
-                log.warning(s"Unable to find actor $actorTupleName to be killed")
-            }
+            ///context.system.scheduler.scheduleOnce( 30 seconds, self, new KillActor( goalStatus.goalName, goalStatus.witness) )
+        case KillActor(actorRef) =>
+            log.info(s" Killing Actor for goal ${actorRef} ") 
+            context.stop( actorRef)
         case GetActiveActors =>
-            val activeActors = actorMap.values.toSet
-            println("Number of active actors is " + activeActors.size + " Map size  " + actorMap.size)
+            val activeActors = _actorMap.values.toSet
             sender ! activeActors
 
     }
@@ -210,6 +222,7 @@ object ProverFactory {
         val f = proverFactory ? GetActor(track, goal, witness)
         Await.result(f, timeout.duration).asInstanceOf[ActorRef]
     }
+
 
     def releaseProver(proverFactory: ActorRef, goal: Goal, witness: Witness) = {
         proverFactory ! ReleaseActor(goal.name, witness)

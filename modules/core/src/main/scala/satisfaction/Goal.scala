@@ -248,7 +248,7 @@ object Goal {
     }
 
     def getPredicateString(goal: Goal, w: Witness): String = {
-        getPredicateString( goal.name, w)
+        getPredicateString( goal.track.descriptor.trackName + "_" + goal.name, w)
     }
     
     def getPredicateString(goalName: String, w: Witness): String = {

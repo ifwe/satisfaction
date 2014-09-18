@@ -27,106 +27,42 @@ class ProofEngine( val trackHistoryOpt : Option[TrackHistory] = None) extends  s
 
     implicit val akkaSystem = ActorSystem("satisfaction")
     val proverFactory = {
-       val actorRef = akkaSystem.actorOf(Props[ProverFactory], "ProverFactory")
+       val actorRef = akkaSystem.actorOf(Props( classOf[ProverFactory], trackHistoryOpt), "ProverFactory")
        actorRef
     }
-    implicit val timeout = Timeout(24 hours)
+    implicit val timeout = Timeout(24 hours) /// Configure !!!!
     
     
     
-    private def startGoal( goal : Goal , witness : Witness) : String = {
-      ///// Create a notifier if the track specifies a notifier
-      //// Create All Notifiers at ProverFactory layer ...
-
-      /***
-      goal.track match {
-        case  notified : Notified => {
-           implicit val track : Track = goal.track
-           info(s" Setting up notification for goal ${goal.name} and witness " )
-           val notifierAgent : ActorRef = akkaSystem.actorOf(Props(new NotificationAgent(notified.notifier)))
-           addListener( goal, witness, notifierAgent)    
-        }
-        case _  => {
-          info( "No Notification setup for goal ${goalName} ")
-        }
-      }
-      goal match {
-        case retryable : Retryable => {
-           info(s" Goal ${goal.name} is retryable ; creating RetryAgent to listen to status ")
-           implicit val track : Track = goal.track
-           val retryAgent : ActorRef = akkaSystem.actorOf(Props(new RetryAgent(retryable)))
-           addListener( goal, witness, retryAgent)    
-        }
-        case _  => {
-          info( "No Retry setup for goal ${goalName} ")
-        }
-        
-      }
-      * 
-      */
-      trackHistoryOpt match {
-        case Some(trackHistory)  => {
-            //// XXX Record differently if it was top level goal
-            ////   versus sub goal runs
-          /// XXX Move to proverFactory pimpMyActor
-           info(s" Track History start Run  ${goal.name} ${witness} " )
-        	trackHistory.startRun(goal.track.descriptor, goal.name, witness, new DateTime)
-        }
-        case None => {
-           info(" No TrackHistory Specified" ) 
-           null
-        }
-      }
-    }
-    
-    /**
-     *   XXX Save entire GoalStatus 
-     *    which each subrun ...
-     */
-    private def completeGoal( runId : String, state : GoalState.State) = {
-      trackHistoryOpt match {
-        case Some(trackHistory)  => {
-          trackHistory.completeRun(runId, state)
-        }
-        case None => {
-           debug(" No TrackHistory Specified" ) 
-        }
-      }
-    }
 
     /**
      *  Blocking call to satisfy Goal
      */
     def satisfyGoalBlocking( goal: Goal, witness: Witness, duration: Duration): GoalStatus = {
-        val runID = startGoal( goal, witness )
-        val f = getProver(goal, witness) ? Satisfy(runID)
+        val f = getProver(goal, witness) ? Satisfy()
         val response = Await.result(f, duration)
         response match {
             case s: GoalSuccess =>
                 info(s" Goal ${goal.name} was Satisfied")
-                completeGoal( runID, s.goalStatus.state)
+                ProverFactory.releaseProver(proverFactory, goal, witness)
                 s.goalStatus
             case f: GoalFailure =>
                 info(s" Goal ${goal.name} received GoalFailure ")
-                completeGoal( runID, f.goalStatus.state )
                 f.goalStatus
         }
     }
     
     def satisfyGoal( goal: Goal, witness: Witness): Future[GoalStatus] = {
         future {
-            val runID = startGoal( goal, witness )
-            val f = getProver(goal, witness) ? Satisfy(runId=runID)
+            val f = getProver(goal, witness) ? Satisfy()
             val response = Await.result(f, Duration(6, HOURS)) /// XXX Allow for really long jobs ... put in config somehow ..
             response match {
                 case s: GoalSuccess =>
                     info(s" Goal ${goal.name} Was Satisfied")
                     ProverFactory.releaseProver(proverFactory, goal, witness)
-                    completeGoal( runID, s.goalStatus.state )
                     s.goalStatus
                 case f: GoalFailure =>
                     info(s" Goal ${goal.name} received GoalFailure ")
-                    completeGoal( runID, f.goalStatus.state )
                     f.goalStatus
             }
        }
@@ -135,18 +71,15 @@ class ProofEngine( val trackHistoryOpt : Option[TrackHistory] = None) extends  s
     def restartGoal( goal : Goal, witness: Witness ) : Future[GoalStatus] = {
        future {
             info(s" Restarting Goal ${goal.name} ( ${witness} )")
-            val runID = startGoal( goal, witness )
-            val f = getProver( goal, witness) ? RestartJob(runID)
+            val f = getProver( goal, witness) ? RestartJob()
             val response = Await.result(f, Duration(6, HOURS))
             response match {
                 case s: GoalSuccess =>
                     info(s" Restart Goal ${goal.name} was Successfull" )
                     ProverFactory.releaseProver(proverFactory, goal, witness)
-                    completeGoal( runID, s.goalStatus.state )
                     s.goalStatus
                 case f: GoalFailure =>
                     info(s" Restart Goal ${goal.name} was Failure ")
-                    completeGoal( runID, f.goalStatus.state )
                     f.goalStatus
             }
         }
@@ -225,9 +158,6 @@ class ProofEngine( val trackHistoryOpt : Option[TrackHistory] = None) extends  s
     }
     
     
-    def addListener(goal: Goal, witness: Witness, listener : ActorRef) = {
-        proverFactory ! new AddListener( goal.name, witness, listener)   
-    }
     
 
     /// sic ....
