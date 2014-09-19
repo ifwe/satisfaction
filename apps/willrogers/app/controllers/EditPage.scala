@@ -54,8 +54,5 @@ object EditPage extends play.api.mvc.Controller {
         case None =>
           Ok( views.html.brokenproject( trackName))
         }
-
     }
-
-
 }

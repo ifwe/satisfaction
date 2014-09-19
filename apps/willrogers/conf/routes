@@ -15,6 +15,7 @@ GET		/trackhistoy				willrogers.controllers.TrackHistoryPage.loadHistoryPageActi
 #Track Page
 GET     /showproject/:projName         willrogers.controllers.ProjectPage.showProject(projName: String)
 GET		/showprojectGoalRuns/:projName/:goalName willrogers.controllers.ProjectPage.showProjectRuns(projName : String, goalName : String)
+GET		/showprojectFiles/:projName	willrogers.controllers.ProjectPage.showProjectFiles(projName : String)
 
 GET     /alltables/:db                   willrogers.controllers.Application.getDBTables(db: String)
 GET     /showtable/:db/:tblName                   willrogers.controllers.Application.showDBTable(db: String, tblName: String)

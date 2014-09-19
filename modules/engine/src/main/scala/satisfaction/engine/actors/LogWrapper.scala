@@ -225,7 +225,6 @@ object LogWrapper {
      val trackPath = rootDirectory / pathString(trackName)
      if (localFS.exists(trackPath)) {
        val returnList = getLogPathsForGoal(trackName, goalName).map(_.path.name).toList
-       returnList.foreach(witness => println("    " + witness))
        returnList
      } else {
        Nil

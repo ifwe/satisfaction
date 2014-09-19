@@ -63,6 +63,20 @@ object ProjectPage extends Controller {
     		  })
       Ok(Json.toJson(witnessList)).as("application/json")
     }
+    
+    def showProjectFiles(projName: String) = Action {
+      val trackDesc = TrackDescriptor( projName)
+       val trackOpt : Option[Track] = trackFactory.getTrack( trackDesc)
+       trackOpt match {
+         case Some(track) =>
+           val files = track.listResources.map(_.split("/").last).toList
+           Ok(Json.toJson(files)).as("application/json")
+         case None => 
+           Ok(Json.toJson("")).as("application/json")
+      }
+      
+    }
+    
 
 
     //// Where does layout code belong ???

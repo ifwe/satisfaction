@@ -16,15 +16,23 @@ div#gridPanel th
 }
 
 div.inLineDivContainer {
-	width: 100%;
+	
 	overflow:hidden;
 	margin:auto;
 }
 
 div.inLineDiv {
 	float:left;
-	overflow:hidden;
+	overflow:auto;
+	width:65%
 }
+
+div.inLineDiv#logHistoryMenu {
+	width: 30%;
+	overflow:hidden;
+	margin-right: 5px;
+}
+
 
 label
 {
@@ -35,9 +43,18 @@ label
 }
 
 .ui-logHistoryMenu { 
+	overflow:hidden;
 	width: 150px; 
 }
 
 .slick-row:hover {
 	background-color:#cdcdcd;
 }
+
+/* to break up long paths Source: http://snipplr.com/view/10979/css-cross-browser-word-wrap */
+.wordwrap { 
+   white-space: pre-wrap;      /* CSS3 */   
+   white-space: -moz-pre-wrap; /* Firefox */   
+   white-space: -o-pre-wrap;   /* Opera 7 */    
+   word-wrap: break-word;      /* IE */
+   }

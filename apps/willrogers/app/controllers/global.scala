@@ -29,8 +29,7 @@ object Global extends play.api.GlobalSettings {
 
     lazy val hdfsFS = Hdfs.fromConfig( hiveConf )
 
-     var trackPath : Path = null;
-
+    var trackPath : Path = new Path("/user/satisfation")
 
 
     override def onStart(app: Application) {
