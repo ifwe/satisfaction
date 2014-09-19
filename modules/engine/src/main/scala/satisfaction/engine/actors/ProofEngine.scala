@@ -128,7 +128,7 @@ class ProofEngine( val trackHistoryOpt : Option[TrackHistory] = None) extends  s
     }
 
     def getProver(goal: Goal, witness: Witness): ActorRef = {
-      ProverFactory.getProver(proverFactory, goal.track, goal, witness)
+      ProverFactory.acquireProver(proverFactory, goal.track, goal, witness)
     }
 
     def getGoalsInProgress: Set[GoalStatus] = {

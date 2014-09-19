@@ -36,7 +36,8 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
 
     val status: GoalStatus = new GoalStatus(track.descriptor, goal.name, witness)
 
-    private val listenerList: mutable.Set[ActorRef] = mutable.Set[ActorRef]()
+    private val _listenerList: mutable.Set[ActorRef] = mutable.Set[ActorRef]()
+    def listenerList : immutable.Set[ActorRef] =  { _listenerList.toSet }
 
     implicit val ec: ExecutionContext = ExecutionContext.global /// ???
     implicit val timeout = Timeout(5 minutes) ///XXX from Config
@@ -48,7 +49,7 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
           try { 
             log.info(s" PredicateProver ${track.descriptor.trackName}::${goal.name} received Satisfy message witness is $witness with runID =${runID} parentRunID=${parentRunID} forceSatisfy=${forceSatisfy} ")
             log.info(s" Adding $sender to listener list")
-            listenerList += sender
+            addListener( sender )
             if (goal.evidence != null &&
                 goal.evidence.size != 0 &&
                 forceSatisfy == false &&
@@ -213,13 +214,8 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
                 case (pred, actor) =>
                      proverFactory ! ReleaseActor(pred._1.name,pred._2)
             }
-
-        goal.dependencies.map(  { case(wmap:(Witness =>Witness),subGoal:Goal) => {
-              val newWitness = wmap( this.witness)
-              val depProverRef = ProverFactory.getProver(proverFactory,track,subGoal,newWitness)
-              ( (subGoal,newWitness) -> depProverRef)
-           }
-        } ).toMap
+        case AddListener(actorRef) => 
+          _listenerList.add( actorRef)
 
         case InvalidRequest =>
           
@@ -231,13 +227,6 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
     }
 
     def publishSuccess = {
-        ////proverFactory ! Success(status)
-
-        ///val f = proverFactory ? GetListeners(goal, witness)
-        ///val response = Await.result(f, Duration(30, SECONDS))
-        ///response.asInstanceOf[Set[ActorRef]].foreach { lref =>
-        ///lref ! Success(status)
-        ///}
         listenerList.foreach{ actor: ActorRef =>
             log.info(s" Sending GoalSuccess to $actor ")
             actor ! GoalSuccess(status)
@@ -250,6 +239,10 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
             actor ! GoalFailure(status)
         }
         proverFactory ! GoalFailure( status)
+    }
+    
+    def addListener( actor : ActorRef) = {
+      _listenerList.add( actor)
     }
 
     def runLocalJob() {
@@ -299,7 +292,7 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
         goal.dependencies.map(  { case(wmap:(Witness =>Witness),subGoal:Goal) => {
               val newWitness = wmap( this.witness)
                log.info(s"   Initializing Dependency ${subGoal.name} ${newWitness} !!!")
-              val depProverRef = ProverFactory.getProver(proverFactory,track,subGoal,newWitness)
+              val depProverRef = ProverFactory.acquireProver(proverFactory,track,subGoal,newWitness)
               ( (subGoal,newWitness) -> depProverRef)
            }
         } ).toMap
