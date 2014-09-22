@@ -3,6 +3,7 @@ package controllers
 
 import play.api._
 import play.api.mvc._
+import play.api.libs.json._
 import Results._
 import play.api.libs.concurrent.Execution.Implicits._
 import scala.concurrent.duration._
@@ -14,6 +15,7 @@ import collection._
 import satisfaction.track._
 import satisfaction.track.TrackFactory._
 import satisfaction.TrackDescriptor
+import satisfaction.engine.actors.LogWrapper
 
 object ProjectPage extends Controller {
   val trackFactory : TrackFactory = Global.trackFactory
@@ -43,12 +45,38 @@ object ProjectPage extends Controller {
           val internalGoals = track.topLevelGoals.toList
           val externalGoals = track.externalGoals.toList
 
-          Ok(views.html.showproject(track.descriptor, internalGoals map (_.name), externalGoals map (_.name)))
+          val goalLogMap = LogWrapper.getGoalLogName(projName)
+          
+          Ok(views.html.showproject(track.descriptor, internalGoals map (_.name), externalGoals map (_.name), goalLogMap))
         case None =>
           Ok( views.html.brokenproject( projName))
         }
 
     }
+    
+    def showProjectRuns (projName :String, goalName : String) = Action { // don't forget to add paging here later!
+      val witnessList = LogWrapper.getGoalLogRuns(projName, goalName, None)
+    		  .map(line => {
+    		    val wStr = line.split("/").last
+    		    val witness = LogWrapper.getWitnessFromLogPath(wStr)
+    		    List(line,"/logwindow/"+projName+"/"+goalName+"/"+HtmlUtil.witnessPath(witness))
+    		  })
+      Ok(Json.toJson(witnessList)).as("application/json")
+    }
+    
+    def showProjectFiles(projName: String) = Action {
+      val trackDesc = TrackDescriptor( projName)
+       val trackOpt : Option[Track] = trackFactory.getTrack( trackDesc)
+       trackOpt match {
+         case Some(track) =>
+           val files = track.listResources.map(_.split("/").last).toList
+           Ok(Json.toJson(files)).as("application/json")
+         case None => 
+           Ok(Json.toJson("")).as("application/json")
+      }
+      
+    }
+    
 
 
     //// Where does layout code belong ???

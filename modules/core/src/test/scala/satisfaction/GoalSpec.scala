@@ -1,8 +1,10 @@
 package satisfaction
 
-import org.specs2.mutable._
-import org.specs2.runner.JUnitRunner
 import org.junit.runner.RunWith
+import org.specs2.mutable.Specification
+import satisfaction.fs.FileSystem
+import satisfaction.fs.LocalFileSystem
+import org.specs2.runner.JUnitRunner
 
 @RunWith(classOf[JUnitRunner])
 class GoalSpec extends Specification {
@@ -48,5 +50,6 @@ class GoalSpec extends Specification {
        
      }
      
+
      
 }

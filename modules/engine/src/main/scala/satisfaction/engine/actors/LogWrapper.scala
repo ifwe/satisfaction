@@ -210,6 +210,27 @@ object LogWrapper {
      }
      
    }
+   
+   def getGoalLogName( trackName : String ) : List[String] = {
+     val trackPath =  rootDirectory / pathString( trackName)
+     if( localFS.exists( trackPath) ) {
+       localFS.listFiles(trackPath).map( _.path.name).toList
+     } else {
+       Nil
+     }
+   }
+   
+   def getGoalLogRuns (trackName : String, goalName : String, pageNumber : Option[Int]) : List[String] = {
+      val batchLength = 100
+     val trackPath = rootDirectory / pathString(trackName)
+     if (localFS.exists(trackPath)) {
+       val returnList = getLogPathsForGoal(trackName, goalName).map(_.path.name).toList
+       returnList
+     } else {
+       Nil
+     }
+   }
+
     
    def getLogPathsForGoal( trackName : String, goalName : String )  : Seq[FileStatus] = {
      val goalPath : Path =  rootDirectory / pathString( trackName) / pathString( goalName) 
@@ -228,7 +249,7 @@ object LogWrapper {
      
      Witness( kvAss:_*)      
    }
-   
+ 
    class ScalaConsoleAppender[E] extends AppenderBase[E] {
      
        def append( event : E )  {
