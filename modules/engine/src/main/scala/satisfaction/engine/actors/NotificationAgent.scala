@@ -13,19 +13,14 @@ import GoalStatus._
 /**
  *   First pass at notification 
  */
-class NotificationAgent( notifier : Notifier )(implicit val track : Track ) extends Actor with ActorLogging {
+class NotificationAgent( val notified : Notified ) extends Actor with ActorLogging {
   
-     def notified : Notified =  {
-        track match {
-          case notified : Notified => {
-              notified 
-          }  
-          case _ => {
-            /// Shouldn't happen
-            null
-          }
-        } 
-     }
+     val notifier = notified.notifier
+     
+     /**
+      *   Notified has to be a track
+      */ 
+     implicit val track : Track = notified.asInstanceOf[Track]
       
      def receive = {
         case GoalFailure(goalStatus) =>

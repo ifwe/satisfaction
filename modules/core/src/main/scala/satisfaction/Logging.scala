@@ -32,9 +32,10 @@ trait Logging {
 
  def error(message:String, error:Throwable) = {
     log.error(message, error)
-    Console.println( s"ERROR - SATISFACTION $message ")
-    if(error!= null)
+    Console.println( s"ERROR - SATISFACTION $message :: ${error.getLocalizedMessage()} ")
+    if(error!= null) {
        error.printStackTrace( Console.out)
+    }
  }
 
 }

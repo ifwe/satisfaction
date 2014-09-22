@@ -63,12 +63,15 @@ class DefaultGoalSatisfier(
         true
       } else {
           logger.info(s"Still waiting on evidence: $remainingEvidence")
+          println(s"Still waiting on evidence: $remainingEvidence")
           remainingEvidence foreach { evidenceToCheck =>
              if (evidenceToCheck.exists(witness)) {
                 logger.info(s" Evidence is Now  there !!! ${evidenceToCheck} ")
+                println(s" Evidence is Now  there !!! ${evidenceToCheck} ")
                  remainingEvidence = remainingEvidence - evidenceToCheck
               } else {
                 logger.info(s" Evidence not there yet ${evidenceToCheck} ")
+                Console.println(s" Evidence not there yet ${evidenceToCheck} ")
               }
           }
           remainingEvidence.isEmpty 
@@ -76,6 +79,7 @@ class DefaultGoalSatisfier(
     }
 
     def finish() {
+        Console.println("No more evidence left.")
         logger.info("No more evidence left.")
         logger.close
         execResult.markSuccess

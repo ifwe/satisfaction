@@ -99,7 +99,15 @@ case class HiveTablePartition(
         case Some( check) => {
            check.toBoolean
         }
-        case None => false
+        ///case None => false
+        case None => {
+           getMetaData("isComplete") match {
+             case Some( check) => {
+              check.toBoolean
+             }
+             case None => false
+           }
+        }
       }
     }
   

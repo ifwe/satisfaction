@@ -29,34 +29,36 @@ import track.TrackHistory
 class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, val proverFactory: ActorRef) extends Actor with ActorLogging {
 
     ///private val dependencies: mutable.Map[String, ActorRef] = scala.collection.mutable.Map[String, ActorRef]()
-    private val dependencies: mutable.Map[(Goal,Witness), ActorRef] = scala.collection.mutable.Map[(Goal,Witness), ActorRef]()
+    private  lazy val  _dependencies: Map[(Goal,Witness), ActorRef] =  initDependencies
+    
+    
     private var jobRunner: ActorRef = null
 
     val status: GoalStatus = new GoalStatus(track.descriptor, goal.name, witness)
 
-    private var listenerList: Set[ActorRef] = mutable.Set[ActorRef]()
+    private val _listenerList: mutable.Set[ActorRef] = mutable.Set[ActorRef]()
+    def listenerList : immutable.Set[ActorRef] =  { _listenerList.toSet }
 
     implicit val ec: ExecutionContext = ExecutionContext.global /// ???
-    implicit val timeout = Timeout(5 minutes)
+    implicit val timeout = Timeout(5 minutes) ///XXX from Config
     
-    var trackHistory : TrackHistory = null
 
     def receive = {
 
-        case Satisfy =>
+        case Satisfy(runID,parentRunID,forceSatisfy) =>
           try { 
-            log.info(s" PredicateProver ${track.descriptor.trackName}::${goal.name} received Satisfy message witness is $witness ")
+            log.info(s" PredicateProver ${track.descriptor.trackName}::${goal.name} received Satisfy message witness is $witness with runID =${runID} parentRunID=${parentRunID} forceSatisfy=${forceSatisfy} ")
             log.info(s" Adding $sender to listener list")
-            listenerList += sender
+            addListener( sender )
             if (goal.evidence != null &&
                 goal.evidence.size != 0 &&
+                forceSatisfy == false &&
                 goal.evidence.forall(e => e.exists(witness))) {
                 log.info(s" Check Already satisfied ${goal.name} $witness ?? ")
-                status.markTerminal( GoalState.AlreadySatisfied )
-                //// Tell our Children 
-                dependencies.foreach { 
-                      case (predTuple, actor) =>  proverFactory ! new KillActor( predTuple._1.name, predTuple._2 ) 
+                 dependencies.foreach { 
+                      case (predTuple, actor) =>  proverFactory ! ReleaseActor( predTuple._1.name, predTuple._2 ) 
                 }
+                status.markTerminal( GoalState.AlreadySatisfied )
                 publishSuccess
             } else {
                 if (status.state != GoalState.Unstarted) {
@@ -65,12 +67,12 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
                 } else {
                     /// Go through our dependencies, and ask them to
                     /// satify
-                    if (dependencies.size > 0) {
+                    if (goal.dependencies.size > 0) {
+                        status.transitionState ( GoalState.WaitingOnDependencies)
                         dependencies.foreach {
                             case (pred, actor) =>
-                                actor ! Satisfy
+                                actor ! Satisfy(runID=null,parentRunID=runID,forceSatisfy)
                         }
-                        status.transitionState ( GoalState.WaitingOnDependencies)
                     } else {
                         runLocalJob()
                     }
@@ -186,6 +188,7 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
                 status.addChildStatus(depStatus)
             //// Determine if all jobs completed
             log.info( s" Received Deps = ${status.numReceivedStatuses} :: num Deps = ${dependencies.size} ")
+            
             if (status.numReceivedStatuses  >= dependencies.size) {
                if(status.canProceed) {
                   runLocalJob()
@@ -202,24 +205,28 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
             log.info(s" ${goal.name} Received Goal Failed from ${result.executionName} , send to our parent  ")
             status.markExecution(result)
             publishFailure
+            
+        //// If I receive a Release actor message, 
+        //// Tell the ProverFactory my dependencies to release
+        //// Assume that we've already completed 
+        case ReleaseActor =>     
+            dependencies.foreach {
+                case (pred, actor) =>
+                     proverFactory ! ReleaseActor(pred._1.name,pred._2)
+            }
+        case AddListener(actorRef) => 
+          _listenerList.add( actorRef)
 
         case InvalidRequest =>
           
         case unexpected : Any => {
-          log.error(" Received Unexpected message " + unexpected)
+          log.error(" Received Unexpected message " + unexpected + " of type " + unexpected.getClass )
           log.warning(" Received Unexpected message " + unexpected)
           log.info(" Received Unexpected message " + unexpected)
         }
     }
 
     def publishSuccess = {
-        ////proverFactory ! Success(status)
-
-        ///val f = proverFactory ? GetListeners(goal, witness)
-        ///val response = Await.result(f, Duration(30, SECONDS))
-        ///response.asInstanceOf[Set[ActorRef]].foreach { lref =>
-        ///lref ! Success(status)
-        ///}
         listenerList.foreach{ actor: ActorRef =>
             log.info(s" Sending GoalSuccess to $actor ")
             actor ! GoalSuccess(status)
@@ -232,6 +239,10 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
             actor ! GoalFailure(status)
         }
         proverFactory ! GoalFailure( status)
+    }
+    
+    def addListener( actor : ActorRef) = {
+      _listenerList.add( actor)
     }
 
     def runLocalJob() {
@@ -263,21 +274,31 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
         }
     }
 
+    def dependencies : Map[(Goal,Witness),ActorRef] = {
+      status.state match {
+        case GoalState.AlreadySatisfied => Map.empty
+        case GoalState.Unstarted => Map.empty
+        case GoalState.Running => Map.empty
+        case _ => {
+           _dependencies
+        } 
+      }
+    } 
 
-    override def preStart() = {
-
-        //// Create actors for all the sub actors, recursively
-        if (goal.dependencies != null) {
-            goal.dependencies.foreach{
-                case (wmap: (Witness => Witness), subGoal: Goal) =>
-                    //// Generate different witness, based on the mapping function
-                    val newWitness = wmap(witness)
-                    ///val depPredicate = subGoal.getPredicateString(newWitness)
-                    val depProverRef = ProverFactory.getProver(proverFactory, track, subGoal, newWitness)
-                    dependencies += ( (subGoal,newWitness) -> depProverRef)
-            }
-        }
-
+    ///override def preStart() = {
+    def initDependencies : Map[(Goal,Witness),ActorRef] = {
+      if(goal.dependencies != null) {
+        log.info(" Initializing Dependencies !!!")
+        goal.dependencies.map(  { case(wmap:(Witness =>Witness),subGoal:Goal) => {
+              val newWitness = wmap( this.witness)
+               log.info(s"   Initializing Dependency ${subGoal.name} ${newWitness} !!!")
+              val depProverRef = ProverFactory.acquireProver(proverFactory,track,subGoal,newWitness)
+              ( (subGoal,newWitness) -> depProverRef)
+           }
+        } ).toMap
+      } else { 
+        Map.empty
+      }
     }
 
 }
