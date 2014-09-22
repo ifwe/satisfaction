@@ -132,7 +132,9 @@
  	   
  	   		//load data
 			var dataCounter = @grList.length;
-
+			
+			console.log ("loading data, grList length = " + dataCounter);
+			
 			@grList.map { gr => 
 				data[--dataCounter] = {
 					id: @gr.runId,
@@ -239,7 +241,9 @@
 	            dataView.endUpdate();
 	            
 	            dataView.refresh();
+	            
 				grid.invalidate();
+				
 				$("#myGrid").show();
 	            $('.slick-header-columns').children().eq(4).trigger('dblclick');
 	            console.log(dataView.getLength() +" tracks to display")

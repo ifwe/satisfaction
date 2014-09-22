@@ -19,7 +19,7 @@
     
     <h2>Version @trackDesc.version </h2>
   <table>  
-   <tr><td><h3>Goals</h3></td>
+   <tr><td><h3>Goals for @trackDesc.version</h3></td>
     <td>
     <h3>External Dependencies</h3>
     </td>
@@ -44,13 +44,15 @@
     </tr>
  </table>    
  
+ <!-- YY Remove these buttons when update is complete -->
+ <button id="listFiles" onClick="window.open('/listfiles/@trackDesc.trackName')">List Files</button>
+ <button id="logHistory" onClick="window.open('/loghistory/@trackDesc.trackName')">Log History</button>
  
 <div id ="trackInfo@trackDesc.trackName">
 
   <h2>Files for @trackDesc.trackName </h2>  
   <div id = "trackFiles@trackDesc.trackName">
-  
-   </div>
+  </div>
    
   <h2>History for @trackDesc.trackName</h2>
   <div class="inLineDivContainer" id="logHistoryContainer">
@@ -68,6 +70,7 @@
       } -->
     </div>
     
+    <h3 class="wordwrap" id ="logHistoryTitle@trackDesc.trackName"></h3>
     <div class="inLineDiv wordwrap" id="logHistoryDisplay@trackDesc.trackName">
   
     </div>
@@ -84,12 +87,11 @@
 <script type="text/javascript" charset="utf8" src="@routes.Assets.at("javascripts/slick.dataview.js")"></script>
   
 <script>
-  var goalRunJson;
   
-  var dataView;
   var grid;
-  var data=[];
+  
   var columns = [
+  	{id: "id", name: "ID", field: "id", width: 20},
     {id: "witness", name: "Witness", field: "witness", sortable:true}
     ];
   var options = {
@@ -104,21 +106,46 @@
    }
 
  
-              
   function changeTrack(goal) {
-  
-  $('#logHistoryDisplay@trackDesc.trackName').html("<h3> Instances of goal : " + goal + "</h3>");
+  	var data=[];
+    $('#logHistoryTitle@trackDesc.trackName').html("Instances of goal: " + goal);
+    $('#logHistoryDisplay@trackDesc.trackName').html("");
   
     var witnessApiCall = "showprojectGoalRuns/@trackDesc.trackName/" + goal
     
     $.get(witnessApiCall, function(data){
+    	console.log("the length of my data is " + data.length);
+    	var dataCounter = 0;
       $.each(data, function(index, witness){
         console.log (" my witness is " + witness);
-        $('#logHistoryDisplay@trackDesc.trackName').append("<a href='"+witness[1]+"'>"+witness[0]+"</a> <br/ >")
+        
+        data[dataCounter]={
+        	id: dataCounter,
+        	witness: witness
+        };
+        dataCounter++;
+        //$('#logHistoryDisplay@trackDesc.trackName').append("<a href='"+witness[1]+"'>"+witness[0]+"</a> <br/ >")
       });
+      
+      grid= new Slick.Grid("#logHistoryDisplay@trackDesc.trackName", data, columns, options);
+      
+      
+      console.log("here's what I got in my data[]:");
+      data.forEach(function(entry){
+      	console.log(entry.id + " " + entry.witness);
+      });
+      /*
+      dataView.beginUpdate();
+      dataView.setItems(data, "id");
+      dataView.endUpdate();
+      */
+      grid.updateRowCount();
+      grid.render();
+      console.log ("amen");
+      
+      
     });
     
-    $(this).parent().addClass('active');
     
   }
   
@@ -130,7 +157,6 @@
       });
     
     $("#logHistoryMenuList@trackDesc.trackName").menu();
-    
     
     //load files for Track
     $.get("showprojectFiles/@trackDesc.trackName", function(data) {

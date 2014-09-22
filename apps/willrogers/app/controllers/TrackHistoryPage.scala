@@ -21,13 +21,12 @@ import willrogers.Global
 object TrackHistoryPage extends Controller {
   lazy val trackHistory = Global.trackHistory
   
-  //private var grList = trackHistory.getAllHistory
-  var grList = trackHistory.getRecentHistory // by default - only grab recent tracks
-
+  
   /**
    * default loader
    */
   def loadHistoryPageAction() = Action {
+	val grList = trackHistory.getRecentHistory // by default - only grab recent tracks
 
     println("loading page history: I have "+ grList.length + " tracks")
    Ok(views.html.trackhistory(grList))
@@ -123,7 +122,7 @@ object TrackHistoryPage extends Controller {
 	 */
 	def getAllHistoryRuns() = Action {
 		//val grList = trackHistory.getAllHistory
-		grList=trackHistory.getAllHistory
+		val grList=trackHistory.getAllHistory
 				Ok(views.html.trackhistory(grList))
 	}
 }

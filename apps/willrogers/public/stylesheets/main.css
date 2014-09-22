@@ -24,13 +24,14 @@ div.inLineDivContainer {
 div.inLineDiv {
 	float:left;
 	overflow:auto;
-	width:65%
+	width:65%;
+	margin: 5px;
 }
 
 div.inLineDiv#logHistoryMenu {
 	width: 30%;
 	overflow:hidden;
-	margin-right: 5px;
+	
 }
 
 
