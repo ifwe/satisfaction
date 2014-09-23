@@ -13,10 +13,6 @@ case class Goal(
     val evidence: Set[Evidence] = Set.empty ) 
     (implicit val track : Track ) {
   
-    locally {
-       println(" Creating a Goal !!! ") 
-    }
-    
     /**
      *  Why is hashcode so slow ???
      *   XXX
@@ -89,6 +85,44 @@ case class Goal(
     def declareTopLevel() : Goal = {
       track.addTopLevelGoal(this) 
       this
+    }
+    
+   
+    /*
+     * Add multiple dependencies to the goal, substituting the variable with values 
+     *    from the Traversable
+     */
+    def foldWitnessRules[T]( prevRule : ( Witness=>Witness) ,subGoal :Goal, foldVar : Variable[T], valIter : Traversable[T]) : Goal = {
+       valIter.foldLeft(  this)( (g : Goal,vv : T) => {
+           val witnessMapping : ( Witness=>Witness)  = {
+              w => {
+               w  + VariableAssignment( foldVar , vv)
+             }
+           }
+           g.addWitnessRule( prevRule compose witnessMapping, subGoal)
+       })
+    }
+    def foldDependencies[T]( subGoal :Goal, foldVar : Variable[T], valIter : Traversable[T]) : Goal = {
+      foldWitnessRules( Goal.Identity, subGoal,foldVar, valIter)
+    }
+    
+    /**
+     *  Depend upon N previous hours of the specified Goal
+     */
+    def forPreviousHours( subGoal : Goal, numHours : Int ) : Goal = {
+      (1 to numHours).foldLeft( this)( (g,nh) => {
+          g.addWitnessRule( Goal.hoursPrevious( nh), subGoal)   
+      }) 
+    }
+    
+    /**
+     *  Depend upon the N previous days of the specified Goal
+     *  
+     */
+    def forPreviousDays( subGoal : Goal, numDays : Int) : Goal = {
+      (1 to numDays).foldLeft( this)( (g,nd) => {
+          g.addWitnessRule( Goal.daysPrevious( nd), subGoal)   
+      }) 
     }
     
 } 

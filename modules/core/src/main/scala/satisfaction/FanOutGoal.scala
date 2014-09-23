@@ -61,4 +61,5 @@ object FanOutGoal {
             evidence = Set.empty)
     }
 
+    
 }
