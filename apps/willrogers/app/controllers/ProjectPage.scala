@@ -46,6 +46,7 @@ object ProjectPage extends Controller {
           val externalGoals = track.externalGoals.toList
 
           val goalLogMap = LogWrapper.getGoalLogName(projName)
+          .filterNot(line => line == ".DS_Store")
           
           Ok(views.html.showproject(track.descriptor, internalGoals map (_.name), externalGoals map (_.name), goalLogMap))
         case None =>
@@ -59,6 +60,8 @@ object ProjectPage extends Controller {
     		  .map(line => {
     		    val wStr = line.split("/").last
     		    val witness = LogWrapper.getWitnessFromLogPath(wStr)
+    		    val witnessPath= HtmlUtil.witnessPath(witness)
+    		    println("my witnessPath is: " + witnessPath)
     		    List(line,"/logwindow/"+projName+"/"+goalName+"/"+HtmlUtil.witnessPath(witness))
     		  })
       Ok(Json.toJson(witnessList)).as("application/json")

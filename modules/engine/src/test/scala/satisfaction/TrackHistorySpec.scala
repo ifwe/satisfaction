@@ -21,19 +21,14 @@ class TrackHistorySpec extends Specification {
     //set ups
     val trackHistory =  JDBCSlickTrackHistory
     
-    val trackDesc : TrackDescriptor = TrackDescriptor ("Why Is TrackHistory Not Updating?")
-    val goalName : String = "calcDAU"
+    val trackDesc : TrackDescriptor = TrackDescriptor ("fakeTrackName")
+    val goalName : String = "fakeGoalName"
     val witness : Witness = Witness( (Variable("date") -> "20140922" ),( Variable("hour") -> "12"))
     
     val dt : DateTime = new DateTime(System.currentTimeMillis())
-/*
+
     
-    "show all tracks" in {
-      
-      val resultList = trackHistory.getAllHistory
-      resultList.foreach(gr => gr.printGoalRun)
-    }
-  */  
+    
     "insert started job into table" in {
     
       val runId  = trackHistory.startRun(trackDesc, goalName, witness, dt)
@@ -48,7 +43,15 @@ class TrackHistorySpec extends Specification {
      // H2DriverInfo.USER must be_==("sa") // NO
     }
     
+    
     /*
+    
+    "show all tracks" in {
+      
+      val resultList = trackHistory.getAllHistory
+      resultList.foreach(gr => gr.printGoalRun)
+    }
+  
      
     "update a running jobhistory" in { 
      //val result : String = trackHistory.completeRun("29", GoalState.Success)

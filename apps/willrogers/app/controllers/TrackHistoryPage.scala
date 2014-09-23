@@ -27,8 +27,6 @@ object TrackHistoryPage extends Controller {
    */
   def loadHistoryPageAction() = Action {
 	val grList = trackHistory.getRecentHistory // by default - only grab recent tracks
-
-    println("loading page history: I have "+ grList.length + " tracks")
    Ok(views.html.trackhistory(grList))
    
   }
