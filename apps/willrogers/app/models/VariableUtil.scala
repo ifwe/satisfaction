@@ -73,7 +73,6 @@ object HtmlUtil {
            s"${ass.variable.name}=${ass.value}"
       } ).mkString(";").replace("/","_sl_")
       
-      //println(" HtmlUtil::witnessPath witnessPath is: " + witnessPath)
       witnessPath
       
     }

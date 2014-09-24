@@ -73,9 +73,6 @@ object ProjectPage extends Controller {
     		   
     		    val witness = LogWrapper.getWitnessFromLogPath(witnessStr)
     		    
-    		    //println("wStr is: " + witnessAttemptStr+ "index of _ATTEMPT_ is "+ witnessAttemptStr.indexOf("_ATTEMPT_") +" my witnessPath is: " + witnessPath)
-    		    //println(" witnessStr is:" + witnessStr + " attemptStr"+ attemptStr)
-    		    
     		    List(line,"/logwindow/"+projName+"/"+goalName+"/"+HtmlUtil.witnessPath(witness) +  attemptStr)
     		  })
       Ok(Json.toJson(witnessList)).as("application/json")
