@@ -15,6 +15,7 @@
 		<form>
 			<label>Track Name contains :</label> <input type=text id="trackNameSearch"> <br />
 			<label>Goal Name contains :</label> <input type=text id="goalNameSearch"> <br />
+			<label>Witness contains :</label> <input type=text id="witnessSearch"> <br />
 			<label>Started* by :</label> <input type=text id="startTimeSearch"> <br />
 			<label>Finished* by :</label> <input type=text id="endTimeSearch"> <br />
 		</form>
@@ -64,6 +65,7 @@
 		//filtering variables
 		trackNameSearchString="";
 		goalNameSearchString="";
+		witnessSearchString="";
 		startTimeSearchString="";
 		endTimeSearchString="";
 		
@@ -83,6 +85,11 @@
        		return false;
        	}
        	
+       	if(args.witnessSearchString != "" && item["witness"].indexOf(args.witnessSearchString) == -1) {
+       		return false;
+       	}
+       	
+  
        	if(Date.parse(item["startTime"]) < Date.parse(args.startTimeSearchString)) {
        		return false;
        	}
@@ -133,7 +140,6 @@
  	   		//load data
 			var dataCounter = @grList.length;
 			
-			console.log ("loading data, grList length = " + dataCounter);
 			
 			@grList.map { gr => 
 				data[--dataCounter] = {
@@ -141,7 +147,7 @@
 					parentId: "@gr.parentRunId",
 					trackName: "@gr.trackDescriptor.trackName",
 	  	          	goalName: "@gr.goalName",
-	  	          	witness: "@Html(HtmlUtil.witnessTable( gr.witness))",
+	  	          	witness: "@Html(HtmlUtil.formatWitness( gr.witness))",
 	  	          	startTime: "@HtmlUtil.formatTrackHistoryDate(Some(gr.startTime))", 
 	  	          	endTime: "@HtmlUtil.formatTrackHistoryDate(gr.endTime)",
 	  	          	status: "@gr.state",
@@ -171,6 +177,7 @@
                 sortcol = args.sortCol.field;
                 dataView.sort(comparer, args.sortAsc);
             });
+            
 
 			//filtering wires
             
@@ -186,6 +193,14 @@
 				Slick.GlobalEditorLock.cancelCurrentEdit();
 				
 				goalNameSearchString=this.value;
+				render();
+				
+			});
+			
+			$('#witnessSearch').keyup(function (e) {
+				Slick.GlobalEditorLock.cancelCurrentEdit();
+				
+				witnessSearchString=this.value;
 				render();
 				
 			});
@@ -234,6 +249,7 @@
 	            dataView.setFilterArgs({
 	            	trackNameSearchString: trackNameSearchString,
 	            	goalNameSearchString: goalNameSearchString,
+	            	witnessSearchString: witnessSearchString,
 	            	startTimeSearchString: startTimeSearchString,
 	            	endTimeSearchString: endTimeSearchString
 	            });

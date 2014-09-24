@@ -11,13 +11,10 @@
 
 
 @main( s"Track ${trackDesc.trackName} ") {
-  <h1>Track @trackDesc.trackName  </h1>
+	
+<h1>Track @trackDesc.trackName  </h1>
   
-
-
-
-    
-    <h2>Version @trackDesc.version </h2>
+<h2>Version @trackDesc.version </h2>
   <table>  
    <tr><td><h3>Goals for @trackDesc.version</h3></td>
     <td>
@@ -44,10 +41,6 @@
     </tr>
  </table>    
  
- <!-- YY Remove these buttons when update is complete -->
- <button id="listFiles" onClick="window.open('/listfiles/@trackDesc.trackName')">List Files</button>
- <button id="logHistory" onClick="window.open('/loghistory/@trackDesc.trackName')">Log History</button>
- 
 <div id ="trackInfo@trackDesc.trackName">
 
   <h2>Files for @trackDesc.trackName </h2>  
@@ -61,17 +54,15 @@
       <h3> Goals</h3>
       <ul id="logHistoryMenuList@trackDesc.trackName">
         @goalLogMap.map{goal =>
-          <li><a onclick="changeTrack('@goal')">@goal</a></li>
+          <li  title='@goal'><a onclick="changeGoal('@goal')">@goal</a></li>
         }
       </ul>
-      
-      <!-- @goalLogMap.map{goal =>
-        <button type="button" onclick="changeTrack('@goal')">@goal</button> <br />
-      } -->
+     
     </div>
     
-    <h3 class="wordwrap" id ="logHistoryTitle@trackDesc.trackName"></h3>
-    <div class="inLineDiv wordwrap" id="logHistoryDisplay@trackDesc.trackName">
+    <div class="inLineDiv wordwrap" id ="logHistoryTitle@trackDesc.trackName">
+    </div>
+    <div class="inLineDiv wordwrap" id="logHistoryDisplay@trackDesc.trackName" style="height:600px">
   
     </div>
   </div>
@@ -89,10 +80,8 @@
 <script>
   
   var grid;
-  
   var columns = [
-  	{id: "id", name: "ID", field: "id", width: 20},
-    {id: "witness", name: "Witness", field: "witness", sortable:true}
+    {id: "witness", name: "Witness/Log File", field: "witness", sortable:true, formatter: formatter}
     ];
   var options = {
     enableCellNavigation: true,
@@ -106,51 +95,32 @@
    }
 
  
-  function changeTrack(goal) {
-  	var data=[];
-    $('#logHistoryTitle@trackDesc.trackName').html("Instances of goal: " + goal);
+  function changeGoal(goal) {
+  	var data = [];
+    $('#logHistoryTitle@trackDesc.trackName').html("<h3>Instances of goal: " + goal + "</h3>");
     $('#logHistoryDisplay@trackDesc.trackName').html("");
   
     var witnessApiCall = "showprojectGoalRuns/@trackDesc.trackName/" + goal
     
     $.get(witnessApiCall, function(data){
-    	console.log("the length of my data is " + data.length);
     	var dataCounter = 0;
       $.each(data, function(index, witness){
-        console.log (" my witness is " + witness);
+        //console.log (" my witness is " + witness);
         
         data[dataCounter]={
-        	id: dataCounter,
-        	witness: witness
+        	witness: "<a href='"+witness[1]+"' target='_blank'>"+witness[0]+"</a>"
         };
         dataCounter++;
-        //$('#logHistoryDisplay@trackDesc.trackName').append("<a href='"+witness[1]+"'>"+witness[0]+"</a> <br/ >")
       });
       
       grid= new Slick.Grid("#logHistoryDisplay@trackDesc.trackName", data, columns, options);
-      
-      
-      console.log("here's what I got in my data[]:");
-      data.forEach(function(entry){
-      	console.log(entry.id + " " + entry.witness);
-      });
-      /*
-      dataView.beginUpdate();
-      dataView.setItems(data, "id");
-      dataView.endUpdate();
-      */
-      grid.updateRowCount();
-      grid.render();
-      console.log ("amen");
-      
-      
     });
     
     
   }
   
    $(function (){
-      
+        
     $("#trackInfo@trackDesc.trackName").accordion({
         collapsible: true,
         heightStyle: "content"
@@ -168,4 +138,6 @@
     });
   });
  </script>
-}
+
+ 
+	}

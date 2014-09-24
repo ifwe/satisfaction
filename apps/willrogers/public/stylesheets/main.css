@@ -24,12 +24,12 @@ div.inLineDivContainer {
 div.inLineDiv {
 	float:left;
 	overflow:auto;
-	width:65%;
+	width:75%;
 	margin: 5px;
 }
 
 div.inLineDiv#logHistoryMenu {
-	width: 30%;
+	width: 20%;
 	overflow:hidden;
 	
 }
@@ -50,6 +50,8 @@ label
 
 .slick-row:hover {
 	background-color:#cdcdcd;
+}
+
 }
 
 /* to break up long paths Source: http://snipplr.com/view/10979/css-cross-browser-word-wrap */
