@@ -14,7 +14,7 @@
     
      @attemptNum match {
         case Some(n) => { 
-           <h2>Attempt Number @n</h2>
+           <h2>Attempt Number: @n</h2>
         }
         case None => {}
      }
@@ -23,11 +23,11 @@
 <div>
  
  @defining( attemptNum match {
-          case Some(n) => s"?attempt=$n"
+          case Some(n) => s"__ATTEMPT_$n"
           case None => ""
   } ) { attemptQuery =>
   <iframe id="logFrame" width="1750px" height ="800px" style="overflow:scroll"
-      src='/rawlog/@helper.urlEncode(trackName)/@helper.urlEncode(goalName)/@helper.urlEncode(HtmlUtil.witnessPath(witness))_@attemptQuery' onload="scrollDown()">
+      src='/rawlog/@helper.urlEncode(trackName)/@helper.urlEncode(goalName)/@helper.urlEncode(HtmlUtil.witnessPath(witness))@attemptQuery' onload="scrollDown()">
   </iframe>
 </div>
 
@@ -36,12 +36,10 @@
 
       <script type="text/javascript">
 
-      
       var frameHeight= parseInt($("#logFrame").get(0).height, 10)
 
 
       setInterval(function(){
-
           var frame = $("#logFrame").get(0).contentWindow.document.body
           var scrollPosn = frame.scrollTop + frameHeight
           var contentHeight = frame.scrollHeight
@@ -55,5 +53,9 @@
       function scrollDown() {
     	 $("#logFrame").get(0).contentWindow.scrollTo(0,$("#logFrame").get(0).contentWindow.document.body.scrollHeight)
       }
+
+      $(function() {
+      	console.log(" here are my parameters: trackName:@trackName  goalName:@goalName witness:@helper.urlEncode(HtmlUtil.witnessPath(witness)) attemptNum:@attemptNum");
+          });
       </script>
 }

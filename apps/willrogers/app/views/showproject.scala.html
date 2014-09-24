@@ -97,14 +97,12 @@
  
   function changeGoal(goal) {
   	var data = [];
-  	
     $('#logHistoryTitle@trackDesc.trackName').html("<h3>Instances of goal: " + goal + "</h3>");
     $('#logHistoryDisplay@trackDesc.trackName').html("");
   
     var witnessApiCall = "showprojectGoalRuns/@trackDesc.trackName/" + goal
     
     $.get(witnessApiCall, function(data){
-    	//console.log("the length of my data is " + data.length);
     	var dataCounter = 0;
       $.each(data, function(index, witness){
         //console.log (" my witness is " + witness);
@@ -113,7 +111,6 @@
         	witness: "<a href='"+witness[1]+"' target='_blank'>"+witness[0]+"</a>"
         };
         dataCounter++;
-        //$('#logHistoryDisplay@trackDesc.trackName').append("<a href='"+witness[1]+"'>"+witness[0]+"</a> <br/ >")
       });
       
       grid= new Slick.Grid("#logHistoryDisplay@trackDesc.trackName", data, columns, options);
@@ -123,9 +120,7 @@
   }
   
    $(function (){
-    
-   // $('li').tooltip({tooltipClass:'withColor'});
-    
+        
     $("#trackInfo@trackDesc.trackName").accordion({
         collapsible: true,
         heightStyle: "content"

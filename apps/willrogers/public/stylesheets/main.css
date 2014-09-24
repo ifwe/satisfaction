@@ -52,13 +52,6 @@ label
 	background-color:#cdcdcd;
 }
 
-.willrogersToolTip {
-	background-image: none;
-	background-color: red;
-}
-
-.withColor{
-    background-color: #d3d3d3;
 }
 
 /* to break up long paths Source: http://snipplr.com/view/10979/css-cross-browser-word-wrap */

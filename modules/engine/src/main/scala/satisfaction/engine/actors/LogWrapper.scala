@@ -158,7 +158,11 @@ object LogWrapper {
     }
 
     def numAttemptsForGoalWitness( track: TrackDescriptor, goalName : String, witness : Witness ) : Int = {
+    	println("LogWrapper::numAttemptsForGoalWitness")
+    	
        val checkPath = logPathForGoalWitness(track,goalName, witness)
+       	println(" checkPath="+ checkPath)
+       	localFS.listFiles(checkPath.parent).foreach(file => println("  file:" + file))
        localFS.listFiles(checkPath.parent).count( _.path.name.startsWith( checkPath.name) )
     }
     
@@ -221,10 +225,13 @@ object LogWrapper {
    }
    
    def getGoalLogRuns (trackName : String, goalName : String, pageNumber : Option[Int]) : List[String] = {
-      val batchLength = 100
+     //println("LogWrapper::getGoalLogRuns") 
+     val batchLength = 100
      val trackPath = rootDirectory / pathString(trackName)
+     //println(" trackPath " + trackPath)
      if (localFS.exists(trackPath)) {
        val returnList = getLogPathsForGoal(trackName, goalName).map(_.path.name).toList
+       //returnList.foreach(r => println("  " + r) )
        returnList
      } else {
        Nil

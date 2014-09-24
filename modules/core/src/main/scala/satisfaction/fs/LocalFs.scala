@@ -58,12 +58,13 @@ case class LocalFileSystem() extends FileSystem {
    
    override def listFiles( p : Path ) : Seq[FileStatus] = {
        val file :File = (p)
-       System.out.println( " File is " + file)
        val lf = file.listFiles
        if( lf == null ) {
          Seq.empty 
        } else {
-         lf.map(f => { new LocalFStatus(f)  } ).toSeq
+         lf.map(f => { 
+           new LocalFStatus(f)  
+           } ).toSeq
        }
    }
    

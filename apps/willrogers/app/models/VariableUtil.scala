@@ -69,9 +69,13 @@ object HtmlUtil {
      *   Convert a witness to a String which can be passed as a string in an URL
      */
     def witnessPath( witness : Witness ) : String = {
-      witness.assignments.map( ass => {
+      val witnessPath = witness.assignments.map( ass => {
            s"${ass.variable.name}=${ass.value}"
       } ).mkString(";").replace("/","_sl_")
+      
+      //println(" HtmlUtil::witnessPath witnessPath is: " + witnessPath)
+      witnessPath
+      
     }
     
 }
