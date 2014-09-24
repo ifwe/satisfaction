@@ -256,7 +256,7 @@ class JDBCSlickTrackHistory( val driverInfo : DriverInfo)   extends TrackHistory
 	  db.withSession {
 	    implicit session =>
 	      
-	    	returnList = table.list.filter(_._8.after(tsThreshold)).map(g => {
+	    	returnList = table.filter( g => g.startTime > tsThreshold ).list.map(g => {
 		   			 		 val gr = GoalRun(TrackDescriptor(g._2, g._3, g._4, Some(g._5)), 
 										g._6, parseWitness(g._7), new DateTime(g._8), 
 										g._9 match { case Some(timestamp) => Some(new DateTime(timestamp))

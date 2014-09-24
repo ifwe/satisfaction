@@ -64,7 +64,15 @@ object Config  extends Logging {
        hc.setVar(HiveConf.ConfVars.METASTORETHRIFTCONNECTIONRETRIES, "5")
        hc.setVar(HiveConf.ConfVars.METASTORETHRIFTFAILURERETRIES, "6")
        
+       if(hc.getVar(HiveConf.ConfVars.PREEXECHOOKS).equals("org.apache.hadoop.hive.ql.hooks.ATSHook") ) {
+          log.warn(" Overriding bogus Ambari Timeline Server ATSHook class")
+          hc.setVar(HiveConf.ConfVars.PREEXECHOOKS, "")
+          hc.setVar(HiveConf.ConfVars.POSTEXECHOOKS, "")
+          hc.setVar(HiveConf.ConfVars.ONFAILUREHOOKS, "")
+       }
        
+       hc.set("mapreduce.task.classpath.user.precedence","true");
+
        hc
     }
     
