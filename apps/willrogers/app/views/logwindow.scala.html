@@ -1,4 +1,4 @@
-@(trackName : String,  goalName : String, witness : satisfaction.Witness , logs : Option[String] , attemptNum : Option[Int] )
+@(trackName : String,  goalName : String, witness : satisfaction.Witness , logs : Option[String] , attemptNum : Option[Int], logType : String)
 
 @import helper._
 @import scala.collection.JavaConversions._
@@ -12,6 +12,8 @@
      <h1>Satisfaction !!! Log Window</h1>
     <h1>Project @trackName Goal @goalName @witness </h1>
     
+    
+    
      @attemptNum match {
         case Some(n) => { 
            <h2>Attempt Number: @n</h2>
@@ -19,7 +21,6 @@
         case None => {}
      }
      
-
 <div>
  
  @defining( attemptNum match {
@@ -27,9 +28,11 @@
           case None => ""
   } ) { attemptQuery =>
   <iframe id="logFrame" width="1750px" height ="800px" style="overflow:scroll"
-      src='/rawlog/@helper.urlEncode(trackName)/@helper.urlEncode(goalName)/@helper.urlEncode(HtmlUtil.witnessPath(witness))@attemptQuery' onload="scrollDown()">
+      src='/@logType/@helper.urlEncode(trackName)/@helper.urlEncode(goalName)/@helper.urlEncode(HtmlUtil.witnessPath(witness))@attemptQuery' onload="scrollDown()">
   </iframe>
 </div>
+
+<h3> logType is @logType </h3>
 
 }
    

@@ -153,7 +153,7 @@
 	  	          	status: "@gr.state",
 	  	          	log:"@Html({
 								var logWindowUrl = "/logwindow/"+gr.trackDescriptor.trackName.replace(" ", "_")+"/"+gr.goalName.replace(" ", "_")+"/"+{HtmlUtil.witnessPath(gr.witness)}.replace(" ", "_")
-								s"<a href='$logWindowUrl'>View Log for Goal</a>"
+								s"<a href='$logWindowUrl' target='_blank'>View Log for Goal</a>"
 							})"
 				};
 			}

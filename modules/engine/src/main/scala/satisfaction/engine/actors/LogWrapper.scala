@@ -222,14 +222,12 @@ object LogWrapper {
      }
    }
    
-   def getGoalLogRuns (trackName : String, goalName : String, pageNumber : Option[Int]) : List[String] = {
-     //println("LogWrapper::getGoalLogRuns") 
+   def getGoalLogRuns (trackName : String, goalName : String, pageNumber : Option[Int] = None) : List[String] = {
+
      val batchLength = 100
      val trackPath = rootDirectory / pathString(trackName)
-     //println(" trackPath " + trackPath)
      if (localFS.exists(trackPath)) {
        val returnList = getLogPathsForGoal(trackName, goalName).map(_.path.name).toList
-       //returnList.foreach(r => println("  " + r) )
        returnList
      } else {
        Nil

@@ -212,32 +212,53 @@ object SatisfyGoalPage extends Controller with Logging {
      * For a particular witness, display  a log window
      */
     def logWindow( trackName: String, goalName : String , varString : String ) = Action { request =>
+      val witness = parseWitness (varString)
       
-      val attemptIndex = varString.indexOf("__ATTEMPT_")
-      
-      var witness = parseWitness(varString)
-      
-      val attemptNumOpt : Option[Int] = attemptIndex match {
-        case -1 => None 
-        case _ => Some(varString.split("_").last.toInt)
+      val attemptNumOpt: Option[Int] = request.queryString.get("attempt") match {
+        case Some(seq) => Some(seq.head.toInt)
+        case None => None
       }
       
-      if (attemptIndex != -1) {
-        witness = parseWitness(varString.substring(0, attemptIndex))
-      }
- 
-      
+      info(s"Attempt Num is $attemptNumOpt")
        val logFileOpt = readLogFile( TrackDescriptor( trackName), goalName, witness, attemptNumOpt) 
-       
-       Ok(views.html.logwindow(trackName, goalName , witness, logFileOpt, attemptNumOpt ))
+       Ok(views.html.logwindow(trackName, goalName , witness, logFileOpt, attemptNumOpt, "rawlog" ))
+    }
+    
+    def logWindowAttempt( trackName: String, goalName : String , varString : String ) = Action { request =>
+      val attemptNum = varString.split("_").last.toInt
+      val witness = parseWitness(varString.substring(0, varString.indexOf("__ATTEMPT_")))
+      
+      val attemptNumOpt : Option[Int] = attemptNum match {
+        case 0 => None
+        case _ => Some(attemptNum)
+      }
+      
+      val logFileOpt = readLogFile(TrackDescriptor(trackName), goalName, witness, attemptNumOpt)
+      Ok(views.html.logwindow(trackName, goalName, witness, logFileOpt, attemptNumOpt, "rawlogAttempt"))
     }
     
     /**
      *  Just output the logs as raw text ...
      */
     def rawLog( trackName: String, goalName : String , varString : String  ) = Action { request =>
-      
-
+      val witness = parseWitness( varString)
+       
+       val attemptNumOpt : Option[Int] = request.queryString.get("attempt") match {
+         case Some(seq) => Some(seq.head.toInt)
+         case None => None
+       }
+       val logFileOpt = readLogFile( TrackDescriptor( trackName), goalName, witness, attemptNumOpt) 
+       
+       logFileOpt match {
+         case Some(logFile) =>
+           Ok( logFile)
+         
+         case None =>
+          NotFound(s" No Log File for $trackName $goalName $witness")
+       } 
+    }
+    
+    def rawLogAttempt( trackName: String, goalName : String , varString : String  ) = Action { request =>
       val attemptIndex = varString.indexOf("__ATTEMPT_")
       
       var witness = parseWitness(varString)
@@ -261,7 +282,6 @@ object SatisfyGoalPage extends Controller with Logging {
           NotFound(s" No Log File for $trackName $goalName $witness")
        }
     }
-    
     /**
      *  Abort a running job 
      */
