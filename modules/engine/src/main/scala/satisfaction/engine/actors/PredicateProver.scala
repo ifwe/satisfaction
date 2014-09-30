@@ -149,6 +149,7 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
                log.warning(s" Received Abort message after failure,  Killing self." )
                status.markTerminal(GoalState.Aborted )
                proverFactory ! ReleaseActor( goal.name, witness)
+               context.system.scheduler.scheduleOnce( 10 seconds, self, new KillActor(goal.name,witness) )
             case GoalState.Running =>
                /// If our job is running ... kill it 
               //// Check to see if abort was able to succeed ...
@@ -167,8 +168,8 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
                          actor ! Abort
                      }
             	   }
-              //// XXX TODO wait for all children's results
-              ////sender ! GoalSuccess( status)
+                proverFactory ! ReleaseActor( goal.name, witness)
+                context.system.scheduler.scheduleOnce( 10 seconds, self, new KillActor(goal.name,witness) )
           }
 
         /// Messages which can be sent from children

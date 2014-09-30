@@ -158,6 +158,11 @@ object Config  extends Logging {
          thisConf.set("mapreduce.job.user.name", track.trackProperties.getProperty("satisfaction.track.user.name"))
       }
       
+      //// Just go ahead and override the Hadoop Configuration ...
+      track.trackProperties.assignments.foreach(  varass => {
+         thisConf.set( varass.variable.name, varass.value.toString) 
+      })
+      
       thisConf
     }
     
