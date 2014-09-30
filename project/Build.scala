@@ -208,6 +208,7 @@ object ApplicationBuild extends Build {
 
 
   def Resolvers = resolvers ++= Seq(
+      "artifactory.tagged.com" at "https://artifactory.tagged.com/artifactory/repo",
       "snapshots" at "http://oss.sonatype.org/content/repositories/snapshots",
       "releases"  at "http://oss.sonatype.org/content/repositories/releases",
       "Typesafe repository" at "http://repo.typesafe.com/typesafe/releases/",
