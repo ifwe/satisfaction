@@ -130,7 +130,6 @@ class ProverFactory( trackHistoryOpt : Option[TrackHistory] = None) extends Acto
        acquireReference( goal.name, witness, sender)
                     
        /// XXX build actor pimping framework
-        pimpMyActor( actorRef, track, goal, witness)
        if( trackHistory != null) {
           val historyRef = context.system.actorOf(Props(classOf[HistoryAgent], actorRef,  track.descriptor, goal.name, witness,trackHistory),
              "History_" + actorTupleName)
@@ -138,9 +137,11 @@ class ProverFactory( trackHistoryOpt : Option[TrackHistory] = None) extends Acto
            actorRef ! AddListener( historyRef)
                 
 
+          pimpMyActor( historyRef, track, goal, witness)
           historyRef      
        } else {
           _actorMap.put(actorTupleName,actorRef)
+          pimpMyActor( actorRef, track, goal, witness)
           actorRef 
        }
     }

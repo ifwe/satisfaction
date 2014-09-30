@@ -60,7 +60,7 @@ trait HiveDriver {
  *    the internal 'SessionState' interface
  */
 
-class HiveLocalDriver( val hiveConf : HiveConf = Config.config)
+class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config))
       extends HiveDriver with MetricsProducing with Progressable with Logging {
   
     implicit var track : Track = null
@@ -191,6 +191,7 @@ class HiveLocalDriver( val hiveConf : HiveConf = Config.config)
                 //// add escaping ???
                 info(s" Setting configuration ${kv(0).trim} to ${kv(1)} ")
                 sessionState.getConf.set(kv(0).trim, kv(1))
+                hiveConf.set(kv(0).trim, kv(1))
                 return true
             }
             if( query.trim.toLowerCase.startsWith("source") ) {
