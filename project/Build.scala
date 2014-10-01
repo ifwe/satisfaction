@@ -17,7 +17,7 @@ object ApplicationBuild extends Build {
 
   val appVersion = "2.3.1"
 
-  val hiveVersion = "0.13.0"
+  val hiveVersion = "0.13.1"
 
   val core = Project(
       "satisfaction-core",
@@ -115,7 +115,7 @@ object ApplicationBuild extends Build {
     name in Rpm := "satisfaction-scheduler",
     version in Rpm := appVersion,
 
-    rpmRelease in Rpm:= "2",
+    rpmRelease in Rpm:= "3",
     packageSummary in Rpm := "wyman",
     packageSummary in Linux := "wyman",
     rpmVendor in Rpm := "Tagged.com",
