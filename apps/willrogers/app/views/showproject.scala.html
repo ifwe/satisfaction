@@ -103,16 +103,13 @@
     var witnessApiCall = "showprojectGoalRuns/@trackDesc.trackName/" + goal
     
     $.get(witnessApiCall, function(data){
-    	var dataCounter = 0;
       $.each(data, function(index, witness){
-        //console.log (" my witness is " + witness);
-        
-        data[dataCounter]={
+        data[index]={
         	witness: "<a href='"+witness[1]+"' target='_blank'>"+witness[0]+"</a>"
         };
-        dataCounter++;
       });
       
+      data.reverse();
       grid= new Slick.Grid("#logHistoryDisplay@trackDesc.trackName", data, columns, options);
     });
     

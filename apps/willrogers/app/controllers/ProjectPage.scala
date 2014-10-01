@@ -56,30 +56,28 @@ object ProjectPage extends Controller {
     }
     
     def showProjectRuns (projName :String, goalName : String) = Action { // don't forget to add paging here later!
+      //for logHistory ( on track page)
       val witnessList = LogWrapper.getGoalLogRuns(projName, goalName, None)
     		  .map(line => {
-    		    
-    		    //format the attempt number here!!!
+
     		    val witnessAttemptStr = line.split("/").last
     		    val attemptIndex = line.split("/").last.indexOf("__ATTEMPT_")
     		    var witnessStr = witnessAttemptStr
-    		    var attemptStr = ""
+    		    var attemptStr = "__ATTEMPT_0"
     		      
     		    if (attemptIndex != -1) {
     		      witnessStr = witnessAttemptStr.substring(0, witnessAttemptStr.indexOf("__ATTEMPT_"))
     		      attemptStr = witnessAttemptStr.substring(witnessAttemptStr.indexOf("__ATTEMPT_"), witnessAttemptStr.length())
     		    } 
 
-    		   
     		    val witness = LogWrapper.getWitnessFromLogPath(witnessStr)
     		    
-    		    //println("wStr is: " + witnessAttemptStr+ "index of _ATTEMPT_ is "+ witnessAttemptStr.indexOf("_ATTEMPT_") +" my witnessPath is: " + witnessPath)
-    		    //println(" witnessStr is:" + witnessStr + " attemptStr"+ attemptStr)
-    		    
-    		    List(line,"/logwindow/"+projName+"/"+goalName+"/"+HtmlUtil.witnessPath(witness) +  attemptStr)
+    		    List(line,"/logwindowAttempt/"+projName+"/"+goalName+"/"+HtmlUtil.witnessPath(witness) +  attemptStr)
     		  })
+    		  
       Ok(Json.toJson(witnessList)).as("application/json")
     }
+    
     
     def showProjectFiles(projName: String) = Action {
       val trackDesc = TrackDescriptor( projName)
