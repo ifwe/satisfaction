@@ -58,21 +58,22 @@ object ProjectPage extends Controller {
     def showProjectRuns (projName :String, goalName : String) = Action { // don't forget to add paging here later!
       //for logHistory ( on track page)
       val witnessList = LogWrapper.getGoalLogRuns(projName, goalName, None)
+              .sorted
     		  .map(line => {
 
     		    val witnessAttemptStr = line.split("/").last
-    		    val attemptIndex = line.split("/").last.indexOf("__ATTEMPT_")
-    		    var witnessStr = witnessAttemptStr
-    		    var attemptStr = "__ATTEMPT_0"
-    		      
-    		    if (attemptIndex != -1) {
-    		      witnessStr = witnessAttemptStr.substring(0, witnessAttemptStr.indexOf("__ATTEMPT_"))
-    		      attemptStr = witnessAttemptStr.substring(witnessAttemptStr.indexOf("__ATTEMPT_"), witnessAttemptStr.length())
-    		    } 
+    		    val attemptIndex = witnessAttemptStr.indexOf("__ATTEMPT_")
+    		    val ( witnessStr : String, attemptNum : Int) = if( attemptIndex != -1) {
+    		      ( witnessAttemptStr.substring(0, attemptIndex),
+    		        witnessAttemptStr.substring( attemptIndex + "__ATTEMPT_".length ).toInt )
+    		    } else {
+    		      (witnessAttemptStr , 0)
+    		    }
 
     		    val witness = LogWrapper.getWitnessFromLogPath(witnessStr)
     		    
-    		    List(line,"/logwindowAttempt/"+projName+"/"+goalName+"/"+HtmlUtil.witnessPath(witness) +  attemptStr)
+    		    val lineStr = if( attemptNum == 0 ) { witness.toString } else { s"${witness.toString} ATTEMPT ${attemptNum+1}" }
+    		    List( lineStr ,s"/logwindow/${projName}/${goalName}/${HtmlUtil.witnessPath(witness)}?attempt=${attemptNum}")
     		  })
     		  
       Ok(Json.toJson(witnessList)).as("application/json")

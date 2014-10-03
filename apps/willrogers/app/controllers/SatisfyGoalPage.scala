@@ -174,16 +174,24 @@ object SatisfyGoalPage extends Controller with Logging {
 
     }
 
-    def getLogFile(track : TrackDescriptor, goalName: String, witness: Witness, attemptNum : Option[Int] = None): Option[Path] = {
-    	log.info(" input attemptNum=" + attemptNum)
-    	attemptNum match {
-    	  case None => Some(LogWrapper.logPathForGoalWitness(track, goalName, witness))
-    	  case Some(n) => Some(LogWrapper.logPathForGoalWitnessAndAttempt(track, goalName, witness, n))
-    	}
+    def getLogFilePath(track : TrackDescriptor, goalName: String, witness: Witness, attemptNum : Option[Int] = None): Option[Path] = {
+       attemptNum match {
+           case None => {
+              val maxAttempt = LogWrapper.numAttemptsForGoalWitness(track, goalName, witness)
+              Some(LogWrapper.logPathForGoalWitnessAndAttempt(track, goalName, witness, maxAttempt -1 ))
+           }
+           case Some(n) => {
+             if( n == 0 ) {
+                Some(LogWrapper.logPathForGoalWitness(track, goalName, witness))
+             } else {
+               Some(LogWrapper.logPathForGoalWitnessAndAttempt(track, goalName, witness, n  ))
+             }
+           }
+       }
     }
 
     def readLogFile(track : TrackDescriptor, goalName: String, witness: Witness, attemptNum : Option[Int] = None): Option[String] = {
-      getLogFile( track, goalName, witness, attemptNum ) match {
+      getLogFilePath( track, goalName, witness, attemptNum ) match {
         case None => None
         case Some(path) => {
           val returnpath = Some( new String( LocalFileSystem.readFile( path)))
@@ -224,19 +232,6 @@ object SatisfyGoalPage extends Controller with Logging {
        Ok(views.html.logwindow(trackName, goalName , witness, logFileOpt, attemptNumOpt, "rawlog" ))
     }
     
-    def logWindowAttempt( trackName: String, goalName : String , varString : String ) = Action { request =>
-      val attemptNum = varString.split("_").last.toInt
-      val witness = parseWitness(varString.substring(0, varString.indexOf("__ATTEMPT_")))
-      
-      val attemptNumOpt : Option[Int] = attemptNum match {
-        case 0 => None
-        case _ => Some(attemptNum)
-      }
-      
-      val logFileOpt = readLogFile(TrackDescriptor(trackName), goalName, witness, attemptNumOpt)
-      Ok(views.html.logwindow(trackName, goalName, witness, logFileOpt, attemptNumOpt, "rawlogAttempt"))
-    }
-    
     /**
      *  Just output the logs as raw text ...
      */
@@ -258,30 +253,6 @@ object SatisfyGoalPage extends Controller with Logging {
        } 
     }
     
-    def rawLogAttempt( trackName: String, goalName : String , varString : String  ) = Action { request =>
-      val attemptIndex = varString.indexOf("__ATTEMPT_")
-      
-      var witness = parseWitness(varString)
-      
-      val attemptNumOpt : Option[Int] = attemptIndex match {
-        case -1 => None 
-        case _ => Some(varString.split("_").last.toInt)
-      }
-      
-      if (attemptIndex != -1) {
-        witness = parseWitness(varString.substring(0, attemptIndex))
-      }
- 
-       val logFileOpt = readLogFile( TrackDescriptor( trackName), goalName, witness, attemptNumOpt) 
-       
-       logFileOpt match {
-         case Some(logFile) =>
-           Ok( logFile)
-         
-         case None =>
-          NotFound(s" No Log File for $trackName $goalName $witness")
-       }
-    }
     /**
      *  Abort a running job 
      */

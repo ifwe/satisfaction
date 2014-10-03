@@ -31,9 +31,7 @@ GET     /listfiles/:trackName                  willrogers.controllers.EditPage.l
 GET     /editfile/:trackName/:fileName          willrogers.controllers.EditPage.editFile(trackName: String, fileName: String)
 GET     /loghistory/:trackName                   willrogers.controllers.SatisfyGoalPage.logHistory(trackName: String)
 GET     /logwindow/:trackName/:goalName/:varString                   willrogers.controllers.SatisfyGoalPage.logWindow(trackName: String, goalName: String, varString : String)
-GET 	/logwindowAttempt/:trackName/:goalName/:varString			willrogers.controllers.SatisfyGoalPage.logWindowAttempt(trackName, goalName, varString)
 GET     /rawlog/:trackName/:goalName/:varString                   willrogers.controllers.SatisfyGoalPage.rawLog(trackName: String, goalName: String, varString : String)
-GET     /rawlogAttempt/:trackName/:goalName/:varString                   willrogers.controllers.SatisfyGoalPage.rawLogAttempt(trackName: String, goalName: String, varString : String)	
 GET     /restart/:trackName/:goalName/:varString                   willrogers.controllers.SatisfyGoalPage.restartJob(trackName: String, goalName: String, varString : String)
 GET     /abort/:trackName/:goalName/:varString                   willrogers.controllers.SatisfyGoalPage.abortJob(trackName: String, goalName: String, varString : String)
 

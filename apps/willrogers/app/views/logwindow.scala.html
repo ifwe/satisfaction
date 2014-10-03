@@ -16,7 +16,7 @@
     
      @attemptNum match {
         case Some(n) => { 
-           <h2>Attempt Number: @n</h2>
+           <h2>Attempt Number: @{n + 1}</h2>
         }
         case None => {}
      }
@@ -24,7 +24,7 @@
 <div>
  
  @defining( attemptNum match {
-          case Some(n) => s"__ATTEMPT_$n"
+          case Some(n) => s"?attempt=$n"
           case None => ""
   } ) { attemptQuery =>
   <iframe id="logFrame" width="1750px" height ="800px" style="overflow:scroll"
