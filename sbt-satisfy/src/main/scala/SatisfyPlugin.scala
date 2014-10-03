@@ -2,12 +2,15 @@ package sbtSatisfy
 
 import sbt._
 import Keys._
+import Defaults._
 import org.apache.hadoop.fs._
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.fs.FileSystem
 import org.apache.hadoop.conf.Configuration
 import java.io.{File=>JavaFile}
 import java.io.FileInputStream
+import sbt.UpdateReport.RichUpdateReport
+import scala.util.matching.Regex
 
 object SatisfyPlugin extends sbt.Plugin {
   
@@ -82,6 +85,35 @@ object SatisfyPlugin extends sbt.Plugin {
 
   import SatisfyKeys._
   
+  /// Make our own scope
+  lazy val Upload : sbt.Configuration = config("Upload")
+  
+  //// Our settings are the same as 
+  /**
+  lazy val uploadSettings : Seq[Setting[_]] = inConfig(Upload)(Defaults.configSettings) ++ Seq(
+      libraryDependencies := libraryDependencies.value.filter(! _.organization.contains("satisfaction")),
+      
+      uploadDependencies.
+      
+   )
+   * 
+   */
+  
+  /**
+   *  Copy a setting to have the same definition, 
+   *   but replace the scope
+   *   
+   *   XXX TODO create an 'uploadDependencies in Upload'
+   *    which removes hadoop and satisfaction-core
+   *      from the dependencies, so uploaded jars 
+   *    won't conflict.
+   */
+  def withScope( setting: sbt.Setting[_], newScope : Configuration ) : sbt.Setting[_] = {
+    
+    null
+  }
+  
+  
   def satisfySettings : Seq[Setting[_]] = Seq(
      hdfsURI := new java.net.URI("hdfs://dhdp2"),
      basePath := "/user/satisfaction/track" ,
@@ -98,13 +130,26 @@ object SatisfyPlugin extends sbt.Plugin {
      
      /// Exclude 
      /// XXX JDB filter these modules out of uploaded jars ...
-     uploadExcludes := Seq(  ( "com.klout.satisfaction" %% "satisfaction-core" % "*" ) ,
-            ( "com.klout.satisfaction" %% "satisfaction-engine" % "*" ),
-            ( "com.klout.satisfaction" %% "satisfaction-hadoop" % "*" ),
-            ( "org.apache.hadoop" %% "*" % "*" )
+     uploadExcludes := Seq(  ( "com.tagged.satisfaction" %% "satisfaction-core_2.10" % "*" ) ,
+            ( "com.tagged.satisfaction" %% "satisfaction-engine_2.10" % "*" ),
+            ( "com.tagged.satisfaction" %% "satisfaction-hadoop_2.10" % "*" ),
+            ( "org.apache.hadoop" %% "*" % "*" ),
+            ( "org.scala-lang" %% "*" % "*" )
        ),
 
-     uploadDependencies <<= dependencyClasspath in Runtime,
+       
+       libraryDependencies in Upload := (libraryDependencies in Runtime).value.filter(! _.organization.contains("satisfaction")),
+       
+       externalDependencyClasspath in Upload <<= externalDependencyClasspath in Runtime, 
+
+       ////uploadDependencies <<= externalDependencyClasspath in Upload,
+     ///uploadDependencies := update.value.retrieve( uploadExcludes),
+
+       //// XXX XXX for now, just do simple filtering ...
+       ///// Remove if organization or artifact matches
+     uploadDependencies <<= ( ( externalDependencyClasspath in Runtime), uploadExcludes, streams)  map filteredDependencies,
+       
+     //uploadDependencies <<= (dependencyClasspath in Runtime),
      
      uploadJars <<= ( hdfsURI, uploadJarsPath , uploadDependencies,  streams) map uploadFilesAttributed,
      
@@ -166,9 +211,47 @@ object SatisfyPlugin extends sbt.Plugin {
   def uploadSingleFile( hdfsURI : java.net.URI, destPath : Path,  file:java.io.File, strms: TaskStreams) : Unit = {
     uploadFiles(hdfsURI, destPath, Seq(file), strms )
   }
-  
+ 
+  /**
+   *  Simple filtering for now ... remove uploaded from the classpath .. 
+   *     Really want to filter from thirdpartyDependencies, so that downstream dependencies
+   *      don't get uploaded as well
+   */
+  def filteredDependencies( dependencyClasspath: Classpath, excl : Seq[ModuleID], strms : TaskStreams) :  Seq[Attributed[java.io.File]] = {
+     val moduleKey = AttributeKey[ModuleID]("module-id")
+     val orgArtifactMap : collection.mutable.Map[String,Seq[String]] = collection.mutable.Map[String,Seq[String]]()
+     excl.foreach(  mod => {
+           strms.log.info(" Checking moduleID " + mod.organization)
+        orgArtifactMap.get( mod.organization) match {
+          case None => orgArtifactMap.put( mod.organization, Seq[String]( mod.name ) )
+          case Some(artList) => orgArtifactMap.put( mod.organization, artList ++ Seq( mod.name) )
+        }
+     })
+     
+     strms.log.info(" Exclude Map = " + orgArtifactMap)
+      
+     //// Return 
+      dependencyClasspath.filter( f => { 
+       val moduleId = f.metadata.get( AttributeKey[ModuleID]("module-id")).get
+       if({
+         orgArtifactMap.get( moduleId.organization ) match {
+           case None => true 
+           case Some(artifactList) => {
+              ///artifactList.forall( !moduleId.name.equals("*") && moduleId.name.matches( _ ))
+              strms.log.info( s" Checking ${moduleId.organization} :: ${moduleId.name} ")
+              artifactList.forall( a =>  {
+                strms.log.info(s" Artifact name is $a ")
+                !( a.equals("*") || moduleId.name.equals(a) ) } )
+           }
+        }
+     } ) { true } else { strms.log.info(s" Filtering moduleID $moduleId"); false } })
+     
+  }
 
   def uploadFilesAttributed( hdfsURI : java.net.URI, destPath : Path,  srcFiles: Seq[Attributed[java.io.File]], strms: TaskStreams) : Unit = {
+    srcFiles.foreach( f => {
+        strms.log.info(s" XXXXX  ATTRIBUTED FILE ${f.data.name}  ATTRIBUTED ${f.metadata.keys.mkString(":")}")
+    })
     val unattributed = srcFiles.map( _.data  )
      uploadFiles(hdfsURI, destPath, unattributed, strms )
   }
