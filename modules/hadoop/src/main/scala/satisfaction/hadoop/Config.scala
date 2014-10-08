@@ -12,6 +12,8 @@ import java.io.FileNotFoundException
 import java.io.File
 import java.io.FileInputStream
 import hdfs.Hdfs
+import org.apache.hadoop.mapred.JobConf
+import org.apache.hadoop.mapreduce.MRJobConfig
 
 /**
  *  Scala Object to handle initial configuration
@@ -20,7 +22,6 @@ import hdfs.Hdfs
 object Config  extends Logging {
     def initHiveConf: HiveConf = {
         
-     
         info( s" Java Version is ${System.getProperty("java.version")}" )
         info( s" Hadoop Major Version is ${ShimLoader.getMajorVersion()}" )
         val hc = new HiveConf(new Configuration(), this.getClass())
@@ -71,7 +72,25 @@ object Config  extends Logging {
           hc.setVar(HiveConf.ConfVars.ONFAILUREHOOKS, "")
        }
        
+       /// AY YAH !!
+       /// For guava dependencies, force the version that we package with the track
+       /**
        hc.set("mapreduce.task.classpath.user.precedence","true");
+       hc.set("mapreduce.job.user.classpath.first", "true");
+       hc.set("mapreduce.user.classpath.first", "true");
+       
+       hc.setBoolean( MRJobConfig.MAPREDUCE_JOB_USER_CLASSPATH_FIRST, true ) 
+       * 
+       */
+       
+       /*** 
+        *  Set log4j libraries to info for some classes 
+        * 
+        * 
+        */
+       
+       
+       
 
        hc
     }
@@ -147,13 +166,16 @@ object Config  extends Logging {
 
       //// Add all jars which are in the Track's lib directory
       val newJars = track.hdfs.listFiles( track.libPath ) map ( _.path.toUri )
+      //// Add the resources as well, so they get put to distributed Cache
+      val newResources = track.hdfs.listFiles( track.resourcePath ) map ( _.path.toUri )
 
-      val newAuxJars = (newJars ++ currentAux).mkString(",")
+      val newAuxJars = (newJars ++ newResources ++ currentAux).mkString(",")
       info(s" Seting AuxJars Path to $newAuxJars ")
       thisConf.setAuxJars(newAuxJars)
       
       
       //// set the user if there 
+      //// XXX Does this work ???
       if( track.trackProperties.contains("satisfaction.track.user.name") ) {
          thisConf.set("mapreduce.job.user.name", track.trackProperties.getProperty("satisfaction.track.user.name"))
       }

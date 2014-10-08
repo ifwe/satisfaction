@@ -155,7 +155,7 @@ object LogWrapper {
 
     def logPathForGoalWitnessAndAttempt( track: TrackDescriptor, goalName : String, witness : Witness, attemptNum: Int ) : Path = {
       if(attemptNum == 0 )
-        Path(s"${rootedPathForGoalWitness( LogWrapper.rootDirectory ,track, goalName, witness)}" )
+        rootedPathForGoalWitness( LogWrapper.rootDirectory ,track, goalName, witness) 
       else
         Path(s"${rootedPathForGoalWitness( LogWrapper.rootDirectory ,track, goalName, witness)}__ATTEMPT_${attemptNum}" )
     }

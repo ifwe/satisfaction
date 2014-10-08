@@ -115,7 +115,7 @@ object ApplicationBuild extends Build {
     name in Rpm := "satisfaction-scheduler",
     version in Rpm := appVersion,
 
-    rpmRelease in Rpm:= "3",
+    rpmRelease in Rpm:= "9",
     packageSummary in Rpm := "wyman",
     packageSummary in Linux := "wyman",
     rpmVendor in Rpm := "Tagged.com",
@@ -192,7 +192,7 @@ object ApplicationBuild extends Build {
 	  ("org.apache.thrift" % "libfb303" % "0.7.0" ),
 	  ("org.antlr" % "antlr-runtime" % "3.4" ),
 	  ("org.antlr" % "antlr" % "3.0.1" )
-  ).excluding("log4j", "log4jj").excluding("org.slf4j", "slf4j-log4j12")  ++ metastoreDependencies ++ testDependencies
+  ).excluding("org.slf4j", "slf4j-log4j12")  ++ metastoreDependencies ++ testDependencies
 
 
   def engineDependencies = Seq(

@@ -84,6 +84,14 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config))
         val shims = ShimLoader.getHadoopShims
         info(" RPC port is " + shims.getJobLauncherRpcAddress(hiveConf))
         info(" Shims version is " + shims.getClass)
+        
+        /**
+         *     Set som
+         */    
+        ///Logger.getLogger( Configuration.class ).setLevel( INFO);
+        
+        
+        
         dr
     }
     
