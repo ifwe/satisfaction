@@ -119,9 +119,11 @@ object ApplicationBuild extends Build {
     bashScriptConfigLocation := Some("$app_home/conf/willrogers.conf"),
 
     name in Rpm := "satisfaction-scheduler",
-    version in Rpm := appVersion,
+    ///version in Rpm := appVersion,
+    verion in Rpm := resolveRpmVersion(),
 
-    rpmRelease in Rpm:= resolveRpmVersion(),
+    ////rpmRelease in Rpm:= resolveRpmVersion(),
+    rpmRelease in Rpm := "1",
     packageSummary in Rpm := "wyman",
     packageSummary in Linux := "wyman",
     rpmVendor in Rpm := "Tagged.com",
