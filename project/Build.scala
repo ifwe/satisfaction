@@ -120,7 +120,7 @@ object ApplicationBuild extends Build {
 
     name in Rpm := "satisfaction-scheduler",
     ///version in Rpm := appVersion,
-    verion in Rpm := resolveRpmVersion(),
+    version in Rpm := resolveRpmVersion(),
 
     ////rpmRelease in Rpm:= resolveRpmVersion(),
     rpmRelease in Rpm := "1",
