@@ -80,6 +80,12 @@ object ApplicationBuild extends Build {
   )
 
 
+  def resolveRpmVersion() = {
+    sys.env.get("BUILD_NUMBER") match {
+      case Some(buildNumber) => buildNumber
+      case None => "12"
+    }
+  }
 
   def RpmSettings = packagerSettings ++ deploymentSettings ++  playScalaSettings ++ packageArchetype.java_server ++  Seq(
     maintainer in Linux := "Jerome Banks jbanks@tagged.com",
@@ -115,7 +121,7 @@ object ApplicationBuild extends Build {
     name in Rpm := "satisfaction-scheduler",
     version in Rpm := appVersion,
 
-    rpmRelease in Rpm:= "9",
+    rpmRelease in Rpm:= resolveRpmVersion(),
     packageSummary in Rpm := "wyman",
     packageSummary in Linux := "wyman",
     rpmVendor in Rpm := "Tagged.com",
