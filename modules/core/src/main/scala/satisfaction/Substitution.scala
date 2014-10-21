@@ -89,6 +89,13 @@ case class Witness(
 
     def get[T](param: Variable[T]): Option[T] =
         assignments find (_.variable == param) map (_.value.asInstanceOf[T])
+        
+    def getOrElse[T](param: Variable[T],  defaultValue : T) : T = {
+       get(param) match {
+         case Some(value) => value
+         case None => defaultValue
+       }
+    }
 
     def update[T](param: Variable[T], value: T): Witness = {
         val filtered = assignments filterNot (_.variable == param)

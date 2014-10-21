@@ -14,6 +14,7 @@ import java.io.FileInputStream
 import hdfs.Hdfs
 import org.apache.hadoop.mapred.JobConf
 import org.apache.hadoop.mapreduce.MRJobConfig
+import org.apache.commons.logging.LogFactory
 
 /**
  *  Scala Object to handle initial configuration

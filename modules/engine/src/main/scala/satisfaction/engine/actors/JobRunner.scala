@@ -97,7 +97,7 @@ class JobRunner(
      *    based on the outcome of the job
      */
     def markEvidence( f: ( Markable => Unit)) = {
-      goal.evidence.filter( _.isInstanceOf[DataOutput]).
+      goal.evidenceForWitness( witness).filter( _.isInstanceOf[DataOutput]).
           map( _.asInstanceOf[DataOutput].getDataInstance(witness) ).
           filter( _.isDefined).map( _.get ).
            foreach( di => {

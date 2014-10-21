@@ -134,7 +134,6 @@ object SatisfyPlugin extends sbt.Plugin {
             ( "com.tagged.satisfaction" %% "satisfaction-engine_2.10" % "*" ),
             ( "com.tagged.satisfaction" %% "satisfaction-hadoop_2.10" % "*" ),
             ( "org.apache.hadoop" %% "*" % "*" ),
-            ( "org.scala-lang" %% "*" % "*" ),
             ( "org.slf4j" %% "log4j-over-slf4j" % "*" ),
             ( "log4j" %% "*" % "*" ),
             ( "commons-daemon" %% "*" % "*" ),

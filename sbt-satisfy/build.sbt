@@ -7,7 +7,7 @@ scalaVersion := "2.10.2"
 
 organization := "com.tagged.satisfaction"
 
-version := "0.12"
+version := "0.14"
 
 val hadoopVersion = "2.3.0"
 

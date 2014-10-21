@@ -21,7 +21,8 @@ import akka.actor.ActorRef
  */
 class RetryAgent(  val retryable : Retryable, val actorToRetry : ActorRef )
       (implicit val track : Track) extends Actor with ActorLogging {
-     var currentRetry: Int = 0
+     var currentRetry: Int = 0;
+     var expWaitTime : Double = retryable.waitPeriod.getStandardSeconds()
 
   def receive = {
     case GoalFailure(goalStatus) =>
@@ -30,9 +31,10 @@ class RetryAgent(  val retryable : Retryable, val actorToRetry : ActorRef )
       if (goalStatus.state == GoalState.Failed) {
         log.warning(s" Goal ${goalStatus.goalName} failed after ${currentRetry} retries ")
         if (currentRetry < retryable.maxRetries) {
-          val waitTime = Duration.create(retryable.waitPeriod.getStandardSeconds(), TimeUnit.SECONDS)
+          val waitTime = Duration.create(expWaitTime.toLong, TimeUnit.SECONDS)
           log.warning(s" Retrying ${goalStatus.goalName} in ${waitTime} ")
           currentRetry += 1
+          expWaitTime *= retryable.backOff
           //// Use akka system to schedule
           context.system.scheduler.scheduleOnce(waitTime) {
             log.warning(s" Sending RestartJob to ${goalStatus.goalName}  to $actorToRetry")

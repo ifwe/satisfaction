@@ -120,7 +120,9 @@ case class HiveTable (
     
     def addPartition(witness : Witness)( implicit track : Track) : HiveTablePartition = {
         val varWit = witness.assignments.filter( va => { variables.contains( va.variable ) } )
-        val part = ms.addPartition( dbName, tblName , Witness(varWit).raw  )    
+
+        val location = partitionPath.getPathForWitness( witness) 
+        val part = ms.addPartition( dbName, tblName , Witness(varWit).raw , location )    
         
         partitionPath.getPathForWitness( witness) match {
           case Some(path) =>

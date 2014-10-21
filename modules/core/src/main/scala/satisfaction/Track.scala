@@ -130,7 +130,7 @@ case class Track(
                 case current :: remaining =>
                     val currentDeps =
                         if (accum contains current) Nil
-                        else current.dependencies map (_._2)
+                        else current.dependentGoals
 
                     allGoals0(remaining ++ currentDeps, accum + current)
             }

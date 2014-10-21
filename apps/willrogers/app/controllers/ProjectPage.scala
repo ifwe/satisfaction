@@ -16,6 +16,7 @@ import satisfaction.track._
 import satisfaction.track.TrackFactory._
 import satisfaction.TrackDescriptor
 import satisfaction.engine.actors.LogWrapper
+import satisfaction.Witness
 
 object ProjectPage extends Controller {
   val trackFactory : TrackFactory = Global.trackFactory
@@ -110,7 +111,8 @@ object ProjectPage extends Controller {
 
         pg.addNodeDiv(topNodeDiv)
         var cnt: Int = 0
-        topLevelGoal.dependencies.foreach { depGoal =>
+        val w : Witness = Witness() /// XXX How do we visualize dynamic witnesses ???
+        topLevelGoal.dependenciesForWitness(w).foreach { depGoal =>
             val depNode = new PlumbGraph.NodeDiv(
                 divContent = depGoal._2.name
             )
@@ -149,9 +151,10 @@ object ProjectPage extends Controller {
      *  Do recursive layout of dependencies
      */
     def getPlumbGraphForGoalRecursive(pg: PlumbGraph, currentGoal: Goal, currentNode: PlumbGraph.NodeDiv, nodeMap: mutable.Map[String, PlumbGraph.NodeDiv]): Unit = {
-        val numDeps = currentGoal.dependencies.size
+        val w : Witness = Witness()
+        val numDeps = currentGoal.dependenciesForWitness(w).size
         var startX = currentNode.posX - (currentNode.width + 2) * numDeps / 2
-        currentGoal.dependencies.foreach { depGoal =>
+        currentGoal.dependenciesForWitness(w).foreach { depGoal =>
             var depNode: PlumbGraph.NodeDiv = null
             if (nodeMap.contains(depGoal._2.name))
                 depNode = nodeMap.get(depGoal._2.name).get

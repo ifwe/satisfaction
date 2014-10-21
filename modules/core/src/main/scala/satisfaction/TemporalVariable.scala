@@ -33,6 +33,7 @@ trait TemporalVariable { self : Variable[String] =>
        TemporalVariable.register( this)
     }
     
+    	
 }
     
  object TemporalVariable {
@@ -119,6 +120,9 @@ trait TemporalVariable { self : Variable[String] =>
     val timestampFormat = "YYYYMMddHHmmss"
     val continuousFrequency = frequency("PT1S")
     
+    
+    	
+    
     /**
      *  Provide a sequence which produces the hours of the day in a preferred format
      */
@@ -200,8 +204,7 @@ object ForDateRange {
   
     //// XXX For now need to know date range at compile time, for fanout..
     def apply( subGoal : Goal , startDate : String, endDate : String ) : Goal = {
-       FanOutGoal( subGoal, TemporalVariable.Date, Temporal.dateRange( startDate,endDate) )
-      
+       FanOutGoal( subGoal, TemporalVariable.Date, Temporal.dateRange( startDate,endDate).toSeq )
     }
   
 }

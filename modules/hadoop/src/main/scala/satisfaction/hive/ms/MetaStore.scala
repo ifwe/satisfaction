@@ -22,6 +22,7 @@ import org.apache.hadoop.hive.metastore.api.MetaException
 import scala.collection._
 import hdfs.Hdfs
 import org.apache.hadoop.hive.metastore.api.AlreadyExistsException
+import org.apache.hadoop.hive.ql.plan.AddPartitionDesc
 
 
 /**
@@ -176,6 +177,14 @@ case class MetaStore(implicit val config: HiveConf)  extends Logging {
     
     def tableExists( db: String, tblName: String) : Boolean = {
        this.synchronized( _hive.getTable(db,tblName, false) != null)
+    }
+    
+    def createTable( db: String, tbl : Table ) = {
+      this.synchronized {
+        tbl.setDbName(db)
+         _hive.createTable( tbl)
+      }
+      
     }
 
     /**
@@ -370,11 +379,16 @@ case class MetaStore(implicit val config: HiveConf)  extends Logging {
     }
    
     
-    def addPartition(db: String, tblName: String, partMap: Map[String, String]): Partition = {
+    def addPartition(db: String, tblName: String, partMap: Map[String, String], pathOpt : Option[Path] = None): Partition = {
         this.synchronized({
           try { 
-            val tbl = _hive.getTable( db, tblName)
-            _hive.createPartition( tbl, partMap)
+            val addPartitionDesc = new AddPartitionDesc(db,tblName, true)
+            val path = pathOpt match {
+              case Some(p) => p.toString
+              case None => null
+            }
+            addPartitionDesc.addPartition( partMap, path )
+            _hive.createPartitions( addPartitionDesc).get(0)
           } catch {
             case alreadyExists : AlreadyExistsException => {
               /// Handle race condition, if some other job tried to create partition

@@ -12,54 +12,102 @@ package satisfaction
  *   ( ie. specify start time and endtime in the witness )     
  *    
  */
+
+/**
+ *  DynamicGoals apply Witness function generator 
+ */
+class DynamicGoal( fName: String, subGoal : Goal,val witnessFunctionGenerator : Witness=>Seq[(Witness=>Witness)] )(implicit track: Track) 
+       extends Goal( name=fName, 
+                     satisfier = Goal.SomeEmptySatisfier,
+                     variables = subGoal.variables,
+                     dependencies = Set.empty, /// Not used
+                     evidence = Set(Evidence.NeverSatisfied) ) {
+  
+   
+   override def hasDependencies =  { true }
+   
+   override def dependenciesForWitness( w : Witness)  : Seq[(Witness=>Witness,Goal)] = {
+     println(s" DYNAMIC DEPS FOR WITNESS $w ")
+     witnessFunctionGenerator( w ).map(  (_,subGoal))
+   }
+   
+}
+
+/**
+ *  Create a set of dependencies based on saturating a variable
+ *   in the witness with values from a function creating a sequence of values.
+ *   
+ *   This might be useful for when the values of the subgoals are not known
+ *   ahead of time, (i.e. generated on the fly)
+ *   
+ */
 object FanOutGoal {
   /**
    *   Return a Goal which depends upon multiple subGoals,
    *   which a mapping function applied
    */ 
-    def apply[T](subGoal: Goal, saturateVar: Variable[T], substSeq:Iterable[T]): Goal = {
-        val vars = subGoal.variables.filter( _ != saturateVar )
+    def apply[T](subGoal: Goal, saturateVar: Variable[T], substSeq: => Seq[T]): Goal = {
         implicit val track = subGoal.track
-        val deps = substSeq.map(Goal.qualifyWitness(saturateVar, _)).map(Tuple2(_, subGoal))
-        new Goal(
-            name = "FanOut " + subGoal.name,
-            satisfier = None,
-            variables = vars,
-            dependencies = deps.toSet,
-            evidence = Set.empty)
-    }
-
-
-    /**
-     *   Allow two sets of variable values to be fanned out.
-     */
-    def apply(subGoal: Goal, saturateVar: Variable[String], substSeq: List[String],
-              saturateVar2: Variable[String], substSeq2: List[String]): Goal = {
-        val vars = subGoal.variables.filter( v => { v != saturateVar && v != saturateVar2  })
-
-        implicit val track = subGoal.track
-        
-        if (substSeq.size != substSeq.size) {
-            throw new IllegalArgumentException(" Fan out values must be same size for multiple variables ")
+        //// Scala magic ...
+        //// Define a function 
+        def fanOutFunction : (Witness=>Seq[(Witness=>Witness)]) = {
+           witness : Witness => {
+              substSeq.map( Goal.qualifyWitness( saturateVar, _) ).toSeq
+           }  
         }
-        val qualFuncs = Iterator.range(0, substSeq.size).collect {
-            case i: Int => {
-                val val1: String = substSeq(i)
-                val val2: String = substSeq2(i)
-                val qualFunc1 = Goal.qualifyWitness(saturateVar, val1)
-                val qualFunc2 = Goal.qualifyWitness(saturateVar2, val2)
-                qualFunc1 compose qualFunc2
-            }
-        }.toSet
-        val deps = qualFuncs.map(Tuple2(_, subGoal))
-
-        new Goal(
-            name = "FanOut " + subGoal.name,
-            satisfier = None,
-            variables = vars,
-            dependencies = deps,
-            evidence = Set.empty)
+        new DynamicGoal(
+            fName = "FanOut " + subGoal.name,
+            subGoal,
+            fanOutFunction
+            )
     }
+}
 
+/*
+ * Similar to FanOutGoal, but have the Goals depend on 
+ *  on another "in sequence", so that only one goal is
+ *  being satisfined at a time
+ */
+object InSequenceGoal {
+ 
+  
+    /**
+     *  Convert a set of WitnessMappings to one WitnessMapping
+     *   which has all it's dependencies chained in a row "in sequence"
+     *   ( as compared to in parallel with FanOut )
+     */
+    def ConvertToInSequence(   fanOut : Seq[((Witness=>Witness),Goal)]) : ((Witness=>Witness),Goal) = {
+        fanOut.reduce( (left,right) => {
+          val chained  = right._2.addWitnessRule( left._1,left._2)
+          val w : Witness = Witness()
+          val wl2 = left._1(w)
+          val wr2 = right._1(w)
+          println( s" REDUCE $wl2 $wr2")
+           (right._1,chained )
+        } )
+    }
     
+    
+    def apply[T](subGoal: Goal, saturateVar: Variable[T], substSeq: => Seq[T]): Goal = {
+           implicit val track = subGoal.track
+        //// Scala magic ...
+        //// Define a function 
+        def fanOutFunction : (Witness=>Seq[(Witness=>Witness)]) = {
+           witness : Witness => {
+              substSeq.map( Goal.qualifyWitness( saturateVar, _) ).toSeq
+           }  
+        }
+        new DynamicGoal(
+            fName = "InSequence " + subGoal.name,
+            subGoal,
+            fanOutFunction
+            ) {
+  
+            override def dependenciesForWitness( w : Witness)  : Seq[(Witness=>Witness,Goal)] = {
+              Seq( ConvertToInSequence( super.dependenciesForWitness( w) ) )
+            }
+        }
+    
+    }
+  
 }

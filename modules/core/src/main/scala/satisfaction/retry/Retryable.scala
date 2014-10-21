@@ -11,15 +11,12 @@ import satisfaction.Goal
  *   implies that the job should 
  *    be attempted 
  *  
- *  XXX TODO 
- *  XXX Allow logic for exponential backoff
- *  XXX  and for scanning output A
- *  XXX  to decide if retry is desired ...
  */
 trait Retryable {
    
-    val maxRetries : Int = 3;
+    val maxRetries : Int = 7;
     val waitPeriod : Duration = Duration.standardSeconds(30)
+    val backOff    : Double = 1.5
     
     def retryNotifier : Option[Notifier] = None
     

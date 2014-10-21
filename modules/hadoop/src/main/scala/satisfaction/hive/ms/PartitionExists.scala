@@ -27,7 +27,7 @@ case class PartitionExistsSatisfier(
     override def satisfy(subst: Witness): ExecutionResult = robustly {
         w = subst ++ extraAssignments
         val part = try { 
-            table.addPartition(w)
+           table.addPartition(w)
         } catch {
           //// In a race condition, if another track wants to check
           //// for the same partition at the same time, 

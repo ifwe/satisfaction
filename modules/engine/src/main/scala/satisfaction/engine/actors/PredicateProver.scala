@@ -50,10 +50,9 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
             log.info(s" PredicateProver ${track.descriptor.trackName}::${goal.name} received Satisfy message witness is $witness with runID =${runID} parentRunID=${parentRunID} forceSatisfy=${forceSatisfy} ")
             log.info(s" Adding $sender to listener list")
             addListener( sender )
-            if (goal.evidence != null &&
-                goal.evidence.size != 0 &&
+            if (goal.hasEvidence &&
                 forceSatisfy == false &&
-                goal.evidence.forall(e => e.exists(witness))) {
+                goal.evidenceForWitness(witness).forall(e => e.exists(witness))) {
                 log.info(s" Check Already satisfied ${goal.name} $witness ?? ")
                  dependencies.foreach { 
                       case (predTuple, actor) =>  proverFactory ! ReleaseActor( predTuple._1.name, predTuple._2 ) 
@@ -67,7 +66,7 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
                 } else {
                     /// Go through our dependencies, and ask them to
                     /// satify
-                    if (goal.dependencies.size > 0) {
+                    if (goal.hasDependencies) {
                         status.transitionState ( GoalState.WaitingOnDependencies)
                         dependencies.foreach {
                             case (pred, actor) =>
@@ -267,7 +266,7 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
                    if( jobRunner == null) {
                     val jobRunActor = Props(new DefaultGoalSatisfier(
                             track,goal,
-                           immutable.Set(goal.evidence.toSeq: _*), witness))
+                           immutable.Set(goal.evidenceForWitness(witness): _*), witness))
                     this.jobRunner = context.system.actorOf(jobRunActor)
                    }
                     jobRunner ! Satisfy
@@ -288,11 +287,15 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
 
     ///override def preStart() = {
     def initDependencies : Map[(Goal,Witness),ActorRef] = {
-      if(goal.dependencies != null) {
+      if(goal.hasDependencies) {
         log.info(" Initializing Dependencies !!!")
-        goal.dependencies.map(  { case(wmap:(Witness =>Witness),subGoal:Goal) => {
+        println(s" Initializing Dependencies ${goal.name}  $witness !!!  GOAL IS $goal ")
+        val deps = goal.dependenciesForWitness(witness)
+        println(s" DEPS is ${deps.size} ")
+        goal.dependenciesForWitness(witness).map(  { case(wmap:(Witness =>Witness),subGoal:Goal) => {
               val newWitness = wmap( this.witness)
                log.info(s"   Initializing Dependency ${subGoal.name} ${newWitness} !!!")
+               println(s"   Initializing Dependency ${subGoal.name} ${newWitness} GOAL is $subGoal ${subGoal.getClass().getName} !!!")
               val depProverRef = ProverFactory.acquireProver(proverFactory,track,subGoal,newWitness)
               ( (subGoal,newWitness) -> depProverRef)
            }

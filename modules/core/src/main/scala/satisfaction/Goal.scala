@@ -9,8 +9,8 @@ case class Goal(
     val name: String,
     val satisfier: Option[Satisfier],
     val variables: List[Variable[_]] = List.empty,
-    val dependencies: Set[(Witness => Witness, Goal)] = Set.empty,
-    val evidence: Set[Evidence] = Set.empty ) 
+    private val dependencies: Set[(Witness => Witness, Goal)] = Set.empty,
+    private val evidence: Set[Evidence] = Set.empty ) 
     (implicit val track : Track ) {
   
     /**
@@ -31,9 +31,30 @@ case class Goal(
        addDependency( DataDependency(depData))
     }
     
+    def dependentGoals() :  Seq[Goal] = {
+       dependencies.map( _._2).toSeq
+    }
+      
+    
     ///def addEvidence[E <: Evidence]( ev : E  ) : Goal = {
     def addEvidence( ev : Evidence  ) : Goal = {
        copy( evidence = evidence + ev)
+    }
+    
+    def hasEvidence : Boolean = {
+      evidence.size > 0
+    }
+    
+    def evidenceForWitness( w : Witness) : Seq[Evidence] = {
+      evidence.toSeq
+    }
+    
+    def hasDependencies : Boolean = {
+      dependencies.size > 0
+    }
+    
+    def dependenciesForWitness( w : Witness ) : Seq[(Witness=>Witness,Goal)] = {
+   	  dependencies.toSeq
     }
 
     /**
@@ -42,7 +63,6 @@ case class Goal(
      *     of witnesses.
      */
     def addWitnessRule(rule: (Witness => Witness), goal: Goal): Goal = {
-      println(" XXX Number of Dependencis is "+ dependencies.size )
       copy( dependencies =  dependencies +  Tuple2(rule, goal) )
     }
     
@@ -203,11 +223,12 @@ object Goal {
         (implicit track : Track) : Goal = {
        new Goal(
            name = s"Mapped${goal.name}",
-           satisfier =  SomeEmptySatisfier,
+           satisfier =  Some(EmptySatisfier),
            dependencies = Set( ( mapping, goal) ),
            variables = goal.variables
        ) 
     }
+    
     
     /**
      * Declare that this Goal should be satisfied for the previous hour,
