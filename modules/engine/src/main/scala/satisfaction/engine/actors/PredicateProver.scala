@@ -16,6 +16,9 @@ import scala.concurrent.ExecutionContext
 import akka.util.Timeout
 import org.joda.time.DateTime
 import track.TrackHistory
+import akka.actor.ActorPath
+import javax.naming.InvalidNameException
+import akka.actor.InvalidActorNameException
 
 
 /**
@@ -251,8 +254,24 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
             goal.satisfier match {
                 case Some(satisfier) =>
                   if( jobRunner == null) {
+                    try {
+                        println(s" CREATING JOB RUNNER ACTOR $goal $witness ")
+                        log.info(s" CREATING JOB RUNNER ACTOR $goal $witness ")
                     val jobRunActor = Props(new JobRunner(satisfier, track ,goal, witness, witness))
+                    /// XXX ACTOR ALREADY EXISTS 
+
                     this.jobRunner = context.system.actorOf((jobRunActor), "Satisfier_" + ProofEngine.getActorName(goal, witness))
+                    } catch {
+                      ///case invName : InvalidActorNameException => {
+                      case invName : Throwable => {
+                         log.info(" INVALID ACTOR NAME " + invName) 
+                         log.error(s" INVALID ACTOR NAME ${goal.name} $witness", invName)
+                         status.transitionState( GoalState.Failed)
+                         status.markUnexpected(invName)
+                         publishFailure
+                         return
+                      }
+                    }
                   }
                     jobRunner ! Satisfy
                     satisfier match {

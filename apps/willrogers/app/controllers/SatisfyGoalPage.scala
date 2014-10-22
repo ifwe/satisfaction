@@ -151,11 +151,11 @@ object SatisfyGoalPage extends Controller with Logging {
         var startX = currentNode.posX - (currentNode.width + 2) * numDeps / 2
         currentGoal.dependencyStatus.values.foreach { depGoalStatus =>
             var depNode: PlumbGraph.NodeDiv = null
-            if (nodeMap.contains(depGoalStatus.goalName))
-                depNode = nodeMap.get(depGoalStatus.goalName).get
+            if (nodeMap.contains(depGoalStatus.goalName + depGoalStatus.witness.toString))
+                depNode = nodeMap.get(depGoalStatus.goalName + depGoalStatus.witness.toString).get
             else {
-                depNode = new PlumbGraph.NodeDiv(divContent = depGoalStatus.goalName)
-                nodeMap.put(depGoalStatus.goalName, depNode)
+                depNode = new PlumbGraph.NodeDiv(divContent = depGoalStatus.goalName + depGoalStatus.witness.toString)
+                nodeMap.put(depGoalStatus.goalName + depGoalStatus.witness.toString, depNode)
                 pg.addNodeDiv(depNode)
             }
 

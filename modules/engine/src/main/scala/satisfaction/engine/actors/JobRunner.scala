@@ -78,6 +78,7 @@ class JobRunner(
           markEvidence( _.markIncomplete )
           log.info( "Result of Abort Attempt is " + abortResult)
           Console.println( "Result of Abort Attempt is " + abortResult)
+          finish()
           /**
           try {
              val abortResult : ExecutionResult = satisfier.abort()
@@ -131,6 +132,16 @@ class JobRunner(
             execResult.markUnexpected( result.failed.get)
             messageSender ! new JobRunFailed(execResult)
         }
+        finish()
     }
+    
+    /**
+     *  Job has finished ...
+     */
+    def finish() = {
+      log.info(s" Finishing up !! ${self.path} ")
+       context.system.stop( self) 
+    }
+    
 
 }

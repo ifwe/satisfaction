@@ -197,6 +197,7 @@ class ProverFactory( trackHistoryOpt : Option[TrackHistory] = None) extends Acto
             val actorTupleName = ProofEngine.getActorName(goalName, witness)
             _actorMap .remove( actorTupleName ) match {
               case Some(actorRef : ActorRef) =>
+                log.info(s"  Stopping ActorRef ${actorRef.path} ")
                 context.stop( actorRef)
               case None =>
                 log.warning(s"Unable to find actor $actorTupleName to be killed")

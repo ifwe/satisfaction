@@ -83,7 +83,7 @@ object ApplicationBuild extends Build {
   def resolveRpmVersion() = {
     sys.env.get("BUILD_NUMBER") match {
       case Some(buildNumber) => buildNumber
-      case None => "12"
+      case None => "14"
     }
   }
 
