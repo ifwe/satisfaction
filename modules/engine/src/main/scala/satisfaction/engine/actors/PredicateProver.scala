@@ -25,8 +25,7 @@ import akka.actor.InvalidActorNameException
  *  Actor who's responsibility is to satisfy a goal
  *
  *
- *  XXX Handle case to see if fully satisfied ( dependencies are satisfied)
- *  XXX  and cases where we want to force completion
+ * 
  *
  */
 class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, val proverFactory: ActorRef) extends Actor with ActorLogging {
@@ -34,62 +33,82 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
     ///private val dependencies: mutable.Map[String, ActorRef] = scala.collection.mutable.Map[String, ActorRef]()
     private  lazy val  _dependencies: Map[(Goal,Witness), ActorRef] =  initDependencies
     
-    
+
     private var jobRunner: ActorRef = null
 
     val status: GoalStatus = new GoalStatus(track.descriptor, goal.name, witness)
 
     private val _listenerList: mutable.Set[ActorRef] = mutable.Set[ActorRef]()
-    def listenerList : immutable.Set[ActorRef] =  { _listenerList.toSet }
+    private val _evidenceCheckers : mutable.Map[String,ActorRef] = mutable.Map[String,ActorRef]()
 
+    def listenerList : immutable.Set[ActorRef] =  { _listenerList.toSet }
+    
     implicit val ec: ExecutionContext = ExecutionContext.global /// ???
     implicit val timeout = Timeout(5 minutes) ///XXX from Config
+   
+    var runID: String  = ""
+    var parentRunID : String = ""
+    var forceSatisfy : Boolean = false
     
+    def failureCheck( f : => Unit ) : Unit = {
+       try {
+           f
+       } catch {
+            case unexpected : Throwable =>
+              unexpected.printStackTrace
+              log.error( s"Unexpected exception while attempting to satisfy Goal ${goal.name} ${witness}", unexpected) 
+              status.markUnexpected( unexpected)
+              publishFailure
+       }
+    }
+
 
     def receive = {
 
         case Satisfy(runID,parentRunID,forceSatisfy) =>
-          try { 
+          failureCheck { 
+            this.runID = runID
+            this.parentRunID = parentRunID
+            this.forceSatisfy = forceSatisfy
             log.info(s" PredicateProver ${track.descriptor.trackName}::${goal.name} received Satisfy message witness is $witness with runID =${runID} parentRunID=${parentRunID} forceSatisfy=${forceSatisfy} ")
             log.info(s" Adding $sender to listener list")
             addListener( sender )
             if (goal.hasEvidence &&
-                forceSatisfy == false &&
-                goal.evidenceForWitness(witness).forall(e => e.exists(witness))) {
-                log.info(s" Check Already satisfied ${goal.name} $witness ?? ")
-                 dependencies.foreach { 
+                forceSatisfy == false ) {
+                 //// Create evidence In  
+              
+                goal.evidenceForWitness(witness).foreach(e => {
+                    sendCheckEvidence(e)   
+                } )
+            } else {
+              if(forceSatisfy) {
+                 log.warning(s" Forcing Satisfy for  ${goal.name} ${witness} ; forcing Satisfy ")
+              }
+              satisfy(runID,parentRunID,forceSatisfy)
+            }
+          }
+        case EvidenceCheckResult(id:String,w:Witness,isAlreadySatisfied:Boolean) =>
+          failureCheck {
+            ////First thing, just remove from evidence
+            val ecActor = _evidenceCheckers.remove(id).get
+            context.system.stop(ecActor)
+
+            if( !isAlreadySatisfied
+                 && status.state == GoalState.CheckingEvidence) {
+               satisfy(this.runID,this.parentRunID,this.forceSatisfy);
+            } else if( isAlreadySatisfied
+                 && status.state == GoalState.CheckingEvidence
+                 && _evidenceCheckers.size == 0 ) {
+
+              //// Already satisfied 
+               dependencies.foreach { 
                       case (predTuple, actor) =>  proverFactory ! ReleaseActor( predTuple._1.name, predTuple._2 ) 
                 }
                 status.markTerminal( GoalState.AlreadySatisfied )
                 publishSuccess
-            } else {
-                if (status.state != GoalState.Unstarted) {
-                  //// XXX Test dependency on running job ...
-                    sender ! InvalidRequest(status, "Job has already been started")
-                } else {
-                    /// Go through our dependencies, and ask them to
-                    /// satify
-                    if (goal.hasDependencies) {
-                        status.transitionState ( GoalState.WaitingOnDependencies)
-                        dependencies.foreach {
-                            case (pred, actor) =>
-                                actor ! Satisfy(runID=null,parentRunID=runID,forceSatisfy)
-                        }
-                    } else {
-                        runLocalJob()
-                    }
-                }
             }
-          } catch {
-            case unexpected : Throwable =>
-              unexpected.printStackTrace
-              log.error( "Unexpected exception while attempting to satisfy Goal ", unexpected) 
-              
-              status.markUnexpected( unexpected)
-
-              publishFailure
-          }
-
+           
+         }
         case WhatsYourStatus =>
             //// Do a blocking call to just return  
 
@@ -97,6 +116,7 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
             ///currentStatus.state = status.state
 
             /// Go through and ask all our 
+          failureCheck {
             val futureSet = dependencies.map {
                 case (pred, actorRef) =>
                     (actorRef ask WhatsYourStatus).mapTo[StatusResponse]
@@ -107,6 +127,7 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
                 }
             }
             sender ! StatusResponse(status)
+        }
         case RestartJob =>
           log.info(s" Received RestartJob Message ; Current state is ${status.state} " )
           status.state match {
@@ -201,12 +222,14 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
                }
             }
         case JobRunSuccess(result) =>
-            log.info(s" ${goal.name} Received Goal Satisfied from ${result.executionName} , send to our parent  ")
+            log.info(s" ${goal.name} Received JobRunSuccess from ${result.executionName} , send to our parent  ")
             status.markExecution(result)
             publishSuccess 
         case JobRunFailed(result) =>
-            log.info(s" ${goal.name} Received Goal Failed from ${result.executionName} , send to our parent  ")
+            log.info(s" ${goal.name} Received JobRunFailed from ${result.executionName} , send to our parent  ")
+            jobRunner = null
             status.markExecution(result)
+            status.markTerminal( GoalState.Failed, DateTime.now)
             publishFailure
             
         //// If I receive a Release actor message, 
@@ -227,6 +250,32 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
           log.warning(" Received Unexpected message " + unexpected)
           log.info(" Received Unexpected message " + unexpected)
         }
+    }
+    
+    def sendCheckEvidence(e: Evidence) = {
+      val id = ( _evidenceCheckers.size +1 ).toString
+      status.transitionState( GoalState.CheckingEvidence)
+      
+      val evidenceCheckerProps = Props( new EvidenceChecker(e))
+      val evidenceCheckerActor = context.system.actorOf((evidenceCheckerProps), "Evidence_" + id + "_" + ProofEngine.getActorName(goal, witness))
+      _evidenceCheckers.put( id, evidenceCheckerActor)
+      
+      evidenceCheckerActor ! CheckEvidence(id, witness)
+      
+    }
+    
+    def satisfy(runID : String,parentRunID : String, forceSatisfy:Boolean) = {
+       /// Go through our dependencies, and ask them to
+      /// satisfy themselves 
+      if (goal.hasDependencies) {
+           status.transitionState ( GoalState.WaitingOnDependencies)
+           dependencies.foreach {
+                case (pred, actor) =>
+                    actor ! Satisfy(runID=null,parentRunID=runID,forceSatisfy)
+           }
+      } else {
+         runLocalJob()
+      }
     }
 
     def publishSuccess = {
@@ -255,26 +304,24 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
                 case Some(satisfier) =>
                   if( jobRunner == null) {
                     try {
-                        println(s" CREATING JOB RUNNER ACTOR $goal $witness ")
-                        log.info(s" CREATING JOB RUNNER ACTOR $goal $witness ")
-                    val jobRunActor = Props(new JobRunner(satisfier, track ,goal, witness, witness))
-                    /// XXX ACTOR ALREADY EXISTS 
-
-                    this.jobRunner = context.system.actorOf((jobRunActor), "Satisfier_" + ProofEngine.getActorName(goal, witness))
+                       val jobRunActor = Props(new JobRunner(satisfier, track ,goal, witness, witness))
+                       this.jobRunner = context.system.actorOf((jobRunActor), "Satisfier_" + ProofEngine.getActorName(goal, witness))
                     } catch {
-                      ///case invName : InvalidActorNameException => {
                       case invName : Throwable => {
-                         log.info(" INVALID ACTOR NAME " + invName) 
-                         log.error(s" INVALID ACTOR NAME ${goal.name} $witness", invName)
+                         log.error(s" Unexpected error while creating actor  ${goal.name} $witness", invName)
                          status.transitionState( GoalState.Failed)
                          status.markUnexpected(invName)
                          publishFailure
                          return
                       }
                     }
+                  } else {
+                     log.warning(s" JobRunner already exists for goal ${goal.name} $witness")   
                   }
-                    jobRunner ! Satisfy
-                    satisfier match {
+                  jobRunner ! Satisfy
+                  //// If the satisfier reports progress,
+                  ////   Grab the progressable...
+                  satisfier match {
                       case progressable : Progressable =>
                         log.info(s" Grabbing Progress for current satisfier for $goal.name -- progress $progressable.progressCounter ")
                        this.status.setProgressCounter( progressable.progressCounter )

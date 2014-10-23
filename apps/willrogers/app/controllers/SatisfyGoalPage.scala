@@ -139,6 +139,7 @@ object SatisfyGoalPage extends Controller with Logging {
             case GoalState.DependencyFailed             => "Orange"
             case GoalState.Running         => "Purple"
             case GoalState.WaitingOnDependencies => "Yellow"
+            case GoalState.CheckingEvidence => "LightYellow"
             case _                               => "White"
         }
 

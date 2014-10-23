@@ -5,7 +5,8 @@ package actors
 import akka.actor.ActorRef
 
 
-case object CheckEvidence
+case class CheckEvidence( val evidencdId : String,w : Witness )
+case class EvidenceCheckResult(val evidenceId : String, w: Witness, val isAlreadySatisfied : Boolean)
 case class JobRunSuccess( val result : ExecutionResult )
 case class JobRunFailed( val result : ExecutionResult )
 

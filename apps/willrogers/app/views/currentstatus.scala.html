@@ -44,7 +44,7 @@
    <td>Witness</td>
    <td>Started</td>
    </theads>
-  @gsList.filter(gst => { gst.state == GoalState.WaitingOnDependencies || gst.state == GoalState.DependencyFailed } ).map { gs => 
+  @gsList.filter(gst => { gst.state == GoalState.WaitingOnDependencies || gst.state == GoalState.DependencyFailed || gst.state == GoalState.CheckingEvidence } ).map { gs => 
      <tr>
      <td>@gs.track.trackName</td>
      <td>@gs.goalName</td>

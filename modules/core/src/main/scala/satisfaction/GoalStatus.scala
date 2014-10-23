@@ -15,6 +15,7 @@ object GoalState extends Enumeration {
     type State = Value
     val Unstarted, 
     	AlreadySatisfied, 
+    	CheckingEvidence,
     	WaitingOnDependencies,
     	Running, 
     	DependencyFailed, 
