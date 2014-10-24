@@ -46,9 +46,9 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
     implicit val ec: ExecutionContext = ExecutionContext.global /// ???
     implicit val timeout = Timeout(5 minutes) ///XXX from Config
    
-    var runID: String  = ""
-    var parentRunID : String = ""
-    var forceSatisfy : Boolean = false
+    private var runID: String  = ""
+    private var parentRunID : String = ""
+    private var forceSatisfy : Boolean = false
     
     def failureCheck( f : => Unit ) : Unit = {
        try {

@@ -24,6 +24,7 @@ class GoalSpec extends Specification {
     
   }
      
+  /**
      "Add Evidence" in {
        implicit val track : Track = new Track(TrackDescriptor("TestTrack"))
        val goal : Goal = new Goal(name="TestGoal",satisfier=None)
@@ -74,6 +75,71 @@ class GoalSpec extends Specification {
              headSeq = head._2.dependenciesForWitness(w)
          }
        
+     }
+     
+     **/
+     "Folded dependencies" in {
+         implicit val track : Track = new Track(TrackDescriptor("TestTrack"))
+         
+         val subGoal : Goal = DataDependency( new SimpleDataOutput( List( Variable("date"), Variable("hour"))) )
+       
+         val topLevel = Goal.RunThis( "TopChain",  { case w : Witness =>{
+              println(s" Do This $w") 
+              true
+         } } )
+         
+         
+         val folded = topLevel.foldDependencies( subGoal, Variable("hour"), (0 to 23).map( _.toString) )
+         
+         val w : Witness = Witness(Variable("date") -> "20141020" )
+         
+         folded.dependenciesForWitness(w).foreach( {case (f,g) => {
+            val newW = f(w) 
+            println(s" New Witness is $newW")
+            println(s" Goals are $g.name")
+            val subDeps = g.dependenciesForWitness(newW)
+            println(s" SupDeps size is ${subDeps.size} ")
+         }})
+
+         true
+     }
+     
+     
+     "Chained dependencies" in {
+         implicit val track : Track = new Track(TrackDescriptor("TestTrack"))
+         
+         val subGoal : Goal = DataDependency( new SimpleDataOutput( List( Variable("date"), Variable("hour"))) )
+       
+         val topLevel = Goal.RunThis( "TopChain",  { case w : Witness =>{
+              println(s" Do This $w") 
+              true
+         } } )
+         
+         
+         val chained = topLevel.chainDependencies( subGoal, Variable("hour"), (0 to 23).map( _.toString) )
+         
+         val w : Witness = Witness(Variable("date") -> "20141020" )
+         
+         chained.dependenciesForWitness(w).foreach( {case (f,g) => {
+            val newW = f(w) 
+            println(s" New Witness is $newW")
+            println(s" Goals are $g.name")
+            val subDeps = g.dependenciesForWitness(newW)
+            println(s" SupDeps size is ${subDeps.size} ")
+         }})
+         
+         def traverse( g: Goal, w : Witness, lvl :Int) :Unit = {
+            println(s" Witness is $w")
+            println(s" Goals are $g.name")
+            println(s" LEvel is $lvl")
+            g.dependenciesForWitness(w).foreach( {case(f,sg)=>{
+                val newW = f(w) 
+                traverse(sg,newW,lvl+1)
+             }})
+         }
+         traverse( chained, w, 0)
+
+         true
      }
      
 

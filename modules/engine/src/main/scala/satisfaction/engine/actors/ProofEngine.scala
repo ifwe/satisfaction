@@ -39,7 +39,7 @@ class ProofEngine( val trackHistoryOpt : Option[TrackHistory] = None) extends  s
      *  Blocking call to satisfy Goal
      */
     def satisfyGoalBlocking( goal: Goal, witness: Witness, duration: Duration): GoalStatus = {
-        val f = getProver(goal, witness) ? Satisfy()
+        val f = getProver(goal, witness) ? Satisfy(true)
         val response = Await.result(f, duration)
         response match {
             case s: GoalSuccess =>
@@ -54,7 +54,7 @@ class ProofEngine( val trackHistoryOpt : Option[TrackHistory] = None) extends  s
     
     def satisfyGoal( goal: Goal, witness: Witness): Future[GoalStatus] = {
         future {
-            val f = getProver(goal, witness) ? Satisfy()
+            val f = getProver(goal, witness) ? Satisfy(true)
             val response = Await.result(f, Duration(6, HOURS)) /// XXX Allow for really long jobs ... put in config somehow ..
             response match {
                 case s: GoalSuccess =>

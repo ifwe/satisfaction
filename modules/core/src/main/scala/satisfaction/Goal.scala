@@ -22,6 +22,11 @@ case class Goal(
     override def hashCode = {
       name.hashCode + variables.mkString.hashCode
     }
+    
+    @Override
+    override def toString() = {
+      track.descriptor.trackName + name +  variables.mkString
+    }
 
     def addDependency(goal: Goal): Goal = {
       copy( dependencies = dependencies + Tuple2(Goal.Identity,goal))
@@ -123,7 +128,30 @@ case class Goal(
        })
     }
     def foldDependencies[T]( subGoal :Goal, foldVar : Variable[T], valIter : Traversable[T]) : Goal = {
-      foldWitnessRules( Goal.Identity, subGoal,foldVar, valIter)
+      foldWitnessRules(  Goal.Identity, subGoal,foldVar, valIter)
+    }
+    
+    
+    /**
+     *  Add multiple dependencies to the goal, similiar to fold,
+     *   but add them in sequence, so that they are done one at 
+     *    a time.
+     */
+    def chainWitnessRules[T]( prevRule : ( Witness=>Witness) ,subGoal :Goal, foldVar : Variable[T], valIter : Traversable[T]) : Goal = {
+      val chained : Goal = valIter.foldLeft( subGoal )( (g: Goal, vv : T) => {
+           val witnessMapping : ( Witness=>Witness)  = {
+              w => {
+               w  + VariableAssignment( foldVar , vv)
+             }
+           }
+           println(s" CHAIN WITNESS RULE $vv ")
+           Goal(subGoal).addWitnessRule(witnessMapping,g)
+      } )
+      addWitnessRule( prevRule, chained)
+    }
+
+    def chainDependencies[T]( subGoal :Goal, foldVar : Variable[T], valIter : Traversable[T]) : Goal = {
+      chainWitnessRules(  Goal.Identity, subGoal,foldVar, valIter)
     }
     
     /**

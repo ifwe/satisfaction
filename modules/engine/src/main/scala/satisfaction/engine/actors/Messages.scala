@@ -21,6 +21,9 @@ object Satisfy {
    def apply() = {
       new Satisfy(null,null,false)
    } 
+   def apply( forceSatisfy: Boolean) = {
+      new Satisfy(null,null,forceSatisfy)
+   }
 }
 
 /// Query whether the evidence already exists, and the goal 
