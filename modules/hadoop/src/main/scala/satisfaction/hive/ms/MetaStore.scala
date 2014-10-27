@@ -388,7 +388,14 @@ case class MetaStore(implicit val config: HiveConf)  extends Logging {
               case None => null
             }
             addPartitionDesc.addPartition( partMap, path )
-            _hive.createPartitions( addPartitionDesc).get(0)
+            val newParts = _hive.createPartitions( addPartitionDesc)
+            if( newParts.size >0) {
+              newParts.get(0)
+            } else {
+              //// Already exists ...
+              val tbl = _hive.getTable( db,tblName)
+              _hive.getPartition(tbl, partMap, false)
+            }
           } catch {
             case alreadyExists : AlreadyExistsException => {
               /// Handle race condition, if some other job tried to create partition

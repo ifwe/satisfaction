@@ -12,7 +12,6 @@ import org.apache.log4j.Level
 import satisfaction.engine.Satisfaction
 import satisfaction.fs.FileSystem
 import hive.ms.MetaStore
-import satisfaction.engine.actors.GoalState
 
 
 /**

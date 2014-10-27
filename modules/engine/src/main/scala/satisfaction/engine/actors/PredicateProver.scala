@@ -95,7 +95,11 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
 
             if( !isAlreadySatisfied
                  && status.state == GoalState.CheckingEvidence) {
-               satisfy(this.runID,this.parentRunID,this.forceSatisfy);
+              if(!forceSatisfy) {
+                 satisfy(this.runID,this.parentRunID,this.forceSatisfy);
+              } else {
+                runLocalJob()
+              }
             } else if( isAlreadySatisfied
                  && status.state == GoalState.CheckingEvidence
                  && _evidenceCheckers.size == 0 ) {
@@ -215,7 +219,13 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
             
             if (status.numReceivedStatuses  >= dependencies.size) {
                if(status.canProceed) {
-                  runLocalJob()
+                 if(!forceSatisfy) {
+                   runLocalJob()
+                 } else {
+                     goal.evidenceForWitness(witness).foreach(e => {
+                        sendCheckEvidence(e)   
+                     })
+                 } 
                } else {
                  /// XXX One of our children failed 
                  log.info(s" Nope --- its not OK to continue")
@@ -267,7 +277,7 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
     def satisfy(runID : String,parentRunID : String, forceSatisfy:Boolean) = {
        /// Go through our dependencies, and ask them to
       /// satisfy themselves 
-      if (goal.hasDependencies) {
+      if (goal.hasDependencies ) {
            status.transitionState ( GoalState.WaitingOnDependencies)
            dependencies.foreach {
                 case (pred, actor) =>

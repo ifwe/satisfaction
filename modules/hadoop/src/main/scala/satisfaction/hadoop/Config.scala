@@ -62,7 +62,7 @@ object Config  extends Logging {
        
        //// Override Retries    
        hc.setVar(HiveConf.ConfVars.HMSHANDLERATTEMPTS, "10")
-       hc.setVar(HiveConf.ConfVars.HMSHANDLERINTERVAL, "3000ms")
+       hc.setVar(HiveConf.ConfVars.HMSHANDLERINTERVAL, "3000")
        hc.setVar(HiveConf.ConfVars.METASTORETHRIFTCONNECTIONRETRIES, "5")
        hc.setVar(HiveConf.ConfVars.METASTORETHRIFTFAILURERETRIES, "6")
        

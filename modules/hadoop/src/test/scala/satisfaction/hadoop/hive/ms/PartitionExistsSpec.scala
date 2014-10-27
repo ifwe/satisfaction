@@ -1,6 +1,6 @@
 package satisfaction
 package hadoop
-package hive
+package hive.ms
 
 import org.specs2.mutable._
 import scala.concurrent.duration._
@@ -13,7 +13,6 @@ import hadoop.hive.ms._
 import satisfaction.fs.FileSystem
 import satisfaction.hadoop.hdfs.Hdfs
 import satisfaction.engine.Satisfaction
-import satisfaction.engine.actors.GoalState
 import satisfaction.fs.LocalFileSystem
 import satisfaction.fs.Path
 
@@ -21,13 +20,14 @@ import satisfaction.fs.Path
 @RunWith(classOf[JUnitRunner])
 class PartitionExistsSpec extends Specification {
     val hour = new Variable[String]("hour", classOf[String])
-    val runDate = new Variable[String]("date", classOf[String])
+    val runDate = new Variable[String]("dt", classOf[String])
     
-    implicit val ms : MetaStore = MetaStore.default
+    ///implicit val ms : MetaStore = MetaStore.default
+    implicit val ms : MetaStore = MetaStore( new java.net.URI("thrift://dhdp2jump01:9083"))
     implicit val hdfs : FileSystem = Hdfs.default
     implicit val track : Track = Track.localTrack( "PartitionExistsTrack", 
            LocalFileSystem.relativePath( new Path(
-                "modules/hadoop/src/test/resources/track/PartitionExists")))
+                "src/test/resources/track/PartitionExists")))
 
     "PartitionExistsSpec" should {
       
@@ -36,10 +36,13 @@ class PartitionExistsSpec extends Specification {
             val vars: List[Variable[_]] = List(hour, runDate)
             
             
-            val partExist = PartitionExists( HiveTable("sqoop_test", "page_view_log"))
+            val partExist = PartitionExists( HiveTable("ramblas", "page_view_event"))
 
 
             val witness = Witness((runDate -> "20140522"), ( hour -> "03"))
+            
+            val checkExists = partExist.evidenceForWitness(witness).head.exists(witness)
+            println(s" DOES EXIST ALREADY ?? $checkExists")
 
             val goalResult = Satisfaction.satisfyGoal( partExist, witness)
             println(" YYY Goal Result is " + goalResult)
@@ -52,13 +55,15 @@ class PartitionExistsSpec extends Specification {
 
             goalResult.state == GoalState.Success
 
+
         }
 
+        /**
         "Create a FanOut set of Partitions" in {
             val vars: List[Variable[_]] = List(hour, runDate)
             
             
-            val partExist = PartitionExists( HiveTable("sqoop_test", "page_view_log"))
+            val partExist = PartitionExists( HiveTable("ramblas", "page_view_event"))
             
             
             val allHours = ( 01 to 23 ) map ( hr => { 
@@ -85,6 +90,8 @@ class PartitionExistsSpec extends Specification {
             goalResult.state == GoalState.Success
 
         }
+        * 
+        */
       
         /**
        "Run a Hive goal" in {
