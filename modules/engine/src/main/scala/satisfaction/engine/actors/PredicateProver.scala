@@ -70,7 +70,7 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
             this.runID = runID
             this.parentRunID = parentRunID
             this.forceSatisfy = forceSatisfy
-            log.info(s" PredicateProver ${track.descriptor.trackName}::${goal.name} received Satisfy message witness is $witness with runID =${runID} parentRunID=${parentRunID} forceSatisfy=${forceSatisfy} ")
+            log.info(s" PredicateProver ${track.descriptor.trackName}::${goal.name} $witness received Satisfy message witness is $witness with runID =${runID} parentRunID=${parentRunID} forceSatisfy=${forceSatisfy} ")
             log.info(s" Adding $sender to listener list")
             addListener( sender )
             if (goal.hasEvidence &&
@@ -90,6 +90,7 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
         case EvidenceCheckResult(id:String,w:Witness,isAlreadySatisfied:Boolean) =>
           failureCheck {
             ////First thing, just remove from evidence
+            log.info(s"Goal ${goal.name} $witness received EvidenceCheckResult $id AlreadySatisfied = $isAlreadySatisfied ")
             val ecActor = _evidenceCheckers.remove(id).get
             context.system.stop(ecActor)
 
@@ -219,12 +220,18 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
             
             if (status.numReceivedStatuses  >= dependencies.size) {
                if(status.canProceed) {
+                 log.info(s"Goal ${goal.name} $witness Received all dependencies .. Proceding ")
                  if(!forceSatisfy) {
                    runLocalJob()
                  } else {
+                   if( goal.hasEvidence) {
                      goal.evidenceForWitness(witness).foreach(e => {
                         sendCheckEvidence(e)   
                      })
+                   } else {
+                     log.info(s"Goal ${goal.name} $witness No Evidence -- Run our local job")
+                     runLocalJob()
+                   }
                  } 
                } else {
                  /// XXX One of our children failed 
