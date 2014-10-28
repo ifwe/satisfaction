@@ -291,7 +291,15 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
                     actor ! Satisfy(runID=null,parentRunID=runID,forceSatisfy)
            }
       } else {
-         runLocalJob()
+        if(forceSatisfy
+            && goal.hasEvidence) {
+               log.info(s" Goal ${goal.name} $witness has no dependencies; checking Evidence if already satisfied")
+                goal.evidenceForWitness(witness).foreach(e => {
+                    sendCheckEvidence(e)   
+                } )
+        } else {
+           runLocalJob()
+        }
       }
     }
 

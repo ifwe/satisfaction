@@ -28,6 +28,7 @@ class EvidenceChecker(val e : Evidence) extends Actor with ActorLogging {
   private var  _sender : ActorRef = null
   def receive = {
     case CheckEvidence(evidenceId,witness) =>
+       log.info(s" CHECKING EVIDENCE $e for %witness with id $evidenceId ")
        val evidenceFuture: Future[Boolean] = future {
           e.exists( witness)
        }
