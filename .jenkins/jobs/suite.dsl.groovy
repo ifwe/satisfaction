@@ -40,4 +40,7 @@ def satisfaction = new Project(
     triggers {
         githubPush()
     }
+    publishers {
+        archiveArtifacts('apps/willrogers/target/rpm/RPMS/noarch/*.rpm')
+    }
 }
