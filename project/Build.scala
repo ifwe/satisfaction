@@ -130,7 +130,7 @@ object ApplicationBuild extends Build {
     rpmUrl in Rpm:= Some("http:/github.com/tagged/satisfaction"),
     rpmLicense in Rpm:= Some("Apache License Version 2"),
     packageDescription in Rpm := "Next Generation Hadoop Scheduler",
-    rpmGroup in Rpm:= Some("satisfaction")
+    rpmGroup in Rpm:= Some("satisfaction"),
 
     rpmPreun := Option("if [[ $1 == 0 ]] ; then"
         + "\n  echo \"Shutdown willrogers\""
