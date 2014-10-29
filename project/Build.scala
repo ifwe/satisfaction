@@ -132,6 +132,11 @@ object ApplicationBuild extends Build {
     packageDescription in Rpm := "Next Generation Hadoop Scheduler",
     rpmGroup in Rpm:= Some("satisfaction")
 
+    rpmPreun := Option("if [[ $1 == 0 ]] ; then"
+        + "\n  echo \"Shutdown willrogers\""
+        + "\n  service willrogers stop || echo \"Could not stop willrogers\"\n"
+        + "fi")
+
   )
 
   def excludeFromAll(items: Seq[ModuleID], group: String, artifact: String) = 
