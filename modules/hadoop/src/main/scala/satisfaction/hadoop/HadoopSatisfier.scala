@@ -24,12 +24,12 @@ object HadoopGoal {
       output : DataOutput )(implicit track : Track) : Goal = {
    
     
-    val satisfier = new HadoopSatisfier[KeyIn,ValIn,MapKeyOut,MapValOut,KeyOut,ValOut](
-            name, mapper, reducer, partitionerOptions, inputs, output)
+    val satisfierFactory : SatisfierFactory = { w => { Some( new HadoopSatisfier[KeyIn,ValIn,MapKeyOut,MapValOut,KeyOut,ValOut](
+            name, mapper, reducer, partitionerOptions, inputs, output)) } }
     
      val variables = output.variables
             
-      new Goal( name, Some(satisfier), variables, dependencies = Set.empty, Set(output) ) 
+      new Goal( name, satisfierFactory, variables, dependencies = Set.empty, Set(output) ) 
   }
   
 }

@@ -5,6 +5,7 @@ package hive.ms
 
 import satisfaction._
 import satisfaction.Satisfier
+import satisfaction.SatisfierFactory
 import scala.collection.JavaConversions._
 import org.apache.hadoop.hive.metastore.api.AlreadyExistsException
 import org.apache.hadoop.hive.metastore.api.UnknownPartitionException
@@ -74,7 +75,7 @@ object DropPartition {
                 =  {
          val partitionDropper = new DropPartitionSatisfier(hiveTable, extraAssignments)
          new Goal( name= s" DropPartition ${hiveTable.tblName} $extraAssignments",
-               satisfier=Some(partitionDropper),
+               satisfierFactory=Goal.SatisfierFactory(partitionDropper),
                variables= hiveTable.variables.filter( ! extraAssignments.variables.contains(_) )
            )
       }

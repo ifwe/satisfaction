@@ -86,7 +86,7 @@ object PartitionExists {
          val partitionCreator = new PartitionExistsSatisfier(hiveTable, extraAssignments)
          val dataPath = hiveTable.partitionPath
          val goal = new Goal( name= s" Partition Exists ${hiveTable.tblName} $extraAssignments",
-               satisfier=Some(partitionCreator),
+               satisfierFactory=Goal.SatisfierFactory(partitionCreator),
                variables= hiveTable.variables.filter( ! extraAssignments.variables.contains(_) )
            ).addEvidence( partitionCreator).addWitnessRule( w => {  w ++ extraAssignments }
                 , DataDependency(dataPath)) 

@@ -325,7 +325,7 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
     def runLocalJob() {
         if (status.state != GoalState.Running) {
             status.transitionState( GoalState.Running )
-            goal.satisfier match {
+            goal.newSatisfier(witness) match {
                 case Some(satisfier) =>
                   if( jobRunner == null) {
                     try {

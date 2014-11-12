@@ -3,11 +3,10 @@ package satisfaction
 import collection._
 import org.joda.time.format.DateTimeFormat
 import fs._
-import satisfaction.Satisfier
 
 case class Goal(
     val name: String,
-    val satisfier: Option[Satisfier],
+    val satisfierFactory: SatisfierFactory,
     val variables: List[Variable[_]] = List.empty,
     private val dependencies: Set[(Witness => Witness, Goal)] = Set.empty,
     private val evidence: Set[Evidence] = Set.empty ) 
@@ -26,6 +25,16 @@ case class Goal(
     @Override
     override def toString() = {
       track.descriptor.trackName + name +  variables.mkString
+    }
+    
+
+    /**
+     *  Satisfier need to be a factory actually ...
+     *   allow this as a bandaid for now ...
+     *   Goal might have multiple satisfiers running 
+     */
+    def newSatisfier( w : Witness) : Option[Satisfier] = {
+       satisfierFactory(w)
     }
 
     def addDependency(goal: Goal): Goal = {
@@ -176,15 +185,31 @@ case class Goal(
 } 
 object Goal {
   
+  
     /**
      *  Copy Constructor 
      */
     def apply( g : Goal )( implicit track : Track) : Goal = {
        new Goal( g.name,
-    		   	g.satisfier,
+    		   	g.satisfierFactory,
     		   	g.variables,
     		   	g.dependencies,
     		   	g.evidence ) 
+    }
+    
+    /**
+     *  Create a SatisfierFactory which returns a specific Satisfier
+     */
+    def SatisfierFactory( sat : Satisfier)  : SatisfierFactory = {
+      { w => {  Some(sat) } }
+    }
+    
+    val NoneFactory : SatisfierFactory  = {
+      { w => { None } }
+    }
+
+    val EmptyFactory : SatisfierFactory  = {
+      { w => { SomeEmptySatisfier } }
     }
 
     /**
@@ -251,7 +276,7 @@ object Goal {
         (implicit track : Track) : Goal = {
        new Goal(
            name = s"Mapped${goal.name}",
-           satisfier =  Some(EmptySatisfier),
+           satisfierFactory =  SatisfierFactory(EmptySatisfier),
            dependencies = Set( ( mapping, goal) ),
            variables = goal.variables
        ) 
@@ -374,7 +399,7 @@ object Goal {
      }
      
      new Goal( name = runName,
-               satisfier = Some(runThisSatisfier)
+               satisfierFactory = SatisfierFactory( runThisSatisfier)
           ) (  track )
      
    }

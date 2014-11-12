@@ -18,7 +18,7 @@ package satisfaction
  */
 class DynamicGoal( fName: String, subGoal : Goal,val witnessFunctionGenerator : Witness=>Seq[(Witness=>Witness)] )(implicit track: Track) 
        extends Goal( name=fName, 
-                     satisfier = Goal.SomeEmptySatisfier,
+                     satisfierFactory = Goal.EmptyFactory,
                      variables = subGoal.variables,
                      dependencies = Set.empty, /// Not used
                      evidence = Set(Evidence.NeverSatisfied) ) {
@@ -27,7 +27,6 @@ class DynamicGoal( fName: String, subGoal : Goal,val witnessFunctionGenerator : 
    override def hasDependencies =  { true }
    
    override def dependenciesForWitness( w : Witness)  : Seq[(Witness=>Witness,Goal)] = {
-     println(s" DYNAMIC DEPS FOR WITNESS $w ")
      witnessFunctionGenerator( w ).map(  (_,subGoal))
    }
    
@@ -82,7 +81,6 @@ object InSequenceGoal {
           val w : Witness = Witness()
           val wl2 = left._1(w)
           val wr2 = right._1(w)
-          println( s" REDUCE $wl2 $wr2")
            (right._1,chained )
         } )
     }

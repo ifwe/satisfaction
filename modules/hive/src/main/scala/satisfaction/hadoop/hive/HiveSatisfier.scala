@@ -20,7 +20,7 @@ case class HiveSatisfier(val queryResource: String, val conf : HiveConf)( implic
    } 
    
 
-    def executeMultiple(hql: String): Boolean = {
+    def executeMultiple( hql: String): Boolean = {
         queries(hql).foreach(query => {
             if (query.trim.length > 0) {
                 info(s" Executing query $query")
@@ -78,7 +78,7 @@ case class HiveSatisfier(val queryResource: String, val conf : HiveConf)( implic
             case Right(query) =>
                 try {
                     info(" Beginning executing Hive queries ..")
-                    val result=  executeMultiple(query)
+                    val result=  executeMultiple( query)
                     //// XXX refactor to get each individual query
                     execResult.metrics.mergeMetrics( jobMetrics)
                     if( result ) { execResult.markSuccess() } else { execResult.markFailure() }
@@ -103,7 +103,7 @@ case class HiveSatisfier(val queryResource: String, val conf : HiveConf)( implic
               return setupResult
            }
         }
-        substituteAndExecQueries( queryTemplate, allProps)
+        substituteAndExecQueries(queryTemplate, allProps)
     }
     
     @Override 

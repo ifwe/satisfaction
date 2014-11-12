@@ -60,10 +60,13 @@ case class HiveTable (
     
     def partitionExists(w: Witness): Boolean = {
       val partitionOpt = getPartition( w)
+      info(s" GetPartition for $w is $partitionOpt")
       
       if(partitionOpt.isDefined ) {
+        info(s" PARTITION EXISTS IS DEFINED" )
         if(  this.checkMarkedComplete) {
         	val partition = partitionOpt.get
+        	info(s" IS MARKED COMPETE ${partition.isMarkedCompleted} ")
         	partition.isMarkedCompleted
         } else{
           true
