@@ -198,9 +198,6 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config))
             if(query.length == 0 ) {
               return true;
             }
-            info(s"HIVE_DRIVER :: AUX JARS ${hiveConf.getAuxJars}")
-            info(s"HIVE_DRIVER :: AUX JARS PROP ${hiveConf.get("hive.aux.jars.path")}")
-            info(s"HIVE_DRIVER :: SESSION STATE ${sessionState.getConf.getAuxJars}")
             info(s"HIVE_DRIVER :: Executing Query $query")
             if (query.trim.toLowerCase.startsWith("set")) {
                 val setExpr = query.trim.split(" ")(1)
@@ -227,13 +224,10 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config))
                 if( !checkSessionState ) {
                    warn(s"HIVE_DRIVER -- SessionState was closed after previous call ") 
                 }
-            info(s" xxx HIVE_DRIVER :: AUX JARS ${hiveConf.getAuxJars}  ADDED JARS - ${hiveConf.get("hive.added.jars.path")} ")
-            info(s" xxx HIVE_DRIVER :: SESSION STATE ${sessionState.getConf.getAuxJars}")
                val confMember = driver.getClass().getDeclaredField("conf") 
                confMember.setAccessible(true)
                
                val checkConf = confMember.get(driver).asInstanceOf[HiveConf]
-            info(s" xxxx HIVE_DRIVER :: AUX JARS ${checkConf.getAuxJars} ADDED JARS  = ${checkConf.get("hive.added.jars.path")} ")
             
             
                 driver.run(query)
