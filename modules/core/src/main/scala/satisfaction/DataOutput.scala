@@ -23,7 +23,7 @@ object DataDependency {
     */
    def apply( depData : DataOutput )( implicit track : Track)  : Goal = {
      Goal(name= s"Data Dependency ${depData.toString} ", 
-          satisfierFactory=Goal.EmptyFactory,
+          satisfierFactory=Goal.NoneFactory,
           variables=depData.variables,
           dependencies=Set.empty,
           evidence = Set(depData))

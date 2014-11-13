@@ -26,9 +26,6 @@ object HiveGoal {
 
         implicit val hiveConf : HiveConf =  Config(track)
         
-        
-        ///val hiveSatisfier = new HiveSatisfier(queryResource,hiveConf)
-        
         val tblVariables = hiveOutput match {
           case tbl : HiveTable => 
               tbl.ms.getVariablesForTable(tbl.dbName, tbl.tblName)
@@ -38,9 +35,14 @@ object HiveGoal {
         }
         val tblOutputs = collection.Set(hiveOutput.asInstanceOf[Evidence])
         
-        val hiveFactory : SatisfierFactory = { w => {
-            Some(new HiveSatisfier(queryResource,hiveConf)) 
-        }}
+        println(" HIVE GOAL AUX JARS = " + hiveConf.getAuxJars)
+        println(" HIVE GOAL AUX JARS PROP = " + hiveConf.get("hive.aux.jars.path"))
+        
+        val hiveFactory : SatisfierFactory = Goal.SatisfierFactory( {
+            println(" FACTORY HIVE GOAL AUX JARS = " + hiveConf.getAuxJars)
+            println(" FACTORY HIVE GOAL AUX JARS PROP = " + hiveConf.get("hive.aux.jars.path"))
+           new HiveSatisfier(queryResource,hiveConf)
+        })
 
         new Goal(name = name,
             satisfierFactory = hiveFactory,

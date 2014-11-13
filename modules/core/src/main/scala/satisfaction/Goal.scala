@@ -29,8 +29,7 @@ case class Goal(
     
 
     /**
-     *  Satisfier need to be a factory actually ...
-     *   allow this as a bandaid for now ...
+     *  Satisfier need to be a factory.
      *   Goal might have multiple satisfiers running 
      */
     def newSatisfier( w : Witness) : Option[Satisfier] = {
@@ -204,10 +203,24 @@ object Goal {
       { w => {  Some(sat) } }
     }
     
+    /**
+     *  Given a function which returns a Satisfier, 
+     *   Create a SatisfierFactory
+     */
+    def SatisfierFactory( satFunc : () => Satisfier) : SatisfierFactory = {
+      { w => { Some(satFunc()) } }
+    }
+    
+    /**
+     *  NoneFactory implies that we wait for data dependency
+     */
     val NoneFactory : SatisfierFactory  = {
       { w => { None } }
     }
 
+    /**
+     *  EmptyFactory produces EmptySatisfier, which does nothing
+     */
     val EmptyFactory : SatisfierFactory  = {
       { w => { SomeEmptySatisfier } }
     }

@@ -64,11 +64,17 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config))
       extends HiveDriver with MetricsProducing with Progressable with Logging {
   
     implicit var track : Track = null
-  
+    
     lazy val driver : org.apache.hadoop.hive.ql.Driver = {
         info("Version :: " + VersionInfo.getBuildVersion)
 
-        val dr = new org.apache.hadoop.hive.ql.Driver(hiveConf)
+        /// Set it to be the same, just in case...
+        hiveConf.set("hive.aux.jars.path", hiveConf.getAuxJars)
+        val dr = if( hiveConf.get("satisfaction.track.user.name") != null )  {
+            new org.apache.hadoop.hive.ql.Driver(hiveConf, hiveConf.get("satisfaction.track.user.name"))
+        } else {
+           new org.apache.hadoop.hive.ql.Driver(hiveConf)
+        }
         dr.init
         /**
         if(hiveConf.getVar( HiveConf.ConfVars.HIVE_DRIVER_RUN_HOOKS ) != null )  {
@@ -192,6 +198,9 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config))
             if(query.length == 0 ) {
               return true;
             }
+            info(s"HIVE_DRIVER :: AUX JARS ${hiveConf.getAuxJars}")
+            info(s"HIVE_DRIVER :: AUX JARS PROP ${hiveConf.get("hive.aux.jars.path")}")
+            info(s"HIVE_DRIVER :: SESSION STATE ${sessionState.getConf.getAuxJars}")
             info(s"HIVE_DRIVER :: Executing Query $query")
             if (query.trim.toLowerCase.startsWith("set")) {
                 val setExpr = query.trim.split(" ")(1)
@@ -213,11 +222,20 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config))
             }
 
             sessionState.setIsVerbose(true)
-            sessionState
+            sessionState.setConf( hiveConf)
             val response : CommandProcessorResponse = HiveLocalDriver.retry (5) {
                 if( !checkSessionState ) {
                    warn(s"HIVE_DRIVER -- SessionState was closed after previous call ") 
                 }
+            info(s" xxx HIVE_DRIVER :: AUX JARS ${hiveConf.getAuxJars}  ADDED JARS - ${hiveConf.get("hive.added.jars.path")} ")
+            info(s" xxx HIVE_DRIVER :: SESSION STATE ${sessionState.getConf.getAuxJars}")
+               val confMember = driver.getClass().getDeclaredField("conf") 
+               confMember.setAccessible(true)
+               
+               val checkConf = confMember.get(driver).asInstanceOf[HiveConf]
+            info(s" xxxx HIVE_DRIVER :: AUX JARS ${checkConf.getAuxJars} ADDED JARS  = ${checkConf.get("hive.added.jars.path")} ")
+            
+            
                 driver.run(query)
             }
             info(s"Response Code ${response.getResponseCode} :: SQLState ${response.getSQLState} ")
@@ -342,10 +360,14 @@ object HiveDriver extends Logging {
         hiveConf.getClassLoader
       }
       val auxJars = hiveConf.getAuxJars
+      println(" HIVE DRVIVER  AUX JARS" + auxJars )
+      info(" HIVE DRVIVER  AUX JARS" + auxJars )
+      info(" HIVE DRVIVER  AUX JARS PROP " + hiveConf.get("hive.aux.jars.path") )
       if (auxJars != null) {
         val urls = auxJars.split(",").map(new URL(_))
         val urlClassLoader = new URLClassLoader(urls, parentLoader)
-        debug(" URLS = " + urls.mkString(";"))
+        info(" URLS = " + urls.mkString(";"))
+        println(" URLS = " + urls.mkString(";"))
         hiveConf.setClassLoader(urlClassLoader)
       }
 

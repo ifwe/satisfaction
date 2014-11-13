@@ -170,10 +170,13 @@ object Config  extends Logging {
       //// Add the resources as well, so they get put to distributed Cache
       val newResources = track.hdfs.listFiles( track.resourcePath ) map ( _.path.toUri )
 
-      val newAuxJars = (newJars ++ newResources ++ currentAux).mkString(",")
+      val newAuxJars = if( track.trackProperties.getOrElse(Variable("satisfaction.override.hive.aux.jars.path"),"true").toBoolean )  {
+        (newJars ++ newResources).mkString(",") } else {
+        (newJars ++ newResources ++ currentAux).mkString(",") }
       info(s" Seting AuxJars Path to $newAuxJars ")
       thisConf.setAuxJars(newAuxJars)
-      
+      //// Need to set this as well ???
+      thisConf.set("hive.aux.jars.path", newAuxJars)
       
       //// set the user if there 
       //// XXX Does this work ???
@@ -185,6 +188,8 @@ object Config  extends Logging {
       track.trackProperties.assignments.foreach(  varass => {
          thisConf.set( varass.variable.name, varass.value.toString) 
       })
+      //// Need to set this as well ???
+      thisConf.set("hive.aux.jars.path", newAuxJars)
       
       thisConf
     }
