@@ -24,7 +24,6 @@ import org.apache.hadoop.hive.ql.processors.CommandProcessorResponse
 import java.io.BufferedReader
 import java.io.FileReader
 import scala.util.control.Breaks
-import satisfaction.hadoop.Config
 import org.apache.hadoop.hive.ql.HiveDriverRunHook
 import org.apache.hadoop.hive.ql.hooks.ExecuteWithHookContext
 import org.apache.hadoop.hive.ql.hooks.HookContext
@@ -68,8 +67,9 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config))
     lazy val driver : org.apache.hadoop.hive.ql.Driver = {
         info("Version :: " + VersionInfo.getBuildVersion)
 
-        /// Set it to be the same, just in case...
-        hiveConf.set("hive.aux.jars.path", hiveConf.getAuxJars)
+        /**
+         *  Need to check our classloader
+         */
         val dr = if( hiveConf.get("satisfaction.track.user.name") != null )  {
             new org.apache.hadoop.hive.ql.Driver(hiveConf, hiveConf.get("satisfaction.track.user.name"))
         } else {
@@ -357,14 +357,15 @@ object HiveDriver extends Logging {
       println(" HIVE DRVIVER  AUX JARS" + auxJars )
       info(" HIVE DRVIVER  AUX JARS" + auxJars )
       info(" HIVE DRVIVER  AUX JARS PROP " + hiveConf.get("hive.aux.jars.path") )
-      if (auxJars != null) {
-        val urls = auxJars.split(",").map(new URL(_))
-        val urlClassLoader = new URLClassLoader(urls, parentLoader)
-        info(" URLS = " + urls.mkString(";"))
-        println(" URLS = " + urls.mkString(";"))
-        hiveConf.setClassLoader(urlClassLoader)
-      }
-
+     
+      val urls = track.hdfs.listFiles( track.libPath).map( _.path.toUri.toURL)
+      val urlClassLoader = URLClassLoader.newInstance( urls.toArray[URL], parentLoader);
+      hiveConf.setClassLoader( urlClassLoader)
+      val auxJarPath = track.hdfs.listFiles( track.libPath).map( _.path.toUri.toString ).mkString(",")
+      info(" Using AuxJarPath " + auxJarPath)
+      hiveConf.setAuxJars( auxJarPath)
+      hiveConf.set("hive.aux.jars.path", auxJarPath)
+      info(" HIVE DRVIVER  AUX JARS PROP " + hiveConf.get("hive.aux.jars.path") )
       //// XXX Move to Scala reflection ...
       val localDriverClass: Class[HiveLocalDriver] = hiveConf.getClass("satisfaction.hadoop.hive.HiveLocalDriver", classOf[HiveLocalDriver]).asInstanceOf[Class[HiveLocalDriver]]
       val constructor = localDriverClass.getConstructor(hiveConf.getClass())

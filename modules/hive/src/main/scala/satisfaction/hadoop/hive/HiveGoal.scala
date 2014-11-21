@@ -35,12 +35,8 @@ object HiveGoal {
         }
         val tblOutputs = collection.Set(hiveOutput.asInstanceOf[Evidence])
         
-        println(" HIVE GOAL AUX JARS = " + hiveConf.getAuxJars)
-        println(" HIVE GOAL AUX JARS PROP = " + hiveConf.get("hive.aux.jars.path"))
         
         val hiveFactory : SatisfierFactory = Goal.SatisfierFactory( {
-            println(" FACTORY HIVE GOAL AUX JARS = " + hiveConf.getAuxJars)
-            println(" FACTORY HIVE GOAL AUX JARS PROP = " + hiveConf.get("hive.aux.jars.path"))
            new HiveSatisfier(queryResource,hiveConf)
         })
 
