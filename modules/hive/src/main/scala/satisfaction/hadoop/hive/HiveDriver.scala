@@ -354,10 +354,8 @@ object HiveDriver extends Logging {
         hiveConf.getClassLoader
       }
       val auxJars = hiveConf.getAuxJars
-      println(" HIVE DRVIVER  AUX JARS" + auxJars )
-      info(" HIVE DRVIVER  AUX JARS" + auxJars )
-      info(" HIVE DRVIVER  AUX JARS PROP " + hiveConf.get("hive.aux.jars.path") )
      
+      info( s" Track libPath is ${track.libPath}")
       val urls = track.hdfs.listFiles( track.libPath).map( _.path.toUri.toURL)
       val urlClassLoader = URLClassLoader.newInstance( urls.toArray[URL], parentLoader);
       hiveConf.setClassLoader( urlClassLoader)
@@ -365,7 +363,6 @@ object HiveDriver extends Logging {
       info(" Using AuxJarPath " + auxJarPath)
       hiveConf.setAuxJars( auxJarPath)
       hiveConf.set("hive.aux.jars.path", auxJarPath)
-      info(" HIVE DRVIVER  AUX JARS PROP " + hiveConf.get("hive.aux.jars.path") )
       //// XXX Move to Scala reflection ...
       val localDriverClass: Class[HiveLocalDriver] = hiveConf.getClass("satisfaction.hadoop.hive.HiveLocalDriver", classOf[HiveLocalDriver]).asInstanceOf[Class[HiveLocalDriver]]
       val constructor = localDriverClass.getConstructor(hiveConf.getClass())
