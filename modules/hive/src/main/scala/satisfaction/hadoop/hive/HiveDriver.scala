@@ -1,35 +1,40 @@
 package satisfaction
-package hadoop
-package hive
+package hadoop.hive 
 
+import satisfaction.Logging
 import scala.util.control.Breaks._
-import org.apache.hive.jdbc._
-import org.apache.hadoop.hive.conf.HiveConf
-import org.apache.hadoop.hive.ql.session.SessionState
-import org.apache.hadoop.hive.shims.ShimLoader
-import org.apache.hadoop.util.VersionInfo
-import org.apache.hadoop.hive.ql.QueryPlan
+import _root_.org.apache.hive.jdbc._
+import _root_.org.apache.hadoop.hive.conf.HiveConf
+import _root_.org.apache.hadoop.hive.ql.session.SessionState
+import _root_.org.apache.hadoop.hive.shims.ShimLoader
+import _root_.org.apache.hadoop.util.VersionInfo
+import _root_.org.apache.hadoop.hive.ql.QueryPlan
 import satisfaction.MetricsProducing
 import collection.JavaConversions._
-import org.apache.hadoop.hive.ql.MapRedStats
+import _root_.org.apache.hadoop.hive.ql.MapRedStats
 import collection.mutable.{HashMap => MutableHashMap}
 import satisfaction.MetricsCollection
+import satisfaction.hadoop.Config
 import scala.io.Source
 import java.net.URLClassLoader
 import java.io.File
 import java.net.URL
-import org.apache.hadoop.hive.ql.exec.Utilities
+import _root_.org.apache.hadoop.hive.ql.exec.Utilities
 import java.lang.reflect.Method
-import org.apache.hadoop.hive.ql.processors.CommandProcessorResponse
+import _root_.org.apache.hadoop.hive.ql.processors.CommandProcessorResponse
 import java.io.BufferedReader
 import java.io.FileReader
 import scala.util.control.Breaks
-import org.apache.hadoop.hive.ql.HiveDriverRunHook
-import org.apache.hadoop.hive.ql.hooks.ExecuteWithHookContext
-import org.apache.hadoop.hive.ql.hooks.HookContext
-import org.apache.hadoop.hive.ql.exec.mr.HadoopJobExecHelper
-import org.apache.hadoop.hive.ql.CommandNeedRetryException
-import org.apache.hadoop.hive.ql.HiveDriverRunHookContext
+import _root_.org.apache.hadoop.hive.ql.HiveDriverRunHook
+import _root_.org.apache.hadoop.hive.ql.hooks.ExecuteWithHookContext
+import _root_.org.apache.hadoop.hive.ql.hooks.HookContext
+import _root_.org.apache.hadoop.hive.ql.exec.mr.HadoopJobExecHelper
+import _root_.org.apache.hadoop.hive.ql.CommandNeedRetryException
+import _root_.org.apache.hadoop.hive.ql.HiveDriverRunHookContext
+import satisfaction.Track
+import satisfaction.Logging
+import satisfaction.Progressable
+import satisfaction.ProgressCounter
 
 /**
  * Executes jobs locally
@@ -59,22 +64,36 @@ trait HiveDriver {
  *    the internal 'SessionState' interface
  */
 
-class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config))
+class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config ))
       extends HiveDriver with MetricsProducing with Progressable with Logging {
   
     implicit var track : Track = null
     
-    lazy val driver : org.apache.hadoop.hive.ql.Driver = {
+    //// Play with cardinarllity of Driver
+    /////lazy val driver : org.apache.hadoop.hive.ql.Driver = {
+    def getDriver : _root_.org.apache.hadoop.hive.ql.Driver = {
         info("Version :: " + VersionInfo.getBuildVersion)
 
+        
+        val cl = this.getClass.getClassLoader
+        info( " HiveLocalDriver getDriver  ClassLoader = " + this.getClass.getClassLoader.getClass().getName() )
+        info( " HiveLocalDriver getDriver  ThreadLoader= = " + Thread.currentThread().getContextClassLoader().getClass().getName() )
+        Thread.currentThread().setContextClassLoader(this.getClass.getClassLoader)
         /**
          *  Need to check our classloader
          */
+        /**
         val dr = if( hiveConf.get("satisfaction.track.user.name") != null )  {
-            new org.apache.hadoop.hive.ql.Driver(hiveConf, hiveConf.get("satisfaction.track.user.name"))
+            new _root_.org.apache.hadoop.hive.ql.Driver(hiveConf, hiveConf.get("satisfaction.track.user.name"))
         } else {
-           new org.apache.hadoop.hive.ql.Driver(hiveConf)
+           new _root_.org.apache.hadoop.hive.ql.Driver(hiveConf)
         }
+        * 
+        */
+        val  apacheHiveDriverClass = cl.loadClass("org.apache.hadoop.hive.ql.Driver")
+        val dr = apacheHiveDriverClass.getConstructor( classOf[HiveConf]).newInstance( hiveConf).asInstanceOf[_root_.org.apache.hadoop.hive.ql.Driver]
+        
+        
         dr.init
         /**
         if(hiveConf.getVar( HiveConf.ConfVars.HIVE_DRIVER_RUN_HOOKS ) != null )  {
@@ -86,7 +105,7 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config))
         * *
         */
         
-        
+       /// Do we need to call this ??? 
         val shims = ShimLoader.getHadoopShims
         info(" RPC port is " + shims.getJobLauncherRpcAddress(hiveConf))
         info(" Shims version is " + shims.getClass)
@@ -111,30 +130,23 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config))
     }
     
     def getQueryPlan( query: String ) : QueryPlan = {
+       val driver = getDriver
        val retCode = driver.compile(query)
        info(s" Compiling $query  has return Code $retCode ")
        
        driver.getPlan()
     }
     
-    def queryPlan : QueryPlan = {
-      driver.getPlan()
-    }
     
-    
-    def sessionState : SessionState  = {
-       val ss1 : SessionState = SessionState.get  
-       if( ss1 == null) {
-          val  ss2 = SessionState.start( hiveConf) 
-           ss2.out = Console.out
-           ss2.info = Console.out
-           ss2.childErr = Console.out
-           ss2.childOut = Console.out
-           ss2.err = Console.out
-           ss2
-       } else {
-         ss1
-       }
+    lazy val sessionState: SessionState  = {
+       val ss1 : SessionState = SessionState.start( hiveConf)
+       ss1.out = Console.out
+       ss1.info = Console.out
+       ss1.childErr = Console.out
+       ss1.childOut = Console.out
+       ss1.err = Console.out
+       ss1.setIsVerbose(true)
+       ss1
     }
     
     def sourceFile( resourceName : String ) : Boolean = {
@@ -172,10 +184,9 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config))
      *  Check that the  threadlocal SessionState
      *   has not been closed since last call
      */
+    /**
     def checkSessionState() : Boolean = {
-       val ss1 = SessionState.get()
-       if(ss1 == null)  {
-          val  ss2 = SessionState.start( hiveConf) 
+       val  ss2 = SessionState.start( hiveConf) 
            ss2.out = Console.out
            ss2.info = Console.out
            ss2.childErr = Console.out
@@ -191,6 +202,8 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config))
          true 
        }
     }
+    * 
+    */
 
     override def executeQuery(queryUnclean: String): Boolean = {
         try {
@@ -218,18 +231,23 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config))
               }
             }
 
-            sessionState.setIsVerbose(true)
-            sessionState.setConf( hiveConf)
+            var driver  : _root_.org.apache.hadoop.hive.ql.Driver = null
             val response : CommandProcessorResponse = HiveLocalDriver.retry (5) {
+              /**
                 if( !checkSessionState ) {
                    warn(s"HIVE_DRIVER -- SessionState was closed after previous call ") 
                 }
+                * 
                val confMember = driver.getClass().getDeclaredField("conf") 
                confMember.setAccessible(true)
                
                val checkConf = confMember.get(driver).asInstanceOf[HiveConf]
+                */
             
             
+                driver = getDriver
+            	SessionState.setCurrentSessionState( sessionState )
+            	driver.init()
                 driver.run(query)
             }
             info(s"Response Code ${response.getResponseCode} :: SQLState ${response.getSQLState} ")
@@ -356,10 +374,19 @@ object HiveDriver extends Logging {
       val auxJars = hiveConf.getAuxJars
      
       info( s" Track libPath is ${track.libPath}")
-      val urls = track.hdfs.listFiles( track.libPath).map( _.path.toUri.toURL)
-      val urlClassLoader = URLClassLoader.newInstance( urls.toArray[URL], parentLoader);
-      hiveConf.setClassLoader( urlClassLoader)
-      val auxJarPath = track.hdfs.listFiles( track.libPath).map( _.path.toUri.toString ).mkString(",")
+      info( s" Track resourcePath is ${track.resourcePath}")
+      val urls = track.hdfs.listFiles( track.libPath)
+      val resources = track.hdfs.listFiles( track.resourcePath)
+      val exportFiles = ( urls ++ resources)
+      val urlClassLoader = harmony.java.net.URLClassLoader.newInstance( exportFiles.map( _.path.toUri.toURL).toArray[URL], parentLoader);
+      urlClassLoader.setLogger( log)
+      urlClassLoader.setName( track.descriptor.trackName)
+
+      hiveConf.setClassLoader( urlClassLoader);
+      Thread.currentThread().setContextClassLoader(urlClassLoader)
+
+      val auxJarPath = exportFiles.map( _.path.toUri.toString ).mkString(",")
+      
       info(" Using AuxJarPath " + auxJarPath)
       hiveConf.setAuxJars( auxJarPath)
       hiveConf.set("hive.aux.jars.path", auxJarPath)

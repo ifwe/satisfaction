@@ -8,7 +8,7 @@ import ms.HiveDataOutput
 import ms.HiveTablePartitionGroup
 import satisfaction._
 import scala.io.Source
-import org.apache.hadoop.hive.conf.HiveConf
+import _root_.org.apache.hadoop.hive.conf.HiveConf
 
 /** 
  *   A Hive Goal executes a Hive Query

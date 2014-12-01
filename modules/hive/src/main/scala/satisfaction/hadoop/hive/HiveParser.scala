@@ -2,21 +2,21 @@ package satisfaction
 package hadoop
 package hive
 
-import org.apache.hadoop.hive.ql.parse.ParseDriver
-import org.apache.hadoop.hive.ql.parse._
-import org.apache.hadoop.hive.ql.parse.ParseException
+import _root_.org.apache.hadoop.hive.ql.parse.ParseDriver
+import _root_.org.apache.hadoop.hive.ql.parse._
+import _root_.org.apache.hadoop.hive.ql.parse.ParseException
 import scala.collection.JavaConversions._
 import satisfaction.DataOutput
 import satisfaction.DataInstance
 import satisfaction.hadoop.hive.ms.HiveTablePartition
-import org.apache.hadoop.hive.ql.tools.LineageInfo
-import org.apache.hadoop.hive.ql.optimizer.index.RewriteParseContextGenerator
+import _root_.org.apache.hadoop.hive.ql.tools.LineageInfo
+import _root_.org.apache.hadoop.hive.ql.optimizer.index.RewriteParseContextGenerator
 import ms.MetaStore
 import fs.FileSystem
 
 class  HiveParser( implicit val ms : MetaStore, implicit val hdfs : FileSystem ) {
 
-    val parseDriver = new org.apache.hadoop.hive.ql.parse.ParseDriver
+    val parseDriver = new _root_.org.apache.hadoop.hive.ql.parse.ParseDriver
     val config = Config.config
     
 

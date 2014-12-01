@@ -2,12 +2,12 @@ package satisfaction
 package hadoop
 package hive
 
-import org.joda.time.format.DateTimeFormat
-import org.joda.time.Days
-import org.joda.time.DateTime
+import _root_.org.joda.time.format.DateTimeFormat
+import _root_.org.joda.time.Days
+import _root_.org.joda.time.DateTime
 import scala.io.Source
-import org.apache.hadoop.hive.ql.metadata.HiveException
-import org.apache.hadoop.hive.conf.HiveConf
+import _root_.org.apache.hadoop.hive.ql.metadata.HiveException
+import _root_.org.apache.hadoop.hive.conf.HiveConf
 
 case class HiveSatisfier(val queryResource: String, val conf : HiveConf)( implicit val track : Track) 
       extends Satisfier with MetricsProducing with Progressable with Logging {

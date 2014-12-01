@@ -4,11 +4,11 @@ package hive
 
 import satisfaction.ProgressCounter
 import scala.collection.immutable.List
-import org.apache.hadoop.hive.ql.QueryPlan
+import _root_.org.apache.hadoop.hive.ql.QueryPlan
 import satisfaction.GoalState
 import collection.JavaConversions._
-import org.apache.hadoop.hive.ql.exec.mr.MapRedTask
-import org.apache.hadoop.hive.ql.exec.mr.HadoopJobExecHelper
+import _root_.org.apache.hadoop.hive.ql.exec.mr.MapRedTask
+import _root_.org.apache.hadoop.hive.ql.exec.mr.HadoopJobExecHelper
 
 class HiveProgress( val localDriver : HiveLocalDriver )  extends ProgressCounter {
   
@@ -28,7 +28,9 @@ class HiveProgress( val localDriver : HiveLocalDriver )  extends ProgressCounter
      *   Get the query
      */
     def queryPlan : QueryPlan = {
-       localDriver.queryPlan
+       ///localDriver.queryPlan
+       ///null
+      null
     }
     
     /**
