@@ -146,16 +146,16 @@ case class Goal(
      *    a time.
      */
     def chainWitnessRules[T]( prevRule : ( Witness=>Witness) ,subGoal :Goal, foldVar : Variable[T], valIter : Traversable[T]) : Goal = {
-      val chained : Goal = valIter.foldLeft( subGoal )( (g: Goal, vv : T) => {
-           val witnessMapping : ( Witness=>Witness)  = {
-              w => {
-               w  + VariableAssignment( foldVar , vv)
-             }
-           }
-           println(s" CHAIN WITNESS RULE $vv ")
-           Goal(subGoal).addWitnessRule(witnessMapping,g)
+      val first = valIter.head
+      println(s" HEAD is $first ")
+
+      val chained : Goal = valIter.drop(1).foldLeft( subGoal )( (g: Goal, vv : T) => {
+           val witnessMapping : ( Witness=>Witness)  = Goal.qualifyWitness( foldVar, vv )
+           println(s" ${g.name} CHAIN WITNESS RULE $vv  ")
+           Goal(subGoal).addWitnessRule( witnessMapping,g)
       } )
-      addWitnessRule( prevRule, chained)
+      //// apply the composed rule onto the first value, and then 
+      addWitnessRule( prevRule compose Goal.qualifyWitness(foldVar, first) , chained)
     }
 
     def chainDependencies[T]( subGoal :Goal, foldVar : Variable[T], valIter : Traversable[T]) : Goal = {

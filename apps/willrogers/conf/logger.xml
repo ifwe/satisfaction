@@ -9,13 +9,20 @@
     </encoder>
   </appender>
 
- <appender name="FILE" class="ch.qos.logback.core.FileAppender">
+ <appender name="FILE" class="ch.qos.logback.core.RollingFileAppender">
      <file>${application.home}/logs/application.log</file>
+     <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+         <!-- daily rollover -->
+          <fileNamePattern>application.log.%d{yyyy-MM-dd}</fileNamePattern>
+
+          <!-- keep 30 days' worth of history -->
+          <maxHistory>30</maxHistory>
+    </rollingPolicy>
          <append>true</append>
           <!-- encoders are assigned the type
              ch.qos.logback.classic.encoder.PatternLayoutEncoder by default -->
     <encoder>
-       <pattern>%-4relative [%thread] %-5level %logger{35} - %msg%n</pattern>
+       <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{35} - %msg%n</pattern>
      </encoder>
  </appender>
 

@@ -4,6 +4,7 @@ package actors
 
 import org.joda.time.format.DateTimeFormatter
 import org.joda.time.format.DateTimeFormat
+import satisfaction.SatisfierFactory
 
 
 object TestGoal {
@@ -14,7 +15,7 @@ object TestGoal {
         val evidence = Set[Evidence](satisfier)
         val dependencies = Set[(Witness => Witness, Goal)]()
 
-        val goal = new Goal(name, Some(satisfier), variables, dependencies, evidence)
+        val goal = new Goal(name, Goal.SatisfierFactory({satisfier}), variables, dependencies, evidence)
 
         goal
 
@@ -27,7 +28,7 @@ object TestGoal {
         val evidence = Set[Evidence](satisfier)
         val dependencies = Set[(Witness => Witness, Goal)]()
 
-        val goal = new Goal(name, Some(satisfier), variables,  dependencies, evidence)
+        val goal = new Goal(name, Goal.SatisfierFactory({ satisfier }), variables,  dependencies, evidence)
 
         goal
 

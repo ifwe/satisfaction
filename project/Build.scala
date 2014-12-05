@@ -197,6 +197,7 @@ object ApplicationBuild extends Build {
 	  ("org.apache.hive" % "hive-exec" % hiveVersion),
 	  ("org.apache.hive" % "hive-metastore" % hiveVersion),
 	  ("org.apache.hive" % "hive-cli" % hiveVersion),
+	  ("org.apache.hive" % "hive-service" % hiveVersion),
 	  ("org.apache.hive" % "hive-serde" % hiveVersion),
 	  ("org.apache.hive" % "hive-shims" %   hiveVersion ),
 	  ("org.apache.hive" % "hive-hbase-handler" % hiveVersion),

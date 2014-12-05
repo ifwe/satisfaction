@@ -23,18 +23,19 @@ import akka.actor.ActorRef
  *  So that it doesn't block the checking of status 
  *   or any other actor activity    
  */
-class EvidenceChecker(val e : Evidence) extends Actor with ActorLogging {
+class EvidenceChecker(val e : Evidence) extends Actor  with satisfaction.Logging {
 
   private var  _sender : ActorRef = null
   def receive = {
     case CheckEvidence(evidenceId,witness) =>
-       log.info(s" CHECKING EVIDENCE $e for %witness with id $evidenceId ")
+       info(s" CHECKING EVIDENCE $e for %witness with id $evidenceId ")
        val evidenceFuture: Future[Boolean] = future {
           e.exists( witness)
        }
        _sender = context.sender
        evidenceFuture.onSuccess({
-           case exists : Boolean => {
+         case exists : Boolean => {
+            info(s" Sending EvidenceCheckResult $evidenceId $witness EXISTS = $exists")
             _sender !  EvidenceCheckResult( evidenceId, witness, exists)  
        }})
        evidenceFuture.onFailure( { 
@@ -42,6 +43,7 @@ class EvidenceChecker(val e : Evidence) extends Actor with ActorLogging {
            /////Publish JobRunFailed, if we are unable to check the evidence
            ////  Even if
            log.error(s" Unexpected error while checking evidence for $e for witness $witness ; ${unexpected.getMessage()}", unexpected )
+           error(s" Unexpected error while checking evidence for $e for witness $witness ; ${unexpected.getMessage()}", unexpected )
            val er = new ExecutionResult(s"Evidence Checking $e $witness", DateTime.now)
            er.markUnexpected(unexpected)
            val failed = new JobRunFailed( er)

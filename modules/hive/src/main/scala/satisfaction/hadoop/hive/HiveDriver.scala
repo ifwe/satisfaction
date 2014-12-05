@@ -55,6 +55,8 @@ trait HiveDriver {
     def executeQuery(query: String): Boolean
     
     def abort() 
+    
+    def close() 
 
 }
 
@@ -79,6 +81,8 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config ))
         info( " HiveLocalDriver getDriver  ClassLoader = " + this.getClass.getClassLoader.getClass().getName() )
         info( " HiveLocalDriver getDriver  ThreadLoader= = " + Thread.currentThread().getContextClassLoader().getClass().getName() )
         Thread.currentThread().setContextClassLoader(this.getClass.getClassLoader)
+        
+        info(s"  SessionState Classloader =  ${classOf[SessionState].getClassLoader}  THIS LOADER = $cl " )
         /**
          *  Need to check our classloader
          */
@@ -118,6 +122,10 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config ))
         
         
         dr
+    }
+    
+    override def close() {
+       ///driver.close 
     }
     
     override lazy val progressCounter : ProgressCounter  = {
@@ -247,6 +255,14 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config ))
             
                 driver = getDriver
             	SessionState.setCurrentSessionState( sessionState )
+            	val cl = Thread.currentThread().getContextClassLoader();
+                if( cl != hiveConf.getClassLoader() ) {
+                  error(s" ERROR SOMEONE OVERWROTE CLASS LOADER IN THREAD CONTEXT  $cl ${hiveConf.getClassLoader}" )
+                  error(s" ERROR SOMEONE OVERWROTE CLASS LOADER IN THREAD CONTEXT Context =  $cl HiveConf = ${hiveConf.getClassLoader} this loader = ${this.getClass.getClassLoader} " )
+                  Console.out.println(s" ERROR SOMEONE OVERWROTE CLASS LOADER IN THREAD CONTEXT Context =  $cl HiveConf = ${hiveConf.getClassLoader} this loader = ${this.getClass.getClassLoader} " )
+                  System.out.println(s" ERROR SOMEONE OVERWROTE CLASS LOADER IN THREAD CONTEXT  Context = $cl  HiveConf =  ${hiveConf.getClassLoader} this loader = ${this.getClass.getClassLoader}" )
+                }
+                Thread.currentThread.setContextClassLoader( hiveConf.getClassLoader )
             	driver.init()
                 driver.run(query)
             }
@@ -401,11 +417,55 @@ object HiveDriver extends Logging {
     } catch {
       case e: Exception =>
         e.printStackTrace(System.out)
-        ////error("Error while accessing HiveDriver", e)
+        error("Error while accessing HiveDriver", e)
         throw e
     }
 
   }
+  
+  def serverDriver(hiveConf: HiveConf)(implicit track : Track): HiveDriver = {
+    try {
+      val parentLoader = if (Thread.currentThread.getContextClassLoader != null) {
+        Thread.currentThread.getContextClassLoader
+      } else {
+        hiveConf.getClassLoader
+      }
+      val auxJars = hiveConf.getAuxJars
+     
+      info( s" Track libPath is ${track.libPath}")
+      info( s" Track resourcePath is ${track.resourcePath}")
+      val urls = track.hdfs.listFiles( track.libPath)
+      val resources = track.hdfs.listFiles( track.resourcePath)
+      val exportFiles = ( urls ++ resources)
+      val urlClassLoader = harmony.java.net.URLClassLoader.newInstance( exportFiles.map( _.path.toUri.toURL).toArray[URL], parentLoader);
+      urlClassLoader.setLogger( log)
+      urlClassLoader.setName( track.descriptor.trackName)
+
+      hiveConf.setClassLoader( urlClassLoader);
+      Thread.currentThread().setContextClassLoader(urlClassLoader)
+
+      val auxJarPath = exportFiles.map( _.path.toUri.toString ).mkString(",")
+      
+      info(" Using AuxJarPath " + auxJarPath)
+      hiveConf.setAuxJars( auxJarPath)
+      hiveConf.set("hive.aux.jars.path", auxJarPath)
+      //// XXX Move to Scala reflection ...
+      val serverDriverClass: Class[HiveServerDriver] = hiveConf.getClass("satisfaction.hadoop.hive.HiveServerDriver", classOf[HiveServerDriver]).asInstanceOf[Class[HiveServerDriver]]
+      val constructor = serverDriverClass.getConstructor(hiveConf.getClass())
+      val hiveDriver = constructor.newInstance(hiveConf).asInstanceOf[HiveServerDriver]
+      ///hiveDriver.track = track
+
+      hiveDriver
+
+    } catch {
+      case e: Exception =>
+        e.printStackTrace(System.out)
+        error("Error while accessing HiveDriver", e)
+        throw e
+    }
+
+  }
+  
   
 }
 

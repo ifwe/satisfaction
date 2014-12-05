@@ -16,7 +16,9 @@ case class HiveSatisfier(val queryResource: String, val conf : HiveConf)( implic
   
    
    lazy val driver : HiveDriver = {
-	   HiveDriver(conf)
+     info( "Creating  HiveLocalDriver")
+	 HiveDriver(conf)
+       ///HiveDriver.serverDriver( conf)
    } 
    
 
@@ -29,6 +31,7 @@ case class HiveSatisfier(val queryResource: String, val conf : HiveConf)( implic
                     return results
             }
         })
+        driver.close
         true
     }
     
@@ -48,7 +51,11 @@ case class HiveSatisfier(val queryResource: String, val conf : HiveConf)( implic
     
     def queryTemplate : String = {
        if( queryResource.endsWith(".hql"))  { 
-          track.getResource( queryResource) 
+         if(track.hasResource( queryResource)) {
+           track.getResource( queryResource) 
+         } else {
+           io.Source.fromInputStream(  this.getClass().getClassLoader().getResourceAsStream( queryResource) ).mkString
+         }
        } else {
          queryResource
        }
