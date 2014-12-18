@@ -15,7 +15,7 @@ import play.Project._
 
 object ApplicationBuild extends Build {
 
-  val appVersion = "2.4.9"
+  val appVersion = "2.5.0"
 
   val hiveVersion = "0.13.1"
 
@@ -123,7 +123,7 @@ object ApplicationBuild extends Build {
     version in Rpm := resolveRpmVersion(),
 
     ////rpmRelease in Rpm:= resolveRpmVersion(),
-    rpmRelease in Rpm := "1",
+    rpmRelease in Rpm := "10",
     packageSummary in Rpm := "wyman",
     packageSummary in Linux := "wyman",
     rpmVendor in Rpm := "Tagged.com",
@@ -132,10 +132,20 @@ object ApplicationBuild extends Build {
     packageDescription in Rpm := "Next Generation Hadoop Scheduler",
     rpmGroup in Rpm:= Some("satisfaction"),
 
-    rpmPreun := Option("if [[ $1 == 0 ]] ; then"
-        + "\n  echo \"Shutdown willrogers\""
-        + "\n  service willrogers stop || echo \"Could not stop willrogers\"\n"
-        + "fi")
+    rpmPreun := Option("""
+if [[ $1 == 0 ]] ; then
+    echo "Shutdown willrogers"
+    service willrogers stop || echo "Could not stop willrogers"
+fi"""),
+
+    rpmPost := Option("""
+export JAVA_HOME=/usr/java/default
+export HADOOP_CONF_DIR=/etc/hadoop/conf
+export HADOOP_HOME=/usr/lib/hadoop
+
+export JAVA_OPTS=' -Xmx2048m -Xms2048m -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.port=9010 -Dcom.sun.management.jmxremote.local.only=false -Dcom.sun.management.jmxremote.authenticate=false -XX:+UseConcMarkSweepGC  -XX:+CMSClassUnloadingEnabled -XX:+CMSPermGenSweepingEnabled -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/usr/share/willrogers -XX:PermSize=256m -XX:MaxPermSize=256m -XX:+TraceClassLoading -XX:+TraceClassUnloading '
+""")
+
 
   )
 
@@ -196,7 +206,6 @@ object ApplicationBuild extends Build {
 	  ("org.apache.hive" % "hive-common" % hiveVersion),
 	  ("org.apache.hive" % "hive-exec" % hiveVersion),
 	  ("org.apache.hive" % "hive-metastore" % hiveVersion),
-	  ("org.apache.hive" % "hive-cli" % hiveVersion),
 	  ("org.apache.hive" % "hive-service" % hiveVersion),
 	  ("org.apache.hive" % "hive-serde" % hiveVersion),
 	  ("org.apache.hive" % "hive-shims" %   hiveVersion ),

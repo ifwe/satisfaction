@@ -46,22 +46,40 @@ class JobRunner(
 
     def receive = {
         case Satisfy =>
-            log.info(s"Asked to satisfy ${track.descriptor.trackName} :: ${goal.name} for params: ${params}")
+            log.info(s"Asked to satisfy ${track.descriptor.trackName} :: ${goal.name} for params: ${params} by ${sender.path} ")
             _startTime = DateTime.now
 
                 val satisfierFuture = future {
-                    logger.log { () => satisfier.satisfy(params) } match {
+                    logger.log { () => 
+                          JobRunner.threadPreserve {  () => { 
+                                val result = satisfier.satisfy(params)
+                                satisfier match {
+                                  case closer : java.io.Closeable => {
+                                     logger.info(s" Closing Closable Satisfier $satisfier for Goal ${goal.name} and Witness $witness ") 
+                                     closer.close()
+                                  }
+                                  case _ =>  /// don't need to close anything ...
+                                }
+                                result
+                            } 
+                          }
+                    } match {
                       case Success(execResult) =>
+                        log.info(s" JobRunner ${goal.name} $witness received ExecResult ${execResult.isSuccess} ")
+                        logger.info(s" JobRunner ${goal.name} $witness received ExecResult ${execResult.isSuccess} ")
                         execResult.hdfsLogPath = logger.hdfsLogPath.toString
                         execResult
                       case Failure(throwable) =>
                         //// Error occurred somehow because of logging,
                         ///   or from satisfier throwing unexpected exception
-                        val execResult = new ExecutionResult(goal.name, _startTime )
-                        execResult.hdfsLogPath = logger.hdfsLogPath.toString
-                        execResult.markUnexpected( throwable)
+                        log.info(s" JobRunner ${goal.name} $witness received Unexpected  ${throwable} :: ${throwable.getMessage()} ")
+                        logger.info(s" JobRunner ${goal.name} $witness received Unexpected  ${throwable} :: ${throwable.getMessage()} ")
+                        val execResult2 = new ExecutionResult(goal.name, _startTime )
+                        execResult2.hdfsLogPath = logger.hdfsLogPath.toString
+                        execResult2.markUnexpected( throwable)
                     }
                 }
+                log.info(s" JobRunner ... MessageSender is $sender ")
                 _messageSender = sender
                 satisfierFuture onComplete {
                     log.info(s" Job Runner :: Future OnComplete ${goal.name} ${witness}")
@@ -105,9 +123,10 @@ class JobRunner(
              log.info(s" Check Markable !!! DataInstance ${di} with witness $witness ")
              di  match {
                case mk : Markable =>
+                   log.info(s" Marking $mk with function $f ")
                    f(mk)
                case _  =>
-                   log.info(" IS NOT MARKABLE !!!")
+                   log.info(s" $di is not markable")
              }          
           })
     }
@@ -117,19 +136,23 @@ class JobRunner(
         if (result.isSuccess) {
             val execResult = result.get
             execResult.hdfsLogPath = logger.hdfsLogPath.toString
+             log.info(s" JobRunner ${goal.name} $witness result isSuccess = ${execResult.isSuccess} ")
             if (execResult.isSuccess ) {
+                log.info(s" Sending JobRunSuccess to $messageSender ")
                 markEvidence( _.markCompleted )
                 messageSender ! new JobRunSuccess(execResult)
             } else {
+                log.info(s" Sending JobRunFailed to $messageSender ")
                 markEvidence( _.markIncomplete)
                 messageSender ! new JobRunFailed(execResult)
             }
         } else {
              //// Error occurred with Akka Actors
-            log.info(" result isFailure " + result.failed.get)
+            log.info(s" JobRunner ${goal.name} $witness result isFailure ; Unexpected Error  " + result.failed.get)
             val execResult = new ExecutionResult( "Failure executing Goal " + goal.name , new DateTime)
             execResult.hdfsLogPath = logger.hdfsLogPath.toString
             execResult.markUnexpected( result.failed.get)
+                log.info(s" Sending JobRunFailed unexpected to $messageSender ")
             messageSender ! new JobRunFailed(execResult)
         }
         finish()
@@ -142,6 +165,25 @@ class JobRunner(
       log.info(s" Finishing up !! ${self.path} ")
        context.system.stop( self) 
     }
-    
 
+}
+
+object JobRunner {
+  
+  
+    /**
+     *  Since Akka uses the context ClassLoader, make sure 
+     *    the task doesn't overwrite the value Akka expects to be there,
+     *    or else messages will get lost..
+     */
+    def threadPreserve[T]( functor : () => T ) : T = {
+       val thClBefore = Thread.currentThread.getContextClassLoader
+       val res = functor()
+       val thClAfter = Thread.currentThread.getContextClassLoader
+       if( thClBefore != thClAfter)  {
+         Thread.currentThread.setContextClassLoader(thClBefore)
+       }
+       res
+    }
+  
 }

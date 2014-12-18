@@ -171,19 +171,88 @@ case class Track(
    /** 
     *  Read a resource from HDFS 
     *  XXX Move to Engine ???
-    * 
+    *  XXX  Cache the result to avoid multiple goals DNS'ing HDFS
+    *  
     */
    def getResource(   resourceFile : String ) : String  = {
-      new String(hdfs.readFile( resourcePath / resourceFile ))
+      ///new String(hdfs.readFile( resourcePath / resourceFile ))
+     _cachedGetResource.get(resourceFile)
    }
    
    def hasResource( resourceFile : String ) : Boolean  = {
-      hdfs.exists( resourcePath / resourceFile ) 
+      ///hdfs.exists( resourcePath / resourceFile ) 
+     _cachedHasResource.get( resourceFile)
    }
    
-   def listResources : Seq[String]  = {
-      hdfs.listFiles(  resourcePath ).map( _.path.name )
+   private val _cachedGetResource = new Cached[String,String](resourceFile => {
+     hdfs.synchronized {
+        new String(hdfs.readFile( resourcePath / resourceFile ))
+     }
+   } )
+
+   private val _cachedHasResource = new Cached[String,Boolean]( resourceFile => {
+     hdfs.synchronized {
+      hdfs.exists( resourcePath / resourceFile ) 
+     }
+   } )
+   
+   //// XXX
+   ////  Move to utility package
+   class Cached[A,T]( func : A => T ) {
+      private val _cache =  scala.collection.mutable.Map[A,T]()
+
+      def get( arg : A )  : T = {
+         _cache.get( arg) match {
+           case Some(t) => { 
+              t 
+           }
+           case None => {
+              val lookup : T = func( arg) 
+              _cache.put( arg, lookup)
+              lookup
+           }
+         }
+      }
    }
+
+   class CachedOne[T]( func : => T ) {
+      private var _one : Option[T] = None 
+
+      def get()  : T = {
+         _one  match {
+           case Some(t) => { 
+              t 
+           }
+           case None => {
+              val lookup : T = func
+              _one = Some(lookup)
+              lookup
+           }
+         }
+      }
+   }
+   
+   
+   def listResources : Seq[Path]  = {
+      ///hdfs.listFiles(  resourcePath ).map( _.path.name )
+     _cachedListResources.get()
+   }
+   private val _cachedListResources = new CachedOne[Seq[Path]]( {
+     hdfs.synchronized { 
+        hdfs.listFiles(  resourcePath ).map( _.path )
+     }
+   } )
+
+   def listLibraries : Seq[Path]  = {
+      ///hdfs.listFiles(  resourcePath ).map( _.path.name )
+     _cachedListLibraries.get()
+   }
+   private val _cachedListLibraries = new CachedOne[Seq[Path]]( {
+     hdfs.synchronized { 
+        hdfs.listFiles(  libPath ).map( _.path )
+     }
+   } )
+   
    
    def resourcePath : Path = {
      if( _trackProperties != null) {
@@ -208,9 +277,9 @@ case class Track(
        _trackPath /  "lib"
      }
    }
+
    	
     def getTrackProperties(witness: Witness): Witness = {
-      println(s"YY ENTERED GETTRACKPROPERTIES")
          val YYYYMMDD = DateTimeFormat.forPattern("YYYYMMdd")
          val YYYYMMDDH = DateTimeFormat.forPattern("YYYYMMDDH")
          val H = DateTimeFormat.forPattern("H")
@@ -255,7 +324,9 @@ case class Track(
         projProperties ++ witness
 
     }
+    
 }
+
 
 object Track {
   
@@ -291,6 +362,7 @@ object Track {
        new Track( TrackDescriptor(trackName) ).addTopLevelGoal(topLevelGoal) 
     }
     
+       
     
     /**
      *  Class representing a Track Version number

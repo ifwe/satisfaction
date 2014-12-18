@@ -332,6 +332,7 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
                     try {
                        val jobRunActor = Props(new JobRunner(satisfier, track ,goal, witness, witness))
                        this.jobRunner = context.system.actorOf((jobRunActor), "Satisfier_" + ProofEngine.getActorName(goal, witness))
+                       log.info(s"Actor ${this.self.path} created Actor ${jobRunner.path} ")
                     } catch {
                       case invName : Throwable => {
                          error(s" Unexpected error while creating actor  ${goal.name} $witness", invName)

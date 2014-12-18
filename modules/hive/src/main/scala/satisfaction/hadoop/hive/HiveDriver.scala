@@ -35,6 +35,11 @@ import satisfaction.Track
 import satisfaction.Logging
 import satisfaction.Progressable
 import satisfaction.ProgressCounter
+import _root_.org.apache.commons.logging.Log
+import _root_.org.apache.hadoop.hive.metastore.HiveMetaStoreClient
+import _root_.org.apache.hadoop.hive.metastore.HiveMetaHookLoader
+import satisfaction.hadoop.CachingTrackLoader
+import _root_.org.apache.hadoop.hive.ql.metadata.Hive
 
 /**
  * Executes jobs locally
@@ -54,6 +59,8 @@ trait HiveDriver {
 
     def executeQuery(query: String): Boolean
     
+    def setProperty( prop : String, propValue : String )
+    
     def abort() 
     
     def close() 
@@ -67,20 +74,20 @@ trait HiveDriver {
  */
 
 class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config ))
-      extends HiveDriver with MetricsProducing with Progressable with Logging {
-  
-    implicit var track : Track = null
+      extends satisfaction.hadoop.hive.HiveDriver with MetricsProducing with Progressable with Logging {
+ 
+            
+    /// Set up a new Hive on this thread, with our HiveConf
+    val newHive  = Hive.set( Hive.get(hiveConf,true))
     
-    //// Play with cardinarllity of Driver
-    /////lazy val driver : org.apache.hadoop.hive.ql.Driver = {
+    ///lazy val driver : _root_.org.apache.hadoop.hive.ql.Driver = {
     def getDriver : _root_.org.apache.hadoop.hive.ql.Driver = {
-        info("Version :: " + VersionInfo.getBuildVersion)
 
         
         val cl = this.getClass.getClassLoader
         info( " HiveLocalDriver getDriver  ClassLoader = " + this.getClass.getClassLoader.getClass().getName() )
         info( " HiveLocalDriver getDriver  ThreadLoader= = " + Thread.currentThread().getContextClassLoader().getClass().getName() )
-        Thread.currentThread().setContextClassLoader(this.getClass.getClassLoader)
+        ////Thread.currentThread().setContextClassLoader(this.getClass.getClassLoader)
         
         info(s"  SessionState Classloader =  ${classOf[SessionState].getClassLoader}  THIS LOADER = $cl " )
         /**
@@ -94,38 +101,45 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config ))
         }
         * 
         */
+        /**
         val  apacheHiveDriverClass = cl.loadClass("org.apache.hadoop.hive.ql.Driver")
         val dr = apacheHiveDriverClass.getConstructor( classOf[HiveConf]).newInstance( hiveConf).asInstanceOf[_root_.org.apache.hadoop.hive.ql.Driver]
-        
-        
-        dr.init
-        /**
-        if(hiveConf.getVar( HiveConf.ConfVars.HIVE_DRIVER_RUN_HOOKS ) != null )  {
-          hiveConf.setVar( HiveConf.ConfVars.HIVE_DRIVER_RUN_HOOKS , 
-            hiveConf.getVar(HiveConf.ConfVars.HIVE_DRIVER_RUN_HOOKS) + ",satifaction.hadoop.hive.HiveDriverHook" );
-        } else {
-          hiveConf.setVar( HiveConf.ConfVars.HIVE_DRIVER_RUN_HOOKS , "satisfaction.hadoop.hive.HiveDriverHook");
-        }
-        * *
+        * 
         */
-        
-       /// Do we need to call this ??? 
-        val shims = ShimLoader.getHadoopShims
-        info(" RPC port is " + shims.getJobLauncherRpcAddress(hiveConf))
-        info(" Shims version is " + shims.getClass)
-        
-        /**
-         *     Set som
-         */    
-        ///Logger.getLogger( Configuration.class ).setLevel( INFO);
+        //// implicitly use same classloader as this 
+        try {
+          val dr = new _root_.org.apache.hadoop.hive.ql.Driver( hiveConf)
+          info( s" New APACHE DRIVER = $dr  CLASS LOADER = ${dr.getClass.getClassLoader}" )
         
         
+          dr.init
+           dr
         
-        dr
+        }  catch {
+          case unexpected : Throwable => {
+            error(s"Unexpected error while creating HiveDriver ${unexpected.getMessage()} ", unexpected )
+            throw unexpected
+          } 
+        }
+        
     }
     
-    override def close() {
-       ///driver.close 
+    override def close() = {
+      val thisClassLoader = this.getClass().getClassLoader
+      thisClassLoader match {
+        case closable : java.io.Closeable => {
+           info(s" Closing Closable ClassLoader $thisClassLoader ")      
+           closable.close
+        }
+        case _ => {
+           info(" Our classloader was not closable") 
+        }
+      }
+    }
+    
+    
+    override def setProperty( prop : String , propValue : String) = {
+      this.hiveConf.set( prop, propValue)
     }
     
     override lazy val progressCounter : ProgressCounter  = {
@@ -146,7 +160,10 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config ))
     }
     
     
+    private var _sessionState :SessionState = null
     lazy val sessionState: SessionState  = {
+       info(s" Starting SessionState !!!")
+       if( _sessionState == null) {
        val ss1 : SessionState = SessionState.start( hiveConf)
        ss1.out = Console.out
        ss1.info = Console.out
@@ -154,29 +171,10 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config ))
        ss1.childOut = Console.out
        ss1.err = Console.out
        ss1.setIsVerbose(true)
-       ss1
-    }
-    
-    def sourceFile( resourceName : String ) : Boolean = {
-       info(s" Sourcing resource ## $resourceName ##")
-       if( track.hasResource( resourceName ) ) {
-         val readFile= track.getResource( resourceName) 
-           info(s" ## Processing SourceFile ## $readFile")
+       _sessionState = ss1
         
-          /// XXX Add variable substitution 
-          readFile.split(";").foreach( q => {
-            if( q.trim.length > 0) {
-               info(s" ## Executing sourced query $q") 
-               if( !executeQuery(q) ) { 
-                  return false
-               }
-            }
-          } )
-          true
-       } else {
-          warn(s"No resource $resourceName available to source.") 
-          false
        }
+       _sessionState
     }
     
     
@@ -185,6 +183,7 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config ))
        /// Hive Driver is somewhat opaque
        info("HIVE_DRIVER Aborting all jobs for Hive Query ")
        HadoopJobExecHelper.killRunningJobs()
+       ///// driver.destroy
     }
     
     
@@ -213,31 +212,8 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config ))
     * 
     */
 
-    override def executeQuery(queryUnclean: String): Boolean = {
+    override def executeQuery(query: String): Boolean = {
         try {
-            val query : String = HiveLocalDriver.stripComments( queryUnclean)
-            if(query.length == 0 ) {
-              return true;
-            }
-            info(s"HIVE_DRIVER :: Executing Query $query")
-            if (query.trim.toLowerCase.startsWith("set")) {
-                val setExpr = query.trim.split(" ")(1)
-                val kv = setExpr.split("=")
-                //// add escaping ???
-                info(s" Setting configuration ${kv(0).trim} to ${kv(1)} ")
-                sessionState.getConf.set(kv(0).trim, kv(1))
-                hiveConf.set(kv(0).trim, kv(1))
-                return true
-            }
-            if( query.trim.toLowerCase.startsWith("source") ) {
-              val cmdArr = query.split(" ")
-              if(cmdArr.size != 2 ) {
-                warn(s" Unable to interpret source command $query ")
-                return false 
-              } else {
-                 return sourceFile(cmdArr(1).replaceAll("'","").trim)
-              }
-            }
 
             var driver  : _root_.org.apache.hadoop.hive.ql.Driver = null
             val response : CommandProcessorResponse = HiveLocalDriver.retry (5) {
@@ -251,6 +227,9 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config ))
                
                val checkConf = confMember.get(driver).asInstanceOf[HiveConf]
                 */
+               if(driver != null) {
+                 driver.close()
+               }
             
             
                 driver = getDriver
@@ -262,10 +241,13 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config ))
                   Console.out.println(s" ERROR SOMEONE OVERWROTE CLASS LOADER IN THREAD CONTEXT Context =  $cl HiveConf = ${hiveConf.getClassLoader} this loader = ${this.getClass.getClassLoader} " )
                   System.out.println(s" ERROR SOMEONE OVERWROTE CLASS LOADER IN THREAD CONTEXT  Context = $cl  HiveConf =  ${hiveConf.getClassLoader} this loader = ${this.getClass.getClassLoader}" )
                 }
-                Thread.currentThread.setContextClassLoader( hiveConf.getClassLoader )
-            	driver.init()
-                driver.run(query)
+                ///Thread.currentThread.setContextClassLoader( hiveConf.getClassLoader )
+                val resp = driver.run(query)
+                driver.close()
+                driver.destroy() 
+                resp
             }
+
             info(s"Response Code ${response.getResponseCode} :: SQLState ${response.getSQLState} ")
             if (response.getResponseCode() != 0) {
                 error(s"HIVE_DRIVER Driver Has error Message ${driver.getErrorMsg()}")
@@ -350,6 +332,7 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config ))
   }
     
   def updateJobMetrics( metricsMap : collection.mutable.Map[String,Any]) : Unit = {
+    if(_sessionState != null) {
     val lastMapRedStats = sessionState.getLastMapRedStatsList
     if( lastMapRedStats != null) {
       val mapRedStats : List[MapRedStats] = lastMapRedStats.toList
@@ -362,7 +345,7 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config ))
           totalMappers += mrs.getNumMap
           totalReducers += mrs.getNumReduce
           
-          println(" Examingng MapRedStats for job " + mrs.getJobId() )
+          println(" Examining MapRedStats for job " + mrs.getJobId() )
           mrs.getCounters.write( new java.io.DataOutputStream(System.out))
           
           //// Printout counters 
@@ -371,6 +354,7 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config ))
       metricsMap.put("TOTAL_NUM_MAPPERS", totalMappers)
       metricsMap.put("TOTAL_NUM_REDUCERS", totalReducers)
       metricsMap.put("TOTAL_CPU_MSEC", totalCpuMsec)
+    }
     }
      
    }
@@ -382,80 +366,134 @@ object HiveDriver extends Logging {
 
   def apply(hiveConf: HiveConf)(implicit track : Track): HiveDriver = {
     try {
+      info( s" ThreadLoader = ${Thread.currentThread.getContextClassLoader}  HiveConfLoader = ${hiveConf.getClassLoader} This loader = ${this.getClass.getClassLoader} ")
       val parentLoader = if (Thread.currentThread.getContextClassLoader != null) {
         Thread.currentThread.getContextClassLoader
       } else {
         hiveConf.getClassLoader
       }
+      info(s" ParentLoader = ${parentLoader} ")
       val auxJars = hiveConf.getAuxJars
      
       info( s" Track libPath is ${track.libPath}")
       info( s" Track resourcePath is ${track.resourcePath}")
-      val urls = track.hdfs.listFiles( track.libPath)
-      val resources = track.hdfs.listFiles( track.resourcePath)
+      ///val urls = track.hdfs.synchronized { track.hdfs.listFiles( track.libPath) }
+      ///val resources = track.hdfs.synchronized { track.hdfs.listFiles( track.resourcePath) }
+      ///val exportFiles = ( urls ++ resources)
+      ///val urlClassLoader = new harmony.java.net.ReverseClassLoader( exportFiles.map( _.path.toUri.toURL).toArray[URL], parentLoader);
+      //val urls =  track.hdfs.listFiles( track.libPath) 
+      val urls =  track.listLibraries 
+      //val resources =  track.hdfs.listFiles( track.resourcePath) 
+      val resources =  track.listResources
       val exportFiles = ( urls ++ resources)
-      val urlClassLoader = harmony.java.net.URLClassLoader.newInstance( exportFiles.map( _.path.toUri.toURL).toArray[URL], parentLoader);
-      urlClassLoader.setLogger( log)
-      urlClassLoader.setName( track.descriptor.trackName)
+      
+      val isolateFlag = track.trackProperties.getProperty("satisfaction.classloader.isolate","true").toBoolean
+      val urlClassLoader = if( isolateFlag) {
+         val cachePath = CachingTrackLoader.getCachePath( track.trackPath ).toString
+         info(s" Using IsolatedClassLoader with a cachePath of $cachePath")
+         
+         val frontLoadClasses =  List("org.apache.hadoop.hive.ql*", 
+    		  "satisfaction.hadoop.hive.HiveLocalDriver", 
+    		  "satisfaction.hadoop.hive.HiveLocalDriver.*", 
+    		  "satisfaction.hadoop.hive.*", 
+    		  "satisfaction.hadoop.hdfs.*",
+    		  "brickhouse.*",
+    		  "com.tagged.udf.*",
+    		  "com.tagged.hadoop.hive.*")
+         val backLoadClasses = List(
+                  "satisfaction.hadoop.hive.HiveSatisfier",
+                  "org.apache.hadoop.hive.conf.*",
+    		      "org.apache.hive.common.*",
+    		      "org.apache.hadoop.hive.common.*",
+                  "org.apache.commons.logging.*",
+                  "org.apache.hadoop.hive.ql.metadata.*",
+                  "org.apache.hadoop.hive.metastore.*"
+                  ////"org.apache.*HiveMetaStoreClient.*",
+                  ///"org.apache.*IMetaStoreClient.*",
+                  ////"org.apache.hadoop.hive.metastore.*",
+                  ///"org.apache.hadoop.hive.ql.lockmgr.*",
+                  ////"org.apache.hadoop.hive.metastore.api.*",
+                  ///"org.apache.*HiveMetaHookLoader.*")
+                  )
+         val isolatedClassLoader = new harmony.java.net.IsolatedClassLoader( exportFiles.map( _.toUri.toURL).toArray[URL], 
+    		  	parentLoader,
+    		  	frontLoadClasses,
+    		  	backLoadClasses, 
+    		  	hiveConf,
+    		  	cachePath);
+         isolatedClassLoader.registerClass(classOf[HiveDriver]);
+         ///isolatedClassLoader.registerClass(classOf[com.tagged.hadoop.hive.serde2.avro.AvroSerDe]);
+         ///isolatedClassLoader.registerClass(classOf[HiveConf]);
+         ////isolatedClassLoader.registerClass(classOf[HiveMetaStoreClient]);
+         /////isolatedClassLoader.registerClass(classOf[HiveMetaHookLoader]);
+         
+         ////isolatedClassLoader.registerClass(classOf[Log]);
+         hiveConf.setVar(HiveConf.ConfVars.HIVE_PERF_LOGGER, "satisfaction.hadoop.hive.BoogerPerfLogger");
+         info( s" LOG CLASSLOADER is ${classOf[Log].getClassLoader}")
+          if( track.trackProperties.contains("satisfaction.classloader.frontload"))  {
+              track.trackProperties.getProperty("satisfaction.classloader.frontload").split(",").foreach( expr => {
+                 isolatedClassLoader.addFrontLoadExpr( expr);
+              })
+          }
+          if( track.trackProperties.contains("satisfaction.classloader.backload"))  {
+             track.trackProperties.getProperty("satisfaction.classloader.backload").split(",").foreach( expr => {
+                isolatedClassLoader.addFrontLoadExpr( expr);
+             })
+         }
+         isolatedClassLoader
+     } else {
+          ///java.net.URLClassLoader.newInstance( exportFiles.map( _.toUri.toURL).toArray[URL], 
+    		  	///parentLoader )
+          java.net.URLClassLoader.newInstance( exportFiles.map( _.toUri.toURL).toArray[URL] )
+      }
+      
+      ////val  checkMetaStoreUtils = classOf[MetaStoreUtils].getDeclaredMethods.filter( _.get )
+      
+      
+      
+      
+
+      ///urlClassLoader.setLogger( log)
+      ///urlClassLoader.setName( track.descriptor.trackName)
 
       hiveConf.setClassLoader( urlClassLoader);
       Thread.currentThread().setContextClassLoader(urlClassLoader)
 
-      val auxJarPath = exportFiles.map( _.path.toUri.toString ).mkString(",")
+      val auxJarPath = exportFiles.map( _.toUri.toString ).mkString(",")
       
       info(" Using AuxJarPath " + auxJarPath)
       hiveConf.setAuxJars( auxJarPath)
       hiveConf.set("hive.aux.jars.path", auxJarPath)
       //// XXX Move to Scala reflection ...
-      val localDriverClass: Class[HiveLocalDriver] = hiveConf.getClass("satisfaction.hadoop.hive.HiveLocalDriver", classOf[HiveLocalDriver]).asInstanceOf[Class[HiveLocalDriver]]
+      info( "Instantiating HiveLocalDriver")
+      val localDriverClass: Class[_] = urlClassLoader.loadClass("satisfaction.hadoop.hive.HiveLocalDriver")
+      info( s" Local Driver Class is $localDriverClass ")
       val constructor = localDriverClass.getConstructor(hiveConf.getClass())
-      val hiveDriver = constructor.newInstance(hiveConf).asInstanceOf[HiveLocalDriver]
-      hiveDriver.track = track
-
-      hiveDriver
-
-    } catch {
-      case e: Exception =>
-        e.printStackTrace(System.out)
-        error("Error while accessing HiveDriver", e)
-        throw e
-    }
-
-  }
-  
-  def serverDriver(hiveConf: HiveConf)(implicit track : Track): HiveDriver = {
-    try {
-      val parentLoader = if (Thread.currentThread.getContextClassLoader != null) {
-        Thread.currentThread.getContextClassLoader
-      } else {
-        hiveConf.getClassLoader
-      }
-      val auxJars = hiveConf.getAuxJars
-     
-      info( s" Track libPath is ${track.libPath}")
-      info( s" Track resourcePath is ${track.resourcePath}")
-      val urls = track.hdfs.listFiles( track.libPath)
-      val resources = track.hdfs.listFiles( track.resourcePath)
-      val exportFiles = ( urls ++ resources)
-      val urlClassLoader = harmony.java.net.URLClassLoader.newInstance( exportFiles.map( _.path.toUri.toURL).toArray[URL], parentLoader);
-      urlClassLoader.setLogger( log)
-      urlClassLoader.setName( track.descriptor.trackName)
-
-      hiveConf.setClassLoader( urlClassLoader);
-      Thread.currentThread().setContextClassLoader(urlClassLoader)
-
-      val auxJarPath = exportFiles.map( _.path.toUri.toString ).mkString(",")
+      val satisfactionHiveConf = new SatisfactionHiveConf(hiveConf)
+      satisfactionHiveConf.setClassLoader( urlClassLoader)
       
-      info(" Using AuxJarPath " + auxJarPath)
-      hiveConf.setAuxJars( auxJarPath)
-      hiveConf.set("hive.aux.jars.path", auxJarPath)
-      //// XXX Move to Scala reflection ...
-      val serverDriverClass: Class[HiveServerDriver] = hiveConf.getClass("satisfaction.hadoop.hive.HiveServerDriver", classOf[HiveServerDriver]).asInstanceOf[Class[HiveServerDriver]]
-      val constructor = serverDriverClass.getConstructor(hiveConf.getClass())
-      val hiveDriver = constructor.newInstance(hiveConf).asInstanceOf[HiveServerDriver]
-      ///hiveDriver.track = track
+      val newHive  = Hive.set( Hive.get( satisfactionHiveConf,true))
 
-      hiveDriver
+      val hiveLocalDriver = constructor.newInstance(satisfactionHiveConf)
+      info( s" Hive Local Driver is ${hiveLocalDriver} ${hiveLocalDriver.getClass} ")
+
+      
+      hiveLocalDriver match {
+        case traitDriver : HiveDriver => {
+            info(s" Local Driver $hiveLocalDriver is Trait Driver $traitDriver" )
+            return traitDriver
+        }
+        case _ => {
+          error(s" LocalDriver $hiveLocalDriver really isn't a Hive Driver !!!!")
+          warn(s" LocalDriver $hiveLocalDriver really isn't a Hive Driver !!!!")
+          error( s" HiveDriver Class is  ${classOf[HiveDriver]} ${classOf[HiveDriver].hashCode()} Loader is ${classOf[HiveDriver].getClassLoader} ")
+          error( " TRAITS of localDriver ")
+          localDriverClass.getInterfaces().foreach( ifc => {
+               error( s" TRAIT CLASS ${ifc} ${ifc.getCanonicalName} ${ifc.hashCode} ${ifc.getClassLoader} ") 
+          })
+          throw new RuntimeException(s" LocalDriver $hiveLocalDriver really isn't a Hive Driver !!!!")
+        }
+      }
 
     } catch {
       case e: Exception =>
@@ -466,6 +504,20 @@ object HiveDriver extends Logging {
 
   }
   
+}
+
+
+class SatisfactionHiveConf(hc : HiveConf) extends HiveConf(hc) with Logging {
+  
+  /**
+   *   Don't Cache !!!
+   */
+  override def getClassByName( className : String ) : Class[_] = {
+      info(s" Loading HiveConf class $className with ClassLoader ${getClassLoader}" ) 
+      
+      getClassLoader.loadClass(className)
+  }
+
   
 }
 
@@ -493,23 +545,6 @@ class HiveDriverHook extends HiveDriverRunHook with Logging {
 }
   
 object HiveLocalDriver {
-  val HiveCommentDelimiter = "---"
-
-  /**
-   *  Strip out comments starting with  ---,
-   *  So that we can have comments in our Hive scripts ..
-   *   #KillerApp
-   */ 
-  def stripComments( queryString : String ) : String = {
-    queryString.split("\n").map( line => {
-       if( line.contains(HiveCommentDelimiter) ) {
-          line.substring( 0, line.indexOf(HiveCommentDelimiter)) 
-       } else {
-          line  
-       }
-     }
-    ).mkString("\n").trim
-  }
   
 
   /**
@@ -531,7 +566,9 @@ object HiveLocalDriver {
                 throw retry
            }
         } 
-        case unexpected : Throwable => throw unexpected
+        case unexpected : Throwable => {
+          throw unexpected
+        }
       }
     }
     null.asInstanceOf[T]

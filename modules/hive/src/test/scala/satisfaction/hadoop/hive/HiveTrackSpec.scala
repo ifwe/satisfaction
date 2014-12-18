@@ -1,6 +1,5 @@
 package satisfaction
-package hadoop
-package hive
+package hadoop.hive
 
 import org.specs2.mutable._
 import scala.concurrent.duration._

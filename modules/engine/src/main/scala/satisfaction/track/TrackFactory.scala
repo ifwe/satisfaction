@@ -53,12 +53,44 @@ case class TrackFactory(val trackFS : FileSystem,
       })
   }
   
+ 
+ /**
+  *  XXX Move caching to utility ...
+  *  XXX allow it to be resettable 
+  */
+ class  Cacheable[T](val  maxAge : Long, genFunc : ()  => T ) {
+   private var _lastAccessed : Long =  System.currentTimeMillis()
+   private var _cached : Option[T]  = None
+  
+   def get() : T = {
+     _cached match {
+       case None => {
+         _cached = Some(genFunc() )
+         _cached.get
+       }
+       case Some(tObj) => {
+         if( System.currentTimeMillis - _lastAccessed >= maxAge ) {
+           _cached = Some( genFunc()  )
+           _cached.get
+         } else {
+           tObj 
+         }
+       }
+     }
+   } 
+}
    
    /** 
     *  Get all the tracks which have been deployed to HDFS under the
     *   Satisfaction base track path.
     */
    def getAllTracks : Seq[TrackDescriptor] = {
+      _cachedAllTracks.get
+   }
+   
+   private val _cachedAllTracks = new Cacheable( 60*1000*30, _getAllTracks )
+   
+   private def _getAllTracks() : Seq[TrackDescriptor] = {
      try {
       val trackRoot : Path =  baseTrackPath / "track" 
       
@@ -224,7 +256,7 @@ case class TrackFactory(val trackFS : FileSystem,
      
       val jarPath = trackPath / trackJar
       info(s" Getting track from jar ${jarPath.toUri} ")
-      val trackClazzOpt = loadTrackClass( trackPath  / trackJar, trackClassName )
+      val trackClazzOpt = loadTrackClass( trackProps, trackPath  / trackJar, trackClassName )
       trackClazzOpt match {
         case Some(trackClazz)  =>
          val track = trackClazz.newInstance 
@@ -251,69 +283,30 @@ case class TrackFactory(val trackFS : FileSystem,
      }
    }
    
-   /// XXX Move to static method
-   def jarURLS( jarPath : Path ) : Array[java.net.URL] = {
-     if( trackFS.isDirectory( jarPath) ) {
-       trackFS.listFiles( jarPath).filter( _.path.toString.endsWith(".jar")).map( _.path.toUri.toURL).toArray
-     } else {
-        val hdfsUri = jarPath.toUri
-        if( jarPath.toString.endsWith(".jar")) {
-          ///val jarUrl = new java.net.URL( s"jar:/${hdfsUri}")
-          val jarUrl = hdfsUri.toURL
-          Array( jarUrl)
-        } else {
-          val hdfsUrl = hdfsUri.toURL
-          Array( hdfsUrl)
-        }
-     }
-   }
-   
-   def trackClassLoader( jarPath: Path) : ClassLoader = {
-      ///val urlClassloader = new java.net.URLClassLoader(jarURLS( jarPath), this.getClass.getClassLoader)
-      val urlClassloader = new java.net.URLClassLoader(jarURLS( jarPath),this.getClass.getClassLoader)
-      Thread.currentThread.setContextClassLoader(urlClassloader)
-      
-      urlClassloader.getURLs.foreach( earl => {
-         info(s" using jar URL $earl ")
-      } ) 
-     
-      urlClassloader
-   }
-
-  def loadTrackClass( jarPath : Path , trackClassName : String ) : Option[Class[_ <: Track]]  = {
-     try {
-      
-      val trackClassloader = trackClassLoader( jarPath)
+  def loadTrackClass( trackProps : Map[String,String], jarPath : Path , trackClassName : String ) : Option[Class[_ <: Track]]  = {
+       val trackLoader : TrackLoader = if( trackProps.contains("satisfaction.track.trackLoaderClass") ) {
+          val loaderClassName = trackProps.get("satisfaction.track.trackLoaderClass").get
+          try {
+             val trackLoaderClass = Class.forName( loaderClassName).asInstanceOf[Class[TrackLoader]]
+          
+             val constructor = trackLoaderClass.getConstructor( classOf[TrackFactory],  classOf[Map[String,String]] )
+             constructor.newInstance(this, trackProps)
+          } catch {
+            case unexpected : Throwable => {
+              error(s"Unable to create TrackLoader $loaderClassName because of ${unexpected.getMessage} ; Defaulting to DefaultTrackLoader ", unexpected)
+              new DefaultTrackLoader(this,trackProps) 
+            }
+          }
+          
+       } else {
+          new DefaultTrackLoader(this,trackProps) 
+       }
       
       
-      //// Accessing object instances 
-      ///val scalaName = if (trackClassName endsWith "$") trackClassName else (trackClassName + "$")
-      //// XXX allow scala companion objects 
-      val scalaName = trackClassName
+       val classLoader = trackLoader.createClassLoader(jarPath)
+       
+       trackLoader.loadTrackClass(trackClassName, classLoader)
       
-      val scalaClass = trackClassloader.loadClass( scalaName)
-      info( " Scala Class is " + scalaClass.getCanonicalName())
-      
-      info(" Scala Parent class = " + scalaClass.getSuperclass() + " :: " + scalaClass.getSuperclass.getCanonicalName())
-      
-      val t1Class = classOf[Track]
-      info(" Track class = " + t1Class + " :: " + t1Class.getCanonicalName())
-      
-      val tClass = scalaClass.asSubclass( classOf[Track])
-      val cons = tClass.getDeclaredConstructors(); 
-      cons.foreach( _.setAccessible(true) );
-      
-      println( " Track Scala Class is " + tClass + " :: " + tClass.getCanonicalName())
-      Some(tClass)
-     } catch {
-         case e : Throwable =>
-           /// XXX Case match any catch all throwable
-           e.printStackTrace(System.out)
-           error(" Could not find Track class ",e)
-           None
-     }
-     
-     
    }
    
    /**

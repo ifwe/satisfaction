@@ -1,6 +1,5 @@
 package satisfaction
-package hadoop
-package hive
+package hadoop.hive
 
 import _root_.org.apache.hadoop.hive.ql.parse.ParseDriver
 import _root_.org.apache.hadoop.hive.ql.parse._
@@ -8,6 +7,7 @@ import _root_.org.apache.hadoop.hive.ql.parse.ParseException
 import scala.collection.JavaConversions._
 import satisfaction.DataOutput
 import satisfaction.DataInstance
+import satisfaction.hadoop.Config
 import satisfaction.hadoop.hive.ms.HiveTablePartition
 import _root_.org.apache.hadoop.hive.ql.tools.LineageInfo
 import _root_.org.apache.hadoop.hive.ql.optimizer.index.RewriteParseContextGenerator

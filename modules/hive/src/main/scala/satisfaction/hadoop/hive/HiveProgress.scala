@@ -1,6 +1,5 @@
 package satisfaction
-package hadoop
-package hive
+package hadoop.hive
 
 import satisfaction.ProgressCounter
 import scala.collection.immutable.List
@@ -9,6 +8,7 @@ import satisfaction.GoalState
 import collection.JavaConversions._
 import _root_.org.apache.hadoop.hive.ql.exec.mr.MapRedTask
 import _root_.org.apache.hadoop.hive.ql.exec.mr.HadoopJobExecHelper
+import satisfaction.hadoop.HadoopJobProgress
 
 class HiveProgress( val localDriver : HiveLocalDriver )  extends ProgressCounter {
   

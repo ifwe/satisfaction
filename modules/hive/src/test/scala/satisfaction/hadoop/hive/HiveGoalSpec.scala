@@ -1,8 +1,7 @@
 package satisfaction
-package hadoop
-package hive
+package hadoop.hive
 
-import org.specs2.mutable._
+import _root_.org.specs2.mutable._
 import scala.concurrent.duration._
 import org.joda.time.DateTime
 import org.specs2.runner.JUnitRunner

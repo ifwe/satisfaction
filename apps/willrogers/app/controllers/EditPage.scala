@@ -39,7 +39,7 @@ object EditPage extends play.api.mvc.Controller {
   
     def getResources( track : Track) : List[String] = {
       ///trackFactory.trackFS.listFiles( track.trackPath / "resource" ).map( _.getPath.toUri.getPath.split("/").last).toList
-      track.listResources.map( _.split("/").last).toList
+      track.listResources.map( _.name.split("/").last).toList
       
     }
   

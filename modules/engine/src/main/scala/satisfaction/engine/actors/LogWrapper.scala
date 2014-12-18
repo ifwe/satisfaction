@@ -164,7 +164,6 @@ object LogWrapper {
     def numAttemptsForGoalWitness( track: TrackDescriptor, goalName : String, witness : Witness ) : Int = {
     	
        val checkPath = logPathForGoalWitness(track,goalName, witness)
-       	localFS.listFiles(checkPath.parent).foreach(file => println("  file:" + file))
        localFS.listFiles(checkPath.parent).count( _.path.name.startsWith( checkPath.name) )
     }
     
@@ -186,7 +185,7 @@ object LogWrapper {
         LocalFileSystem.copyToFileSystem( track.hdfs, localPath, destPath) 
       } catch {
         case unexpected : Throwable =>
-          System.out.println(" Unexpected error copying logs ot HDFS" + unexpected)
+          System.out.println(" Unexpected error copying logs out to HDFS" + unexpected)
           unexpected.printStackTrace
       }
     }

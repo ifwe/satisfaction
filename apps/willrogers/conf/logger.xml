@@ -9,7 +9,7 @@
     </encoder>
   </appender>
 
- <appender name="FILE" class="ch.qos.logback.core.RollingFileAppender">
+ <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
      <file>${application.home}/logs/application.log</file>
      <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
          <!-- daily rollover -->
@@ -28,6 +28,7 @@
 
  <logger name="play" level="INFO" />
  <logger name="application" level="INFO" />
+ <logger name="org.apache.hadoop.hdfs" level="OFF" />
 
 
   <root level="INFO">

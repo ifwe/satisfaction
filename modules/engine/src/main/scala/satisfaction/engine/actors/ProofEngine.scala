@@ -22,15 +22,19 @@ import satisfaction.notifier.Notifier
 import akka.actor.Actor
 import akka.actor.ActorLogging
 import satisfaction.retry.Retryable
+import akka.actor.DeadLetter
+import com.typesafe.config.ConfigFactory
 
 class ProofEngine( val trackHistoryOpt : Option[TrackHistory] = None) extends  satisfaction.Logging{
 
-    implicit val akkaSystem = ActorSystem("satisfaction")
+    implicit val config : com.typesafe.config.Config = ConfigFactory.load
+    implicit val akkaSystem = ActorSystem("satisfaction", config ,this.getClass.getClassLoader)
     val proverFactory = {
        val actorRef = akkaSystem.actorOf(Props( classOf[ProverFactory], trackHistoryOpt), "ProverFactory")
+       akkaSystem.eventStream.subscribe(actorRef, classOf[DeadLetter])
        actorRef
     }
-    implicit val timeout = Timeout(24 hours) /// Configure !!!!
+    implicit val timeout = Timeout(10 minutes) /// Configure !!!!
     
     
     

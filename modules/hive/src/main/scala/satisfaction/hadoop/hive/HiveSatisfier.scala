@@ -1,6 +1,5 @@
 package satisfaction
-package hadoop
-package hive
+package hadoop.hive
 
 import _root_.org.joda.time.format.DateTimeFormat
 import _root_.org.joda.time.Days
@@ -10,7 +9,7 @@ import _root_.org.apache.hadoop.hive.ql.metadata.HiveException
 import _root_.org.apache.hadoop.hive.conf.HiveConf
 
 case class HiveSatisfier(val queryResource: String, val conf : HiveConf)( implicit val track : Track) 
-      extends Satisfier with MetricsProducing with Progressable with Logging {
+      extends Satisfier with MetricsProducing with Progressable with Logging with java.io.Closeable {
 
    override def name = s"Hive( $queryResource )" 
   
@@ -21,17 +20,24 @@ case class HiveSatisfier(val queryResource: String, val conf : HiveConf)( implic
        ///HiveDriver.serverDriver( conf)
    } 
    
+   /** 
+    *   For closeable 
+    */
+   override def close() = {
+       info(s" Closing Hive Satisfier")
+       driver.close 
+   }
+   
 
-    def executeMultiple( hql: String): Boolean = {
+    def executeMultiple( hql: String, allProps : Witness): Boolean = {
         queries(hql).foreach(query => {
             if (query.trim.length > 0) {
                 info(s" Executing query $query")
-                val results = driver.executeQuery(query.trim)
+                val results = execute(query.trim, allProps)
                 if (!results)
                     return results
             }
         })
-        driver.close
         true
     }
     
@@ -73,6 +79,51 @@ case class HiveSatisfier(val queryResource: String, val conf : HiveConf)( implic
        hql.split(";")
     }
     
+       
+    def sourceFile( resourceName : String, allProps : Witness ) : Boolean = {
+       info(s" Sourcing resource ## $resourceName ##")
+       if( track.hasResource( resourceName ) ) {
+           val readFile= track.getResource( resourceName) 
+           info(s" ## Processing SourceFile ## $readFile")
+           val result = substituteAndExecQueries( readFile, allProps)
+           result.isSuccess
+       } else {
+          warn(s"No resource $resourceName available to source.") 
+          false
+       }
+    }
+    
+    
+
+    def execute( queryUnclean : String, allProps : Witness ) : Boolean = {
+   	  val query : String = HiveSatisfier.stripComments( queryUnclean)
+      if(query.length == 0 ) {
+    	return true;
+      }
+      info(s"HIVE_SATISFIER :: Executing Query $query")
+      if (query.trim.toLowerCase.startsWith("set")) {
+    	val setExpr = query.trim.split(" ")(1)
+    	val kv = setExpr.split("=")
+    	//// add escaping ???
+        info(s" Setting configuration ${kv(0).trim} to ${kv(1)} ")
+    	driver.setProperty( kv(0).trim, kv(1))
+    	return true
+      }
+      if( query.trim.toLowerCase.startsWith("source") ) {
+    	val cmdArr = query.split(" ")
+    	if(cmdArr.size != 2 ) {
+    	  warn(s" Unable to interpret source command $query ")
+    	  return false 
+    	} else {
+    	  return sourceFile(cmdArr(1).replaceAll("'","").trim, allProps)
+   		}
+      }
+      val result = driver.executeQuery( query)
+      info(s"HIVE_SATISFIER : Driver returned $result")
+      result
+    }
+
+    
     def substituteAndExecQueries( queryString : String, allProps : Witness) : ExecutionResult = {
       /// XXX If source statements 
       ///  propagate variables to driver ...
@@ -85,7 +136,7 @@ case class HiveSatisfier(val queryResource: String, val conf : HiveConf)( implic
             case Right(query) =>
                 try {
                     info(" Beginning executing Hive queries ..")
-                    val result=  executeMultiple( query)
+                    val result=  executeMultiple( query, allProps)
                     //// XXX refactor to get each individual query
                     execResult.metrics.mergeMetrics( jobMetrics)
                     if( result ) { execResult.markSuccess() } else { execResult.markFailure() }
@@ -104,34 +155,62 @@ case class HiveSatisfier(val queryResource: String, val conf : HiveConf)( implic
     override def satisfy(params: Witness): ExecutionResult = {
         val allProps = track.getTrackProperties(params)
         info(s" Track Properties is $allProps ; Witness is $params ")
-        if( track.hasResource("setup.hql")) {
-           val setupResult = loadSetup(allProps)
-           if( ! setupResult.isSuccess) {
-              return setupResult
-           }
-        }
-        substituteAndExecQueries(queryTemplate, allProps)
+        //// Avoid deadlock on accessing track
+        ///track.synchronized { 
+          if( track.hasResource("setup.hql")) {
+             val setupResult = loadSetup(allProps)
+             if( ! setupResult.isSuccess) {
+               return setupResult
+             }
+          }
+        ///}
+        val res = substituteAndExecQueries(queryTemplate, allProps)
+        res
     }
+
     
     @Override 
     override def abort() : ExecutionResult =  robustly {
        driver.abort
        true
     }
-
-      
+    
     
    ///
     def jobMetrics : MetricsCollection =  {
        if( driver.isInstanceOf[MetricsProducing])  {
            val mpDriver = driver.asInstanceOf[MetricsProducing] 
-            mpDriver.jobMetrics
+            val metrics = mpDriver.jobMetrics
+            //// XXX Have well defined close 
+            metrics
+            
        } else {
          new MetricsCollection("Hive Query")
        }
     }
    
-    
    
+}
+
+object HiveSatisfier {
+    val HiveCommentDelimiter = "---"
+
+  /**
+   *  Strip out comments starting with  ---,
+   *  So that we can have comments in our Hive scripts ..
+   *   #KillerApp
+   */ 
+  def stripComments( queryString : String ) : String = {
+    queryString.split("\n").map( line => {
+       if( line.contains(HiveCommentDelimiter) ) {
+          line.substring( 0, line.indexOf(HiveCommentDelimiter)) 
+       } else {
+          line  
+       }
+     }
+    ).mkString("\n").trim
+  }
+  
+  
 }
 

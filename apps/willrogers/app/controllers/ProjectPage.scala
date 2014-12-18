@@ -86,7 +86,7 @@ object ProjectPage extends Controller {
        val trackOpt : Option[Track] = trackFactory.getTrack( trackDesc)
        trackOpt match {
          case Some(track) =>
-           val files = track.listResources.map(_.split("/").last).toList
+           val files = track.listResources.map( _.name.split("/").last).toList
            Ok(Json.toJson(files)).as("application/json")
          case None => 
            Ok(Json.toJson("")).as("application/json")

@@ -31,7 +31,7 @@ case class PartitionExistsSatisfier(
         } catch {
           //// In a race condition, if another track wants to check
           //// for the same partition at the same time, 
-          ////  A "AlreadyExistsPartition may be thrown
+          ////  An "AlreadyExistsException" may be thrown
           case hiveExc  : HiveException => {
              hiveExc.getCause match {
                case alreadyExists : AlreadyExistsException => {
@@ -69,8 +69,19 @@ case class PartitionExistsSatisfier(
     
     override def exists(w: Witness): Boolean = {
       table.getPartition(w ++ extraAssignments) match {
-        case Some(p) => true
-        case None => false
+        case Some(p) => {
+          info(s" Found Partition for Table ${table.dbName}::${table.tblName} $w")
+          if(p.isMarkedCompleted) {
+             true
+          } else {
+            warn(s" Found Partition for Table ${table.dbName}::${table.tblName} $w ; But it is not marked Complete")
+            false 
+          }
+        }
+        case None =>  {
+          info(s" Could not find Partition for Table ${table.dbName}::${table.tblName} $w")
+          false
+        }
       }
     }
     

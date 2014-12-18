@@ -1,17 +1,17 @@
 package satisfaction
-package hadoop
-package hive
+package hadoop.hive
 
-import org.specs2.mutable._
-import org.specs2.runner.JUnitRunner
-import org.junit.runner.RunWith
-import org.apache.log4j.Logger
-import org.apache.log4j.Level
+import _root_.org.specs2.mutable._
+import _root_.org.specs2.runner.JUnitRunner
+import _root_.org.junit.runner.RunWith
 import satisfaction.MetricsProducing
-import org.apache.hadoop.hive.conf.HiveConf
+import _root_.org.apache.hadoop.hive.conf.HiveConf
 import java.io.File
 import satisfaction.fs.Path
-import org.apache.hadoop.hive.conf.HiveConf.ConfVars
+import satisfaction.Track
+import satisfaction._
+import satisfaction.hadoop._
+import _root_.org.apache.hadoop.hive.conf.HiveConf.ConfVars
 
 @RunWith(classOf[JUnitRunner])
 class HiveDriverSpec extends Specification {

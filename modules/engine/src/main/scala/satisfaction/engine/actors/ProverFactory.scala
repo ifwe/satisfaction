@@ -208,6 +208,12 @@ class ProverFactory( trackHistoryOpt : Option[TrackHistory] = None) extends Acto
             val activeActors = _actorMap.values.toSet
             sender ! activeActors
 
+        /**
+          *  Let's see if we are receiving dead letters
+          */
+        case dead : DeadLetter =>
+          log.warning(s" Received DeadLetter $dead MESSAGE = ${dead.message} SENDER= ${dead.sender} RECIPIENT = ${dead.recipient}" )
+          
     }
 
     def publishMessageToListeners(goalStatus: GoalStatus, message: Any) = {

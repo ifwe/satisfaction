@@ -40,6 +40,10 @@ class HiveServerDriver( val hiveConf : HiveConf ) extends HiveDriver with satisf
       
     }
     
+    override def setProperty( key : String, value : String ) = {
+       hiveConf.set( key, value)
+    }
+    
     override def abort()  = {
       info(" Aborting !!")
            /// Not sure this works with multiple Hive Goals ...
