@@ -123,7 +123,7 @@ object ApplicationBuild extends Build {
     version in Rpm := resolveRpmVersion(),
 
     ////rpmRelease in Rpm:= resolveRpmVersion(),
-    rpmRelease in Rpm := "10",
+    rpmRelease in Rpm := "1",
     packageSummary in Rpm := "wyman",
     packageSummary in Linux := "wyman",
     rpmVendor in Rpm := "Tagged.com",
