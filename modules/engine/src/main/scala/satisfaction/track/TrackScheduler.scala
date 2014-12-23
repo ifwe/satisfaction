@@ -61,7 +61,7 @@ case class TrackScheduler( val proofEngine : ProofEngine ) extends Logging  {
            trckOpt match {
 	             case Some(trck) if (pausable && isRunning(trck)) => // define "already running"
 	               //// XXX Add onto queue if done ...
-                   log.info("   this instance of me cannot run - going to discard now")
+                   log.info(s" Track ${trck.descriptor.trackName} is already running - going to discard now")
 	             case Some(trck) =>
 	               val witness = generateWitness(trck, DateTime.now)
 		           trck.topLevelGoals.foreach( goal => { 
@@ -74,7 +74,7 @@ case class TrackScheduler( val proofEngine : ProofEngine ) extends Logging  {
 		                         trck match {
 	                               case always : Constantly => {
 		                            if( gs.state == GoalState.Success ||  always.retryOnFailure ) {
-	                                  log.info(" Track is constantly Recurring; restarting in " + always.delayInterval)
+	                                  log.info(s" Track ${trck.descriptor.trackName} is constantly Recurring; restarting in " + always.delayInterval)
 	                                  val schedMess = AddOneTimeSchedule(startGoalActor, always.delayInterval , mess, true)
 		                              sendScheduleMessage( mess.trackDesc, schedMess, always.scheduleString , false)
 		                            }
@@ -86,6 +86,23 @@ case class TrackScheduler( val proofEngine : ProofEngine ) extends Logging  {
 		                     }
 		                  }
 		                }
+		        	    //// Need to capture failures as well
+		        	    goalFuture.onFailure {
+		        	      case unexpected : Throwable => {
+		        	        log.error(s" Unexpected Error while running ${trck.descriptor.trackName} for Witness $witness ; ${unexpected.getMessage()} ", unexpected)
+		                    trck match {
+	                          case always : Constantly => {
+		                        if( always.retryOnFailure ) {
+	                              log.info(s" Track ${trck.descriptor.trackName} is constantly Recurring and restarts on error ; restarting in " + always.delayInterval)
+	                              val schedMess = AddOneTimeSchedule(startGoalActor, always.delayInterval , mess, true)
+		                            sendScheduleMessage( mess.trackDesc, schedMess, always.scheduleString , false)
+		                        } else {
+	                              log.info(s" Track ${trck.descriptor.trackName} is constantly Recurring but no restart on error.")
+		                        }
+	                          }
+		        	        }
+		        	      } 
+		        	    }
 		              } )
 	             case None =>
 	              println(" Track " + mess.trackDesc.trackName + " not found ")

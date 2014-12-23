@@ -11,6 +11,7 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLStreamHandler;
 import java.net.URLStreamHandlerFactory;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -86,6 +87,7 @@ public class CachingURLStreamHandlerFactory implements URLStreamHandlerFactory {
 	}
 	
 	private class CacheingUrlStreamHandler extends URLStreamHandler {
+        private Path _tempDir;
 
 		@Override
 		protected URLConnection openConnection(URL jarURL) throws IOException {
@@ -117,7 +119,8 @@ public class CachingURLStreamHandlerFactory implements URLStreamHandlerFactory {
 					InputStream hdfsStream = hdfsConnection.getInputStream();
 					System.out.println(fileURL.getFile() + " HDFS HAS AVAILABLE " + hdfsStream.available());
 
-					Path tempPath= Files.createTempFile("satisfaction", ".jar" );
+
+					Path tempPath= Files.createTempFile(tempDir(), "satisfaction", ".jar" );
 					Files.deleteIfExists(tempPath);
 					Files.copy( hdfsStream, tempPath );
 
@@ -140,6 +143,15 @@ public class CachingURLStreamHandlerFactory implements URLStreamHandlerFactory {
 				exc.printStackTrace();
 				throw new IOException("Trouble caching connection " + jarURL , exc);
 			}
+		}
+		
+		
+		protected Path tempDir() throws IOException {
+			if(_tempDir == null) {
+			   Path currentDir = FileSystems.getDefault().getPath(System.getProperty("user.dir"));
+			   _tempDir = Files.createTempDirectory(currentDir, "satis_cache");
+			}
+			return _tempDir;
 		}
 
 	}
