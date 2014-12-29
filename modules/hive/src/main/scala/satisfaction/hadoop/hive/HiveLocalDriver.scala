@@ -15,13 +15,14 @@ import _root_.org.apache.hadoop.hive.ql.QueryPlan
 import _root_.org.apache.hadoop.hive.ql.exec.mr.HadoopJobExecHelper
 import _root_.org.apache.hadoop.hive.ql.metadata.Hive
 import _root_.org.apache.hadoop.hive.ql.processors.CommandProcessorResponse
-import _root_.org.apache.hadoop.hive.ql.session.SessionState
 import satisfaction.Logging
 import satisfaction.MetricsCollection
 import satisfaction.MetricsProducing
 import satisfaction.ProgressCounter
 import satisfaction.Progressable
 import satisfaction.hadoop.Config
+import java.io.File
+import harmony.java.net.IsolatedClassLoader
 
 
 /**
@@ -29,7 +30,7 @@ import satisfaction.hadoop.Config
  *    the internal 'SessionState' interface
  */
 
-class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config ))
+class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config ) )
       extends satisfaction.hadoop.hive.HiveDriver with MetricsProducing with Progressable with Logging {
  
             
@@ -37,10 +38,12 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config ))
     val newHive  = Hive.set( Hive.get(hiveConf,true))
     
     ///lazy val driver : _root_.org.apache.hadoop.hive.ql.Driver = {
-    def getDriver : _root_.org.apache.hadoop.hive.ql.Driver = {
+    ////def getDriver : _root_.org.apache.hadoop.hive.ql.Driver = {
+    def getDriver : Wrapper = {
 
         
-        val cl = this.getClass.getClassLoader
+        val cl = this.getClass.getClassLoader() 
+        info( " HiveLocalDriver getDriver  Cl = " + cl )
         info( " HiveLocalDriver getDriver  ClassLoader = " + this.getClass.getClassLoader.getClass().getName() )
         info( " HiveLocalDriver getDriver  ThreadLoader= = " + Thread.currentThread().getContextClassLoader().getClass().getName() )
         ////Thread.currentThread().setContextClassLoader(this.getClass.getClassLoader)
@@ -58,14 +61,19 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config ))
         * 
         */
         try {
+          /***
         val  apacheHiveDriverClass = cl.loadClass("org.apache.hadoop.hive.ql.Driver")
         val dr = apacheHiveDriverClass.getConstructor( classOf[HiveConf]).newInstance( hiveConf).asInstanceOf[_root_.org.apache.hadoop.hive.ql.Driver]
         //// implicitly use same classloader as this 
           ///val dr = new _root_.org.apache.hadoop.hive.ql.Driver( hiveConf)
-          info( s" New APACHE DRIVER = $dr  CLASS LOADER = ${dr.getClass.getClassLoader}" )
+           * ***
+           */
+          
+          val dr = Wrapper.withConstructor( "org.apache.hadoop.hive.ql.Driver", cl, Array[Class[_]]( classOf[HiveConf] ) , Array(  hiveConf ) )
+          info( s" New APACHE DRIVER = ${dr.wrapped}  CLASS LOADER = ${dr.wrapped.getClass.getClassLoader}" )
         
         
-          dr.init
+          dr.->("init")
            dr
         
         }  catch {
@@ -106,24 +114,25 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config ))
     
     def getQueryPlan( query: String ) : QueryPlan = {
        val driver = getDriver
-       val retCode = driver.compile(query)
+       val retCode = driver.->("compile",query)
        info(s" Compiling $query  has return Code $retCode ")
        
-       driver.getPlan()
+       driver.->("getPlan").asInstanceOf[QueryPlan]
     }
     
     
-    private var _sessionState :SessionState = null
-    lazy val sessionState: SessionState  = {
+    private var _sessionState : Wrapper = null
+    ////lazy val sessionState: SessionState  = {
+    lazy val sessionState: Wrapper  = {
        info(s" Starting SessionState !!!")
        if( _sessionState == null) {
-       val ss1 : SessionState = SessionState.start( hiveConf)
-       ss1.out = Console.out
-       ss1.info = Console.out
-       ss1.childErr = Console.out
-       ss1.childOut = Console.out
-       ss1.err = Console.out
-       ss1.setIsVerbose(true)
+       val ss1 : Wrapper  = new Wrapper( Wrapper.execStatic( "org.apache.hadoop.hive.ql.session.SessionState", this.getClass.getClassLoader, "start",  new HiveConf(hiveConf)) )
+       ss1 ##= ( "out", Console.out)
+       ss1 ##= ( "info" , Console.out )
+       ss1 ##= ( "childErr" , Console.out )
+       ss1 ##= ( "childOut" , Console.out )
+       ss1 ##= ( "err" , Console.out )
+       ss1.execWithParams( "setIsVerbose",Array[Class[_]]( java.lang.Boolean.TYPE ), Array( new java.lang.Boolean(true)))
        _sessionState = ss1
         
        }
@@ -168,7 +177,7 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config ))
     override def executeQuery(query: String): Boolean = {
         try {
 
-            var driver  : _root_.org.apache.hadoop.hive.ql.Driver = null
+            var driver  : Wrapper = null
             val response : CommandProcessorResponse = HiveLocalDriver.retry (5) {
               /**
                 if( !checkSessionState ) {
@@ -181,12 +190,14 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config ))
                val checkConf = confMember.get(driver).asInstanceOf[HiveConf]
                 */
                if(driver != null) {
-                 driver.close()
+                 driver.->("close")
                }
             
             
                 driver = getDriver
-            	SessionState.setCurrentSessionState( sessionState )
+                sessionState.execStatic("setCurrentSessionState", sessionState.wrapped)
+                info( s" SESSION STATE CL = ${sessionState.wrapped} ${sessionState.wrappedClass.getClassLoader} ")
+            	////SessionState.setCurrentSessionState( sessionState )
             	val cl = Thread.currentThread().getContextClassLoader();
                 if( cl != hiveConf.getClassLoader() ) {
                   error(s" ERROR SOMEONE OVERWROTE CLASS LOADER IN THREAD CONTEXT  $cl ${hiveConf.getClassLoader}" )
@@ -195,24 +206,25 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config ))
                   System.out.println(s" ERROR SOMEONE OVERWROTE CLASS LOADER IN THREAD CONTEXT  Context = $cl  HiveConf =  ${hiveConf.getClassLoader} this loader = ${this.getClass.getClassLoader}" )
                 }
                 ///Thread.currentThread.setContextClassLoader( hiveConf.getClassLoader )
-                val resp = driver.run(query)
-                driver.close()
-                driver.destroy() 
+                val resp = driver.->("run",query).asInstanceOf[CommandProcessorResponse]
+                driver.->("close")
+                driver.->("destroy")
                 resp
             }
 
             info(s"Response Code ${response.getResponseCode} :: SQLState ${response.getSQLState} ")
             if (response.getResponseCode() != 0) {
-                error(s"HIVE_DRIVER Driver Has error Message ${driver.getErrorMsg()}")
+                error(s"HIVE_DRIVER Driver Has error Message ${driver.->("getErrorMsg")}")
                 error(s"Error while processing statement: ${response.getErrorMessage()} ${response.getSQLState()} ${response.getResponseCode()}" );
                 
-                val driverClass = driver.getClass
+                val driverClass = driver.wrapped.getClass
                 
+                /// XXX Use wrapper class ...
                 val errorMember =  driverClass.getDeclaredFields.filter( _.getName().endsWith("Error"))(0)
                
                 errorMember.setAccessible(true)
                 
-                val errorStack : Throwable = errorMember.get( driver).asInstanceOf[Throwable]
+                val errorStack : Throwable = errorMember.get( driver.wrapped).asInstanceOf[Throwable]
                 if( errorStack !=null) {
                    error(s"HIVE ERROR :: ERROR STACK IS $errorStack :: ${errorStack.getLocalizedMessage()} ")
                    if(errorStack.getCause != null) 
@@ -221,16 +233,17 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config ))
                   error("HIVE ERROR :: ErrorStack is not set ") 
                 }
                 
-                if(sessionState.getStackTraces != null) {
-                   sessionState.getStackTraces.foreach { case( stackName , stackTrace) => {
+                val stackTraces = sessionState->("getStackTraces")
+                if(stackTraces != null) {
+                   stackTraces.asInstanceOf[java.util.Map[String, java.util.List[java.util.List[String]]]].foreach { case( stackName , stackTrace) => {
                      error( s"## Stack $stackName ")
                      stackTrace.foreach { ln => error(s"      ##${ln}")  }
                     }
                   }
                 }
-                if(sessionState.getLocalMapRedErrors() != null) {
-                	val localErrs = sessionState.getLocalMapRedErrors()
-                	localErrs.foreach { case(key,errLines)  => {
+                val localErrs = sessionState->("getLocalMapRedErrors")
+                if( localErrs != null) {
+                	localErrs.asInstanceOf[java.util.HashMap[String,java.util.List[String]]].foreach { case(key,errLines)  => {
                 	    error(s"## LocalError  $key")
                 	    errLines.foreach { ln => error(s"     ##${ln}") } 
                 	 }
@@ -261,7 +274,7 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config ))
             print(s"${field.getName}\t")
         })
       
-      val tmpFile = sessionState.getTmpOutputFile
+      val tmpFile = sessionState.->("getTmpOutputFile").asInstanceOf[File]
       val resultReader = new BufferedReader( new FileReader(tmpFile))
       breakable { for ( i<-0 to maxRows) {
          val line = resultReader.readLine
@@ -286,9 +299,8 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config ))
     
   def updateJobMetrics( metricsMap : collection.mutable.Map[String,Any]) : Unit = {
     if(_sessionState != null) {
-    val lastMapRedStats = sessionState.getLastMapRedStatsList
-    if( lastMapRedStats != null) {
-      val mapRedStats : List[MapRedStats] = lastMapRedStats.toList
+    val mapRedStats = sessionState.->("getLastMapRedStatsList").asInstanceOf[java.util.ArrayList[MapRedStats] ]
+    if( mapRedStats != null) {
       var totalCpuMsec : Long = 0 
       var totalMappers : Long = 0
       var totalReducers :  Long = 0

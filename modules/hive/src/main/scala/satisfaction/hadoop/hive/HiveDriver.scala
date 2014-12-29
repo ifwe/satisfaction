@@ -10,6 +10,7 @@ import satisfaction.Track
 import satisfaction.Witness.Witness2Properties
 import satisfaction.hadoop.CachingTrackLoader
 import _root_.org.apache.hadoop.hive.ql.metadata.Hive
+import harmony.java.net.IsolatedClassLoader
 
 /**
  *  Trait for class which can executes
@@ -67,22 +68,32 @@ object HiveDriver extends Logging {
          val cachePath = CachingTrackLoader.getCachePath( track.trackPath ).toString
          info(s" Using IsolatedClassLoader with a cachePath of $cachePath")
          
-         val frontLoadClasses =  List("org.apache.hadoop.hive.ql*", 
+         val frontLoadClasses =  List("org.apache.hadoop.hive.ql.*", 
     		  "satisfaction.hadoop.hive.HiveLocalDriver", 
     		  "satisfaction.hadoop.hive.HiveLocalDriver.*", 
     		  "satisfaction.hadoop.hive.*", 
     		  "satisfaction.hadoop.hdfs.*",
+    		  "org.apache.hadoop.hive.ql.Driver",
+    		  "org.apache.hadoop.hive.ql.Driver.*",
+    		  "org.apache.hadoop.hive.ql.exec.*",
+    		  "org.apache.hadoop.hive.ql.exec.Task.*",
+    		  "org.apache.hadoop.hive.ql.exec.Utilities",
+    		  "org.apache.hadoop.hive.ql.exec.Utilities.*",
+    		  "org.apache.hadoop.hive.ql.exec.DDLTask.*",
+    		  "org.apache.hadoop.hive.ql.exec.TaskRunner.*",
+    		  "org.apache.hadoop.hive.ql.session.SessionState",
+    		  "org.apache.hadoop.hive.ql.session.SessionState.*",
     		  "brickhouse.*",
     		  "com.tagged.udf.*",
-    		  "com.tagged.hadoop.hive.*",
-    		  "org.apache.hadoop.hbase.*")
+    		  "com.tagged.hadoop.hive.*")
          val backLoadClasses = List(
                   "satisfaction.hadoop.hive.HiveSatisfier",
                   "org.apache.hadoop.hive.conf.*",
     		      "org.apache.hive.common.*",
     		      "org.apache.hadoop.hive.common.*",
                   "org.apache.commons.logging.*",
-                  "org.apache.hadoop.hive.ql.metadata.*",
+                  "org.apache.hadoop.hbase",
+                  ////"org.apache.hadoop.hive.ql.metadata.*",
                   "org.apache.hadoop.hive.metastore.*"
                   ////"org.apache.*HiveMetaStoreClient.*",
                   ///"org.apache.*IMetaStoreClient.*",
@@ -99,7 +110,7 @@ object HiveDriver extends Logging {
     		  	cachePath);
          isolatedClassLoader.registerClass(classOf[HiveDriver]);
          ///isolatedClassLoader.registerClass(classOf[com.tagged.hadoop.hive.serde2.avro.AvroSerDe]);
-         ///isolatedClassLoader.registerClass(classOf[HiveConf]);
+         isolatedClassLoader.registerClass(classOf[HiveConf]);
          ////isolatedClassLoader.registerClass(classOf[HiveMetaStoreClient]);
          /////isolatedClassLoader.registerClass(classOf[HiveMetaHookLoader]);
          
@@ -151,13 +162,13 @@ object HiveDriver extends Logging {
       info( "Instantiating HiveLocalDriver")
       val localDriverClass: Class[_] = urlClassLoader.loadClass("satisfaction.hadoop.hive.HiveLocalDriver")
       info( s" Local Driver Class is $localDriverClass ")
-      val constructor = localDriverClass.getConstructor(hiveConf.getClass())
+      val constructor = localDriverClass.getConstructor(hiveConf.getClass() )
       val satisfactionHiveConf = new SatisfactionHiveConf(hiveConf)
       satisfactionHiveConf.setClassLoader( urlClassLoader)
       
       val newHive  = Hive.set( Hive.get( satisfactionHiveConf,true))
 
-      val hiveLocalDriver = constructor.newInstance(satisfactionHiveConf)
+      val hiveLocalDriver = constructor.newInstance(satisfactionHiveConf )
       info( s" Hive Local Driver is ${hiveLocalDriver} ${hiveLocalDriver.getClass} ")
 
       

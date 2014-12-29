@@ -149,7 +149,7 @@ public class IsolatedClassLoader extends java.net.URLClassLoader {
 	   protected Class<?> loadClass(String name, boolean resolve)
 		        throws ClassNotFoundException
 	    {
-		   LOG.debug(" Loading class " + name);
+		   LOG.info(" Loading class " + name);
 		   if( registeredClasses.containsKey( name)) {
 			  return registeredClasses.get(name);
 		   }
