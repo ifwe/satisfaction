@@ -12,7 +12,7 @@ import org.apache.hadoop.hive.conf.HiveConf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import satisfaction.hadoop.hdfs.CachingURLStreamHandlerFactory;
+import satisfaction.hadoop.hdfs.CacheJarURLStreamHandlerFactory;
  
 
 /***
@@ -38,7 +38,7 @@ public class IsolatedClassLoader extends java.net.URLClassLoader {
 	}
 	public IsolatedClassLoader(URL[] urls, ClassLoader parent, List<String> frontLoadedClassExprs, List<String> backLoadedClassExprs, 
 			 HiveConf configuration, String cachePath) {
-		super(urls, parent, new CachingURLStreamHandlerFactory( configuration, cachePath));
+		super(urls, parent, new CacheJarURLStreamHandlerFactory( configuration, cachePath));
 		configuration.setBoolean("fs.hdfs.impl.disable.cache", false); /// ???
 		LOG.info(" Creating RobustClassLoader with URLS " + urls);
 		frontLoadPatterns = new ArrayList<Pattern>();
