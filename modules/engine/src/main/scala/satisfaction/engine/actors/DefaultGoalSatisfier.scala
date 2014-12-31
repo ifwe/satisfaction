@@ -59,12 +59,15 @@ class DefaultGoalSatisfier(
     
     
     def checkEvidence() : Boolean = {
+      logger.info(s"Checking Evidence ${goal.name} for witness $witness ")
+      Console.println(s"Checking Evidence ${goal.name} for witness $witness ")
       if( remainingEvidence.isEmpty) {
         true
       } else {
           logger.info(s"Still waiting on evidence: $remainingEvidence")
           println(s"Still waiting on evidence: $remainingEvidence")
           remainingEvidence foreach { evidenceToCheck =>
+            try {
              if (evidenceToCheck.exists(witness)) {
                 logger.info(s" Evidence is Now  there !!! ${evidenceToCheck} ")
                 println(s" Evidence is Now  there !!! ${evidenceToCheck} ")
@@ -73,6 +76,18 @@ class DefaultGoalSatisfier(
                 logger.info(s" Evidence not there yet ${evidenceToCheck} ")
                 Console.println(s" Evidence not there yet ${evidenceToCheck} ")
               }
+            } catch {
+              case unexpected : Throwable => {
+                Console.println(s" Unexpected error ${unexpected.getMessage} while satisfy ${goal.name} for witness $witness ", unexpected)
+                logger.error(s" Unexpected error ${unexpected.getMessage} while satisfy ${goal.name} for witness $witness ", unexpected)
+                //// Set up retry mechanism ???
+                //// for now just fail job, and let other mechanisms retry ...
+                execResult.markUnexpected(unexpected)
+                if( messageSender != null) 	{
+                	messageSender !  new JobRunFailed(execResult)
+                }
+              }
+            }
           }
           remainingEvidence.isEmpty 
       }

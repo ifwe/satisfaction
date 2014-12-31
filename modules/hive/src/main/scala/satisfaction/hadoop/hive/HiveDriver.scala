@@ -42,12 +42,16 @@ object HiveDriver extends Logging {
 
   def apply(hiveConf: HiveConf)(implicit track : Track): HiveDriver = {
     try {
-      info( s" ThreadLoader = ${Thread.currentThread.getContextClassLoader}  HiveConfLoader = ${hiveConf.getClassLoader} This loader = ${this.getClass.getClassLoader} ")
+      info( s" Current Thread = ${Thread.currentThread.getName} ThreadLoader = ${Thread.currentThread.getContextClassLoader}  HiveConfLoader = ${hiveConf.getClassLoader} This loader = ${this.getClass.getClassLoader} ")
+      /**
       val parentLoader = if (Thread.currentThread.getContextClassLoader != null) {
         Thread.currentThread.getContextClassLoader
       } else {
         hiveConf.getClassLoader
       }
+      * 
+      */
+      val parentLoader = classOf[HiveDriver].getClassLoader()
       info(s" ParentLoader = ${parentLoader} ")
       val auxJars = hiveConf.getAuxJars
      
@@ -150,8 +154,10 @@ object HiveDriver extends Logging {
       ///urlClassLoader.setLogger( log)
       ///urlClassLoader.setName( track.descriptor.trackName)
 
-      hiveConf.setClassLoader( urlClassLoader);
-      Thread.currentThread().setContextClassLoader(urlClassLoader)
+      //// Don't set the current thread contextClassLoader !!!
+      ////hiveConf.setClassLoader( urlClassLoader);
+      ////
+      ////Thread.currentThread().setContextClassLoader(urlClassLoader)
 
       val auxJarPath = exportFiles.map( _.toUri.toString ).mkString(",")
       
@@ -166,7 +172,7 @@ object HiveDriver extends Logging {
       val satisfactionHiveConf = new SatisfactionHiveConf(hiveConf)
       satisfactionHiveConf.setClassLoader( urlClassLoader)
       
-      val newHive  = Hive.set( Hive.get( satisfactionHiveConf,true))
+      ////val newHive  = Hive.set( Hive.get( satisfactionHiveConf,true))
 
       val hiveLocalDriver = constructor.newInstance(satisfactionHiveConf )
       info( s" Hive Local Driver is ${hiveLocalDriver} ${hiveLocalDriver.getClass} ")

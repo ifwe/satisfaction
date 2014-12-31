@@ -15,7 +15,7 @@ import play.Project._
 
 object ApplicationBuild extends Build {
 
-  val appVersion = "2.5.1"
+  val appVersion = "2.5.3"
 
   val hiveVersion = "0.13.1"
 

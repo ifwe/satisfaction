@@ -36,9 +36,13 @@ object HiveGoal {
         val tblOutputs = collection.Set(hiveOutput.asInstanceOf[Evidence])
         
         
-        val hiveFactory : SatisfierFactory = Goal.SatisfierFactory( {
-           new HiveSatisfier(queryResource,hiveConf)
+        val hiveFactory : SatisfierFactory = Goal.SatisfierFactoryFromFunc( () => {
+           println(s" HIVE GOAL CREATING NEW HIVE SATISFIER ")
+           val hs = new HiveSatisfier(queryResource,hiveConf)
+           println(s" HIVE GOAL CREATING NEW HIVE SATISFIER $hs")
+           hs
         })
+        println(s" HIVE GOAL SATISFIER FACTIRO = $hiveFactory")
 
         new Goal(name = name,
             satisfierFactory = hiveFactory,

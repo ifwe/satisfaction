@@ -15,7 +15,7 @@ case class HiveSatisfier(val queryResource: String, val conf : HiveConf)( implic
   
    
    lazy val driver : HiveDriver = {
-     info( "Creating  HiveLocalDriver")
+     info(s"Creating  HiveLocalDriver ${Thread.currentThread().getName()} ")
 	 HiveDriver(conf)
        ///HiveDriver.serverDriver( conf)
    } 
@@ -153,19 +153,37 @@ case class HiveSatisfier(val queryResource: String, val conf : HiveConf)( implic
 
     @Override
     override def satisfy(params: Witness): ExecutionResult = {
-        val allProps = track.getTrackProperties(params)
-        info(s" Track Properties is $allProps ; Witness is $params ")
+      
+      //// Try running in it's own thread to avoid context loader issues
+      // Not scala like, but punting for now !!!!
+      val isolatedThread = new Thread {
+         var _res : ExecutionResult = null
+         override def run() : Unit = {
+          val allProps = track.getTrackProperties(params)
+          info(s" Track Properties is $allProps ; Witness is $params ")
         //// Avoid deadlock on accessing track
-        ///track.synchronized { 
           if( track.hasResource("setup.hql")) {
              val setupResult = loadSetup(allProps)
              if( ! setupResult.isSuccess) {
-               return setupResult
+                //return setupResult
+                _res = setupResult
+                return
              }
           }
-        ///}
-        val res = substituteAndExecQueries(queryTemplate, allProps)
-        res
+          _res = substituteAndExecQueries(queryTemplate, allProps)
+        }
+      }
+         
+        info(s" HIVE SATISFIER -- CREATING ISOLATED THREAD $isolatedThread  CONTEXT LOADER IS ${isolatedThread.getContextClassLoader()} ")
+         
+         isolatedThread.start
+         /// Need better way to do this  with futures ...
+         while( isolatedThread.isAlive) {
+            Thread.sleep( 5000) 
+         }
+        info(s" HIVE SATISFIER -- AFTER ISOLATED THREAD $isolatedThread  CONTEXT LOADER IS ${isolatedThread.getContextClassLoader()} ")
+         isolatedThread._res
+
     }
 
     

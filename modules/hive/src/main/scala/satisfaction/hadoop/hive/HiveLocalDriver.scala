@@ -35,7 +35,9 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config ) )
  
             
     /// Set up a new Hive on this thread, with our HiveConf
-    val newHive  = Hive.set( Hive.get(hiveConf,true))
+    ///val newHive  = Hive.set( Hive.get(hiveConf,true))
+
+     private var _isClosed = false;
     
     ///lazy val driver : _root_.org.apache.hadoop.hive.ql.Driver = {
     ////def getDriver : _root_.org.apache.hadoop.hive.ql.Driver = {
@@ -87,6 +89,7 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config ) )
     
     override def close() = {
       val thisClassLoader = this.getClass().getClassLoader
+      _isClosed = true
       thisClassLoader match {
         case closable : java.io.Closeable => {
            info(s" Closing Closable ClassLoader $thisClassLoader ")      
@@ -146,6 +149,7 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config ) )
        info("HIVE_DRIVER Aborting all jobs for Hive Query ")
        HadoopJobExecHelper.killRunningJobs()
        ///// driver.destroy
+       close
     }
     
     
@@ -176,7 +180,10 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config ) )
 
     override def executeQuery(query: String): Boolean = {
         try {
-
+           if( _isClosed ) {
+             println( s" Attempting to execute Query on a HiveLocalDriver which is already Closed !!!!")
+             return false;
+           }
             var driver  : Wrapper = null
             val response : CommandProcessorResponse = HiveLocalDriver.retry (5) {
               /**

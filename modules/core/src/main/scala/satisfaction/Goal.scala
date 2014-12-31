@@ -207,7 +207,7 @@ object Goal {
      *  Given a function which returns a Satisfier, 
      *   Create a SatisfierFactory
      */
-    def SatisfierFactory( satFunc : () => Satisfier) : SatisfierFactory = {
+    def SatisfierFactoryFromFunc( satFunc : () => Satisfier) : SatisfierFactory = {
       { w => { Some(satFunc()) } }
     }
     
