@@ -1,13 +1,13 @@
 @GrabResolver('https://artifactory.tagged.com/artifactory/libs-release-local/')
-@Grab('com.tagged.build:jenkins-dsl-common:0.1.20')
+@Grab('com.tagged.build:jenkins-dsl-common:[0.1.0,)')
 
+import com.tagged.build.scm.*
 import com.tagged.build.common.*
 
 def satisfaction = new Project(
     jobFactory,
     [
-        githubOwner: 'jbanks',
-        githubProject: 'satisfaction-limbo',
+        scm: new StashSCM(project: "hadoop", name: "satisfaction-limbo"),
         hipchatRoom: 'Cluster Corner',
         email: 'jbanks@tagged.com',
     ]
@@ -36,9 +36,6 @@ def satisfaction = new Project(
             '\'project willrogers\' rpm:packageBin',
             '-Dsbt.log.noformat=true',
             '-Xmx1536M -Xss1M -XX:+CMSClassUnloadingEnabled -XX:MaxPermSize=256m')
-    }
-    triggers {
-        githubPush()
     }
     publishers {
         archiveArtifacts('apps/willrogers/target/rpm/RPMS/noarch/*.rpm')
