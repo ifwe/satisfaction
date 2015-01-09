@@ -38,6 +38,6 @@ def satisfaction = new Project(
             '-Xmx1536M -Xss1M -XX:+CMSClassUnloadingEnabled -XX:MaxPermSize=256m')
     }
     publishers {
-        archiveArtifacts('apps/willrogers/target/rpm/RPMS/noarch/*.rpm')
-    }
+        archiveArtifacts('apps/willrogers/target/rpm/RPMS/noarch/*.rpm')
+    }
 }
