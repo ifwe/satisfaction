@@ -1,0 +1,25 @@
+# #################################
+# ##### Default configuration #####
+# #################################
+
+# Available replacements 
+# ------------------------------------------------
+# ${{author}}           debian author
+# ${{descr}}            debian package description
+# ${{exec}}             startup script name
+# ${{chdir}}            app directory
+# ${{retries}}          retries for startup
+# ${{retryTimeout}}     retry timeout
+# ${{app_name}}         normalized app name
+# ${{daemon_user}}      daemon user
+# -------------------------------------------------
+
+# Referencing a custom config file
+-Dconfig.file=${{chdir}}/conf/application.conf
+-Dhttp.port=9000
+-Dpidfile.path=/var/run/${{app_name}}/running.pid
+-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.ssl=false 
+-Dcom.sun.management.jmxremote.port=9010 
+-Dcom.sun.management.jmxremote.local.only=false 
+-Dcom.sun.management.jmxremote.authenticate=false
+

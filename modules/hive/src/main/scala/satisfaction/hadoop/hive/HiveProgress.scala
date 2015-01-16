@@ -27,17 +27,21 @@ class HiveProgress( val localDriver : HiveLocalDriver )  extends ProgressCounter
     /** 
      *   Get the query
      */
+    /**
     def queryPlan : QueryPlan = {
        ///localDriver.queryPlan
        ///null
       null
     }
+    * 
+    */
     
     /**
      *  The subtasks of a given Hive Query, are all the individual 
      *   map reduce tasks found in the query plan
      */
     def subtasks : List[(String,GoalState.State)] = {
+      /**
       if( queryPlan == null ) {
          List.empty  
       } else { 
@@ -45,6 +49,9 @@ class HiveProgress( val localDriver : HiveLocalDriver )  extends ProgressCounter
              ( tsk.getName, getStateOfMapRedTask(tsk.asInstanceOf[MapRedTask])  ) 
         } ).toList
       }
+      * **
+      */
+      List.empty
     }
     
     private def getStateOfMapRedTask( mrt : MapRedTask) : GoalState.State = {
@@ -67,7 +74,8 @@ class HiveProgress( val localDriver : HiveLocalDriver )  extends ProgressCounter
      *     XXX Make sure name matches sub-tasks
      */
     def runningSubTasks : Set[ProgressCounter] = {
-        HadoopJobExecHelper.runningJobs.map( new HadoopJobProgress( _ )).toSet
+        ////HadoopJobExecHelper.runningJobs.map( new HadoopJobProgress( _ )).toSet
+      Set.empty
     }
 
     
@@ -80,7 +88,7 @@ class HiveProgress( val localDriver : HiveLocalDriver )  extends ProgressCounter
       /// ??? TODO 
       ////  Should we aggregate counters ????
       //// XXXX Number of steps passed ???
-       new MetricsCollection(s"HiveQuery:: ${queryPlan.getQueryId}" )
+       new MetricsCollection(s"HiveQuery:: " )
     }
       
 

@@ -40,9 +40,8 @@ trait HiveDriver {
 
 object HiveDriver extends Logging {
 
-  def apply(hiveConf: HiveConf)(implicit track : Track): HiveDriver = {
+  def apply(hiveConfRef: HiveConf)(implicit track : Track): HiveDriver = {
     try {
-      info( s" Current Thread = ${Thread.currentThread.getName} ThreadLoader = ${Thread.currentThread.getContextClassLoader}  HiveConfLoader = ${hiveConf.getClassLoader} This loader = ${this.getClass.getClassLoader} ")
       /**
       val parentLoader = if (Thread.currentThread.getContextClassLoader != null) {
         Thread.currentThread.getContextClassLoader
@@ -51,6 +50,10 @@ object HiveDriver extends Logging {
       }
       * 
       */
+      /// Create a new HiveConf, so that we don't have reference to global objects,
+      //// and we can get garbage collected
+      val hiveConf = new HiveConf(hiveConfRef)
+      info( s" Current Thread = ${Thread.currentThread.getName} ThreadLoader = ${Thread.currentThread.getContextClassLoader}  HiveConfLoader = ${hiveConf.getClassLoader} This loader = ${this.getClass.getClassLoader} ")
       val parentLoader = classOf[HiveDriver].getClassLoader()
       info(s" ParentLoader = ${parentLoader} ")
       val auxJars = hiveConf.getAuxJars
@@ -87,7 +90,21 @@ object HiveDriver extends Logging {
     		  "org.apache.hadoop.hive.ql.exec.TaskRunner.*",
     		  "org.apache.hadoop.hive.ql.session.SessionState",
     		  "org.apache.hadoop.hive.ql.session.SessionState.*",
+    		  "org.apache.op.hive.ql.session.SessionState.*",
     		  "brickhouse.*",
+    		  "org.apache.hive.com.esotericsoftware.*",
+    		  "org.apache.hadoop.util.ReflectionUtils",
+    		  "org.apache.hadoop.util.ReflectionUtils.*",
+    		  "org.apache.hadoop.io.WritableComparator",
+    		  "org.apache.hadoop.io.WritableComparator.*",
+    		  "org.apache.hadoop.io.compress.CompressionCodecFactory",
+    		  "org.apache.hadoop.io.compress.CompressionCodecFactory.*",
+    		  "org.apache.hadoop.util.ShutdownHookManager",
+    		  "org.apache.hadoop.util.ShutdownHookManager.*",
+    		  "org.apache.hadoop.yarn.*",
+    		  "org.apache.hadoop.mapreduce.*",
+    		  "satisfaction.Logging",
+    		  "satisfaction.Logging.*",
     		  "com.tagged.udf.*",
     		  "com.tagged.hadoop.hive.*")
          val backLoadClasses = List(
@@ -98,7 +115,10 @@ object HiveDriver extends Logging {
                   "org.apache.commons.logging.*",
                   "org.apache.hadoop.hbase",
                   ////"org.apache.hadoop.hive.ql.metadata.*",
-                  "org.apache.hadoop.hive.metastore.*"
+    		      ///"org.apache.hadoop.hive.ql.exec.mr.HadoopJobExecHelper",
+    		      ///"org.apache.hadoop.hive.ql.exec.mr.HadoopJobExecHelper.*",
+                  "org.apache.hadoop.hive.metastore.*",
+                  "org.apache.hadoop.hive.ql.plan.api.*"
                   ////"org.apache.*HiveMetaStoreClient.*",
                   ///"org.apache.*IMetaStoreClient.*",
                   ////"org.apache.hadoop.hive.metastore.*",
@@ -133,31 +153,9 @@ object HiveDriver extends Logging {
          }
          isolatedClassLoader
      } else {
-          ///java.net.URLClassLoader.newInstance( exportFiles.map( _.toUri.toURL).toArray[URL], 
-    		  	///parentLoader )
           java.net.URLClassLoader.newInstance( exportFiles.map( _.toUri.toURL).toArray[URL] )
       }
       
-      ////val  checkMetaStoreUtils = classOf[MetaStoreUtils].getDeclaredMethods.filter( _.get )
-      
-      
-      info(" STARTING TO LOAD HBASE CONFIGURATION ")
-      val hbaseClass = urlClassLoader.loadClass("org.apache.hadoop.hbase.HBaseConfiguration")
-      info(s" HBASE CONFIGURATION is $hbaseClass ")
-      
-      info(" STARTING TO LOAD HBASE VERSION ")
-      val hbaseVersionClass = urlClassLoader.loadClass("org.apache.hadoop.hbase.util.VersionInfo")
-      info(s" HBASE VERSION INFO is $hbaseVersionClass ")
-      
-      
-
-      ///urlClassLoader.setLogger( log)
-      ///urlClassLoader.setName( track.descriptor.trackName)
-
-      //// Don't set the current thread contextClassLoader !!!
-      ////hiveConf.setClassLoader( urlClassLoader);
-      ////
-      ////Thread.currentThread().setContextClassLoader(urlClassLoader)
 
       val auxJarPath = exportFiles.map( _.toUri.toString ).mkString(",")
       
@@ -217,7 +215,7 @@ class SatisfactionHiveConf(hc : HiveConf) extends HiveConf(hc) with Logging {
       
       getClassLoader.loadClass(className)
   }
-
+  
   
 }
 

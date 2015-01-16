@@ -54,6 +54,7 @@ class GoalSpec extends Specification {
        
      }
      
+     **/
      "InSequence Goal" in {
          implicit val track : Track = new Track(TrackDescriptor("TestTrack"))
          
@@ -77,7 +78,7 @@ class GoalSpec extends Specification {
        
      }
      
-     **/
+     /**
      "Folded dependencies" in {
          implicit val track : Track = new Track(TrackDescriptor("TestTrack"))
          
@@ -141,6 +142,8 @@ class GoalSpec extends Specification {
 
          true
      }
+     * 
+     */
      
 
      

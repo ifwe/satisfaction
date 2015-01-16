@@ -36,6 +36,7 @@ case class GetActor(track : Track, goal: Goal, witness: Witness)
 case class GetActiveActors()
 case class ReleaseActor(goalName : String, witness: Witness)
 case class KillActor( goalName : String, witness : Witness)
+case class ActorRefMessage( actorRef : Option[ActorRef], message : Option[String] = None)
 
 class ProverFactory( trackHistoryOpt : Option[TrackHistory] = None) extends Actor with ActorLogging {
     ///val actorMap: mutable.Map[Tuple2[Goal, Witness], ActorRef] = mutable.Map()
@@ -152,19 +153,23 @@ class ProverFactory( trackHistoryOpt : Option[TrackHistory] = None) extends Acto
 
     def receive = {
         case GetActor(track, goal, witnessArg) =>
+            witnessArg.assignments.foreach( ass => { log.info(s" WITNESS HAS VARIABLE ${ass.variable} ") } )
             val witness = witnessArg.filter( goal.variables.toSet)
             
             log.info(s"Getting ProverActor for goal ${goal.name} and witness $witness vs $witnessArg ; Goal Variables are ${goal.variables}")
-            checkVariables( goal, witness)
-            val actorTuple: Tuple2[Goal, Witness] = (goal, witness)
-            val actorTupleName = ProofEngine.getActorName(goal.name, witness)
-            println("Before check for Tuple " + ProofEngine.getActorName(goal.name, witness))
-            if (containsActor(actorTupleName)) {
-                sender ! _actorMap.get(actorTupleName).get
-            } else {
-                val actorRef = createProverActor( track, goal, witness)
+            if(checkVariables( goal, witness) ) {
+               val actorTuple: Tuple2[Goal, Witness] = (goal, witness)
+               val actorTupleName = ProofEngine.getActorName(goal.name, witness)
+               println("Before check for Tuple " + ProofEngine.getActorName(goal.name, witness))
+               if (containsActor(actorTupleName)) {
+                  sender ! new ActorRefMessage(Some(_actorMap.get(actorTupleName).get )) 
+               } else {
+                  val actorRef = createProverActor( track, goal, witness)
                
-                sender ! actorRef
+                  sender ! new ActorRefMessage( Some(actorRef) )
+               }
+            } else {
+               sender ! new ActorRefMessage( None, Some(s"Witness $witness does not fully saturate variables ${goal.variables} for Goal ${goal.name}"))
             }
         case ReleaseActor(goalName, witnessArg) =>
             //val witness = witnessArg.filter( goal.variables.toSet)
@@ -244,7 +249,18 @@ object ProverFactory {
     
     def acquireProver(proverFactory: ActorRef, track : Track, goal: Goal, witness: Witness): ActorRef = {
         val f = proverFactory ?  GetActor( track,goal,witness)
-        Await.result(f, timeout.duration).asInstanceOf[ActorRef]
+        System.out.println(s" ProverFactory -- getting actor for ${goal.name} and Witness  ${witness} ")
+        val refMess = Await.result(f, timeout.duration).asInstanceOf[ActorRefMessage]
+        refMess.actorRef match {
+           case Some(actor) => return actor
+           case None => {
+             val mess =refMess.message match {
+               case Some(message)  => message
+               case None => s"Unexpected error getting actor for goal ${goal.name} with witness ${witness} "
+             }
+             throw new RuntimeException(mess)
+          }
+        }
     }
 
 

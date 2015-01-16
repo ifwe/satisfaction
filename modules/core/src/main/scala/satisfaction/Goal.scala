@@ -8,8 +8,8 @@ case class Goal(
     val name: String,
     val satisfierFactory: SatisfierFactory,
     val variables: List[Variable[_]] = List.empty,
-    private val dependencies: Set[(Witness => Witness, Goal)] = Set.empty,
-    private val evidence: Set[Evidence] = Set.empty ) 
+    val dependencies: Set[(Witness => Witness, Goal)] = Set.empty,
+    val evidence: Set[Evidence] = Set.empty ) 
     (implicit val track : Track ) {
   
     /**
@@ -234,8 +234,14 @@ object Goal {
      *  Add a variable and value to  a witness
      */
     def qualifyWitness[T](param: Variable[T], paramValue : T): (Witness => Witness) = {
-        w: Witness =>
+        w: Witness => {
+          if(w.contains(param) ) {
             w.update  (param, paramValue)
+          } else {
+            println(s" ADDing $paramValue to ${param.name} in witness $w  ")
+            w + ( param -> paramValue )
+          }
+        }
     }
     
     
@@ -303,8 +309,10 @@ object Goal {
      *     data gathered in the last hour)
      */
     def ForPreviousHour( goal : Goal )(implicit track: Track) : Goal = MappedGoal(goal) ( previousHour)
+    def ForPreviousHours( goal : Goal, numHours : Int)(implicit track: Track) : Goal = MappedGoal(goal) ( hoursPrevious( numHours ))
 
     def ForPreviousDay( goal : Goal )(implicit track: Track) : Goal = MappedGoal(goal) ( yesterday)
+    def ForPreviousDays( goal : Goal, numDays : Int)(implicit track: Track) : Goal = MappedGoal(goal) ( daysPrevious( numDays))
 
     /**
      *  Define a witness mapping, replacing temporal variables "dt" and "hour"

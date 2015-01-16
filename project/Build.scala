@@ -95,6 +95,8 @@ object ApplicationBuild extends Build {
     daemonGroup in Linux := "satisfaction",
     normalizedName in Linux := "satisfaction",
 
+    linuxStartScriptTemplate := sbt.url( "conf/dist-play-app-initd") ,
+
 
     linuxPackageMappings <++= (mappings in Universal) map { universalDir => 
         universalDir.filter( {  _._2.toString.startsWith("/usr/share") } ).map { packageMapping( _ ) } 
@@ -111,19 +113,13 @@ object ApplicationBuild extends Build {
        conf -> "conf/logger.xml"
     },
 
-    mappings in Universal <+= (packageBin in Compile, baseDirectory ) map { (_, base) =>
-       val conf = base / "conf" / "willrogers.conf"
-       conf -> "conf/willrogers.conf"
-    },
-
-    bashScriptConfigLocation := Some("$app_home/conf/willrogers.conf"),
 
     name in Rpm := "satisfaction-scheduler",
     ///version in Rpm := appVersion,
     version in Rpm := resolveRpmVersion(),
 
     ////rpmRelease in Rpm:= resolveRpmVersion(),
-    rpmRelease in Rpm := "1",
+    rpmRelease in Rpm := "8",
     packageSummary in Rpm := "wyman",
     packageSummary in Linux := "wyman",
     rpmVendor in Rpm := "Tagged.com",
@@ -143,7 +139,6 @@ export JAVA_HOME=/usr/java/default
 export HADOOP_CONF_DIR=/etc/hadoop/conf
 export HADOOP_HOME=/usr/lib/hadoop
 
-export JAVA_OPTS=' -Xmx2048m -Xms2048m -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.port=9010 -Dcom.sun.management.jmxremote.local.only=false -Dcom.sun.management.jmxremote.authenticate=false -XX:+UseConcMarkSweepGC  -XX:+CMSClassUnloadingEnabled -XX:+CMSPermGenSweepingEnabled -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/usr/share/willrogers -XX:PermSize=256m -XX:MaxPermSize=256m -XX:+TraceClassLoading -XX:+TraceClassUnloading '
 """)
 
 

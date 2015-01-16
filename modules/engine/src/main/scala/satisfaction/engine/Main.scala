@@ -52,7 +52,6 @@ object Satisfaction {
 
         println(" before continually")
         Iterator.continually(Thread.sleep(2000)).foreach { _ =>
-            println("BLAH ")
             val statuses = engine.getGoalsInProgress
             println(statuses.size + " goals are in progress ")
             statuses.foreach { status: GoalStatus =>

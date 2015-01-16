@@ -23,6 +23,8 @@ import satisfaction.Progressable
 import satisfaction.hadoop.Config
 import java.io.File
 import harmony.java.net.IsolatedClassLoader
+import satisfaction.util.Releaseable
+import satisfaction.util.Wrapper
 
 
 /**
@@ -31,17 +33,22 @@ import harmony.java.net.IsolatedClassLoader
  */
 
 class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config ) )
-      extends satisfaction.hadoop.hive.HiveDriver with MetricsProducing with Progressable with Logging {
+      ///extends satisfaction.hadoop.hive.HiveDriver with MetricsProducing with Progressable with Logging {
+      extends satisfaction.hadoop.hive.HiveDriver with MetricsProducing  {
+  
+  
+    /// To avoid linkage errors for now ...
+    def info(ms : String ) = { println(s" INFO HiveLocalDriver ::  $ms ") }
+    def error(ms : String ) = 
+    { println(s" ERROR HiveLocalDriver ::  $ms ") }
+    def error(ms : String, unexpect : Throwable ) = {
+      println(s" ERROR HiveLocalDriver ::  $ms ")
+      unexpect.printStackTrace
+    }
  
-            
-    /// Set up a new Hive on this thread, with our HiveConf
-    ///val newHive  = Hive.set( Hive.get(hiveConf,true))
-
-     private var _isClosed = false;
-    
     ///lazy val driver : _root_.org.apache.hadoop.hive.ql.Driver = {
     ////def getDriver : _root_.org.apache.hadoop.hive.ql.Driver = {
-    def getDriver : Wrapper = {
+     val driver = new Releaseable[Wrapper]({
 
         
         val cl = this.getClass.getClassLoader() 
@@ -85,18 +92,19 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config ) )
           } 
         }
         
-    }
+    })
     
     override def close() = {
+       driver.get.->("close")
+       driver.release
       val thisClassLoader = this.getClass().getClassLoader
-      _isClosed = true
       thisClassLoader match {
         case closable : java.io.Closeable => {
-           info(s" Closing Closable ClassLoader $thisClassLoader ")      
+           info(s" HiveLocalDriver :: Closing Closable ClassLoader $thisClassLoader ")      
            closable.close
         }
         case _ => {
-           info(" Our classloader was not closable") 
+           info(" HiveLocalDriver :: Our classloader was not closable") 
         }
       }
     }
@@ -106,9 +114,12 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config ) )
       this.hiveConf.set( prop, propValue)
     }
     
+    /**
     override lazy val progressCounter : ProgressCounter  = {
         new HiveProgress( this ) 
     }
+    * 
+    */
 
     override def useDatabase(dbName: String) : Boolean = {
         info(" Using database " + dbName)
@@ -116,11 +127,10 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config ) )
     }
     
     def getQueryPlan( query: String ) : QueryPlan = {
-       val driver = getDriver
-       val retCode = driver.->("compile",query)
+       val retCode = driver.get.->("compile",query)
        info(s" Compiling $query  has return Code $retCode ")
        
-       driver.->("getPlan").asInstanceOf[QueryPlan]
+       driver.get.->("getPlan").asInstanceOf[QueryPlan]
     }
     
     
@@ -180,11 +190,6 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config ) )
 
     override def executeQuery(query: String): Boolean = {
         try {
-           if( _isClosed ) {
-             println( s" Attempting to execute Query on a HiveLocalDriver which is already Closed !!!!")
-             return false;
-           }
-            var driver  : Wrapper = null
             val response : CommandProcessorResponse = HiveLocalDriver.retry (5) {
               /**
                 if( !checkSessionState ) {
@@ -196,12 +201,6 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config ) )
                
                val checkConf = confMember.get(driver).asInstanceOf[HiveConf]
                 */
-               if(driver != null) {
-                 driver.->("close")
-               }
-            
-            
-                driver = getDriver
                 sessionState.execStatic("setCurrentSessionState", sessionState.wrapped)
                 info( s" SESSION STATE CL = ${sessionState.wrapped} ${sessionState.wrappedClass.getClassLoader} ")
             	////SessionState.setCurrentSessionState( sessionState )
@@ -213,9 +212,7 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config ) )
                   System.out.println(s" ERROR SOMEONE OVERWROTE CLASS LOADER IN THREAD CONTEXT  Context = $cl  HiveConf =  ${hiveConf.getClassLoader} this loader = ${this.getClass.getClassLoader}" )
                 }
                 ///Thread.currentThread.setContextClassLoader( hiveConf.getClassLoader )
-                val resp = driver.->("run",query).asInstanceOf[CommandProcessorResponse]
-                driver.->("close")
-                driver.->("destroy")
+                val resp = driver.get.->("run",query).asInstanceOf[CommandProcessorResponse]
                 resp
             }
 
@@ -224,14 +221,14 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config ) )
                 error(s"HIVE_DRIVER Driver Has error Message ${driver.->("getErrorMsg")}")
                 error(s"Error while processing statement: ${response.getErrorMessage()} ${response.getSQLState()} ${response.getResponseCode()}" );
                 
-                val driverClass = driver.wrapped.getClass
+                val driverClass = driver.get.wrapped.getClass
                 
                 /// XXX Use wrapper class ...
                 val errorMember =  driverClass.getDeclaredFields.filter( _.getName().endsWith("Error"))(0)
                
                 errorMember.setAccessible(true)
                 
-                val errorStack : Throwable = errorMember.get( driver.wrapped).asInstanceOf[Throwable]
+                val errorStack : Throwable = errorMember.get( driver.get.wrapped).asInstanceOf[Throwable]
                 if( errorStack !=null) {
                    error(s"HIVE ERROR :: ERROR STACK IS $errorStack :: ${errorStack.getLocalizedMessage()} ")
                    if(errorStack.getCause != null) 
@@ -269,6 +266,10 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config ) )
             case unexpected : Throwable => 
                 error(s"Dammit !!! Unexpected SQLException ${unexpected.getLocalizedMessage} ", unexpected)
                 throw unexpected
+        } finally {
+           driver.get.->("close")
+           driver.get.->("destroy")
+           driver.release
         }
     }
     

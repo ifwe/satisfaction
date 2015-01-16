@@ -17,15 +17,11 @@ case class Variable[T](val name: String, val clazz: Class[T], val description: O
     override lazy val toString =
         s"name=[$name], class=[$clazz], description=[${description getOrElse ""}]"
     
-    override def equals( other : Any ) : Boolean = {
-      //// assume just the names are the same
-      if( other.isInstanceOf[Variable[_]]) {
-    	  val otherVar = other.asInstanceOf[Variable[_]]
-    	  name.equals( otherVar.name)
-      } else {
-        false
-      }
+    override def equals(o: Any) = o match {
+       case that: Variable[_] => that.name.equals(this.name)
+       case _ => false
     }
+    override def hashCode = name.hashCode
     
 }
 

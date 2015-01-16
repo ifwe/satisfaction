@@ -53,6 +53,7 @@ class JobRunner(
                     logger.log { () => 
                           JobRunner.threadPreserve {  () => { 
                                 val result = satisfier.satisfy(params)
+                                /**
                                 satisfier match {
                                   case closer : java.io.Closeable => {
                                      logger.info(s" Closing Closable Satisfier $satisfier for Goal ${goal.name} and Witness $witness ") 
@@ -60,6 +61,8 @@ class JobRunner(
                                   }
                                   case _ =>  /// don't need to close anything ...
                                 }
+                                * 
+                                */
                                 result
                             } 
                           }
@@ -83,6 +86,13 @@ class JobRunner(
                 _messageSender = sender
                 satisfierFuture onComplete {
                     log.info(s" Job Runner :: Future OnComplete ${goal.name} ${witness}")
+                                satisfier match {
+                                  case closer : java.io.Closeable => {
+                                     logger.info(s" Closing Closable Satisfier $satisfier for Goal ${goal.name} and Witness $witness ") 
+                                     closer.close()
+                                  }
+                                  case _ =>  /// don't need to close anything ...
+                                }
                     checkResults(_)
                 }
         case Abort =>

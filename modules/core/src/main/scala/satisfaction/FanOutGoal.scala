@@ -2,7 +2,6 @@ package satisfaction
 
 
 /**
- * XXX TODO
  *    Create multiple dependencies for a goal for a range of values ..
  *    
  *   For now the range needs to be know at compile time, 
@@ -47,8 +46,6 @@ object FanOutGoal {
    */ 
     def apply[T](subGoal: Goal, saturateVar: Variable[T], substSeq: => Seq[T]): Goal = {
         implicit val track = subGoal.track
-        //// Scala magic ...
-        //// Define a function 
         def fanOutFunction : (Witness=>Seq[(Witness=>Witness)]) = {
            witness : Witness => {
               substSeq.map( Goal.qualifyWitness( saturateVar, _) ).toSeq
@@ -56,9 +53,17 @@ object FanOutGoal {
         }
         new DynamicGoal(
             fName = "FanOut " + subGoal.name,
-            subGoal,
+            new Goal(name=subGoal.name,
+              satisfierFactory=subGoal.satisfierFactory,
+              variables= subGoal.variables ,
+              dependencies= subGoal.dependencies,
+              evidence=subGoal.evidence),
             fanOutFunction
-            )
+            ) {
+           override val variables = {
+             subGoal.variables.filter( _ != saturateVar)
+           }
+        }
     }
 }
 
@@ -78,9 +83,6 @@ object InSequenceGoal {
     def ConvertToInSequence(   fanOut : Seq[((Witness=>Witness),Goal)]) : ((Witness=>Witness),Goal) = {
         fanOut.reduce( (left,right) => {
           val chained  = right._2.addWitnessRule( left._1,left._2)
-          val w : Witness = Witness()
-          val wl2 = left._1(w)
-          val wr2 = right._1(w)
            (right._1,chained )
         } )
     }
@@ -88,8 +90,6 @@ object InSequenceGoal {
     
     def apply[T](subGoal: Goal, saturateVar: Variable[T], substSeq: => Seq[T]): Goal = {
            implicit val track = subGoal.track
-        //// Scala magic ...
-        //// Define a function 
         def fanOutFunction : (Witness=>Seq[(Witness=>Witness)]) = {
            witness : Witness => {
               substSeq.map( Goal.qualifyWitness( saturateVar, _) ).toSeq
@@ -97,9 +97,16 @@ object InSequenceGoal {
         }
         new DynamicGoal(
             fName = "InSequence " + subGoal.name,
-            subGoal,
+            new Goal(name=subGoal.name,
+                    satisfierFactory=subGoal.satisfierFactory,
+                    variables= subGoal.variables,
+                    dependencies= subGoal.dependencies,
+                    evidence=subGoal.evidence),
             fanOutFunction
             ) {
+           override val variables = {
+              subGoal.variables.filter( _ != saturateVar)
+           }
   
             override def dependenciesForWitness( w : Witness)  : Seq[(Witness=>Witness,Goal)] = {
               Seq( ConvertToInSequence( super.dependenciesForWitness( w) ) )

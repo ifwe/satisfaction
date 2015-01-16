@@ -1,4 +1,5 @@
-package satisfaction.hadoop.hive
+package satisfaction
+package util
 
 /**
  *   Wrap an object , and access it only through reflection

@@ -7,25 +7,31 @@ import _root_.org.joda.time.DateTime
 import scala.io.Source
 import _root_.org.apache.hadoop.hive.ql.metadata.HiveException
 import _root_.org.apache.hadoop.hive.conf.HiveConf
+import util.Releaseable
 
 case class HiveSatisfier(val queryResource: String, val conf : HiveConf)( implicit val track : Track) 
-      extends Satisfier with MetricsProducing with Progressable with Logging with java.io.Closeable {
+///      extends Satisfier with MetricsProducing with Progressable with Logging with java.io.Closeable {
+      extends Satisfier with MetricsProducing  with Logging with java.io.Closeable {
 
    override def name = s"Hive( $queryResource )" 
   
    
-   lazy val driver : HiveDriver = {
-     info(s"Creating  HiveLocalDriver ${Thread.currentThread().getName()} ")
-	 HiveDriver(conf)
-       ///HiveDriver.serverDriver( conf)
-   } 
+   val  driver  = new Releaseable[HiveDriver]( {
+        info(s"Creating  HiveLocalDriver ${Thread.currentThread().getName()} ")
+	    HiveDriver(conf)
+   }  )
    
    /** 
     *   For closeable 
     */
    override def close() = {
        info(s" Closing Hive Satisfier")
-       driver.close 
+       if( driver.isBuilt) {
+         driver.get.close 
+         driver.release
+       } else  {
+         warn(" Attempting to close already closed Driver ")
+       }
    }
    
 
@@ -48,12 +54,15 @@ case class HiveSatisfier(val queryResource: String, val conf : HiveConf)( implic
      *    from track history
      *  XXX For now progress of currently running query is returned ...
      */
+    /**
     def progressCounter : ProgressCounter = {
-       driver match {
+       driver.get match {
          case pr : Progressable => pr.progressCounter
          case _  => { throw new RuntimeException(" HiveDriver needs to implement Progressable !!! ") }
       }
     }
+    * 
+    */
     
     def queryTemplate : String = {
        if( queryResource.endsWith(".hql"))  { 
@@ -106,7 +115,7 @@ case class HiveSatisfier(val queryResource: String, val conf : HiveConf)( implic
     	val kv = setExpr.split("=")
     	//// add escaping ???
         info(s" Setting configuration ${kv(0).trim} to ${kv(1)} ")
-    	driver.setProperty( kv(0).trim, kv(1))
+    	driver.get.setProperty( kv(0).trim, kv(1))
     	return true
       }
       if( query.trim.toLowerCase.startsWith("source") ) {
@@ -118,7 +127,11 @@ case class HiveSatisfier(val queryResource: String, val conf : HiveConf)( implic
     	  return sourceFile(cmdArr(1).replaceAll("'","").trim, allProps)
    		}
       }
-      val result = driver.executeQuery( query)
+      val result = driver.get.executeQuery( query)
+      if( result == false ) {
+        driver.get.close
+        driver.release
+      }
       info(s"HIVE_SATISFIER : Driver returned $result")
       result
     }
@@ -130,7 +143,7 @@ case class HiveSatisfier(val queryResource: String, val conf : HiveConf)( implic
         val execResult = new ExecutionResult(queryString)
         val queryMatch = Substituter.substitute(queryString, allProps) match {
             case Left(badVars) =>
-                error(" Missing variables in query Template ")
+                error(s" Missing variables in query Template $queryString")
                 badVars.foreach { s => error(s"   Missing variable ${s} ") }
                 execResult.markFailure( s"Missing variables in queryTemplate ${badVars.mkString(",")} ")
             case Right(query) =>
@@ -156,6 +169,7 @@ case class HiveSatisfier(val queryResource: String, val conf : HiveConf)( implic
       
       //// Try running in it's own thread to avoid context loader issues
       // Not scala like, but punting for now !!!!
+      driver.get
       val isolatedThread = new Thread {
          var _res : ExecutionResult = null
          override def run() : Unit = {
@@ -182,6 +196,15 @@ case class HiveSatisfier(val queryResource: String, val conf : HiveConf)( implic
             Thread.sleep( 5000) 
          }
         info(s" HIVE SATISFIER -- AFTER ISOLATED THREAD $isolatedThread  CONTEXT LOADER IS ${isolatedThread.getContextClassLoader()} ")
+         driver.get match {
+            case mp : MetricsProducing => {
+              _jobMetrics = mp.jobMetrics
+            }  
+            case _  => {  info(" Driver is not MetricsProducing" )  }
+         }
+
+         driver.get.close
+         driver.release
          isolatedThread._res
 
     }
@@ -189,22 +212,28 @@ case class HiveSatisfier(val queryResource: String, val conf : HiveConf)( implic
     
     @Override 
     override def abort() : ExecutionResult =  robustly {
-       driver.abort
+      if(driver.isBuilt ) {
+       driver.get.abort
+       driver.get.close
+       driver.release
+
+      }
        true
     }
     
     
    ///
+    private var _jobMetrics = new MetricsCollection(s" Hive Query $queryResource ")
     def jobMetrics : MetricsCollection =  {
-       if( driver.isInstanceOf[MetricsProducing])  {
-           val mpDriver = driver.asInstanceOf[MetricsProducing] 
-            val metrics = mpDriver.jobMetrics
-            //// XXX Have well defined close 
-            metrics
+      /**
+       if( driver.isBuilt && driver.get.isInstanceOf[MetricsProducing])  {
+           val mpDriver = driver.get.asInstanceOf[MetricsProducing] 
+            _jobMetrics = mpDriver.jobMetrics
             
-       } else {
-         new MetricsCollection("Hive Query")
        }
+       * 
+       */
+       _jobMetrics
     }
    
    
