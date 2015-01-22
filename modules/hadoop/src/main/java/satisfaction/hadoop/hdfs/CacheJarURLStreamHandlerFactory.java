@@ -4,9 +4,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.net.JarURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
@@ -15,25 +12,23 @@ import java.net.URLStreamHandlerFactory;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.util.Enumeration;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 import org.apache.hadoop.fs.FsUrlStreamHandlerFactory;
 import org.apache.hadoop.hive.conf.HiveConf;
-import org.joda.time.DateTime;
-
-import sun.net.www.protocol.jar.Handler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *  To avoid contention on HDFS, cache jar files locally
- *   on the filesystem
+ *   on the local filesystem
  */
 public class CacheJarURLStreamHandlerFactory implements URLStreamHandlerFactory {
+	private final static Logger LOG = LoggerFactory.getLogger( CacheJarURLStreamHandlerFactory.class);
 	private  FsUrlStreamHandlerFactory hdfsHandlerFactory;
 	private String cachePathRoot;
-     private Path _tempDir;
+    private Path _tempDir;
 
 
 	public CacheJarURLStreamHandlerFactory( HiveConf conf, String cachePathRoot) {
@@ -82,12 +77,10 @@ public class CacheJarURLStreamHandlerFactory implements URLStreamHandlerFactory 
 		       }
 		         return result;
 		   } catch(IOException ioExc) {
-			   System.out.println(" IO EXC " + ioExc.getMessage());
-			   ioExc.printStackTrace();
+			   LOG.error(" IO Exception " + ioExc.getMessage(), ioExc);
 			   throw ioExc;
 		   } catch(RuntimeException runExc) {
-			   System.out.println(" RUNTIME EXC " + runExc.getMessage());
-			   runExc.printStackTrace();
+			   LOG.error(" RuntimeException " + runExc.getMessage(), runExc);
 			   throw runExc;
 		   }
 		}
@@ -95,21 +88,20 @@ public class CacheJarURLStreamHandlerFactory implements URLStreamHandlerFactory 
 		@Override 
 		public void connect() throws IOException {
 			try {
-			System.out.println(" CONNECTED !!!" );
+			LOG.debug(" CONNECTED !!!" );
 			if(!connected) {
 				URL jarURL = getJarFileURL();
-				System.out.println(" JAR URL IS " + jarURL +  " FILE IS " + jarURL.getFile());
+				LOG.debug(" JAR URL IS " + jarURL +  " FILE IS " + jarURL.getFile());
 				String[] jarDirs= jarURL.getFile().split("/");
 				String jarName = jarDirs[ jarDirs.length -1 ];
-				System.out.println(" PATH = " + jarURL.getFile() + " JAR NMAME = " + jarName);
+				LOG.debug(" PATH = " + jarURL.getFile() + " JAR NMAME = " + jarName);
 
 				File cacheFile = new File( cachePathRoot +  "/" + jarName  );
 				URL mappedURL = new URL("file://" + cachePathRoot + "/" + jarName );
-				System.out.println(" CACHED FILE = " + cacheFile+ " MAPPED URL = "+ mappedURL );
+				LOG.debug(" CACHED FILE = " + cacheFile+ " MAPPED URL = "+ mappedURL );
 				if(!cacheFile.exists()) {
-					///System.out.println(" COPYING JAR FILE ");
 					URLConnection hdfsConnection = jarURL.openConnection(); 
-					////System.out.println(" HDFS CONNECTION = "  + hdfsConnection);
+					LOG.debug(" HDFS CONNECTION = "  + hdfsConnection);
 
 					//// Copy to a tempfile and then move in one step
 					////  so that nobody reads partial files
@@ -125,16 +117,11 @@ public class CacheJarURLStreamHandlerFactory implements URLStreamHandlerFactory 
 
 					hdfsStream.close();
 
-					////Files.copy( tempPath, cacheFile.toPath(), StandardCopyOption.ATOMIC_MOVE);
 					Path cachedPath = cacheFile.toPath();
 					if( !Files.exists( cachedPath.getParent())){
-						///System.out.println(" CREATING PARENT " + cachedPath.getParent());
 					   Files.createDirectories( cachedPath.getParent());
 					}
 					Files.copy( tempPath, cacheFile.toPath());
-					////System.out.println(" MAPPED URL IS " + mappedURL);
-
-					///return getConnection(fileHandler, mappedURL );
 					
 				}
 			    jarFile =  new JarFile( cacheFile);
@@ -160,12 +147,11 @@ public class CacheJarURLStreamHandlerFactory implements URLStreamHandlerFactory 
 				//// Swallow these
 				throw notExc;
 			} catch(IOException ioExc ) {
-				System.out.println(" WHAT WENT WRONG " + ioExc.getMessage());
-				ioExc.printStackTrace();
+				LOG.error("IO Exception " + ioExc.getMessage(), ioExc );
 				throw ioExc;
 			} catch(Throwable unexpected ) {
-				System.out.println(" ARGGGH WHAT WENT WRONG " + unexpected.getMessage());
-				unexpected.printStackTrace();
+				LOG.error(" Unexpected error " + unexpected.getMessage(), unexpected );
+				throw new RuntimeException(unexpected);
 			}
 		}
 		
@@ -189,7 +175,7 @@ public class CacheJarURLStreamHandlerFactory implements URLStreamHandlerFactory 
 	
 	protected Path tempDir() throws IOException {
 		if(_tempDir == null) {
-		   Path currentDir = FileSystems.getDefault().getPath(System.getProperty("user.dir"));
+		   Path currentDir = FileSystems.getDefault().getPath(cachePathRoot);
 		   _tempDir = Files.createTempDirectory(currentDir, "satis_cache");
 		}
 		return _tempDir;

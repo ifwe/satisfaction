@@ -1,4 +1,4 @@
-package harmony.java.net;
+package satisfaction.util.classloader;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -34,11 +34,6 @@ public class IsolatedClassLoader extends ClassLoader implements java.io.Closeabl
 	private InnerIsolatedClassLoader _delegLoader = null;
 
 	 
-	/**
-	public IsolatedClassLoader(URL[] urls, ClassLoader parent) {
-		_delegLoader = new InnerIsolatedClassLoader( urls, parent);
-	}
-	**/
 	public IsolatedClassLoader(URL[] urls, ClassLoader parent, List<String> frontLoadedClassExprs, List<String> backLoadedClassExprs, 
 			 HiveConf configuration, String cachePath) {
 		HiveConf newConf = new HiveConf( configuration);

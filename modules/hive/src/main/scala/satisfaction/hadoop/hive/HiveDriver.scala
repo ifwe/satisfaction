@@ -10,7 +10,7 @@ import satisfaction.Track
 import satisfaction.Witness.Witness2Properties
 import satisfaction.hadoop.CachingTrackLoader
 import _root_.org.apache.hadoop.hive.ql.metadata.Hive
-import harmony.java.net.IsolatedClassLoader
+import satisfaction.util.classloader.IsolatedClassLoader
 
 /**
  *  Trait for class which can executes
@@ -72,7 +72,9 @@ object HiveDriver extends Logging {
       
       val isolateFlag = track.trackProperties.getProperty("satisfaction.classloader.isolate","true").toBoolean
       val urlClassLoader = if( isolateFlag) {
-         val cachePath = CachingTrackLoader.getCachePath( track.trackPath ).toString
+             
+         val cachePath = track.trackProperties.getOrElse(Variable("satisfaction.track.cache.path") , "/var/log/satisfaction-cache-root")
+
          info(s" Using IsolatedClassLoader with a cachePath of $cachePath")
          
          val frontLoadClasses =  List("org.apache.hadoop.hive.ql.*", 
@@ -126,7 +128,7 @@ object HiveDriver extends Logging {
                   ////"org.apache.hadoop.hive.metastore.api.*",
                   ///"org.apache.*HiveMetaHookLoader.*")
                   )
-         val isolatedClassLoader = new harmony.java.net.IsolatedClassLoader( exportFiles.map( _.toUri.toURL).toArray[URL], 
+         val isolatedClassLoader = new IsolatedClassLoader( exportFiles.map( _.toUri.toURL).toArray[URL], 
     		  	parentLoader,
     		  	frontLoadClasses,
     		  	backLoadClasses, 

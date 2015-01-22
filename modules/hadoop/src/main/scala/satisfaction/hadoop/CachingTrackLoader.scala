@@ -28,7 +28,7 @@ class CachingTrackLoader(trackFactory : TrackFactory, trackProps : Map[String,St
        } })
        
        
-       val cachePath  = CachingTrackLoader.getCachePath( trackPath)
+       val cachePath  = getCachePath( trackPath)
        info(s" Using ${cachePath} instead of trackPath $trackPath ")
        
        val cachingStreamHandlerFactory = new CacheJarURLStreamHandlerFactory( hiveConf, cachePath.toString)
@@ -38,16 +38,14 @@ class CachingTrackLoader(trackFactory : TrackFactory, trackProps : Map[String,St
 
      }
 
-}
-
-object CachingTrackLoader  {
   
      def getCachePath( trackPath : Path) : Path = {
        //// Place cache in local directory , but append the track Path
        val localPath = trackPath.toUri.getPath() /// remove hdfs:// scheme
        
+       val cacheBase = trackProps.getOrElse("satisfaction.track.cache" , "/var/log/satisfaction-cache-root")
 
-       val cachePath  = Path( System.getProperty("user.dir") ) / "cache" / localPath
+       val cachePath  = new Path(cacheBase) / localPath
        
        cachePath
      }

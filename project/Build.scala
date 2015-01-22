@@ -15,7 +15,7 @@ import play.Project._
 
 object ApplicationBuild extends Build {
 
-  val appVersion = "2.5.3"
+  val appVersion = "2.5.4"
 
   val hiveVersion = "0.13.1"
 
@@ -119,7 +119,7 @@ object ApplicationBuild extends Build {
     version in Rpm := resolveRpmVersion(),
 
     ////rpmRelease in Rpm:= resolveRpmVersion(),
-    rpmRelease in Rpm := "8",
+    rpmRelease in Rpm := "1",
     packageSummary in Rpm := "wyman",
     packageSummary in Linux := "wyman",
     rpmVendor in Rpm := "Tagged.com",

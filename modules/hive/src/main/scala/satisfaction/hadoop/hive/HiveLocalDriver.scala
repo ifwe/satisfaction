@@ -22,7 +22,7 @@ import satisfaction.ProgressCounter
 import satisfaction.Progressable
 import satisfaction.hadoop.Config
 import java.io.File
-import harmony.java.net.IsolatedClassLoader
+import satisfaction.util.classloader.IsolatedClassLoader
 import satisfaction.util.Releaseable
 import satisfaction.util.Wrapper
 
