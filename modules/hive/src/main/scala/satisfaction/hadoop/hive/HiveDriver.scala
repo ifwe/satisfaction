@@ -211,7 +211,7 @@ class SatisfactionHiveConf(hc : HiveConf) extends HiveConf(hc) with Logging {
    *   Don't Cache !!!
    */
   override def getClassByName( className : String ) : Class[_] = {
-      info(s" Loading HiveConf class $className with ClassLoader ${getClassLoader}" ) 
+      debug(s" Loading HiveConf class $className with ClassLoader ${getClassLoader}" ) 
       
       getClassLoader.loadClass(className)
   }

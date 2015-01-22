@@ -43,7 +43,7 @@ class InnerIsolatedClassLoader extends java.net.URLClassLoader implements java.i
 			 HiveConf configuration, String cachePath, IsolatedClassLoader outerLoader) {
 		super(urls, parent, new CacheJarURLStreamHandlerFactory( configuration, cachePath));
 		configuration.setBoolean("fs.hdfs.impl.disable.cache", false); /// ???
-		LOG.info(" Creating RobustClassLoader with URLS " + urls);
+		LOG.info(" Creating InnerIsolatedClassLoader with URLS " + urls);
 		frontLoadPatterns = new ArrayList<Pattern>();
 	    for( String expr : frontLoadedClassExprs ) {
            LOG.info(" Adding Pattern " + expr + " to frontloaded patterns");
@@ -134,7 +134,6 @@ class InnerIsolatedClassLoader extends java.net.URLClassLoader implements java.i
 	@Override
 	public void close() throws IOException {
 		LOG.info(" Closing InnerIsolatedClassLoader " + this);
-		System.out.println(" Closing InnerIsolatedClassLoader " + this);
 		registeredClasses.clear();
 		super.close();
 		
@@ -153,34 +152,6 @@ class InnerIsolatedClassLoader extends java.net.URLClassLoader implements java.i
 		}
 		
 		
-		////  Remove reference in the WritableComparatore static comparators map
-		/**
-		try {
-			Class writableCompClass = Class.forName("org.apache.hadoop.io.WritableComparator");
-			
-			Field comparatorsField = writableCompClass.getDeclaredField("comparators");
-			comparatorsField.setAccessible(true);
-			
-			Object comparatorObj = comparatorsField.get(null);
-			ConcurrentHashMap comparatorMap = (ConcurrentHashMap) comparatorObj;
-			boolean found = false;
-			for(Object comparatorKey : comparatorMap.keySet() ) {
-				Object comparator = comparatorMap.get(comparatorKey);
-				if( comparator.getClass().getClassLoader() == this 
-						|| comparator.getClass().getClassLoader() == this ) {
-					LOG.info(" Removing reference WritableComparator " + comparatorKey + " == " + comparator );
-					comparatorMap.remove( comparatorKey);
-					found = true;
-				}
-			}
-			if( !found ) {
-				LOG.warn(" Unable to find WritableComparator References !!!!!");
-			}
-		} catch( Exception exc) {
-			LOG.error(" Unexpected Error while attempting to Clear WritableComparator ", exc);
-			
-		}
-		**/
 		removeStaticCacheReference("org.apache.hadoop.io.WritableComparator");
 		removeStaticCacheReference("org.apache.hadoop.hive.serde2.objectinspector.ObjectInspectorFactory");
 		
@@ -368,7 +339,7 @@ class InnerIsolatedClassLoader extends java.net.URLClassLoader implements java.i
 		for( Pattern frontPattern : frontLoadPatterns) {
 			Matcher m = frontPattern.matcher( name);
 			if(m.matches() ) {
-				LOG.info( " Class " + name + " matches frontload pattern " + frontPattern.pattern());
+				LOG.debug( " Class " + name + " matches frontload pattern " + frontPattern.pattern());
 				frontFlag = true;
 				break;
 			}
@@ -377,7 +348,7 @@ class InnerIsolatedClassLoader extends java.net.URLClassLoader implements java.i
 		   for( Pattern backPattern : backLoadPatterns) {
 			  Matcher m = backPattern.matcher( name);
 			  if( m.matches()) {
-				  LOG.info( " Class " + name + " matches backload pattern " + backPattern.pattern() + " ; Delegating to Parent ");
+				  LOG.debug( " Class " + name + " matches backload pattern " + backPattern.pattern() + " ; Delegating to Parent ");
 				  return false;
 			  }
 		   }
@@ -409,7 +380,7 @@ class InnerIsolatedClassLoader extends java.net.URLClassLoader implements java.i
 	   protected Class<?> reverseLoadClass(String name, boolean resolve)
 		        throws ClassNotFoundException
 	    {
-		   LOG.info(" Front loading class " + name);
+		   LOG.debug(" Front loading class " + name);
 		            // First, check if the class has already been loaded
 		            Class c = findLoadedClass(name);
 		            if (c == null) {
@@ -423,7 +394,7 @@ class InnerIsolatedClassLoader extends java.net.URLClassLoader implements java.i
 
 		            	if( c == null) {
 		                   try {	
-		                	   LOG.info(" Going to parent loader for class " + name);
+		                	   LOG.debug(" Going to parent loader for class " + name);
 		                     c = getParent().loadClass(name);
 		                	   ///c = copyParentClass(name);
 		                   } catch( ClassNotFoundException notFoundParent ) {

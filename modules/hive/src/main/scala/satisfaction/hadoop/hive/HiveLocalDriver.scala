@@ -46,8 +46,6 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config ) )
       unexpect.printStackTrace
     }
  
-    ///lazy val driver : _root_.org.apache.hadoop.hive.ql.Driver = {
-    ////def getDriver : _root_.org.apache.hadoop.hive.ql.Driver = {
      val driver = new Releaseable[Wrapper]({
 
         
@@ -55,28 +53,7 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config ) )
         info( " HiveLocalDriver getDriver  Cl = " + cl )
         info( " HiveLocalDriver getDriver  ClassLoader = " + this.getClass.getClassLoader.getClass().getName() )
         info( " HiveLocalDriver getDriver  ThreadLoader= = " + Thread.currentThread().getContextClassLoader().getClass().getName() )
-        ////Thread.currentThread().setContextClassLoader(this.getClass.getClassLoader)
-        
-        ///info(s"  SessionState Classloader =  ${classOf[SessionState].getClassLoader}  THIS LOADER = $cl " )
-        /**
-         *  Need to check our classloader
-         */
-        /**
-        val dr = if( hiveConf.get("satisfaction.track.user.name") != null )  {
-            new _root_.org.apache.hadoop.hive.ql.Driver(hiveConf, hiveConf.get("satisfaction.track.user.name"))
-        } else {
-           new _root_.org.apache.hadoop.hive.ql.Driver(hiveConf)
-        }
-        * 
-        */
         try {
-          /***
-        val  apacheHiveDriverClass = cl.loadClass("org.apache.hadoop.hive.ql.Driver")
-        val dr = apacheHiveDriverClass.getConstructor( classOf[HiveConf]).newInstance( hiveConf).asInstanceOf[_root_.org.apache.hadoop.hive.ql.Driver]
-        //// implicitly use same classloader as this 
-          ///val dr = new _root_.org.apache.hadoop.hive.ql.Driver( hiveConf)
-           * ***
-           */
           
           val dr = Wrapper.withConstructor( "org.apache.hadoop.hive.ql.Driver", cl, Array[Class[_]]( classOf[HiveConf] ) , Array(  hiveConf ) )
           info( s" New APACHE DRIVER = ${dr.wrapped}  CLASS LOADER = ${dr.wrapped.getClass.getClassLoader}" )
@@ -163,55 +140,12 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config ) )
     }
     
     
-    /**
-     *  Check that the  threadlocal SessionState
-     *   has not been closed since last call
-     */
-    /**
-    def checkSessionState() : Boolean = {
-       val  ss2 = SessionState.start( hiveConf) 
-           ss2.out = Console.out
-           ss2.info = Console.out
-           ss2.childErr = Console.out
-           ss2.childOut = Console.out
-           ss2.err = Console.out
-           false
-       } else {
-           ss1.out = Console.out
-           ss1.info = Console.out
-           ss1.childErr = Console.out
-           ss1.childOut = Console.out
-           ss1.err = Console.out
-         true 
-       }
-    }
-    * 
-    */
-
     override def executeQuery(query: String): Boolean = {
         try {
             val response : CommandProcessorResponse = HiveLocalDriver.retry (5) {
-              /**
-                if( !checkSessionState ) {
-                   warn(s"HIVE_DRIVER -- SessionState was closed after previous call ") 
-                }
-                * 
-               val confMember = driver.getClass().getDeclaredField("conf") 
-               confMember.setAccessible(true)
-               
-               val checkConf = confMember.get(driver).asInstanceOf[HiveConf]
-                */
                 sessionState.execStatic("setCurrentSessionState", sessionState.wrapped)
                 info( s" SESSION STATE CL = ${sessionState.wrapped} ${sessionState.wrappedClass.getClassLoader} ")
-            	////SessionState.setCurrentSessionState( sessionState )
-            	val cl = Thread.currentThread().getContextClassLoader();
-                if( cl != hiveConf.getClassLoader() ) {
-                  error(s" ERROR SOMEONE OVERWROTE CLASS LOADER IN THREAD CONTEXT  $cl ${hiveConf.getClassLoader}" )
-                  error(s" ERROR SOMEONE OVERWROTE CLASS LOADER IN THREAD CONTEXT Context =  $cl HiveConf = ${hiveConf.getClassLoader} this loader = ${this.getClass.getClassLoader} " )
-                  Console.out.println(s" ERROR SOMEONE OVERWROTE CLASS LOADER IN THREAD CONTEXT Context =  $cl HiveConf = ${hiveConf.getClassLoader} this loader = ${this.getClass.getClassLoader} " )
-                  System.out.println(s" ERROR SOMEONE OVERWROTE CLASS LOADER IN THREAD CONTEXT  Context = $cl  HiveConf =  ${hiveConf.getClassLoader} this loader = ${this.getClass.getClassLoader}" )
-                }
-                ///Thread.currentThread.setContextClassLoader( hiveConf.getClassLoader )
+
                 val resp = driver.get.->("run",query).asInstanceOf[CommandProcessorResponse]
                 resp
             }
