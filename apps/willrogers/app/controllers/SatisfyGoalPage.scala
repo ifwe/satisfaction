@@ -102,7 +102,7 @@ object SatisfyGoalPage extends Controller with Logging {
     def plumbGraphForStatus(status: GoalStatus): PlumbGraph = {
         val pg = new PlumbGraph
         pg.divWidth = 2000
-        pg.divHeight = 500
+        pg.divHeight = 1500
         val nodeMap: mutable.Map[String, PlumbGraph.NodeDiv] = mutable.Map()
         
         val progTracker = status.progressCounter

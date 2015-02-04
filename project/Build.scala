@@ -7,15 +7,23 @@ import com.typesafe.sbt.packager.rpm.RpmDependencies
 import com.typesafe.sbt.packager.Keys._
 import com.typesafe.sbt.SbtNativePackager._
 import NativePackagerKeys._
+import com.typesafe.sbt.packager.archetypes.TemplateWriter
 
 import com.typesafe.sbt.packager.universal.Keys.stagingDirectory
 
-import play.Project._
+import play.Play.autoImport._
+import PlayKeys._
+
+import com.typesafe.sbt.web._
+import com.typesafe.sbt.web.SbtWeb._
+import com.typesafe.sbt.web.Import._
+import com.typesafe.sbt.web.Import.WebKeys._
+
 
 
 object ApplicationBuild extends Build {
 
-  val appVersion = "2.5.4"
+  val appVersion = "2.5.5"
 
   val hiveVersion = "0.13.1"
 
@@ -39,11 +47,21 @@ object ApplicationBuild extends Build {
       file("modules/hive")
   ).settings(CommonSettings: _*).settings(libraryDependencies  := hiveDependencies ).dependsOn(core).dependsOn(hadoop).dependsOn( engine)
 
-  val willrogers = play.Project(
+  val willrogers = Project(
       "willrogers",
-      appVersion,
-      path = file("apps/willrogers")
-  ).settings(AppSettings: _*).settings(RpmSettings: _* ).dependsOn(core, engine, hadoop )
+      file("apps/willrogers")
+  ).enablePlugins(play.PlayScala, SbtWeb)
+   .settings( version := appVersion,
+
+     ////sbt-web doesn't automatically include the assets 
+
+     (unmanagedResourceDirectories in Compile) += (webTarget in Assets).value,
+
+     (packageBin in Compile) <<= (packageBin in Compile).dependsOn(assets in Assets),
+
+     (packageBin in Rpm) <<= (packageBin in Rpm).dependsOn(packageBin in Compile)
+
+   ).settings( AppSettings: _* ).settings(RpmSettings: _* ).dependsOn(core, engine, hadoop )
 
   def CommonSettings =  Resolvers ++ Seq(
       scalacOptions ++= Seq(
@@ -75,8 +93,15 @@ object ApplicationBuild extends Build {
       isSnapshot := true
   ) 
 
-  def AppSettings =  CommonSettings ++ playScalaSettings ++ Seq(
-     javacOptions in Compile ++= Seq("-source", "1.7", "-target", "1.7")
+  def AppSettings =  CommonSettings ++ Seq(
+     javacOptions in Compile ++= Seq("-source", "1.7", "-target", "1.7"),
+
+     unmanagedResourceDirectories in Assets += baseDirectory.value / "public"
+
+    
+     ///(managedClasspath in Runtime) += (packageBin in Assets).value
+
+
   )
 
 
@@ -87,15 +112,13 @@ object ApplicationBuild extends Build {
     }
   }
 
-  def RpmSettings = packagerSettings ++ deploymentSettings ++  playScalaSettings ++ packageArchetype.java_server ++  Seq(
+  def RpmSettings = packagerSettings ++ deploymentSettings ++ packageArchetype.java_server ++  Seq(
     maintainer in Linux := "Jerome Banks jbanks@tagged.com",
     packageSummary in Linux := "Satisfaction",
     packageDescription in Linux := "The Next Generation Hadoop Scheduler",
     daemonUser in Linux := "satisfaction",
     daemonGroup in Linux := "satisfaction",
     normalizedName in Linux := "satisfaction",
-
-    linuxStartScriptTemplate := sbt.url( "conf/dist-play-app-initd") ,
 
 
     linuxPackageMappings <++= (mappings in Universal) map { universalDir => 
@@ -119,7 +142,8 @@ object ApplicationBuild extends Build {
     version in Rpm := resolveRpmVersion(),
 
     ////rpmRelease in Rpm:= resolveRpmVersion(),
-    rpmRelease in Rpm := "1",
+    rpmRelease in Rpm := "11",
+    rpmBrpJavaRepackJars := true,
     packageSummary in Rpm := "wyman",
     packageSummary in Linux := "wyman",
     rpmVendor in Rpm := "Tagged.com",
@@ -174,7 +198,11 @@ export HADOOP_HOME=/usr/lib/hadoop
 	  ("org.hamcrest" % "hamcrest-core" % "1.3"  ) ,
           ("ch.qos.logback" % "logback-classic" % "1.0.13" ),
           ("org.slf4j" % "log4j-over-slf4j" % "1.7.7" )
-  ).excluding("commons-daemon", "commons-daemon" ).excluding("junit","junit").excluding("log4j", "log4j").excluding("org.slf4j","slf4j-log4j12") ++ testDependencies ++ metastoreDependencies
+  ).excluding("commons-daemon", "commons-daemon" )
+	.excluding("junit","junit")
+	.excluding("log4j", "log4j")
+        .excluding("org.slf4j","slf4j-log4j12")
+        .excludingGroup("org.jboss.netty" ) ++ testDependencies ++ metastoreDependencies
 
   def coreDependencies = Seq(
     ("org.slf4j" % "slf4j-api" % "1.7.7"),
@@ -196,6 +224,7 @@ export HADOOP_HOME=/usr/lib/hadoop
 	  ("org.apache.thrift" % "libfb303" % "0.7.0"),
 	  ("com.tagged.analytics" % "avro-serde" % "0.13.1-jdb")
   ).excluding( "log4j", "log4j" ).excluding("org.slf4j", "slf4j-log4j12")
+   .excluding("org.jboss.netty", "netty")
 
   def hiveDependencies = Seq(
 	  ("org.apache.hive" % "hive-common" % hiveVersion),
@@ -210,16 +239,19 @@ export HADOOP_HOME=/usr/lib/hadoop
 	  ("org.apache.thrift" % "libfb303" % "0.7.0" ),
 	  ("org.antlr" % "antlr-runtime" % "3.4" ),
 	  ("org.antlr" % "antlr" % "3.0.1" )
-  ).excluding("org.slf4j", "slf4j-log4j12")  ++ metastoreDependencies ++ testDependencies
+  ).excluding("org.slf4j", "slf4j-log4j12")
+   .excluding("org.jboss.netty", "netty") 
+   .excludingGroup("org.jboss.netty")  ++ metastoreDependencies ++ testDependencies
 
 
   def engineDependencies = Seq(
-    ("com.typesafe.akka" %% "akka-actor" % "2.2.0"),
+    ("com.typesafe.akka" %% "akka-actor" % "2.3.9"),
     ("org.quartz-scheduler" % "quartz" % "2.2.1"),
     ("ch.qos.logback" % "logback-classic" % "1.0.13" ),
     ("com.typesafe.slick" %% "slick" % "2.0.2"),
     ("com.h2database" % "h2" % "1.3.170"),
     ("com.typesafe.slick" %% "slick" % "2.0.2"),
+    ("nl.grons" %% "metrics-scala" % "3.3.0_a2.2"),
     ("ch.qos.logback" % "logback-classic" % "1.0.13" )
   ) ++ testDependencies ++ jsonDependencies
 
@@ -237,3 +269,6 @@ export HADOOP_HOME=/usr/lib/hadoop
   )
 
 }
+
+
+

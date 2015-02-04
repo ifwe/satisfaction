@@ -42,7 +42,6 @@ class InnerIsolatedClassLoader extends java.net.URLClassLoader implements java.i
 	public InnerIsolatedClassLoader(URL[] urls, ClassLoader parent, List<String> frontLoadedClassExprs, List<String> backLoadedClassExprs, 
 			 HiveConf configuration, String cachePath, IsolatedClassLoader outerLoader) {
 		super(urls, parent, new CacheJarURLStreamHandlerFactory( configuration, cachePath));
-		configuration.setBoolean("fs.hdfs.impl.disable.cache", false); /// ???
 		LOG.info(" Creating InnerIsolatedClassLoader with URLS " + urls);
 		frontLoadPatterns = new ArrayList<Pattern>();
 	    for( String expr : frontLoadedClassExprs ) {

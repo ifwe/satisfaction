@@ -9,6 +9,8 @@ import java.util.Properties
 import org.apache.hadoop.conf.Configuration
 import satisfaction.Logging
 import satisfaction.hadoop.hdfs.CacheJarURLStreamHandlerFactory
+import satisfaction.fs.FileSystem
+import satisfaction.fs.LocalFileSystem
 
 class CachingTrackLoader(trackFactory : TrackFactory, trackProps : Map[String,String] )  extends DefaultTrackLoader(trackFactory,trackProps) with Logging {
   
@@ -43,9 +45,12 @@ class CachingTrackLoader(trackFactory : TrackFactory, trackProps : Map[String,St
        //// Place cache in local directory , but append the track Path
        val localPath = trackPath.toUri.getPath() /// remove hdfs:// scheme
        
-       val cacheBase = trackProps.getOrElse("satisfaction.track.cache" , "/var/log/satisfaction-cache-root")
+       val cacheBase = trackProps.getOrElse("satisfaction.track.cache.path" , "/var/log/satisfaction-cache-root")
 
        val cachePath  = new Path(cacheBase) / localPath
+       
+       val localFs = LocalFileSystem()
+       if( !localFs.exists(cachePath) ) { localFs.mkdirs( cachePath) }
        
        cachePath
      }

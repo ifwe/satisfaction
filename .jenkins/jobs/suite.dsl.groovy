@@ -33,7 +33,7 @@ def satisfaction = new Project(
             '-Dsbt.log.noformat=true',
             '-Xmx1536M -Xss1M -XX:+CMSClassUnloadingEnabled -XX:MaxPermSize=256m')
         sbt('sbt',
-            '\'project willrogers\' rpm:packageBin',
+            '\'project willrogers\' package rpm:packageBin',
             '-Dsbt.log.noformat=true',
             '-Xmx1536M -Xss1M -XX:+CMSClassUnloadingEnabled -XX:MaxPermSize=256m')
     }

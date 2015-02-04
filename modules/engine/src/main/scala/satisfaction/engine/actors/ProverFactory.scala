@@ -84,7 +84,7 @@ class ProverFactory( trackHistoryOpt : Option[TrackHistory] = None) extends Acto
         case retryable : Retryable => {
           if( retryable.shouldRetry( goal)) {
              log.info(s" Goal ${goal.name} is retryable ; creating RetryAgent to listen to status ")
-             val retryAgent : ActorRef = context.system.actorOf(Props(new RetryAgent(retryable,actor )(track)))
+             val retryAgent : ActorRef = context.system.actorOf(Props(classOf[RetryAgent],retryable,actor,track) )
              actor ! AddListener( retryAgent)
           } else {
             log.warning(" Retryable says we should not retry goal ${goal.name}; Not creating RetryAgent ")
@@ -132,10 +132,14 @@ class ProverFactory( trackHistoryOpt : Option[TrackHistory] = None) extends Acto
                     
        /// XXX build actor pimping framework
        if( trackHistory != null) {
-          val historyRef = context.system.actorOf(Props(classOf[HistoryAgent], actorRef,  track.descriptor, goal.name, witness,trackHistory),
+         
+          val jmxAgent = context.system.actorOf(Props(classOf[JMXAgent], actorRef,  track.descriptor, goal.name, witness,trackHistory), 
+             "JMXAgent_" + actorTupleName)
+          val historyRef = context.system.actorOf(Props(classOf[HistoryAgent], jmxAgent,  track.descriptor, goal.name, witness,trackHistory),
              "History_" + actorTupleName)
           _actorMap.put(actorTupleName,historyRef)
            actorRef ! AddListener( historyRef)
+           actorRef ! AddListener( jmxAgent)
                 
 
           pimpMyActor( historyRef, track, goal, witness)

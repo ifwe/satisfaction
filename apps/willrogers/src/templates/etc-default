@@ -19,7 +19,18 @@
 -Dhttp.port=9000
 -Dpidfile.path=/var/run/${{app_name}}/running.pid
 -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.ssl=false 
--Dcom.sun.management.jmxremote.port=9010 
+-Dcom.sun.management.jmxremote.port=9004
 -Dcom.sun.management.jmxremote.local.only=false 
 -Dcom.sun.management.jmxremote.authenticate=false
+-J-Xmx2048m
+-J-Xms2048m
+-J-XX:+UseConcMarkSweepGC
+-J-XX:+CMSClassUnloadingEnabled 
+-J-XX:+CMSPermGenSweepingEnabled 
+-J-XX:+HeapDumpOnOutOfMemoryError 
+-J-XX:HeapDumpPath=/usr/share/${{app_name}}
+-J-XX:PermSize=512m 
+-J-XX:MaxPermSize=512m 
+-J-XX:+TraceClassLoading 
+-J-XX:+TraceClassUnloading
 

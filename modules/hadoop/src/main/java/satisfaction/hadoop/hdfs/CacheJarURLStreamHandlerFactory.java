@@ -72,8 +72,8 @@ public class CacheJarURLStreamHandlerFactory implements URLStreamHandlerFactory 
 		                                  " not found in " +
 		                                 jarFile.getName());
 		           }
-		        ///result = new JarURLInputStream (jarFile.getInputStream(jarEntry));
-		        result =  (jarFile.getInputStream(jarEntry));
+		        result = new JarURLInputStream (jarFile.getInputStream(jarEntry));
+		        ///result =  (jarFile.getInputStream(jarEntry));
 		       }
 		         return result;
 		   } catch(IOException ioExc) {
@@ -85,9 +85,26 @@ public class CacheJarURLStreamHandlerFactory implements URLStreamHandlerFactory 
 		   }
 		}
 
+	   class  JarURLInputStream extends java.io.FilterInputStream {
+		  JarURLInputStream (InputStream src) {
+		     super (src);
+		  }
+		  
+		  @Override
+		  public void close () throws IOException {
+		      try {
+		         super.close();
+		      } finally {
+		          if (!getUseCaches()) {
+		               jarFile.close();
+		          }
+		     }
+		   }
+		 }
+
 		@Override 
 		public void connect() throws IOException {
-			try {
+		  try {
 			LOG.debug(" CONNECTED !!!" );
 			if(!connected) {
 				URL jarURL = getJarFileURL();
@@ -97,8 +114,6 @@ public class CacheJarURLStreamHandlerFactory implements URLStreamHandlerFactory 
 				LOG.debug(" PATH = " + jarURL.getFile() + " JAR NMAME = " + jarName);
 
 				File cacheFile = new File( cachePathRoot +  "/" + jarName  );
-				URL mappedURL = new URL("file://" + cachePathRoot + "/" + jarName );
-				LOG.debug(" CACHED FILE = " + cacheFile+ " MAPPED URL = "+ mappedURL );
 				if(!cacheFile.exists()) {
 					URLConnection hdfsConnection = jarURL.openConnection(); 
 					LOG.debug(" HDFS CONNECTION = "  + hdfsConnection);
@@ -143,13 +158,13 @@ public class CacheJarURLStreamHandlerFactory implements URLStreamHandlerFactory 
 			    }
 			    connected = true;
 			}
-			} catch(FileNotFoundException notExc ) {
+		  } catch(FileNotFoundException notExc ) {
 				//// Swallow these
 				throw notExc;
-			} catch(IOException ioExc ) {
+		 } catch(IOException ioExc ) {
 				LOG.error("IO Exception " + ioExc.getMessage(), ioExc );
 				throw ioExc;
-			} catch(Throwable unexpected ) {
+		 } catch(Throwable unexpected ) {
 				LOG.error(" Unexpected error " + unexpected.getMessage(), unexpected );
 				throw new RuntimeException(unexpected);
 			}

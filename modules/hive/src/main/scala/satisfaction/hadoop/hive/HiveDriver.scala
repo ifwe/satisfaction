@@ -11,6 +11,8 @@ import satisfaction.Witness.Witness2Properties
 import satisfaction.hadoop.CachingTrackLoader
 import _root_.org.apache.hadoop.hive.ql.metadata.Hive
 import satisfaction.util.classloader.IsolatedClassLoader
+import satisfaction.fs.LocalFileSystem
+import satisfaction.fs.Path
 
 /**
  *  Trait for class which can executes
@@ -60,21 +62,20 @@ object HiveDriver extends Logging {
      
       info( s" Track libPath is ${track.libPath}")
       info( s" Track resourcePath is ${track.resourcePath}")
-      ///val urls = track.hdfs.synchronized { track.hdfs.listFiles( track.libPath) }
-      ///val resources = track.hdfs.synchronized { track.hdfs.listFiles( track.resourcePath) }
-      ///val exportFiles = ( urls ++ resources)
-      ///val urlClassLoader = new harmony.java.net.ReverseClassLoader( exportFiles.map( _.path.toUri.toURL).toArray[URL], parentLoader);
-      //val urls =  track.hdfs.listFiles( track.libPath) 
       val urls =  track.listLibraries 
-      //val resources =  track.hdfs.listFiles( track.resourcePath) 
       val resources =  track.listResources
       val exportFiles = ( urls ++ resources)
       
       val isolateFlag = track.trackProperties.getProperty("satisfaction.classloader.isolate","true").toBoolean
       val urlClassLoader = if( isolateFlag) {
              
-         val cachePath = track.trackProperties.getOrElse(Variable("satisfaction.track.cache.path") , "/var/log/satisfaction-cache-root")
+         val localPath = track.trackPath.toUri.getPath() /// remove hdfs:// scheme
+         val cacheBase = track.trackProperties.getProperty("satisfaction.track.cache.path" , "/var/log/satisfaction-cache-root")
 
+         val cachePath  = new Path(cacheBase) / localPath
+       
+         val localFs = LocalFileSystem()
+         if( !localFs.exists(cachePath) ) { localFs.mkdirs( cachePath) }
          info(s" Using IsolatedClassLoader with a cachePath of $cachePath")
          
          val frontLoadClasses =  List("org.apache.hadoop.hive.ql.*", 
@@ -133,15 +134,10 @@ object HiveDriver extends Logging {
     		  	frontLoadClasses,
     		  	backLoadClasses, 
     		  	hiveConf,
-    		  	cachePath);
+    		  	cachePath.pathString);
          isolatedClassLoader.registerClass(classOf[HiveDriver]);
-         ///isolatedClassLoader.registerClass(classOf[com.tagged.hadoop.hive.serde2.avro.AvroSerDe]);
          isolatedClassLoader.registerClass(classOf[HiveConf]);
-         ////isolatedClassLoader.registerClass(classOf[HiveMetaStoreClient]);
-         /////isolatedClassLoader.registerClass(classOf[HiveMetaHookLoader]);
          
-         ////isolatedClassLoader.registerClass(classOf[Log]);
-         ////hiveConf.setVar(HiveConf.ConfVars.HIVE_PERF_LOGGER, "satisfaction.hadoop.hive.BoogerPerfLogger");
          info( s" LOG CLASSLOADER is ${classOf[Log].getClassLoader}")
           if( track.trackProperties.contains("satisfaction.classloader.frontload"))  {
               track.trackProperties.getProperty("satisfaction.classloader.frontload").split(",").foreach( expr => {

@@ -77,8 +77,8 @@ case class PlumbGraph() {
     var connections: List[PlumbGraph.Connection] = List()
     var idCnt = 0
 
-    var divWidth = 500
-    var divHeight = 500
+    var divWidth = 1500
+    var divHeight = 1500
 
     def generateJavaScript(): String = {
         connections.map(conn => conn.toJavaScript) mkString ("\n")

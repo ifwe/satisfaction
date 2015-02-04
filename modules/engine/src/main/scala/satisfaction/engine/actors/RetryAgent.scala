@@ -19,8 +19,8 @@ import akka.actor.ActorRef
  *  RetryAgent listens for Job failures,
  *    and sends a Retry message
  */
-class RetryAgent(  val retryable : Retryable, val actorToRetry : ActorRef )
-      (implicit val track : Track) extends Actor with ActorLogging {
+class RetryAgent(  val retryable : Retryable, val actorToRetry : ActorRef , implicit val track : Track )
+          extends Actor with ActorLogging {
      var currentRetry: Int = 0;
      var expWaitTime : Double = retryable.waitPeriod.getStandardSeconds()
 

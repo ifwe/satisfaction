@@ -288,7 +288,7 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
       val id = ( _evidenceCheckers.size +1 ).toString
       status.transitionState( GoalState.CheckingEvidence)
       
-      val evidenceCheckerProps = Props( new EvidenceChecker(e))
+      val evidenceCheckerProps = Props( classOf[EvidenceChecker], e )
       val evidenceCheckerActor = context.system.actorOf((evidenceCheckerProps), "Evidence_" + id + "_" + ProofEngine.getActorName(goal, witness))
       _evidenceCheckers.put( id, evidenceCheckerActor)
       
