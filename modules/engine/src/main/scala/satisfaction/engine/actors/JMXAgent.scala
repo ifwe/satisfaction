@@ -30,38 +30,35 @@ import nl.grons.metrics.scala.Counter
  *   
  *   JMX Agent updates counter runs
  */
-class JMXAgent( val forwardActor : ActorRef, 
-          val trackDesc: TrackDescriptor, 
-          val goalName : String, 
-          val witness : Witness )
-      extends Actor with ActorLogging with satisfaction.engine.Instrumented  {
+class JMXAgent extends Actor with ActorLogging with satisfaction.engine.Instrumented  {
   
-  val jmxCounterStarted : Counter  = metrics.counter( "satisfaction", s"${trackDesc.trackName}.$goalName.started")
-  val jmxCounterSuccess : Counter  = metrics.counter( "satisfaction", s"${trackDesc.trackName}.$goalName.success")
-  val jmxCounterFailed : Counter  = metrics.counter( "satisfaction", s"${trackDesc.trackName}.$goalName.failed")
-  val jmxCounterUnexpected : Counter  = metrics.counter( "satisfaction", s"${trackDesc.trackName}.$goalName.unexpected")
+  val counterMap : Map[String,Counter] = Map[String,Counter]()
 
+  /**
+   *   Only count job successes and failures for now 
+   *     until we rethink agent publishing ..
+   *     and job lifecycle
+   */
   def receive = {
-    case Satisfy(runID,parentRunID,force) =>
-      jmxCounterStarted += 1
-      forwardActor forward Satisfy(runID,parentRunID,force)
-      
-    case RestartJob(runID,parentRunID) =>
-      jmxCounterStarted += 1
-      forwardActor forward RestartJob(runID=runID,parentRunID=parentRunID )
     case GoalFailure(goalStatus) =>
-      jmxCounterFailed += 1
+      getCounter( goalStatus, "failure") += 1
     case GoalSuccess(goalStatus) =>
-      jmxCounterSuccess += 1
+      getCounter( goalStatus, "success") += 1
     case unexpected : Any =>
-      jmxCounterUnexpected += 1
-      forwardActor forward unexpected
+    	log.warning(s" Unexpected message $unexpected in JMX Agent")
   } 
 
      
-   override def postStop() = {
-      //// Kill the forward actor ..
-     context.system.stop( forwardActor)
-   }
+  def getCounter(goalStatus : GoalStatus, event : String ) : Counter =  {
+      val counterName = s"${goalStatus.track.trackName}.${goalStatus.goalName}.$event" 
+    
+      counterMap get( counterName ) match {
+        case Some(counter)  =>   counter 
+        case None  => {
+           val newCounter = metrics.counter( "satisfaction", counterName)
+           newCounter
+        }
+      }
+  }
 
 }
