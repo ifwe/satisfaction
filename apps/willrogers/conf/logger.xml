@@ -29,6 +29,9 @@
  <logger name="play" level="INFO" />
  <logger name="application" level="INFO" />
  <logger name="org.apache.hadoop.hdfs" level="OFF" />
+ <logger name="com.sun.jersey" level="OFF" />
+ <logger name="satisfaction.util.classloader.InnerIsolatedClassLoader" level="OFF" />
+ <logger name="org.apache.hadoop.hive.ql.log.PerfLogger" level="OFF" />
 
 
   <root level="INFO">
