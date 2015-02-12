@@ -34,7 +34,7 @@ class ProofEngine( val trackHistoryOpt : Option[TrackHistory] = None) extends  s
        akkaSystem.eventStream.subscribe(actorRef, classOf[DeadLetter])
        actorRef
     }
-    implicit val timeout = Timeout(10 minutes) /// Configure !!!!
+    implicit val timeout = Timeout(60 seconds) /// Configure !!!!
     
     
     
@@ -147,18 +147,29 @@ class ProofEngine( val trackHistoryOpt : Option[TrackHistory] = None) extends  s
         val futureList = Future.sequence(listOfRequests)
         val fMap = futureList.map(_.map(_.goalStatus))
 
-        var resultSet = Await.result(fMap, timeout.duration)
+        val resultSet = Await.result(fMap, 120 seconds)
         
         //// Not quite what we want because we only want the ones for a particular track ...
         info(s" ResultSet size is ${resultSet.size} Active Actors = ${activeActors.size} ")
+        /**
         while( resultSet.size < activeActors.size ) {
            info(" Result Set size is " + resultSet.size)
            resultSet = Await.result(fMap, timeout.duration)
         }
+        * 
+        */
         resultSet.foreach( statResp => {
             info(s" Status = ${statResp.goalName}  :: ${statResp.witness}   :: ${statResp.state} :: result = ${statResp.execResult} ")
         })
-        resultSet
+        
+        
+        if( resultSet.size != activeActors.size) {
+           warn( "Did not receive messages from all actors ")
+           val missingActors = activeActors.filter(  actor => { ! resultSet.exists( gs => { actor.path.toString.contains( gs.goalName ) }  )  } )
+           resultSet ++ missingActors.map( actor => {  GoalStatus(TrackDescriptor("MissingInAction"), actor.path.name , Witness())  } )
+        } else { 
+           resultSet
+        }
     }
     
     
