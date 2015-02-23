@@ -7,7 +7,7 @@ scalaVersion := "2.10.2"
 
 organization := "com.tagged.satisfaction"
 
-version := "0.14"
+version := "0.15"
 
 val hadoopVersion = "2.3.0"
 
@@ -16,9 +16,11 @@ libraryDependencies ++= Seq(
   ("org.apache.hadoop" % "hadoop-hdfs" % hadoopVersion)
 )
 
-publishMavenStyle := false
+publishMavenStyle := true
 
-publishTo := Some("tagged-artifactory-release" at "http://artifactory.tagged.com:8081/artifactory/libs-release-local")
+isSnapshot := true
+
+publishTo := Some("tagged-artifactory-release" at "http://artifactory.tagged.com:8081/artifactory/sbt-plugins-release-local")
 
 credentials += Credentials(Path.userHome / ".ivy2" / ".credentials")
 
