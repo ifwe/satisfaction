@@ -591,13 +591,14 @@ case class MetaStore(implicit val config: HiveConf)  extends Logging {
  */
 object MetaStore  {
   
-    def apply( msURI : java.net.URI )(implicit config :  HiveConf = Config.config) : MetaStore = {
+    def apply( msURI : java.net.URI )(implicit config :  HiveConf = new HiveConf(Config.config, classOf[MetaStore])) : MetaStore = {
       config.setVar(HiveConf.ConfVars.METASTOREURIS, msURI.toASCIIString())
       
       new MetaStore()(config)
     }
     
-    lazy val default = new MetaStore()(Config.config)
+    	//// XXX JDB --- Put in hard-wired defaults here ...
+    lazy val default = new MetaStore()(new HiveConf(Config.config, classOf[MetaStore] ))
   
     /**
      *  From a set of dates 

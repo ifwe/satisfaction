@@ -243,6 +243,11 @@ object TrackScheduler {
 	                              log.info(s" Track ${trck.descriptor.trackName} is constantly Recurring but no restart on error.")
 		                        }
 	                          }
+	                          case _ => {
+	                            //// XXX FIXME
+	                            /// JDB  Handle unexpected errors on Scheduling 
+	                            //// Such as "Ask timed out in "
+	                          }
 		        	        }
 		        	      } 
 		        	    }

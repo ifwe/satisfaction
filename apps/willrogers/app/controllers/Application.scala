@@ -3,7 +3,6 @@ package controllers
 
 import willrogers.Global
 import play.api._
-import satisfaction.hadoop.hive.ms._
 import satisfaction.hadoop.hdfs._
 import play.api.data._
 import play.api.data.Forms._
@@ -13,13 +12,14 @@ import satisfaction.hadoop.Config
 
 
 object Application extends Controller {
-    val ms = Global.metaStore
+    ////val ms = Global.metaStore
 
     def index = Action {
         Ok(views.html.toplevel())
     }
 
 
+    /**
     def allDBs = Action {
         ///Ok( views.html.dbs( MetaStore.getDbs ) )
         Ok(views.html.dbtabs(ms.getDbs))
@@ -33,7 +33,10 @@ object Application extends Controller {
             case _              => data.toString()
         }
     }
+    * **
+    */
 
+    /***
     def getDBTables(db: String) = Action {
         Ok(views.html.alltables(db, ms.getTables(db), ms.getViews(db)))
     }
@@ -49,10 +52,8 @@ object Application extends Controller {
         val part = ms.getPartitionByName(db, tblName, partName.replace('@', '/'))
         Ok(views.html.showpartition(db, tblName, ms, part))
     }
+    * 
+    */
     
-    def reloadFactory() = Action {
-      Global.trackFactory.getAllTracks
-      Ok(s"what do I pass in here?")
-    }
 
 }

@@ -5,7 +5,6 @@ import satisfaction._
 import satisfaction.track.TrackFactory
 import satisfaction.track.TrackScheduler
 import satisfaction.hadoop.hdfs.Hdfs
-import satisfaction.hadoop.hive.ms._
 import satisfaction.hadoop.Config
 import satisfaction.fs.Path
 import satisfaction.hadoop.Config
@@ -25,7 +24,7 @@ import satisfaction.track.TrackFactory.TracksUnavailableException
 object Global extends play.api.GlobalSettings {
 
     implicit lazy val hiveConf = Config.config
-    implicit lazy val metaStore : MetaStore  = new MetaStore()( hiveConf)
+    ////implicit lazy val metaStore : MetaStore  = new MetaStore()( hiveConf)
 
     lazy val hdfsFS = Hdfs.fromConfig( hiveConf )
 

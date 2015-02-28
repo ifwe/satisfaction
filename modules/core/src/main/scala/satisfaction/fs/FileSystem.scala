@@ -1,6 +1,7 @@
 package satisfaction.fs
 
 import java.io.ByteArrayOutputStream
+import org.joda.time.DateTime
 
 
 /**
@@ -80,4 +81,24 @@ trait FileSystem {
       transfer( inStream, outStream)
    }
    
+}
+
+object FileSystem {
+      /**
+     *  Scan a FileSystem to see if new files have been created, and then call a callback function
+     *    for 
+     */
+    def scanForNewDirs( fs : FileSystem, rootPath : Path , lastTime : DateTime,  pathVisitor : Path => Unit ) = {
+      fs.listFilesRecursively( rootPath).foreach( fstat => {
+          if( fstat.isFile) {
+             if( fstat.created.getMillis() > lastTime.getMillis() ) {
+               val parent = fs.getStatus(fstat.path.parent)
+               if( parent.created.getMillis() > lastTime.getMillis()) {
+                 pathVisitor( parent.path)
+               }
+             }
+          }
+      } )
+    }
+  
 }

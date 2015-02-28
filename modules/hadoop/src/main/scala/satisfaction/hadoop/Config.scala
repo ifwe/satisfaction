@@ -1,12 +1,11 @@
 package satisfaction
 package hadoop
 
-import org.apache.hadoop.hive.conf.HiveConf
-import org.apache.hadoop.hive.shims.ShimLoader
+//import org.apache.hadoop.hive.shims.ShimLoader
 import org.apache.hadoop.conf.Configuration
 import collection.JavaConversions._
 import collection.JavaConverters._
-import org.apache.hadoop.hive.conf.HiveConf.ConfVars
+///import org.apache.hadoop.hive.conf.HiveConf.ConfVars
 import java.io.ByteArrayInputStream
 import java.io.FileNotFoundException
 import java.io.File
@@ -21,11 +20,12 @@ import org.apache.commons.logging.LogFactory
  *   to be used
  */
 object Config  extends Logging {
-    def initHiveConf: HiveConf = {
+    def initHiveConf: Configuration = {
         
         info( s" Java Version is ${System.getProperty("java.version")}" )
-        info( s" Hadoop Major Version is ${ShimLoader.getMajorVersion()}" )
-        val hc = new HiveConf(new Configuration(), this.getClass())
+        ///info( s" Hadoop Major Version is ${ShimLoader.getMajorVersion()}" )
+        ///val hc = new Configuration(new Configuration(), this.getClass())
+        val hc = new Configuration()
         
         val hadoopDir = hadoopConfDir 
         info(s"HADOOP Config Directory = $hadoopDir")
@@ -61,6 +61,8 @@ object Config  extends Logging {
        }
        
        //// Override Retries    
+       /// Put logic in Metastore module !!!
+       /**
        hc.setVar(HiveConf.ConfVars.HMSHANDLERATTEMPTS, "10")
        hc.setVar(HiveConf.ConfVars.HMSHANDLERINTERVAL, "3000")
        hc.setVar(HiveConf.ConfVars.METASTORETHRIFTCONNECTIONRETRIES, "5")
@@ -72,6 +74,7 @@ object Config  extends Logging {
           hc.setVar(HiveConf.ConfVars.POSTEXECHOOKS, "")
           hc.setVar(HiveConf.ConfVars.ONFAILUREHOOKS, "")
        }
+       * **/
        
        /// AY YAH !!
        /// For guava dependencies, force the version that we package with the track
@@ -134,8 +137,8 @@ object Config  extends Logging {
 
     val config = initHiveConf
     
-    def apply( track : Track ) : HiveConf = {
-      val thisConf = new HiveConf( config)
+    def apply( track : Track ) : Configuration = {
+      val thisConf = new Configuration( config)
       
       HadoopResources.foreach { res => {
          try {
@@ -158,9 +161,9 @@ object Config  extends Logging {
       track.hdfs = Hdfs.fromConfig(thisConf)
       
       ///// Set Hive AUX Jars Path
-      println(" Current AuxJars is " +config.getAuxJars())
-      val currentAux : Array[String] = if( config.getAuxJars != null) { 
-           config.getAuxJars.split(",")}
+      println(" Current AuxJars is " +config.get("hive.aux.jars.path"))
+      val currentAux : Array[String] = if( config.get("hive.aux.jars.path") != null) { 
+           config.get("hive.aux.jars.path").split(",")}
         else {
           Array()
       }
@@ -174,7 +177,6 @@ object Config  extends Logging {
         (newJars ++ newResources).mkString(",") } else {
         (newJars ++ newResources ++ currentAux).mkString(",") }
       info(s" Seting AuxJars Path to $newAuxJars ")
-      thisConf.setAuxJars(newAuxJars)
       //// Need to set this as well ???
       thisConf.set("hive.aux.jars.path", newAuxJars)
       

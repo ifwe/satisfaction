@@ -56,7 +56,24 @@ object HiveDriver extends Logging {
       //// and we can get garbage collected
       val hiveConf = new HiveConf(hiveConfRef)
       info( s" Current Thread = ${Thread.currentThread.getName} ThreadLoader = ${Thread.currentThread.getContextClassLoader}  HiveConfLoader = ${hiveConf.getClassLoader} This loader = ${this.getClass.getClassLoader} ")
-      val parentLoader = classOf[HiveDriver].getClassLoader()
+      ////  XXX What should the parent loader be 
+      ///val parentLoader = classOf[HiveDriver].getClassLoader()
+      val parentLoader = hiveConf.getClassLoader
+      
+      //// XXX Centralize somewhere
+       hiveConf.setVar(HiveConf.ConfVars.HMSHANDLERATTEMPTS, "10")
+       hiveConf.setVar(HiveConf.ConfVars.HMSHANDLERINTERVAL, "3000")
+       hiveConf.setVar(HiveConf.ConfVars.METASTORETHRIFTCONNECTIONRETRIES, "5")
+       hiveConf.setVar(HiveConf.ConfVars.METASTORETHRIFTFAILURERETRIES, "6")
+       
+       if(hiveConf.getVar(HiveConf.ConfVars.PREEXECHOOKS).equals("org.apache.hadoop.hive.ql.hooks.ATSHook") ) {
+          log.warn(" Overriding bogus Ambari Timeline Server ATSHook class")
+          hiveConf.setVar(HiveConf.ConfVars.PREEXECHOOKS, "")
+          hiveConf.setVar(HiveConf.ConfVars.POSTEXECHOOKS, "")
+          hiveConf.setVar(HiveConf.ConfVars.ONFAILUREHOOKS, "")
+       }
+      
+      
       info(s" ParentLoader = ${parentLoader} ")
       val auxJars = hiveConf.getAuxJars
      
@@ -72,12 +89,13 @@ object HiveDriver extends Logging {
          val localPath = track.trackPath.toUri.getPath() /// remove hdfs:// scheme
          val cacheBase = track.trackProperties.getProperty("satisfaction.track.cache.path" , "/var/log/satisfaction-cache-root")
 
-         val cachePath  = new Path(cacheBase) / localPath
+         val cachePath  = new Path(cacheBase) / localPath / "lib"
        
          val localFs = LocalFileSystem()
          if( !localFs.exists(cachePath) ) { localFs.mkdirs( cachePath) }
          info(s" Using IsolatedClassLoader with a cachePath of $cachePath")
          
+         /// XXX Store as static resource
          val frontLoadClasses =  List("org.apache.hadoop.hive.ql.*", 
     		  "satisfaction.hadoop.hive.HiveLocalDriver", 
     		  "satisfaction.hadoop.hive.HiveLocalDriver.*", 
@@ -102,8 +120,6 @@ object HiveDriver extends Logging {
     		  "org.apache.hadoop.io.WritableComparator.*",
     		  "org.apache.hadoop.io.compress.CompressionCodecFactory",
     		  "org.apache.hadoop.io.compress.CompressionCodecFactory.*",
-    		  "org.apache.hadoop.util.ShutdownHookManager",
-    		  "org.apache.hadoop.util.ShutdownHookManager.*",
     		  "org.apache.hadoop.yarn.*",
     		  "org.apache.hadoop.mapreduce.*",
     		  "satisfaction.Logging",
@@ -116,15 +132,16 @@ object HiveDriver extends Logging {
     		      "org.apache.hive.common.*",
     		      "org.apache.hadoop.hive.common.*",
                   "org.apache.commons.logging.*",
-                  "org.apache.hadoop.hbase",
+                  "org.apache.hadoop.hbase"
                   ////"org.apache.hadoop.hive.ql.metadata.*",
     		      ///"org.apache.hadoop.hive.ql.exec.mr.HadoopJobExecHelper",
     		      ///"org.apache.hadoop.hive.ql.exec.mr.HadoopJobExecHelper.*",
-                  "org.apache.hadoop.hive.metastore.*",
-                  "org.apache.hadoop.hive.ql.plan.api.*"
-                  ////"org.apache.*HiveMetaStoreClient.*",
+                  ///"org.apache.hadoop.hive.metastore.*",
+                  ///"org.apache.hadoop.hive.ql.plan.api.*",
+                  ///"org.apache.hadoop.hive.ql.metadata.*",
+                  //"org.apache.*HiveMetaStoreClient.*",
                   ///"org.apache.*IMetaStoreClient.*",
-                  ////"org.apache.hadoop.hive.metastore.*",
+                  ///"org.apache.hadoop.hive.metastore.*"
                   ///"org.apache.hadoop.hive.ql.lockmgr.*",
                   ////"org.apache.hadoop.hive.metastore.api.*",
                   ///"org.apache.*HiveMetaHookLoader.*")
@@ -160,8 +177,11 @@ object HiveDriver extends Logging {
       info(" Using AuxJarPath " + auxJarPath)
       hiveConf.setAuxJars( auxJarPath)
       hiveConf.set("hive.aux.jars.path", auxJarPath)
+      hiveConf.setClassLoader(urlClassLoader)
+
       //// XXX Move to Scala reflection ...
       info( "Instantiating HiveLocalDriver")
+      //// XXX Specify as track property ..
       val localDriverClass: Class[_] = urlClassLoader.loadClass("satisfaction.hadoop.hive.HiveLocalDriver")
       info( s" Local Driver Class is $localDriverClass ")
       val constructor = localDriverClass.getConstructor(hiveConf.getClass() )

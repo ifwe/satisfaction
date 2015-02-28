@@ -16,7 +16,7 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 import org.apache.hadoop.fs.FsUrlStreamHandlerFactory;
-import org.apache.hadoop.hive.conf.HiveConf;
+import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,7 +31,7 @@ public class CacheJarURLStreamHandlerFactory implements URLStreamHandlerFactory 
     private Path _tempDir;
 
 
-	public CacheJarURLStreamHandlerFactory( HiveConf conf, String cachePathRoot) {
+	public CacheJarURLStreamHandlerFactory( Configuration conf, String cachePathRoot) {
         hdfsHandlerFactory = new FsUrlStreamHandlerFactory(conf);
         if(cachePathRoot.startsWith("/")) {
           this.cachePathRoot = cachePathRoot;
@@ -77,10 +77,10 @@ public class CacheJarURLStreamHandlerFactory implements URLStreamHandlerFactory 
 		       }
 		         return result;
 		   } catch(IOException ioExc) {
-			   LOG.error(" IO Exception " + ioExc.getMessage(), ioExc);
+			   LOG.error(" IO Exception while getting entry " + getEntryName() + " in file " + jarFile.getName() + " :: " + ioExc.getMessage());
 			   throw ioExc;
 		   } catch(RuntimeException runExc) {
-			   LOG.error(" RuntimeException " + runExc.getMessage(), runExc);
+			   LOG.error(" RuntimeException while getting entry " + getEntryName() + " in file " + jarFile.getName() + " :: " + runExc.getMessage(), runExc);
 			   throw runExc;
 		   }
 		}
@@ -105,18 +105,20 @@ public class CacheJarURLStreamHandlerFactory implements URLStreamHandlerFactory 
 		@Override 
 		public void connect() throws IOException {
 		  try {
-			LOG.debug(" CONNECTED !!!" );
 			if(!connected) {
 				URL jarURL = getJarFileURL();
 				LOG.debug(" JAR URL IS " + jarURL +  " FILE IS " + jarURL.getFile());
 				String[] jarDirs= jarURL.getFile().split("/");
 				String jarName = jarDirs[ jarDirs.length -1 ];
 				LOG.debug(" PATH = " + jarURL.getFile() + " JAR NMAME = " + jarName);
+				if( !( jarName.endsWith(".jar") || jarName.endsWith(".zip"))) {
+					LOG.info(" Skipping non-jar file " + jarName);
+					throw new FileNotFoundException(" Skipping non-jar file " + jarName);
+				}
 
 				File cacheFile = new File( cachePathRoot +  "/" + jarName  );
 				if(!cacheFile.exists()) {
 					URLConnection hdfsConnection = jarURL.openConnection(); 
-					LOG.debug(" HDFS CONNECTION = "  + hdfsConnection);
 
 					//// Copy to a tempfile and then move in one step
 					////  so that nobody reads partial files
@@ -162,10 +164,10 @@ public class CacheJarURLStreamHandlerFactory implements URLStreamHandlerFactory 
 				//// Swallow these
 				throw notExc;
 		 } catch(IOException ioExc ) {
-				LOG.error("IO Exception " + ioExc.getMessage(), ioExc );
+				LOG.error("IO Exception while opening " + getJarFileURL() + " :: "  + ioExc.getMessage(), ioExc );
 				throw ioExc;
 		 } catch(Throwable unexpected ) {
-				LOG.error(" Unexpected error " + unexpected.getMessage(), unexpected );
+				LOG.error(" Unexpected error while opening " + getJarFileURL() + " :: " + unexpected.getMessage(), unexpected );
 				throw new RuntimeException(unexpected);
 			}
 		}

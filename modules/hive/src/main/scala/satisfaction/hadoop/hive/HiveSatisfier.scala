@@ -11,7 +11,8 @@ import util.Releaseable
 
 case class HiveSatisfier(val queryResource: String, val conf : HiveConf)( implicit val track : Track) 
 ///      extends Satisfier with MetricsProducing with Progressable with Logging with java.io.Closeable {
-      extends Satisfier with MetricsProducing  with Logging with java.io.Closeable {
+      ////extends Satisfier with MetricsProducing  with Logging with java.io.Closeable {
+      extends Satisfier  with Logging with java.io.Closeable {
 
    override def name = s"Hive( $queryResource )" 
   
@@ -79,7 +80,6 @@ case class HiveSatisfier(val queryResource: String, val conf : HiveConf)( implic
     def loadSetup( allProps : Witness ) : ExecutionResult = {
          val setupScript = track.getResource("setup.hql")
          info(s" Running setup script $setupScript")
-         /// XXX Merge multiple Execution results together ...
          substituteAndExecQueries( setupScript, allProps) 
     }
     
@@ -166,36 +166,18 @@ case class HiveSatisfier(val queryResource: String, val conf : HiveConf)( implic
 
     @Override
     override def satisfy(params: Witness): ExecutionResult = {
-      
-      //// Try running in it's own thread to avoid context loader issues
-      // Not scala like, but punting for now !!!!
+      info(s"HiveSatisfier satisfying $params ") 
+      val allProps = track.getTrackProperties(params)
       driver.get
-      val isolatedThread = new Thread {
-         var _res : ExecutionResult = null
-         override def run() : Unit = {
-          val allProps = track.getTrackProperties(params)
-          info(s" Track Properties is $allProps ; Witness is $params ")
-        //// Avoid deadlock on accessing track
-          if( track.hasResource("setup.hql")) {
-             val setupResult = loadSetup(allProps)
-             if( ! setupResult.isSuccess) {
-                //return setupResult
-                _res = setupResult
-                return
-             }
-          }
-          _res = substituteAndExecQueries(queryTemplate, allProps)
-        }
-      }
-         
-        info(s" HIVE SATISFIER -- CREATING ISOLATED THREAD $isolatedThread  CONTEXT LOADER IS ${isolatedThread.getContextClassLoader()} ")
-         
-         isolatedThread.start
-         /// Need better way to do this  with futures ...
-         while( isolatedThread.isAlive) {
-            Thread.sleep( 5000) 
-         }
-        info(s" HIVE SATISFIER -- AFTER ISOLATED THREAD $isolatedThread  CONTEXT LOADER IS ${isolatedThread.getContextClassLoader()} ")
+      info(s" Track Properties is $allProps ; Witness is $params ")
+      if( track.hasResource("setup.hql")) {
+           val setupResult = loadSetup(allProps)
+           if( ! setupResult.isSuccess) {
+              return setupResult
+           }
+       }
+       var res = substituteAndExecQueries(queryTemplate, allProps)
+
          driver.get match {
             case mp : MetricsProducing => {
               _jobMetrics = mp.jobMetrics
@@ -205,8 +187,8 @@ case class HiveSatisfier(val queryResource: String, val conf : HiveConf)( implic
 
          driver.get.close
          driver.release
-         isolatedThread._res
 
+         res
     }
 
     

@@ -16,8 +16,6 @@ import org.joda.time.DateTime
  *
  * It simply waits for all of the evidence to be completed.
  *
- * Implementation Note: It is MUCH better to check and schedule future checks
- * rather than to call Thread.sleep(), hogging the thread.
  */
 
 class DefaultGoalSatisfier(
@@ -58,7 +56,7 @@ class DefaultGoalSatisfier(
     }
     
     
-    def checkEvidence() : Boolean = {
+    def checkEvidence() : Boolean = JobRunner.threadPreserve(track) {
       logger.info(s"Checking Evidence ${goal.name} for witness $witness ")
       Console.println(s"Checking Evidence ${goal.name} for witness $witness ")
       if( remainingEvidence.isEmpty) {

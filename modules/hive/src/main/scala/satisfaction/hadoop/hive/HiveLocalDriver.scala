@@ -12,6 +12,7 @@ import _root_.org.apache.hadoop.hive.conf.HiveConf
 import _root_.org.apache.hadoop.hive.ql.CommandNeedRetryException
 import _root_. org.apache.hadoop.hive.ql.MapRedStats
 import _root_.org.apache.hadoop.hive.ql.QueryPlan
+import _root_.org.apache.hadoop.hive.ql.exec.Utilities
 import _root_.org.apache.hadoop.hive.ql.exec.mr.HadoopJobExecHelper
 import _root_.org.apache.hadoop.hive.ql.metadata.Hive
 import _root_.org.apache.hadoop.hive.ql.processors.CommandProcessorResponse
@@ -32,7 +33,7 @@ import satisfaction.util.Wrapper
  *    the internal 'SessionState' interface
  */
 
-class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config ) )
+class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config, classOf[HiveDriver] ) )
       ///extends satisfaction.hadoop.hive.HiveDriver with MetricsProducing with Progressable with Logging {
       extends satisfaction.hadoop.hive.HiveDriver with MetricsProducing  {
   
@@ -112,9 +113,9 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config ) )
     
     
     private var _sessionState : Wrapper = null
-    ////lazy val sessionState: SessionState  = {
     lazy val sessionState: Wrapper  = {
        info(s" Starting SessionState !!!")
+       ///SessionState.start( new HiveConf(hiveConf))
        if( _sessionState == null) {
        val ss1 : Wrapper  = new Wrapper( Wrapper.execStatic( "org.apache.hadoop.hive.ql.session.SessionState", this.getClass.getClassLoader, "start",  new HiveConf(hiveConf)) )
        ss1 ##= ( "out", Console.out)
@@ -142,9 +143,16 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config ) )
     
     override def executeQuery(query: String): Boolean = {
         try {
+
             val response : CommandProcessorResponse = HiveLocalDriver.retry (5) {
                 sessionState.execStatic("setCurrentSessionState", sessionState.wrapped)
+
+            ////val dbName = Utilities.getDbTableName("user_session")
+                val dbName = Wrapper.execStatic("org.apache.hadoop.hive.ql.exec.Utilities", this.getClass.getClassLoader(), "getDbTableName", "user_session" ).asInstanceOf[Array[String]]
+
+            info( s" DB NAME = ${dbName.mkString(":")} ")
                 info( s" SESSION STATE CL = ${sessionState.wrapped} ${sessionState.wrappedClass.getClassLoader} ")
+                ////SessionState.setCurrentSessionState( sessionState)
 
                 val resp = driver.get.->("run",query).asInstanceOf[CommandProcessorResponse]
                 resp
@@ -152,7 +160,7 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config ) )
 
             info(s"Response Code ${response.getResponseCode} :: SQLState ${response.getSQLState} ")
             if (response.getResponseCode() != 0) {
-                error(s"HIVE_DRIVER Driver Has error Message ${driver.->("getErrorMsg")}")
+                error(s"HIVE_DRIVER Driver Has error Message ${driver->("getErrorMsg")}")
                 error(s"Error while processing statement: ${response.getErrorMessage()} ${response.getSQLState()} ${response.getResponseCode()}" );
                 
                 val driverClass = driver.get.wrapped.getClass
@@ -164,9 +172,9 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config ) )
                 
                 val errorStack : Throwable = errorMember.get( driver.get.wrapped).asInstanceOf[Throwable]
                 if( errorStack !=null) {
-                   error(s"HIVE ERROR :: ERROR STACK IS $errorStack :: ${errorStack.getLocalizedMessage()} ")
+                   error(s"HIVE ERROR :: ERROR STACK IS $errorStack :: ${errorStack.getLocalizedMessage()} ", errorStack)
                    if(errorStack.getCause != null) 
-                      error(s"HIVE ERROR ::   CAUSE IS ${errorStack.getCause} :: ${errorStack.getCause.getLocalizedMessage()} ")
+                      error(s"HIVE ERROR ::   CAUSE IS ${errorStack.getCause} :: ${errorStack.getCause.getLocalizedMessage()} ",errorStack.getCause)
                 } else {
                   error("HIVE ERROR :: ErrorStack is not set ") 
                 }
@@ -240,8 +248,10 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config ) )
   }
     
   def updateJobMetrics( metricsMap : collection.mutable.Map[String,Any]) : Unit = {
-    if(_sessionState != null) {
-    val mapRedStats = sessionState.->("getLastMapRedStatsList").asInstanceOf[java.util.ArrayList[MapRedStats] ]
+    ///val mapRedStats = sessionState.->("getLastMapRedStatsList").asInstanceOf[java.util.ArrayList[MapRedStats] ]
+     info(" Not updating JobMetrics for now ")
+    /***
+    val mapRedStats = sessionState.getLastMapRedStatsList()
     if( mapRedStats != null) {
       var totalCpuMsec : Long = 0 
       var totalMappers : Long = 0
@@ -261,8 +271,9 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config ) )
       metricsMap.put("TOTAL_NUM_MAPPERS", totalMappers)
       metricsMap.put("TOTAL_NUM_REDUCERS", totalReducers)
       metricsMap.put("TOTAL_CPU_MSEC", totalCpuMsec)
+      * 
     }
-    }
+      */
      
    }
 

@@ -37,6 +37,35 @@ class TemporalSpec extends Specification {
      }
      
      
+    /**
+     *  Validate that the witness contains all the variables needed for the goal
+     *   XXX move to utility
+     */
+    def checkVariables( goal : Goal, wit : Witness ) : Boolean = {
+       goal.variables.foreach( v => {
+          if(!wit.contains(v)) {
+              return false
+          }
+       })
+       true
+    }
+
+     "Be equivalent to String vars" in {
+         val temporalWitness = Witness( TemporalVariable.Dt -> "20150223")
+         
+         val strVar = Variable("dt")
+       
+         temporalWitness.contains( strVar)  must_== true
+         
+         val strWitness = Witness( strVar -> "20150223")
+         
+         System.out.println(s"  TemporalContains = ${temporalWitness.contains(strVar)} ")
+         System.out.println(s"  StrContains = ${strWitness.contains(TemporalVariable.Dt)} ")
+         
+         strWitness.contains( TemporalVariable.Dt )  must_== true
+     }
+     
+     
   } 
      
      

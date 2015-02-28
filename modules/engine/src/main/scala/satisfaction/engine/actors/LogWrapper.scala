@@ -38,7 +38,7 @@ case class LogWrapper[T]( track : Track, goal : Goal, witness : Witness)  {
   
   lazy val printWriter = new PrintWriter(outStream)
 
-  def log( functor :  () => T  ) : Try[T] = {
+  def log( functor :   => T  ) : Try[T] = {
      resetOutStream
      val currOut = Console.out
      val currErr = Console.err
@@ -46,7 +46,7 @@ case class LogWrapper[T]( track : Track, goal : Goal, witness : Witness)  {
          Console.setOut(outStream)
          Console.setErr(outStream)
        
-         val result : T =  functor()
+         val result : T =  functor
          
          Success(result)
      } catch {

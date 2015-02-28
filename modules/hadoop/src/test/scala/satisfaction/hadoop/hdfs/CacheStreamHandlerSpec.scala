@@ -11,7 +11,6 @@ import io._
 import satisfaction.fs.Path
 import org.apache.hadoop.conf.Configuration
 import satisfaction.fs.LocalFileSystem
-import org.apache.hadoop.hive.conf.HiveConf
 import java.net.URLClassLoader
 import java.io.BufferedReader
 import java.io.InputStreamReader
@@ -101,7 +100,7 @@ class CacheStreamHandlerSpec extends Specification {
           **/
         "Instantiate HBaseConfiguration" in {
           
-          implicit val hiveConf = new HiveConf(Config.config)
+          implicit val hiveConf = new Configuration(Config.config)
          
           val cacheStreamHandler = new CacheJarURLStreamHandlerFactory( hiveConf, System.getProperty("user.dir") + "/cache")
           

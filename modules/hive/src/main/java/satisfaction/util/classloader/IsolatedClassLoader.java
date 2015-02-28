@@ -157,6 +157,14 @@ public class IsolatedClassLoader extends ClassLoader implements java.io.Closeabl
 	protected Class<?> loadClass(String name, boolean resolve)
 		        throws ClassNotFoundException {
 	    try {
+	    	if( name == null) {
+	    		LOG.error(" Null passed in for classname; returning null");
+	    		return null;
+	    	}
+	    	if(_delegLoader == null){
+    		   LOG.error(" Delegated Loader is null !!!! Trying to access after classloader was closed ... " );
+    		   throw new IllegalStateException(" Delegated Loader is null !!!! Trying to access after classloader was closed ... " );
+	    	}
 		    return _delegLoader.loadClass( name, resolve);
 	    } catch( RuntimeException unexpected ) {
 	    	unexpected.printStackTrace();

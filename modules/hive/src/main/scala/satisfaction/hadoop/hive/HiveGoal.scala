@@ -21,10 +21,9 @@ object HiveGoal {
               queryResource: String,
               hiveOutput: HiveDataOutput,
               depends: Set[(Witness => Witness, Goal)] = Set.empty )
-        (implicit track : Track )
+        (implicit track : Track, hiveConf : HiveConf)
             : Goal = {
 
-        implicit val hiveConf : HiveConf =  Config(track)
         
         val tblVariables = hiveOutput match {
           case tbl : HiveTable => 

@@ -5,8 +5,6 @@
 # Home page
 GET     /                           willrogers.controllers.Application.index
 
-GET     /alldbs                      willrogers.controllers.Application.allDBs
-GET     /dbtabs                      willrogers.controllers.Application.allDBs
 GET     /projtabs                      willrogers.controllers.ProjectPage.allProjects
 GET		/schedules				willrogers.controllers.ScheduleTrackPage.showSchedulesAction()
 GET     /current                   willrogers.controllers.SatisfyGoalPage.currentStatusAction()
@@ -17,11 +15,6 @@ GET     /showproject/:projName         willrogers.controllers.ProjectPage.showPr
 GET		/showprojectGoalRuns/:projName/:goalName willrogers.controllers.ProjectPage.showProjectRuns(projName : String, goalName : String)
 GET		/showprojectFiles/:projName	willrogers.controllers.ProjectPage.showProjectFiles(projName : String)
 
-GET     /alltables/:db                   willrogers.controllers.Application.getDBTables(db: String)
-GET     /showtable/:db/:tblName                   willrogers.controllers.Application.showDBTable(db: String, tblName: String)
-GET     /showpartition/:db/:tblName/:partName                   willrogers.controllers.Application.showPartition(db: String, tblName: String, partName: String)
-GET     /metadata/:db/:tblName                   willrogers.controllers.MetaDataPage.showMetaData(db: String, tblName: String)
-POST     /addmetadata/:db/:tblName                   willrogers.controllers.MetaDataPage.addMetaData(db: String, tblName: String)
 GET     /satisfygoal/:projName/:goalName                   willrogers.controllers.SatisfyGoalPage.showSatisfyForm(projName: String, goalName: String)
 POST     /satisfygoal/:projName/:goalName                   willrogers.controllers.SatisfyGoalPage.satisfyGoalAction(projName: String, goalName: String)
 GET     /goalstatus/:projName/:goalName                   willrogers.controllers.SatisfyGoalPage.goalStatus(projName: String, goalName: String)
@@ -42,7 +35,6 @@ GET		/filterJobHistory	willrogers.controllers.TrackHistoryPage.filterJobHistory
 GET		/lookupJobHistoryGoal willrogers.controllers.TrackHistoryPage.lookupJobHistoryGoal
 GET		/lookupGoalHistoryID	willrogers.controllers.TrackHistoryPage.lookupGoalHistoryID
 
-GET		/reloadTrackFactory		willrogers.controllers.Application.reloadFactory()
 # Map static resources from the /public folder to the /assets URL path
-GET     /assets/*file               controllers.Assets.at(path="/public/maichedul", file)
+GET     /assets/*file               controllers.Assets.at(path="/public/main", file)
 

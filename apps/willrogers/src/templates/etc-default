@@ -31,6 +31,4 @@
 -J-XX:HeapDumpPath=/usr/share/${{app_name}}
 -J-XX:PermSize=512m 
 -J-XX:MaxPermSize=512m 
--J-XX:+TraceClassLoading 
--J-XX:+TraceClassUnloading
 

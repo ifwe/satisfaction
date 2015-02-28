@@ -23,7 +23,7 @@ import com.typesafe.sbt.web.Import.WebKeys._
 
 object ApplicationBuild extends Build {
 
-  val appVersion = "2.5.5"
+  val appVersion = "2.5.7"
 
   val hiveVersion = "0.13.1"
 
@@ -40,12 +40,17 @@ object ApplicationBuild extends Build {
   val hadoop = Project(
       "satisfaction-hadoop",
       file("modules/hadoop")
-  ).settings(CommonSettings: _*).settings(libraryDependencies := hadoopDependencies ).dependsOn(core).dependsOn( engine)
+  ).settings(CommonSettings: _*).settings(libraryDependencies := hadoopDependencies ).dependsOn(core).dependsOn( engine )
+
+  val metastore = Project(
+      "satisfaction-hive-ms",
+      file("modules/hive-ms")
+  ).settings(CommonSettings: _*).settings(libraryDependencies := metastoreDependencies ).dependsOn(core).dependsOn(hadoop)
 
   val hive = Project(
       "satisfaction-hive",
       file("modules/hive")
-  ).settings(CommonSettings: _*).settings(libraryDependencies  := hiveDependencies ).dependsOn(core).dependsOn(hadoop).dependsOn( engine)
+  ).settings(CommonSettings: _*).settings(libraryDependencies  := hiveDependencies ).dependsOn(core).dependsOn(hadoop).dependsOn(metastore)
 
   val willrogers = Project(
       "willrogers",
@@ -97,11 +102,6 @@ object ApplicationBuild extends Build {
      javacOptions in Compile ++= Seq("-source", "1.7", "-target", "1.7"),
 
      unmanagedResourceDirectories in Assets += baseDirectory.value / "public"
-
-    
-     ///(managedClasspath in Runtime) += (packageBin in Assets).value
-
-
   )
 
 
@@ -142,7 +142,7 @@ object ApplicationBuild extends Build {
     version in Rpm := resolveRpmVersion(),
 
     ////rpmRelease in Rpm:= resolveRpmVersion(),
-    rpmRelease in Rpm := "2",
+    rpmRelease in Rpm := "10",
     rpmBrpJavaRepackJars := true,
     packageSummary in Rpm := "wyman",
     packageSummary in Linux := "wyman",
@@ -202,7 +202,7 @@ export HADOOP_HOME=/usr/lib/hadoop
 	.excluding("junit","junit")
 	.excluding("log4j", "log4j")
         .excluding("org.slf4j","slf4j-log4j12")
-        .excludingGroup("org.jboss.netty" ) ++ testDependencies ++ metastoreDependencies
+        .excludingGroup("org.jboss.netty" ) ++ testDependencies 
 
   def coreDependencies = Seq(
     ("org.slf4j" % "slf4j-api" % "1.7.7"),
@@ -221,8 +221,7 @@ export HADOOP_HOME=/usr/lib/hadoop
 	  ("org.apache.hive" % "hive-metastore" % hiveVersion),
 	  ("org.apache.hive" % "hive-serde" % hiveVersion),
 	  ("org.apache.hive" % "hive-exec" % hiveVersion),
-	  ("org.apache.thrift" % "libfb303" % "0.7.0"),
-	  ("com.tagged.analytics" % "avro-serde" % "0.13.1-jdb")
+	  ("org.apache.thrift" % "libfb303" % "0.7.0")
   ).excluding( "log4j", "log4j" ).excluding("org.slf4j", "slf4j-log4j12")
    .excluding("org.jboss.netty", "netty")
 

@@ -77,6 +77,9 @@ case class HiveTable (
     }
 
     def getDataInstance(w: Witness): Option[DataInstance] = {
+      info(s" Hive Table $tblName getDataInstance $w ")
+      info(s" ThisLoader = ${this.getClass.getClassLoader}  CurrentThreadLoader = ${Thread.currentThread().getContextClassLoader()} hiveConfLoader = ${ms.hive().getConf().getClassLoader()} ")
+      ms.hive().getConf().setClassLoader( this.getClass.getClassLoader)
       if( isPartitioned ) {
         if(variables.forall( w.contains(_))) {
           val partition = getPartition(w)

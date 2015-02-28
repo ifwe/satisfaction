@@ -3,7 +3,6 @@ package satisfaction.hadoop
 import satisfaction.track.DefaultTrackLoader
 import satisfaction.track.TrackFactory
 import satisfaction.fs.Path
-import org.apache.hadoop.hive.conf.HiveConf
 import satisfaction.Witness
 import java.util.Properties
 import org.apache.hadoop.conf.Configuration
@@ -24,7 +23,7 @@ class CachingTrackLoader(trackFactory : TrackFactory, trackProps : Map[String,St
          case Some(config) => (config.raw ++ trackProps)
          case None => (trackProps)
        }
-       val hiveConf = new HiveConf()
+       val hiveConf = new Configuration()
        configMap.foreach( {case(k,v) => {
            hiveConf.set( k,v) 
        } })

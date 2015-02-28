@@ -6,6 +6,7 @@ import fs._
 import java.util.Properties
 import satisfaction.Recurring
 import satisfaction.Track.MajorMinorPatch
+import satisfaction.engine.actors.JobRunner
 
 
 /**
@@ -198,7 +199,12 @@ case class TrackFactory(val trackFS : FileSystem,
      /// XXX Allow implicit to be set on object creation ...
      track.hdfs = hdfs 
      
-     track.init
+     /**
+      *  Set the ThreadContextLoader in init
+      */
+     JobRunner.threadPreserve(track) {
+        track.init
+     }
      
      schedulerOpt match {
        case Some(scheduler) =>

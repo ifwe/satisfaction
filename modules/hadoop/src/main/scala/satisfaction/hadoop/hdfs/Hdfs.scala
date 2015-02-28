@@ -16,7 +16,7 @@ import org.joda.time.DateTime
 import satisfaction.hadoop.Config._
 import org.apache.hadoop.fs.FSDataOutputStream
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.hive.conf.HiveConf
+import org.apache.hadoop.fs.PathFilter
 
 /**
  *   Implement our FileSystem abstraction with 
@@ -135,6 +135,7 @@ case class Hdfs(val fsURI: String)
       fullList
     }
     
+    
     @Override 
     override def mkdirs( p : Path ): Boolean = {
       fs.mkdirs( p)
@@ -236,7 +237,7 @@ case class Hdfs(val fsURI: String)
 
 object Hdfs {
    
-  implicit val hiveConf : HiveConf = Config.config
+  implicit val hiveConf : Configuration = Config.config
   
   def default : Hdfs = {
      new Hdfs(getFileSystem(hiveConf) )( hiveConf)

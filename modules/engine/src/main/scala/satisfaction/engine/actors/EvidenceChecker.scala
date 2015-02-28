@@ -30,7 +30,7 @@ class EvidenceChecker(val e : Evidence) extends Actor  with satisfaction.Logging
     case CheckEvidence(evidenceId,witness) =>
        info(s" CHECKING EVIDENCE $e for %witness with id $evidenceId ")
        val evidenceFuture: Future[Boolean] = future {
-          JobRunner.threadPreserve { () =>  e.exists( witness) }
+          JobRunner.threadPreserve(e) {  e.exists( witness) }
        }
        _sender = context.sender
        evidenceFuture.onSuccess({

@@ -23,7 +23,7 @@ case class PartitionExistsSatisfier(
   
     override def name = "PartitionExists " + table.toString + " :: "  + extraAssignments.toString
     
-      
+    
     override def satisfy(subst: Witness): ExecutionResult = robustly {
         w = subst ++ extraAssignments
         val part = try { 

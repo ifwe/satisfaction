@@ -18,6 +18,7 @@ import java.io.File
 import org.joda.time.DateTime
 import scala.util.Success
 import scala.util.Failure
+import satisfaction.RobustRun
 
 /**
  *  JobRunner actually satisfies a goal,
@@ -50,22 +51,10 @@ class JobRunner(
             _startTime = DateTime.now
 
                 val satisfierFuture = future {
-                    logger.log { () => 
-                          JobRunner.threadPreserve {  () => { 
-                                val result = satisfier.satisfy(params)
-                                /**
-                                satisfier match {
-                                  case closer : java.io.Closeable => {
-                                     logger.info(s" Closing Closable Satisfier $satisfier for Goal ${goal.name} and Witness $witness ") 
-                                     closer.close()
-                                  }
-                                  case _ =>  /// don't need to close anything ...
-                                }
-                                * 
-                                */
-                                result
-                            } 
-                          }
+                    logger.log { 
+                       threadPreserve { 
+                          satisfier.satisfy(params)
+                       }
                     } match {
                       case Success(execResult) =>
                         log.info(s" JobRunner ${goal.name} $witness received ExecResult ${execResult.isSuccess} ")
@@ -93,6 +82,7 @@ class JobRunner(
                                   }
                                   case _ =>  /// don't need to close anything ...
                                 }
+                    /// XXX FIXME NullPointerException????
                     checkResults(_)
                 }
         case Abort =>
@@ -125,7 +115,7 @@ class JobRunner(
      *   Mark them as either completed or incomplete,
      *    based on the outcome of the job
      */
-    def markEvidence( f: ( Markable => Unit)) = {
+    def markEvidence( f: ( Markable => Unit)) : Boolean = JobRunner.threadPreserve(goal.track) {
       goal.evidenceForWitness( witness).filter( _.isInstanceOf[DataOutput]).
           map( _.asInstanceOf[DataOutput].getDataInstance(witness) ).
           filter( _.isDefined).map( _.get ).
@@ -139,6 +129,7 @@ class JobRunner(
                    log.info(s" $di is not markable")
              }          
           })
+      true
     }
     
 
@@ -147,13 +138,20 @@ class JobRunner(
             val execResult = result.get
             execResult.hdfsLogPath = logger.hdfsLogPath.toString
              log.info(s" JobRunner ${goal.name} $witness result isSuccess = ${execResult.isSuccess} ")
+             /// Need to handle 
             if (execResult.isSuccess ) {
                 log.info(s" Sending JobRunSuccess to $messageSender ")
-                markEvidence( _.markCompleted )
-                messageSender ! new JobRunSuccess(execResult)
+                val markRes  = RobustRun( s"MarkResult ${execResult.executionName} ", {  markEvidence( _.markCompleted )  } )
+                if( markRes.isSuccess) {
+                   messageSender ! new JobRunSuccess(execResult)
+                } else {
+                   //// There was an error while trying to mark the DataInstances ...
+                   messageSender ! new JobRunFailed(markRes)
+                }
             } else {
                 log.info(s" Sending JobRunFailed to $messageSender ")
-                markEvidence( _.markIncomplete)
+                val markRes  = RobustRun( s"MarkResult ${execResult.executionName} ", {  markEvidence( _.markCompleted )  } )
+                //// If there is an error , send the previous fail result
                 messageSender ! new JobRunFailed(execResult)
             }
         } else {
@@ -172,23 +170,37 @@ class JobRunner(
      *  Job has finished ...
      */
     def finish() = {
+      /// XXX NullPointer Exception ???
       log.info(s" Finishing up !! ${self.path} ")
        context.system.stop( self) 
     }
 
-}
+    /**
+     *    Set the Thread Context Classloader to the classloader
+     *     of the Satisfier, so that it has access to all the 
+     *     classes that that Satisfier would
+     */
+    def threadPreserve[T]( functor :  => T ) : T =  JobRunner.threadPreserve(satisfier)(functor)
+
+}  
+  
 
 object JobRunner {
-  
-  
+
     /**
      *  Since Akka uses the context ClassLoader, make sure 
      *    the task doesn't overwrite the value Akka expects to be there,
      *    or else messages will get lost..
+     *    
+     *    Set the Thread Context Classloader to the classloader
+     *     of the Satisfier, so that it has access to all the 
+     *     classes that that Satisfier would
      */
-    def threadPreserve[T]( functor : () => T ) : T = {
+    def threadPreserve[T](clObj : Any)( functor :  => T ) : T = {
        val thClBefore = Thread.currentThread.getContextClassLoader
-       val res = functor()
+       val objCl = clObj.getClass.getClassLoader
+       Thread.currentThread().setContextClassLoader(objCl)
+       val res = functor
        val thClAfter = Thread.currentThread.getContextClassLoader
        if( thClBefore != thClAfter)  {
          Thread.currentThread.setContextClassLoader(thClBefore)
