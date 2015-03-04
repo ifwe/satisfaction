@@ -135,7 +135,6 @@ object HiveDriver extends Logging {
     		      "org.apache.hadoop.hive.common.*",
                   "org.apache.commons.logging.*",
                   "org.apache.hadoop.hbase.*"
-                  "org.apache.zookeeper.*"
                   ////"org.apache.hadoop.hive.ql.metadata.*",
     		      ///"org.apache.hadoop.hive.ql.exec.mr.HadoopJobExecHelper",
     		      ///"org.apache.hadoop.hive.ql.exec.mr.HadoopJobExecHelper.*",
@@ -194,8 +193,6 @@ object HiveDriver extends Logging {
       val satisfactionHiveConf = new SatisfactionHiveConf(hiveConf)
       satisfactionHiveConf.setClassLoader( urlClassLoader)
       
-      ////val newHive  = Hive.set( Hive.get( satisfactionHiveConf,true))
-
       val hiveLocalDriver = constructor.newInstance(satisfactionHiveConf )
       info( s" Hive Local Driver is ${hiveLocalDriver} ${hiveLocalDriver.getClass} ")
 
