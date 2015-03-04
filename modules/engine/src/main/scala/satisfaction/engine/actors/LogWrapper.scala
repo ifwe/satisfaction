@@ -284,8 +284,8 @@ object LogWrapper {
         }
        }
        case _ => {
-         ///Console.println(s"${obj} Not a Logging interface ") 
-         ///System.out.println(s" ${obj} Not a Logging interface ") 
+         Console.println(s"${obj} Not a Logging interface ") 
+         System.out.println(s" ${obj} Not a Logging interface ") 
        }
      }
    }

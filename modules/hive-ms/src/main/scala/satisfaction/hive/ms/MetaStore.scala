@@ -33,7 +33,7 @@ import org.apache.hadoop.hive.ql.plan.AddPartitionDesc
 
 
 ///case class MetaStore(val hvConfig: HiveConf) extends Logging {
-case class MetaStore(implicit val config: HiveConf)  extends Logging {
+case class MetaStore(implicit val config: HiveConf)  extends Logging with java.io.Closeable {
    import hdfs.HdfsImplicits
    import hdfs.HdfsImplicits._
 
@@ -47,6 +47,10 @@ case class MetaStore(implicit val config: HiveConf)  extends Logging {
     private var _viewMap : collection.immutable.Map[String,List[String]] = if( PRELOAD ) { _initViewMap } else { null }
 
     def hive(): Hive = { _hive }
+    
+    def close() = {
+       Hive.closeCurrent
+    }
 
     object MetaDataProps extends Enumeration {
         type Prop = Value

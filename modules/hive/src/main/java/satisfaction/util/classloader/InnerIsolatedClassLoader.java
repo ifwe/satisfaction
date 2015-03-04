@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -34,14 +35,18 @@ class InnerIsolatedClassLoader extends java.net.URLClassLoader implements java.i
 	private final static Logger LOG = LoggerFactory.getLogger( InnerIsolatedClassLoader.class);
 	private List<Pattern> frontLoadPatterns;
 	private List<Pattern> backLoadPatterns;
-	private Map<String,Class<?>> registeredClasses = new HashMap<String,Class<?>>();
 	private int maxRetries = 10;
 	private IsolatedClassLoader outerLoader;
+    private Map<String,Class> registeredClasses = new HashMap<String,Class>();
+    private ClassLoader parentLoader;
+
+
 
 	 
 	public InnerIsolatedClassLoader(URL[] urls, ClassLoader parent, List<String> frontLoadedClassExprs, List<String> backLoadedClassExprs, 
 			 HiveConf configuration, String cachePath, IsolatedClassLoader outerLoader) {
 		super(urls, parent, new CacheJarURLStreamHandlerFactory( configuration, cachePath));
+		parentLoader = parent;
 		LOG.info(" Creating InnerIsolatedClassLoader with URLS " + urls);
 		frontLoadPatterns = new ArrayList<Pattern>();
 	    for( String expr : frontLoadedClassExprs ) {
@@ -59,7 +64,7 @@ class InnerIsolatedClassLoader extends java.net.URLClassLoader implements java.i
 	}
 	
 	public void registerClass( Class<?> clazz) {
-	   registeredClasses.put( clazz.getName(), clazz);
+		registeredClasses.put( clazz.getName(), clazz);
 	}
 	
 	/**
@@ -92,6 +97,9 @@ class InnerIsolatedClassLoader extends java.net.URLClassLoader implements java.i
 		while(true) {
 		  try {
 			  LOG.debug(" Finding " + name);
+			  if( registeredClasses.containsKey(name)) {
+				  return registeredClasses.get(name);
+			  }
 		     return super.findClass( name);
 		  } catch( ClassNotFoundException notFound) {
 			  LOG.warn(" Could not find class "+  name + " after " + cnt +  " tries ; " + notFound.getLocalizedMessage());
@@ -108,34 +116,12 @@ class InnerIsolatedClassLoader extends java.net.URLClassLoader implements java.i
 		}
 	}
 	
-	/**
-	 * Copy a class from the parentloader, and 
-	 *  make it seem like it was loaded from this class
-	 * @param name
-	 * @return
-	 * @throws ClassNotFoundException
-	 */
-	protected Class<?> copyParentClass( String className) throws ClassNotFoundException {
-		try {
-		   String classAsPath = className.replace('.', '/') + ".class";
-		    InputStream stream = getParent().getResourceAsStream(classAsPath);
-		
-			byte[] classBytes = IOUtils.toByteArray(stream);
-			
-			return defineClass(className, classBytes,0, classBytes.length);
-		} catch (IOException e) {
-			LOG.error("Error while trying to copy parent class " + className, e);
-			throw new ClassNotFoundException("Trouble copyting parent class", e);
-		}
-		
-	}
-	
 	@Override
 	public void close() throws IOException {
 		LOG.info(" Closing InnerIsolatedClassLoader " + this);
-		registeredClasses.clear();
 		super.close();
 		
+		registeredClasses.clear();
 		  
 		try {
 		  //// Need to call clearCache on ReflectionUtils 
@@ -153,14 +139,23 @@ class InnerIsolatedClassLoader extends java.net.URLClassLoader implements java.i
 		
 		removeStaticCacheReference("org.apache.hadoop.io.WritableComparator");
 		removeStaticCacheReference("org.apache.hadoop.hive.serde2.objectinspector.ObjectInspectorFactory");
+		removeStaticCacheReference("org.apache.thrift.meta_data.FieldMetaData");
 		
 		removeShutdownReferences();
 		  
-		outerLoader.release();
+		if(outerLoader != null) {
+		  outerLoader.release();
+		  outerLoader = null;
+		} else {
+			LOG.warn(" Close called multiple times on InnerIsolatedClassLoader " + this);
+		}
 	}
+
+	private HashSet<Object> _seenObjs = new HashSet();
 	
 	protected void removeStaticCacheReference(String className ) {
 		try {
+			_seenObjs.clear();
 			Class staticCacheClass = Class.forName(className);
 			Field[] fields = staticCacheClass.getDeclaredFields();
 			for(Field field : fields) {
@@ -184,13 +179,18 @@ class InnerIsolatedClassLoader extends java.net.URLClassLoader implements java.i
 			}
 		} catch(Exception exc ) {
 			LOG.error(" Unexpected error trying to remove Cached static reference from class " + className+ " :: " +exc.getMessage() , exc );
+		} finally {
+		    _seenObjs.clear();	
 		}
 	}
+	
 	
 	private void recursiveRemoveCachedMapReference(Map valMap) {
 		LOG.info(" Recursively checking value Map " + valMap
 				+ " for references");
 		List removeList = new ArrayList();
+		Set<Map> recursiveMapSet = new HashSet<Map>();
+		Set<List> recursiveListSet = new HashSet<List>();
 		for (Object valKey : valMap.keySet()) {
 			Object val = valMap.get(valKey);
 			if (val != null) {
@@ -206,9 +206,11 @@ class InnerIsolatedClassLoader extends java.net.URLClassLoader implements java.i
 							removeList.add(valKey);
 						}
 					} else if (List.class.isAssignableFrom(val.getClass())) {
-						recursiveRemoveCachedListReference((List) val);
+						///recursiveRemoveCachedListReference((List) val);
+						recursiveListSet.add( (List) val);
 					} else if (Map.class.isAssignableFrom(val.getClass())) {
-						recursiveRemoveCachedMapReference((Map) val);
+						///recursiveRemoveCachedMapReference((Map) val);
+						recursiveMapSet.add( (Map) val);
 					} else {
 						Field[] checkFields = val.getClass()
 								.getDeclaredFields();
@@ -221,19 +223,25 @@ class InnerIsolatedClassLoader extends java.net.URLClassLoader implements java.i
 										LOG.info(" Adding to remove list field "
 												+ checkField.getName()
 												+ " value " + checkObj);
-										removeList.add(valKey);
+										if(!removeList.contains( valKey)) {
+										  removeList.add(valKey);
+										} else {
+											LOG.warn(" RemoveList already contains key " + valKey + " with object " + checkObj);
+										}
 									} else {
 										if (List.class
 												.isAssignableFrom(checkField
 														.getType())) {
 											List checkListObj = (List) checkObj;
-											recursiveRemoveCachedListReference(checkListObj);
+											////recursiveRemoveCachedListReference(checkListObj);
+											recursiveListSet.add( (List) val);
 										} else if (Map.class
 												.isAssignableFrom(checkField
 														.getType())) {
 											checkField.setAccessible(true);
 											Map checkMapObj = (Map) checkObj;
-											recursiveRemoveCachedMapReference(checkMapObj);
+											////recursiveRemoveCachedMapReference(checkMapObj);
+											recursiveMapSet.add( (Map) val);
 										}
 									}
 								}
@@ -252,6 +260,23 @@ class InnerIsolatedClassLoader extends java.net.URLClassLoader implements java.i
 			LOG.info(" Removing cached reference " + removeObj + " from map "
 					+ valMap);
 			valMap.remove(removeObj);
+		}
+		//// Now recursively go through and check the map and list fields
+		for( Map recurseMap : recursiveMapSet) {
+			if(!_seenObjs.contains(recurseMap )) {
+			   _seenObjs.add( recurseMap);
+			   recursiveRemoveCachedMapReference((Map) recurseMap);
+			} else {
+			   LOG.info(" Skipping Map " + recurseMap + " which we've already seen");	
+			}
+		}
+		for( List recurseList : recursiveListSet) {
+			if(!_seenObjs.contains(recurseList )) {
+			   _seenObjs.add( recurseList);
+			   recursiveRemoveCachedListReference((List) recurseList);
+			} else {
+			   LOG.info(" Skipping List " + recurseList + " which we've already seen");	
+			}
 		}
 	}
 	
@@ -312,7 +337,6 @@ class InnerIsolatedClassLoader extends java.net.URLClassLoader implements java.i
 	
 	protected void removeShutdownReferences() {
 		try {
-			////Class shutdownHookClass = Class.forName( "java.lang.ApplicationShutdownHooks");
 			removeStaticCacheReference("java.lang.ApplicationShutdownHooks");
 		} catch (Exception e) {
 			LOG.error("Unexpected error while trying to remove references to shutdown hooks ; " + e.getMessage(), e);
@@ -365,13 +389,13 @@ class InnerIsolatedClassLoader extends java.net.URLClassLoader implements java.i
 		        throws ClassNotFoundException
 	    {
 		   LOG.debug(" Loading class " + name);
-		   if( registeredClasses.containsKey( name)) {
-			  return registeredClasses.get(name);
+		   if( registeredClasses.containsKey(name)) {
+			   return registeredClasses.get(name);
 		   }
 		   if( shouldFrontLoad(name)) {
 			   return reverseLoadClass(name,resolve);
 		   } else {
-			   return super.loadClass(name, resolve);
+			   return parentLoader.loadClass(name);
 		   }
 	    }
 	

@@ -55,7 +55,26 @@ class PartitionCreator( table : Table, ms : Hive )(implicit hdfs : FileSystem) e
          info( s" Adding to Table ${table.getTableName()} Partition $partPath ")
          addPartitions.addPartition( partMap, partPath)
      } )
-     FileSystem.scanForNewDirs( fs, rootPath, lastTime, pathVisitorFunc)
+     PartitionCreator.scanForNewDirs( fs, rootPath, lastTime, pathVisitorFunc)
   }
+  
+}
+object PartitionCreator {
+    /**
+     *  Scan a FileSystem to see if new files have been created, and then call a callback function
+     *    for 
+     */
+    def scanForNewDirs( fs : FileSystem, rootPath : Path , lastTime : DateTime,  pathVisitor : Path => Unit ) = {
+      fs.listFilesRecursively( rootPath).foreach( fstat => {
+          if( fstat.isFile) {
+             if( fstat.created.getMillis() > lastTime.getMillis() ) {
+               val parent = fs.getStatus(fstat.path.parent)
+               if( parent.created.getMillis() > lastTime.getMillis()) {
+                 pathVisitor( parent.path)
+               }
+             }
+          }
+      } )
+    }
   
 }

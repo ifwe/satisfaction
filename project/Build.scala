@@ -142,7 +142,7 @@ object ApplicationBuild extends Build {
     version in Rpm := resolveRpmVersion(),
 
     ////rpmRelease in Rpm:= resolveRpmVersion(),
-    rpmRelease in Rpm := "10",
+    rpmRelease in Rpm := "1",
     rpmBrpJavaRepackJars := true,
     packageSummary in Rpm := "wyman",
     packageSummary in Linux := "wyman",
@@ -236,8 +236,7 @@ export HADOOP_HOME=/usr/lib/hadoop
 	  ("org.apache.hive" % "hive-jdbc" % hiveVersion),
 	  ("org.apache.hive" % "hive-service" % hiveVersion ),
 	  ("org.apache.thrift" % "libfb303" % "0.7.0" ),
-	  ("org.antlr" % "antlr-runtime" % "3.4" ),
-	  ("org.antlr" % "antlr" % "3.0.1" )
+	  ("org.antlr" % "antlr-runtime" % "3.4" )
   ).excluding("org.slf4j", "slf4j-log4j12")
    .excluding("org.jboss.netty", "netty") 
    .excludingGroup("org.jboss.netty")  ++ metastoreDependencies ++ testDependencies

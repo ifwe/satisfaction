@@ -26,6 +26,7 @@ import java.io.File
 import satisfaction.util.classloader.IsolatedClassLoader
 import satisfaction.util.Releaseable
 import satisfaction.util.Wrapper
+import _root_.org.apache.hadoop.hive.ql.io.IOContext
 
 
 /**
@@ -48,18 +49,9 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config, cl
     }
  
      val driver = new Releaseable[Wrapper]({
-
-        
         val cl = this.getClass.getClassLoader() 
-        info( " HiveLocalDriver getDriver  Cl = " + cl )
-        info( " HiveLocalDriver getDriver  ClassLoader = " + this.getClass.getClassLoader.getClass().getName() )
-        info( " HiveLocalDriver getDriver  ThreadLoader= = " + Thread.currentThread().getContextClassLoader().getClass().getName() )
         try {
-          
           val dr = Wrapper.withConstructor( "org.apache.hadoop.hive.ql.Driver", cl, Array[Class[_]]( classOf[HiveConf] ) , Array(  hiveConf ) )
-          info( s" New APACHE DRIVER = ${dr.wrapped}  CLASS LOADER = ${dr.wrapped.getClass.getClassLoader}" )
-        
-        
           dr.->("init")
            dr
         
@@ -75,6 +67,31 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config, cl
     override def close() = {
        driver.get.->("close")
        driver.release
+       /// Release the Metastore
+       Hive.closeCurrent()
+       if(_sessionState != null) {
+          sessionState.->("close")
+          sessionState.execStatic("detachSession") 
+       }
+       
+      Utilities.runtimeSerializationKryo.remove();
+      
+      IOContext.clear();
+      
+
+      try {
+        val cloneQueryPlanKryoField = classOf[Utilities].getDeclaredField("cloningQueryPlanKryo")
+        cloneQueryPlanKryoField.setAccessible(true)
+      
+        val staticThreadLocal= cloneQueryPlanKryoField.get( null).asInstanceOf[ThreadLocal[_]] /// Remove reference to Kryo from the thread Local
+        staticThreadLocal.remove
+      } catch {
+        case unexpected : Throwable => {
+          error(" Unexpected error trying to clean threadLocal cloningQueryPlanKryo " , unexpected)
+        } 
+      }
+
+
       val thisClassLoader = this.getClass().getClassLoader
       thisClassLoader match {
         case closable : java.io.Closeable => {
@@ -147,12 +164,7 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config, cl
             val response : CommandProcessorResponse = HiveLocalDriver.retry (5) {
                 sessionState.execStatic("setCurrentSessionState", sessionState.wrapped)
 
-            ////val dbName = Utilities.getDbTableName("user_session")
                 val dbName = Wrapper.execStatic("org.apache.hadoop.hive.ql.exec.Utilities", this.getClass.getClassLoader(), "getDbTableName", "user_session" ).asInstanceOf[Array[String]]
-
-            info( s" DB NAME = ${dbName.mkString(":")} ")
-                info( s" SESSION STATE CL = ${sessionState.wrapped} ${sessionState.wrappedClass.getClassLoader} ")
-                ////SessionState.setCurrentSessionState( sessionState)
 
                 val resp = driver.get.->("run",query).asInstanceOf[CommandProcessorResponse]
                 resp

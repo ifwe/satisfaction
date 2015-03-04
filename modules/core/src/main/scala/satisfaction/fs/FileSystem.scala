@@ -19,6 +19,10 @@ trait FileSystem {
    def listFiles( p : Path ) : Seq[FileStatus]
    def listFilesRecursively( p : Path ) : Seq[FileStatus]
    
+   def globFiles( p: Path,  filterFunc : (FileStatus=>Boolean)) : Seq[FileStatus] = {
+      listFilesRecursively( p).filter( filterFunc)
+   }
+   
    def mkdirs( p : Path ) : Boolean
    
    def open( pth : Path) : java.io.InputStream
@@ -84,21 +88,6 @@ trait FileSystem {
 }
 
 object FileSystem {
-      /**
-     *  Scan a FileSystem to see if new files have been created, and then call a callback function
-     *    for 
-     */
-    def scanForNewDirs( fs : FileSystem, rootPath : Path , lastTime : DateTime,  pathVisitor : Path => Unit ) = {
-      fs.listFilesRecursively( rootPath).foreach( fstat => {
-          if( fstat.isFile) {
-             if( fstat.created.getMillis() > lastTime.getMillis() ) {
-               val parent = fs.getStatus(fstat.path.parent)
-               if( parent.created.getMillis() > lastTime.getMillis()) {
-                 pathVisitor( parent.path)
-               }
-             }
-          }
-      } )
-    }
+
   
 }

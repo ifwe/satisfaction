@@ -8,6 +8,7 @@ import scala.io.Source
 import _root_.org.apache.hadoop.hive.ql.metadata.HiveException
 import _root_.org.apache.hadoop.hive.conf.HiveConf
 import util.Releaseable
+import satisfaction.hadoop.Config
 
 case class HiveSatisfier(val queryResource: String, val conf : HiveConf)( implicit val track : Track) 
 ///      extends Satisfier with MetricsProducing with Progressable with Logging with java.io.Closeable {
@@ -16,6 +17,7 @@ case class HiveSatisfier(val queryResource: String, val conf : HiveConf)( implic
 
    override def name = s"Hive( $queryResource )" 
   
+
    
    val  driver  = new Releaseable[HiveDriver]( {
         info(s"Creating  HiveLocalDriver ${Thread.currentThread().getName()} ")
@@ -223,6 +225,11 @@ case class HiveSatisfier(val queryResource: String, val conf : HiveConf)( implic
 
 object HiveSatisfier {
     val HiveCommentDelimiter = "---"
+
+  def apply(queryResource: String)( implicit  track : Track)  = {
+      val hiveConf : HiveConf =  new HiveConf( Config(track), track.getClass )
+      new HiveSatisfier( queryResource, hiveConf) 
+  }
 
   /**
    *  Strip out comments starting with  ---,

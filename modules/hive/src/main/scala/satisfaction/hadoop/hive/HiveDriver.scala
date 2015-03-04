@@ -13,6 +13,8 @@ import _root_.org.apache.hadoop.hive.ql.metadata.Hive
 import satisfaction.util.classloader.IsolatedClassLoader
 import satisfaction.fs.LocalFileSystem
 import satisfaction.fs.Path
+import org.apache.hadoop.mapred.JobConf
+import org.apache.hadoop.conf.Configuration
 
 /**
  *  Trait for class which can executes
@@ -23,7 +25,7 @@ import satisfaction.fs.Path
  *   Can be both local, using Hive Driver implementation,
  *     or remote, using HiveServer2 JDBC client
  */
-trait HiveDriver {
+trait HiveDriver extends java.io.Closeable {
 
     def useDatabase(dbName: String) : Boolean 
 
@@ -113,7 +115,7 @@ object HiveDriver extends Logging {
     		  "org.apache.hadoop.hive.ql.session.SessionState.*",
     		  "org.apache.op.hive.ql.session.SessionState.*",
     		  "brickhouse.*",
-    		  "org.apache.hive.com.esotericsoftware.*",
+              "org.apache.hive.com.esotericsoftware.kryo.*",
     		  "org.apache.hadoop.util.ReflectionUtils",
     		  "org.apache.hadoop.util.ReflectionUtils.*",
     		  "org.apache.hadoop.io.WritableComparator",
@@ -132,7 +134,8 @@ object HiveDriver extends Logging {
     		      "org.apache.hive.common.*",
     		      "org.apache.hadoop.hive.common.*",
                   "org.apache.commons.logging.*",
-                  "org.apache.hadoop.hbase"
+                  "org.apache.hadoop.hbase.*"
+                  "org.apache.zookeeper.*"
                   ////"org.apache.hadoop.hive.ql.metadata.*",
     		      ///"org.apache.hadoop.hive.ql.exec.mr.HadoopJobExecHelper",
     		      ///"org.apache.hadoop.hive.ql.exec.mr.HadoopJobExecHelper.*",
@@ -154,6 +157,9 @@ object HiveDriver extends Logging {
     		  	cachePath.pathString);
          isolatedClassLoader.registerClass(classOf[HiveDriver]);
          isolatedClassLoader.registerClass(classOf[HiveConf]);
+         isolatedClassLoader.registerClass(classOf[HiveConf.ConfVars]);
+         isolatedClassLoader.registerClass(classOf[org.apache.hadoop.mapred.JobConf]);
+         isolatedClassLoader.registerClass(classOf[Configuration]);
          
          info( s" LOG CLASSLOADER is ${classOf[Log].getClassLoader}")
           if( track.trackProperties.contains("satisfaction.classloader.frontload"))  {

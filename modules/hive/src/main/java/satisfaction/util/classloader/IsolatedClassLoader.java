@@ -42,13 +42,9 @@ public class IsolatedClassLoader extends ClassLoader implements java.io.Closeabl
 		System.out.println(" Creating IsolatedClassLoader " + this + " ; DelegLoader =  " + _delegLoader);
 	}
 	
+	
 	public void registerClass( Class<?> clazz) {
-		try {
-	      _delegLoader.registerClass( clazz);
-	    } catch( RuntimeException unexpected ) {
-	    	unexpected.printStackTrace();
-	    	throw unexpected;
-	    }
+	   _delegLoader.registerClass( clazz);
 	}
 	
 	/**
@@ -116,6 +112,7 @@ public class IsolatedClassLoader extends ClassLoader implements java.io.Closeabl
 		try {
 		  LOG.info(" Closing IsolatedClassLoader " + this);
 		  System.out.println(" Closing IsolatedClassLoader " + this);
+
 		  if(_delegLoader != null)
 		     _delegLoader.close();
 		  
@@ -165,6 +162,7 @@ public class IsolatedClassLoader extends ClassLoader implements java.io.Closeabl
     		   LOG.error(" Delegated Loader is null !!!! Trying to access after classloader was closed ... " );
     		   throw new IllegalStateException(" Delegated Loader is null !!!! Trying to access after classloader was closed ... " );
 	    	}
+	    	
 		    return _delegLoader.loadClass( name, resolve);
 	    } catch( RuntimeException unexpected ) {
 	    	unexpected.printStackTrace();
