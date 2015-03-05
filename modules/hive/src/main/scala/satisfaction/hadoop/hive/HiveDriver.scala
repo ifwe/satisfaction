@@ -134,7 +134,8 @@ object HiveDriver extends Logging {
     		      "org.apache.hive.common.*",
     		      "org.apache.hadoop.hive.common.*",
                   "org.apache.commons.logging.*",
-                  "org.apache.hadoop.hbase.*"
+                  "org.apache.hadoop.hbase.*",
+                  "satisfaction.util.*"
                   ////"org.apache.hadoop.hive.ql.metadata.*",
     		      ///"org.apache.hadoop.hive.ql.exec.mr.HadoopJobExecHelper",
     		      ///"org.apache.hadoop.hive.ql.exec.mr.HadoopJobExecHelper.*",
