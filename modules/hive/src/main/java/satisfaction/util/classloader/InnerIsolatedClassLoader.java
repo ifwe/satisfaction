@@ -141,6 +141,7 @@ class InnerIsolatedClassLoader extends java.net.URLClassLoader implements java.i
 		removeStaticCacheReference("org.apache.hadoop.hive.serde2.objectinspector.ObjectInspectorFactory");
 		removeStaticCacheReference("org.apache.thrift.meta_data.FieldMetaData");
 		removeStaticCacheReference("org.apache.hadoop.io.compress.CompressionCodecFactory");
+		removeStaticCacheReference("com.tagged.hadoop.hive.serde2.avro.SchemaFactory");
 		
 		removeShutdownReferences();
 		  

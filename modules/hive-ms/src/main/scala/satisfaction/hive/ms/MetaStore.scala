@@ -37,7 +37,6 @@ case class MetaStore(implicit val config: HiveConf)  extends Logging with java.i
    import hdfs.HdfsImplicits
    import hdfs.HdfsImplicits._
 
-    private lazy val _hive = {val hv=  Hive.get(config); Hive.set( hv); hv }
     private lazy val _hdfs = Hdfs.fromConfig(config)
     
     
@@ -46,7 +45,9 @@ case class MetaStore(implicit val config: HiveConf)  extends Logging with java.i
     private var _tableMap : collection.immutable.Map[String,List[String]] = if( PRELOAD) { _initTableMap  } else { null }
     private var _viewMap : collection.immutable.Map[String,List[String]] = if( PRELOAD ) { _initViewMap } else { null }
 
-    def hive(): Hive = { _hive }
+    def hive(): Hive = {
+      Hive.get( config, true)
+    }
     
     def close() = {
        Hive.closeCurrent
@@ -62,8 +63,8 @@ case class MetaStore(implicit val config: HiveConf)  extends Logging with java.i
         this.synchronized({
           try {
             info(" Metastore URI  =  " + config.getVar( HiveConf.ConfVars.METASTOREURIS))
-            info(" Init DB LIST !! hive =  " + _hive)
-            val list = _hive.getAllDatabases().toList
+            info(" Init DB LIST !! hive =  " + hive)
+            val list = hive.getAllDatabases().toList
             list.foreach( info(_))
             list
           } catch {
@@ -107,10 +108,10 @@ case class MetaStore(implicit val config: HiveConf)  extends Logging with java.i
        	 var buildMap : immutable.Map[String,List[String]]= Map.empty
            getDbs.foreach( db => {
         	buildMap = buildMap + ( db ->
-        	_hive.getAllTables( db).toList.filter( tbl =>
+        	hive.getAllTables( db).toList.filter( tbl =>
               try{
                 debug(s" Getting table $db :: $tbl")
-        	   _hive.getTable( db, tbl).getTableType() != TableType.VIRTUAL_VIEW
+        	    hive.getTable( db, tbl).getTableType() != TableType.VIRTUAL_VIEW
               } catch {
         	    case e:Throwable =>
                   warn("Ignoring ..Unable to get table " + tbl + " Exception " + e)
@@ -127,10 +128,10 @@ case class MetaStore(implicit val config: HiveConf)  extends Logging with java.i
        	 var buildMap : immutable.Map[String,List[String]]= Map.empty
           getDbs.foreach( db => {
         	buildMap = buildMap + ( db ->
-        	_hive.getAllTables( db).toList.filter( tbl =>
+        	hive.getAllTables( db).toList.filter( tbl =>
               try{
                 debug(s" Getting view $db :: $tbl")
-        	   _hive.getTable( db, tbl).getTableType() == TableType.VIRTUAL_VIEW
+        	    hive.getTable( db, tbl).getTableType() == TableType.VIRTUAL_VIEW
               } catch {
         	    case e: Throwable  =>
                   warn(" Ignore ..Unable to get table " + tbl + " Exception " + e)
@@ -145,16 +146,16 @@ case class MetaStore(implicit val config: HiveConf)  extends Logging with java.i
 
     def getPartitionNamesForTable(db: String, tblName: String): List[String] = {
         this.synchronized({
-            _hive.getPartitionNames(db, tblName, 100).toList
+            hive.getPartitionNames(db, tblName, 100).toList
         })
     }
 
     def getPartitionsForTable(tbl: Table): Seq[Partition] = {
-        this.synchronized({ _hive.getPartitions(tbl).toList })
+        this.synchronized({ hive.getPartitions(tbl).toList })
     }
 
     def getPartitionSetForTable(tbl: Table, partialVars: Map[String, String]) : Seq[Partition] = {
-        this.synchronized({ _hive.getPartitions(tbl, partialVars).toList })
+        this.synchronized({ hive.getPartitions(tbl, partialVars).toList })
     }
 
     def getPartitionSize(part: Partition): Long = {
@@ -176,17 +177,17 @@ case class MetaStore(implicit val config: HiveConf)  extends Logging with java.i
     }
 
     def getTableByName(db: String, tblName: String): Table = {
-        this.synchronized({ _hive.getTable(db, tblName) })
+        this.synchronized({ hive.getTable(db, tblName) })
     }
     
     def tableExists( db: String, tblName: String) : Boolean = {
-       this.synchronized( _hive.getTable(db,tblName, false) != null)
+       this.synchronized( hive.getTable(db,tblName, false) != null)
     }
     
     def createTable( db: String, tbl : Table ) = {
       this.synchronized {
         tbl.setDbName(db)
-         _hive.createTable( tbl)
+        hive.createTable( tbl)
       }
       
     }
@@ -198,20 +199,20 @@ case class MetaStore(implicit val config: HiveConf)  extends Logging with java.i
     def cleanPartitions(db: String, tblName: String) = {
         this.synchronized({
             try {
-                val tbl = _hive.getTable(db, tblName)
+                val tbl = hive.getTable(db, tblName)
                 if (!tbl.isView && tbl.isPartitioned()) {
-                    _hive.getPartitions(tbl).toList.map { part =>
+                    hive.getPartitions(tbl).toList.map { part =>
                         if (_hdfs.exists(part.getDataLocation)) {
                             if (_hdfs.getSpaceUsed(part.getDataLocation) == 0) {
                                debug("Dropping empty partition " + part.getValues + " for table " + tblName)
-                                _hive.dropPartition(db, tblName, part.getValues(), true)
+                                hive.dropPartition(db, tblName, part.getValues(), true)
                                 _hdfs.fs.delete(part.getDataLocation)
                             } else {
                                debug(" Keeping partition " + part.getValues + " for table " + tblName)
                             }
                         } else {
                             debug(" Dropping missing partition " + part.getValues + " for table " + tblName)
-                            _hive.dropPartition(db, tblName, part.getValues(), false)
+                            hive.dropPartition(db, tblName, part.getValues(), false)
                         }
                     }
                 }
@@ -231,7 +232,7 @@ case class MetaStore(implicit val config: HiveConf)  extends Logging with java.i
 
     def prunePartitionsByRetention(db: String, tblName: String, now: DateTime, reten: Int) = {
         this.synchronized({
-            val tbl = _hive.getTable(db, tblName)
+            val tbl = hive.getTable(db, tblName)
             var dtIdx: Int = -1
             val partCols = tbl.getPartCols
             for (i <- 0 to partCols.size - 1) {
@@ -239,7 +240,7 @@ case class MetaStore(implicit val config: HiveConf)  extends Logging with java.i
                     dtIdx = i;
                 }
             }
-            val parts = _hive.getPartitions(tbl)
+            val parts = hive.getPartitions(tbl)
             info(" Pruning Partitions on table " + tbl.getCompleteName() + " for " + reten + " days from " + now)
             if (!tbl.isView && tbl.isPartitioned()) {
                 parts.toList.map { part =>
@@ -255,7 +256,7 @@ case class MetaStore(implicit val config: HiveConf)  extends Logging with java.i
                                 _hdfs.fs.delete(part.getDataLocation)
                             }
                             info("Dropping obsolete partition " + part.getValues + " for table " + tblName)
-                            _hive.dropPartition(db, tblName, part.getValues(), true)
+                            hive.dropPartition(db, tblName, part.getValues(), true)
                         } else {
                             info("Keeping recent partition " + part.getValues + " for table " + tblName)
                         }
@@ -270,7 +271,7 @@ case class MetaStore(implicit val config: HiveConf)  extends Logging with java.i
      */
     def cleanPartitionsForDb(db: String) = {
         this.synchronized({
-            val tblList = _hive.getTablesForDb(db, "*").toList
+            val tblList = hive.getTablesForDb(db, "*").toList
             tblList.map { tblName =>
               if( tblName.compareTo( "ksuid_mapping") > 0) {
                 info(" Cleaning table " + db + "@" + tblName)
@@ -338,12 +339,12 @@ case class MetaStore(implicit val config: HiveConf)  extends Logging with java.i
       })
       
       
-      val tables = _hive.getAllTables( db)
+      val tables = hive.getAllTables( db)
       tables.foreach( tblName => {
-          val tbl = _hive.getTable( db, tblName)
+          val tbl = hive.getTable( db, tblName)
           if(! tbl.isView)
             if( tbl.isPartitioned() ) {
-              val parts = _hive.getPartitions(tbl)
+              val parts = hive.getPartitions(tbl)
               parts.foreach( part => {
                val partDt = getRecentTime( Right(part)) 
                periods.foreach( per => {
@@ -377,8 +378,8 @@ case class MetaStore(implicit val config: HiveConf)  extends Logging with java.i
 
     def getPartition(db: String, tblName: String, partMap: Map[String, String]): Partition = {
         this.synchronized({
-            val tbl = _hive.getTable(db, tblName)
-            _hive.getPartition(tbl, partMap, false)
+            val tbl = hive.getTable(db, tblName)
+            hive.getPartition(tbl, partMap, false)
         })
     }
    
@@ -392,13 +393,13 @@ case class MetaStore(implicit val config: HiveConf)  extends Logging with java.i
               case None => null
             }
             addPartitionDesc.addPartition( partMap, path )
-            val newParts = _hive.createPartitions( addPartitionDesc)
+            val newParts = hive.createPartitions( addPartitionDesc)
             if( newParts.size >0) {
               newParts.get(0)
             } else {
               //// Already exists ...
-              val tbl = _hive.getTable( db,tblName)
-              _hive.getPartition(tbl, partMap, false)
+              val tbl = hive.getTable( db,tblName)
+              hive.getPartition(tbl, partMap, false)
             }
           } catch {
             case alreadyExists : AlreadyExistsException => {
@@ -415,34 +416,34 @@ case class MetaStore(implicit val config: HiveConf)  extends Logging with java.i
     
     def alterPartition( db: String, tblName: String , part: Partition )  = {
       this.synchronized {
-        _hive.alterPartition(db,tblName, part)
+        hive.alterPartition(db,tblName, part)
       }
     }
     
     def dropPartition( db: String, tblName: String , part: Partition , deleteData : Boolean = true)  = {
       this.synchronized {
-        _hive.dropPartition(db, tblName, part.getValues , deleteData)
+        hive.dropPartition(db, tblName, part.getValues , deleteData)
       }
     }
 
     def getPartition(db: String, tblName: String, partSpec: List[String]): Partition = {
         this.synchronized({
-            val tbl = _hive.getTable(db, tblName)
+            val tbl = hive.getTable(db, tblName)
             val partMap = new HashMap[String, String]()
             val partCols = tbl.getPartCols()
             for (i <- 0 until partCols.size) {
                 partMap.put(partCols.get(i).getName(), partSpec.get(i))
             }
-            _hive.getPartition(tbl, partMap, false)
+            hive.getPartition(tbl, partMap, false)
         })
     }
 
     def getPartitionByName(db: String, tblName: String, partName: String): Partition = {
         this.synchronized({
-            val tbl = _hive.getTable(db, tblName)
+            val tbl = hive.getTable(db, tblName)
             val partNameList = new java.util.ArrayList[String]()
             partNameList.add(partName)
-            _hive.getPartitionsByNames(tbl, partNameList).get(0)
+            hive.getPartitionsByNames(tbl, partNameList).get(0)
         })
     }
 
@@ -462,12 +463,11 @@ case class MetaStore(implicit val config: HiveConf)  extends Logging with java.i
      *
      */
     def setTableMetaData(db: String, tblName: String, key: String, md: String) = {
-      println(s"YY: entered SetTableMetaData ".concat(key))
       this.synchronized({
-            val tbl = _hive.getTable(db, tblName)
+            val tbl = hive.getTable(db, tblName)
             val map = tbl.getParameters()
             map.put(key, md)
-            _hive.alterTable(tblName, tbl)
+            hive.alterTable(tblName, tbl)
         })
     }
 
@@ -477,7 +477,7 @@ case class MetaStore(implicit val config: HiveConf)  extends Logging with java.i
      */
     def getTableMetaData(db: String, tblName: String, key: String) : Option[String] = {
         this.synchronized({
-            val tbl = _hive.getTable(db, tblName)
+            val tbl = hive.getTable(db, tblName)
             val map = tbl.getParameters
             if ( map.containsKey(key)  ) {
               Some(map.get(key))
@@ -505,15 +505,13 @@ case class MetaStore(implicit val config: HiveConf)  extends Logging with java.i
             map.put(key, md)
             val tblName: String = part.getTable().getTableName()
             
-                  println(s"YYYYY setPartitionMetaData tblName=$tblName" )
-            //_hive.alterPartition(tblName, part)
-                  _hive.alterPartition(part.getTable().getDbName(), tblName, part)
+                  hive.alterPartition(part.getTable().getDbName(), tblName, part)
         })
     }
 
     def getTableMetaData(db: String, tblName: String): Map[String, String] = {
         this.synchronized({
-            val tbl = _hive.getTable(db, tblName)
+            val tbl = hive.getTable(db, tblName)
             tbl.getParameters.toMap
         })
     }
