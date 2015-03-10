@@ -100,6 +100,7 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
           failureCheck {
             ////First thing, just remove from evidence
             info(s"Goal ${goal.name} $witness received EvidenceCheckResult $id AlreadySatisfied = $isAlreadySatisfied ")
+            //// XXX 
             val ecActor = _evidenceCheckers.remove(id).get
             context.system.stop(ecActor)
 

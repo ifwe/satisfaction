@@ -171,8 +171,12 @@ class JobRunner(
      */
     def finish() = {
       /// XXX NullPointer Exception ???
-      log.info(s" Finishing up !! ${self.path} ")
-       context.system.stop( self) 
+      if( context != null && self != null) {
+        log.info(s" Finishing up !! ${self.path} ")
+        context.system.stop( self) 
+      } else {
+        log.warning(s" Call to finish called with null context $context -- self = $self ")
+      }
     }
 
     /**

@@ -74,7 +74,7 @@ class TrackScheduler( val proofEngine : ProofEngine ) extends Logging  {
             val mess = new TrackScheduler.StartGoalMessage( track.descriptor, true)
             Some((AddOneTimeSchedule(startGoalActor, constant.delayInterval , mess, true),constant.scheduleString))
           case recurring : Recurring => // in core
-             val mess = new TrackScheduler.StartGoalMessage( track.descriptor, true)
+             val mess = new TrackScheduler.StartGoalMessage( track.descriptor, false)
              Some((AddPeriodSchedule( startGoalActor, recurring.frequency, recurring.timeOffset , mess, true),recurring.scheduleString))
           case _  => None
         }
@@ -195,14 +195,14 @@ object TrackScheduler {
 
        def receive = {
          case mess : StartGoalMessage =>
-           log.info(" Starting an instance of Track " + mess.trackDesc.trackName + " Version " + mess.trackDesc.version)
+           log.info(" Starting Goal for Track " + mess.trackDesc.trackName + " Version " + mess.trackDesc.version)
            
            
            val trckOpt =  if( trackFactory != null ) { trackFactory.getTrack( mess.trackDesc ) } else { None }
 
            trckOpt match {
 	             case Some(trck) if (trackScheduler.isRunning(trck) && mess.continuous ) => { // define "already running"
-                   log.info(s" Track ${trck.descriptor.trackName} is already running ; Going to try again ")
+                   log.info(s" Track ${trck.descriptor.trackName} is already running ; Going to try again later ")
                    restartConstantJob( trck, mess)
 	             }
 	             case Some(trck) =>

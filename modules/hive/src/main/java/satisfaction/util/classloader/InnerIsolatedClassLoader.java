@@ -140,6 +140,7 @@ class InnerIsolatedClassLoader extends java.net.URLClassLoader implements java.i
 		removeStaticCacheReference("org.apache.hadoop.io.WritableComparator");
 		removeStaticCacheReference("org.apache.hadoop.hive.serde2.objectinspector.ObjectInspectorFactory");
 		removeStaticCacheReference("org.apache.thrift.meta_data.FieldMetaData");
+		removeStaticCacheReference("org.apache.hadoop.io.compress.CompressionCodecFactory");
 		
 		removeShutdownReferences();
 		  
@@ -195,7 +196,10 @@ class InnerIsolatedClassLoader extends java.net.URLClassLoader implements java.i
 			Object val = valMap.get(valKey);
 			if (val != null) {
 				if (val.getClass().getClassLoader() == this
-						|| valKey.getClass().getClassLoader() == this) {
+						|| valKey.getClass().getClassLoader() == this
+						|| val.getClass().getClassLoader() == outerLoader
+						|| valKey.getClass().getClassLoader() == outerLoader
+						) {
 					removeList.add(valKey);
 				} else {
 					if (val instanceof Thread) {
@@ -286,7 +290,8 @@ class InnerIsolatedClassLoader extends java.net.URLClassLoader implements java.i
 		List removeList = new ArrayList();
 		for( Object val : valList) {
 			if(val != null) {
-				if( val.getClass().getClassLoader() == this ) {
+				if( val.getClass().getClassLoader() == this 
+						|| val.getClass().getClassLoader() == outerLoader) {
 					removeList.add( val );
 				} else {
 					if( val instanceof Thread ) {
@@ -395,7 +400,8 @@ class InnerIsolatedClassLoader extends java.net.URLClassLoader implements java.i
 		   if( shouldFrontLoad(name)) {
 			   return reverseLoadClass(name,resolve);
 		   } else {
-			   return parentLoader.loadClass(name);
+			   ////return parentLoader.loadClass(name);
+			   return super.loadClass(name, resolve);
 		   }
 	    }
 	
