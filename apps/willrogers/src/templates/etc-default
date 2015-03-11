@@ -22,13 +22,13 @@
 -Dcom.sun.management.jmxremote.port=9004
 -Dcom.sun.management.jmxremote.local.only=false 
 -Dcom.sun.management.jmxremote.authenticate=false
--J-Xmx2048m
--J-Xms2048m
+-J-Xmx4096m
+-J-Xms4096m
 -J-XX:+UseConcMarkSweepGC
 -J-XX:+CMSClassUnloadingEnabled 
 -J-XX:+CMSPermGenSweepingEnabled 
 -J-XX:+HeapDumpOnOutOfMemoryError 
 -J-XX:HeapDumpPath=/usr/share/${{app_name}}
--J-XX:PermSize=512m 
--J-XX:MaxPermSize=512m 
+-J-XX:PermSize=1024m 
+-J-XX:MaxPermSize=1024m 
 

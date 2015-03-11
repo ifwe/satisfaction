@@ -42,7 +42,15 @@ case class TrackFactory(val trackFS : FileSystem,
           warn(" No Scheduler available") 
        }
      } 
-  }
+ }
+  
+ /**
+  *  Monitor the memory usage, and die 
+  *  when we have exhausted all of the PermGen space
+  */
+ val initPoisonPill = {
+   PoisonPill()
+ } 
    
  private val _trackMap : collection.mutable.Map[TrackDescriptor,Track] = collection.mutable.HashMap[TrackDescriptor,Track]()
  def trackMap : collection.immutable.Map[TrackDescriptor,Track] =  _trackMap.toMap

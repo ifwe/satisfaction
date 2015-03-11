@@ -96,35 +96,39 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
               satisfy(runID,parentRunID,forceSatisfy)
             }
           }
-        case EvidenceCheckResult(id:String,w:Witness,isAlreadySatisfied:Boolean) =>
-          failureCheck {
-            ////First thing, just remove from evidence
-            info(s"Goal ${goal.name} $witness received EvidenceCheckResult $id AlreadySatisfied = $isAlreadySatisfied ")
-            //// XXX 
-            val ecActor = _evidenceCheckers.remove(id).get
+    case EvidenceCheckResult(id: String, w: Witness, isAlreadySatisfied: Boolean) =>
+      failureCheck {
+        ////First thing, just remove from evidence
+        info(s"Goal ${goal.name} $witness received EvidenceCheckResult $id AlreadySatisfied = $isAlreadySatisfied ")
+        _evidenceCheckers.remove(id) match {
+          case Some(ecActor) => {
             context.system.stop(ecActor)
 
-            if( !isAlreadySatisfied
-                 && status.state == GoalState.CheckingEvidence) {
-              if(!forceSatisfy) {
-                 satisfy(this.runID,this.parentRunID,this.forceSatisfy);
+            if (!isAlreadySatisfied
+              && status.state == GoalState.CheckingEvidence) {
+              if (!forceSatisfy) {
+                satisfy(this.runID, this.parentRunID, this.forceSatisfy);
               } else {
                 runLocalJob()
               }
-            } else if( isAlreadySatisfied
-                 && status.state == GoalState.CheckingEvidence
-                 && _evidenceCheckers.size == 0 ) {
+            } else if (isAlreadySatisfied
+              && status.state == GoalState.CheckingEvidence
+              && _evidenceCheckers.size == 0) {
 
               //// Already satisfied 
-               info(s" Goal ${goal.name} Already satisfied for Witness $w ; releasing dependencies ")
-               dependencies.foreach { 
-                      case (predTuple, actor) =>  proverFactory ! ReleaseActor( predTuple._1.name, predTuple._2 ) 
-                }
-                status.markTerminal( GoalState.AlreadySatisfied )
-                publishSuccess
+              info(s" Goal ${goal.name} Already satisfied for Witness $w ; releasing dependencies ")
+              dependencies.foreach {
+                case (predTuple, actor) => proverFactory ! ReleaseActor(predTuple._1.name, predTuple._2)
+              }
+              status.markTerminal(GoalState.AlreadySatisfied)
+              publishSuccess
             }
-           
-         }
+          }
+          case None => {
+        	 warn(s" No evidence found for $id for ${goal.name} $witness ; Ignoring")
+          }
+        }
+      }
         case WhatsYourStatus =>
           try  {
             //// Do a blocking call to just return  
