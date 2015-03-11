@@ -115,13 +115,17 @@ class InnerIsolatedClassLoader extends java.net.URLClassLoader implements java.i
 		  }
 		}
 	}
+	private static boolean _isClosed = false;
 	
 	@Override
 	public void close() throws IOException {
+		if(_isClosed) {
+			return;
+		}
 		LOG.info(" Closing InnerIsolatedClassLoader " + this);
+		registeredClasses.clear();
 		super.close();
 		
-		registeredClasses.clear();
 		  
 		try {
 		  //// Need to call clearCache on ReflectionUtils 
@@ -143,6 +147,8 @@ class InnerIsolatedClassLoader extends java.net.URLClassLoader implements java.i
 		removeStaticCacheReference("org.apache.hadoop.io.compress.CompressionCodecFactory");
 		removeStaticCacheReference("com.tagged.hadoop.hive.serde2.avro.SchemaFactory");
 		
+		removeReflectAsmReferences();
+		
 		removeShutdownReferences();
 		  
 		if(outerLoader != null) {
@@ -151,6 +157,7 @@ class InnerIsolatedClassLoader extends java.net.URLClassLoader implements java.i
 		} else {
 			LOG.warn(" Close called multiple times on InnerIsolatedClassLoader " + this);
 		}
+		_isClosed = true;
 	}
 
 	private HashSet<Object> _seenObjs = new HashSet();
@@ -159,6 +166,7 @@ class InnerIsolatedClassLoader extends java.net.URLClassLoader implements java.i
 		try {
 			_seenObjs.clear();
 			Class staticCacheClass = Class.forName(className);
+			LOG.info(" Removing static cached references for class " + className + " :: " + staticCacheClass);
 			Field[] fields = staticCacheClass.getDeclaredFields();
 			for(Field field : fields) {
 				if( Modifier.isStatic( field.getModifiers())) {
@@ -171,9 +179,10 @@ class InnerIsolatedClassLoader extends java.net.URLClassLoader implements java.i
 					  recursiveRemoveCachedListReference( (List) fieldObj);
 				    } else {
 					  ///// Forcibly set to null if there for some reason 
-					  if(fieldObj.getClass().getClassLoader() == this) {
+					  if(fieldObj.getClass().getClassLoader() == this
+							  || fieldObj.getClass().getClassLoader() == outerLoader) {
 						  LOG.info(" Forcibly setting to null field " + field.getName() + " on class " + className);
-						  field.set(null, null);
+						  field.set(fieldObj, null);
 					  }
 				    }
 			      }
@@ -348,6 +357,34 @@ class InnerIsolatedClassLoader extends java.net.URLClassLoader implements java.i
 			LOG.error("Unexpected error while trying to remove references to shutdown hooks ; " + e.getMessage(), e);
 		}
 		
+	}
+	
+	/**
+	 * Static reference in some versions of ReflectAsm
+	 *   hold onto the parent class in AccessClassLoader
+	 *   
+	 */
+	protected void removeReflectAsmReferences() {
+		try {
+		  Class reflectAsmClass = this.getClass().getClassLoader().loadClass( "org.apache.hive.com.esotericsoftware.reflectasm.AccessClassLoader");
+		  Field accessClassLoadersField = reflectAsmClass.getDeclaredField("accessClassLoaders");
+		  accessClassLoadersField.setAccessible(true);
+		  
+		  Field parentField = reflectAsmClass.getDeclaredField("parent");
+		  parentField.setAccessible(true);
+		  
+		  List accessClassLoaders  =  (List) accessClassLoadersField.get( null);
+		  for(Object accessClassLoader : accessClassLoaders ) {
+			 Object parent = parentField.get( accessClassLoader);
+			 if( parent == this || parent == this.outerLoader) {
+				 LOG.info(" Removing AccessClassLoader " + accessClassLoader +  " from static list accessClassLoaders ");
+				 accessClassLoaders.remove( accessClassLoader);
+			 }
+		  }
+
+		} catch( Exception unexpected ) {
+		  LOG.error(" Unexpected error while trying to remove reference to AccessCloassLoaders ");	
+		}
 	}
 	
 	/**

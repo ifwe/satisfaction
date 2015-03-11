@@ -103,8 +103,7 @@ public class IsolatedClassLoader extends ClassLoader implements java.io.Closeabl
 	
 	public void release() throws IOException {
 		  LOG.info(" Releasing InnerIsolatedClassLoader");
-		  _delegLoader = null;
-		  System.gc();
+		  close();
 	}
 	
 	@Override
@@ -113,8 +112,10 @@ public class IsolatedClassLoader extends ClassLoader implements java.io.Closeabl
 		  LOG.info(" Closing IsolatedClassLoader " + this);
 		  System.out.println(" Closing IsolatedClassLoader " + this);
 
-		  if(_delegLoader != null)
+		  if(_delegLoader != null) {
 		     _delegLoader.close();
+		     _delegLoader = null;
+		  }
 		  
 		  //// Need to call clearCache on ReflectionUtils 
 		  ////   to avoid classloader leak
@@ -125,7 +126,7 @@ public class IsolatedClassLoader extends ClassLoader implements java.io.Closeabl
 		  
 		  clearMethod.invoke( null);
 		  
-		  release();
+		  System.gc();
 
 	    } catch( RuntimeException unexpected ) {
 	    	unexpected.printStackTrace();
