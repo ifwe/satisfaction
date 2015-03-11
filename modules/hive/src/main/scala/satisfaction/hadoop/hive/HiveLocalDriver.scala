@@ -65,21 +65,29 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config, cl
     })
     
     override def close() = {
+       info("HiveLocalDriver calling close")
        driver.get.->("close")
        driver.release
        /// Release the Metastore
-       Hive.closeCurrent()
-       if(_sessionState != null) {
-          sessionState.->("close")
-          sessionState.execStatic("detachSession") 
-       }
-       
-      Utilities.runtimeSerializationKryo.remove();
+       try {
+         Hive.closeCurrent()
+         if(_sessionState != null) {
+            sessionState.->("close")
+            sessionState.execStatic("detachSession") 
+         }
       
-      IOContext.clear();
+         IOContext.clear();
+       } catch {
+         case unexpected : Throwable => {
+          error(" Unexpected error trying to close Hive and SessionState " , unexpected)
+         } 
+       }
       
 
       try {
+
+        Utilities.runtimeSerializationKryo.remove();
+
         val cloneQueryPlanKryoField = classOf[Utilities].getDeclaredField("cloningQueryPlanKryo")
         cloneQueryPlanKryoField.setAccessible(true)
       
@@ -92,15 +100,21 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config, cl
       }
 
 
-      val thisClassLoader = this.getClass().getClassLoader
-      thisClassLoader match {
-        case closable : java.io.Closeable => {
-           info(s" HiveLocalDriver :: Closing Closable ClassLoader $thisClassLoader ")      
-           closable.close
+      try {
+        val thisClassLoader = this.getClass().getClassLoader
+        thisClassLoader match {
+          case closable : java.io.Closeable => {
+             info(s" HiveLocalDriver :: Closing Closable ClassLoader $thisClassLoader ")      
+             closable.close
+          }
+          case _ => {
+             info(" HiveLocalDriver :: Our classloader was not closable") 
+          }
         }
-        case _ => {
-           info(" HiveLocalDriver :: Our classloader was not closable") 
-        }
+      } catch {
+        case unexpected : Throwable => {
+          error(" Unexpected error trying to close Isolated ClassLoader " , unexpected)
+        } 
       }
     }
     
@@ -153,7 +167,6 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config, cl
        /// Hive Driver is somewhat opaque
        info("HIVE_DRIVER Aborting all jobs for Hive Query ")
        HadoopJobExecHelper.killRunningJobs()
-       ///// driver.destroy
        close
     }
     

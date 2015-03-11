@@ -74,15 +74,7 @@ class JobRunner(
                 log.info(s" JobRunner ... MessageSender is $sender ")
                 _messageSender = sender
                 satisfierFuture onComplete {
-                    log.info(s" Job Runner :: Future OnComplete ${goal.name} ${witness}")
-                                satisfier match {
-                                  case closer : java.io.Closeable => {
-                                     logger.info(s" Closing Closable Satisfier $satisfier for Goal ${goal.name} and Witness $witness ") 
-                                     closer.close()
-                                  }
-                                  case _ =>  /// don't need to close anything ...
-                                }
-                    /// XXX FIXME NullPointerException????
+                    log.info(s" Job Runner :: Future OnComplete ${goal.name} ${witness} ${satisfier}")
                     checkResults(_)
                 }
         case Abort =>
@@ -170,7 +162,15 @@ class JobRunner(
      *  Job has finished ...
      */
     def finish() = {
-      /// XXX NullPointer Exception ???
+      /// If the satisfier has any resources which needs to be released,
+      ////  call close()
+      satisfier match {
+         case closer : java.io.Closeable => {
+             logger.info(s" Closing Closable Satisfier $satisfier for Goal ${goal.name} and Witness $witness ") 
+             closer.close()
+         }
+         case _ =>  { logger.info(s" Satisfier $satisfier is not closeable") }
+      }
       if( context != null && self != null) {
         log.info(s" Finishing up !! ${self.path} ")
         context.system.stop( self) 

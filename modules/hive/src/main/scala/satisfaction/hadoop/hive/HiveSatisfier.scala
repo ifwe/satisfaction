@@ -11,18 +11,14 @@ import util.Releaseable
 import satisfaction.hadoop.Config
 
 case class HiveSatisfier(val queryResource: String, val conf : HiveConf)( implicit val track : Track) 
-///      extends Satisfier with MetricsProducing with Progressable with Logging with java.io.Closeable {
-      ////extends Satisfier with MetricsProducing  with Logging with java.io.Closeable {
       extends Satisfier  with Logging with java.io.Closeable {
 
    override def name = s"Hive( $queryResource )" 
   
-
-   
-   val  driver  = new Releaseable[HiveDriver]( {
+   private val  driver = new Releaseable[HiveDriver]( {
         info(s"Creating  HiveLocalDriver ${Thread.currentThread().getName()} ")
 	    HiveDriver(conf)
-   }  )
+   } )
    
    /** 
     *   For closeable 
@@ -130,10 +126,6 @@ case class HiveSatisfier(val queryResource: String, val conf : HiveConf)( implic
    		}
       }
       val result = driver.get.executeQuery( query)
-      if( result == false ) {
-        driver.get.close
-        driver.release
-      }
       info(s"HIVE_SATISFIER : Driver returned $result")
       result
     }
@@ -178,48 +170,17 @@ case class HiveSatisfier(val queryResource: String, val conf : HiveConf)( implic
               return setupResult
            }
        }
-       var res = substituteAndExecQueries(queryTemplate, allProps)
-
-         driver.get match {
-            case mp : MetricsProducing => {
-              _jobMetrics = mp.jobMetrics
-            }  
-            case _  => {  info(" Driver is not MetricsProducing" )  }
-         }
-
-         driver.get.close
-         driver.release
-
-         res
+       substituteAndExecQueries(queryTemplate, allProps)
     }
 
     
     @Override 
     override def abort() : ExecutionResult =  robustly {
-      if(driver.isBuilt ) {
-       driver.get.abort
-       driver.get.close
-       driver.release
-
-      }
+       close()
        true
     }
     
     
-   ///
-    private var _jobMetrics = new MetricsCollection(s" Hive Query $queryResource ")
-    def jobMetrics : MetricsCollection =  {
-      /**
-       if( driver.isBuilt && driver.get.isInstanceOf[MetricsProducing])  {
-           val mpDriver = driver.get.asInstanceOf[MetricsProducing] 
-            _jobMetrics = mpDriver.jobMetrics
-            
-       }
-       * 
-       */
-       _jobMetrics
-    }
-   
    
 }
 

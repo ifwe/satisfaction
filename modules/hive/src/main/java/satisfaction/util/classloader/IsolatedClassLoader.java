@@ -102,13 +102,20 @@ public class IsolatedClassLoader extends ClassLoader implements java.io.Closeabl
 	}
 	
 	public void release() throws IOException {
-		  LOG.info(" Releasing InnerIsolatedClassLoader");
 		  close();
 	}
+	
+	private static boolean _isClosing = false;
 	
 	@Override
 	public void close() throws IOException {
 		try {
+			if(_isClosing) {
+				return;
+			} else {
+				_isClosing = true;
+			}
+
 		  LOG.info(" Closing IsolatedClassLoader " + this);
 		  System.out.println(" Closing IsolatedClassLoader " + this);
 
@@ -143,8 +150,6 @@ public class IsolatedClassLoader extends ClassLoader implements java.io.Closeabl
 		} catch (InvocationTargetException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		} finally {
-			release();
 		}
 	}
 	

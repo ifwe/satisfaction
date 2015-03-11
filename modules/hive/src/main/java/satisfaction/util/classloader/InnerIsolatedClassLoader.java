@@ -115,12 +115,15 @@ class InnerIsolatedClassLoader extends java.net.URLClassLoader implements java.i
 		  }
 		}
 	}
-	private static boolean _isClosed = false;
+	private static boolean _isClosing = false;
 	
 	@Override
 	public void close() throws IOException {
-		if(_isClosed) {
+		if(_isClosing) {
+			LOG.info(" Sorry, we're already closed ");
 			return;
+		} else {
+			_isClosing = true;
 		}
 		LOG.info(" Closing InnerIsolatedClassLoader " + this);
 		registeredClasses.clear();
@@ -157,7 +160,6 @@ class InnerIsolatedClassLoader extends java.net.URLClassLoader implements java.i
 		} else {
 			LOG.warn(" Close called multiple times on InnerIsolatedClassLoader " + this);
 		}
-		_isClosed = true;
 	}
 
 	private HashSet<Object> _seenObjs = new HashSet();
