@@ -38,7 +38,7 @@ class InnerIsolatedClassLoader extends java.net.URLClassLoader implements java.i
 	private int maxRetries = 10;
 	private IsolatedClassLoader outerLoader;
     private Map<String,Class> registeredClasses = new HashMap<String,Class>();
-    private ClassLoader parentLoader;
+	private static boolean _isClosing = false;
 
 
 
@@ -46,7 +46,6 @@ class InnerIsolatedClassLoader extends java.net.URLClassLoader implements java.i
 	public InnerIsolatedClassLoader(URL[] urls, ClassLoader parent, List<String> frontLoadedClassExprs, List<String> backLoadedClassExprs, 
 			 HiveConf configuration, String cachePath, IsolatedClassLoader outerLoader) {
 		super(urls, parent, new CacheJarURLStreamHandlerFactory( configuration, cachePath));
-		parentLoader = parent;
 		LOG.info(" Creating InnerIsolatedClassLoader with URLS " + urls);
 		frontLoadPatterns = new ArrayList<Pattern>();
 	    for( String expr : frontLoadedClassExprs ) {
@@ -115,7 +114,6 @@ class InnerIsolatedClassLoader extends java.net.URLClassLoader implements java.i
 		  }
 		}
 	}
-	private static boolean _isClosing = false;
 	
 	@Override
 	public void close() throws IOException {

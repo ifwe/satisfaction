@@ -117,11 +117,12 @@ public class IsolatedClassLoader extends ClassLoader implements java.io.Closeabl
 			}
 
 		  LOG.info(" Closing IsolatedClassLoader " + this);
-		  System.out.println(" Closing IsolatedClassLoader " + this);
 
 		  if(_delegLoader != null) {
 		     _delegLoader.close();
 		     _delegLoader = null;
+		  } else {
+			  LOG.info(" Delegated InnerClassLoader is already null");
 		  }
 		  
 		  //// Need to call clearCache on ReflectionUtils 

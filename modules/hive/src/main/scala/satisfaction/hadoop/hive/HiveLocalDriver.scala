@@ -36,18 +36,9 @@ import _root_.org.apache.hadoop.hive.ql.io.IOContext
 
 class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config, classOf[HiveDriver] ) )
       ///extends satisfaction.hadoop.hive.HiveDriver with MetricsProducing with Progressable with Logging {
-      extends satisfaction.hadoop.hive.HiveDriver with MetricsProducing  {
+      extends satisfaction.hadoop.hive.HiveDriver with MetricsProducing  with Logging {
   
   
-    /// To avoid linkage errors for now ...
-    def info(ms : String ) = { println(s" INFO HiveLocalDriver ::  $ms ") }
-    def error(ms : String ) = 
-    { println(s" ERROR HiveLocalDriver ::  $ms ") }
-    def error(ms : String, unexpect : Throwable ) = {
-      println(s" ERROR HiveLocalDriver ::  $ms ")
-      unexpect.printStackTrace
-    }
- 
      val driver = new Releaseable[Wrapper]({
         val cl = this.getClass.getClassLoader() 
         try {
@@ -66,8 +57,15 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config, cl
     
     override def close() = {
        info("HiveLocalDriver calling close")
-       driver.get.->("close")
-       driver.release
+       try {
+         driver.get.->("close")
+         driver.release
+       } catch {
+         case unexpected : Throwable => {
+          error(" Unexpected error trying to close Apache HiveDriver " , unexpected)
+         } 
+       }
+      
        /// Release the Metastore
        try {
          Hive.closeCurrent()
