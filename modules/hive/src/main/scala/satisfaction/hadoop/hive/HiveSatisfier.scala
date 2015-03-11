@@ -144,8 +144,6 @@ case class HiveSatisfier(val queryResource: String, val conf : HiveConf)( implic
                 try {
                     info(" Beginning executing Hive queries ..")
                     val result=  executeMultiple( query, allProps)
-                    //// XXX refactor to get each individual query
-                    execResult.metrics.mergeMetrics( jobMetrics)
                     if( result ) { execResult.markSuccess() } else { execResult.markFailure() }
                 } catch {
                     case unexpected : Throwable =>
