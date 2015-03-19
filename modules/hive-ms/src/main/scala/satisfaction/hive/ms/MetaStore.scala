@@ -45,8 +45,16 @@ case class MetaStore(implicit val config: HiveConf)  extends Logging with java.i
     private var _tableMap : collection.immutable.Map[String,List[String]] = if( PRELOAD) { _initTableMap  } else { null }
     private var _viewMap : collection.immutable.Map[String,List[String]] = if( PRELOAD ) { _initViewMap } else { null }
 
+    private var _lastAccess : Long = 0
     def hive(): Hive = {
-      Hive.get( config, true)
+      /// Refresh every 5 min
+      val refresh =  if( System.currentTimeMillis() - _lastAccess >  1000*60*5) {
+         _lastAccess = System.currentTimeMillis();
+         true
+      } else {
+        false
+      }
+      Hive.get( config, refresh)
     }
     
     def close() = {
