@@ -27,6 +27,11 @@ import satisfaction.util.classloader.IsolatedClassLoader
 import satisfaction.util.Releaseable
 import satisfaction.util.Wrapper
 import _root_.org.apache.hadoop.hive.ql.io.IOContext
+import _root_.org.apache.hadoop.util.ReflectionUtils
+import java.lang.reflect.Field
+import _root_.org.apache.hadoop.io.WritableComparator
+import _root_.org.apache.thrift.meta_data.FieldMetaData
+import _root_.org.apache.hive.com.esotericsoftware.reflectasm.AccessClassLoader
 
 
 /**
@@ -52,29 +57,132 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config, cl
             throw unexpected
           } 
         }
-        
-    })
-    
-    override def close() = {
-       info("HiveLocalDriver calling close")
-       try {
-         driver.get.->("close")
-         driver.release
-       } catch {
+    }, { wrapper : Wrapper => {
+      try {
+         info(s" Calling close on our ApacheDriver Wrapper $wrapper ")
+         wrapper.->("close")
+      } catch {
          case unexpected : Throwable => {
           error(" Unexpected error trying to close Apache HiveDriver " , unexpected)
          } 
-       }
+      }
+    } } )
+    
+    override def close() = {
+       info("HiveLocalDriver calling close")
+       driver.release
+       info(" Any Day Now, Any Way Now, I Shall Be Released !!!")
       
        /// Release the Metastore
        try {
+         info(" Closing Current Hive, and closing the session state")
          Hive.closeCurrent()
          if(_sessionState != null) {
             sessionState.->("close")
             sessionState.execStatic("detachSession") 
          }
       
+            ///ReflectionUtils.clearCache();
+         val clearCacheMeth = classOf[ReflectionUtils].getDeclaredMethod("clearCache")
+         clearCacheMeth.setAccessible(true)
+         clearCacheMeth.invoke( null)
+           
          IOContext.clear();
+         
+         val thisLoader = this.getClass.getClassLoader
+         val outerMeth = thisLoader.getClass().getDeclaredMethod("getOuterLoader")
+         outerMeth.setAccessible(true)
+         val outerLoader = outerMeth.invoke( thisLoader)
+         info(s" ThisLoader = $thisLoader OuterLoader = $outerLoader ")
+         
+         ///// WritableComparaters
+         val comparatorsField : Field = classOf[WritableComparator].getDeclaredField("comparators")
+         comparatorsField.setAccessible(true)
+         
+         val comparators : java.util.Map[Class[_],WritableComparator] = comparatorsField.get(null).asInstanceOf[java.util.Map[Class[_],WritableComparator]]
+
+         info(s" WritableComparators are $comparators :: ${comparators.size} values ; This ClassLoader = ${this.getClass.getClassLoader} ")
+         comparators.foreach({ case(klass : Class[_],comp : WritableComparator) => {
+             info(s" Class is ${klass.getName} Class Loader = ${klass.getClassLoader}" )
+             if( klass.getClassLoader() == thisLoader
+                 || klass.getClassLoader() == outerLoader) {
+                info(s" Removing class ${klass.getName} ")      
+                comparators.remove(klass)
+             }
+         } })
+         
+         //// org.apache.thrift.meta_data.FieldMetaData
+         val structMapField : Field = classOf[FieldMetaData].getDeclaredField("structMap")
+         structMapField.setAccessible(true)
+         
+         //// Avoid ConcurrentModificationException
+         val structMap : java.util.Map[Class[_],_] = structMapField.get(null).asInstanceOf[java.util.Map[Class[_],_]]
+         info(s" thrift FieldMetaData structmap is  $structMap :: ${structMap.size} values ; This ClassLoader = ${this.getClass.getClassLoader} ")
+         structMap.filter({ case(klass : Class[_], other) => {
+             info(s" StructMap Class is ${klass.getName} Class Loader = ${klass.getClassLoader}" )
+             klass.getClassLoader() == thisLoader  || klass.getClassLoader() == outerLoader
+         } }).foreach( { case(klass : Class[_], other) => {
+            info(s" Removing class ${klass.getName} ")      
+            structMap.remove(klass)
+         } })
+        
+         /// Can we get access ???
+         val shutdownHookClass = Class.forName("java.lang.ApplicationShutdownHooks")
+         val hooksField = shutdownHookClass.getDeclaredField("hooks")
+         hooksField.setAccessible(true)
+         val hooks : java.util.Map[Thread,Thread] = hooksField.get(null).asInstanceOf[java.util.Map[Thread,Thread]]
+         
+         hooks.filter( { case( t1 : Thread, t2 : Thread) => {
+            val contextLoader = t1.getContextClassLoader()
+            info(s" Thread ContextLoader = $contextLoader ; ThisLoader = ${this.getClass.getClassLoader} ")
+            (contextLoader == thisLoader 
+             || contextLoader == outerLoader 
+             || t1.getClass().getClassLoader() == thisLoader 
+             || t1.getClass().getClassLoader() == outerLoader 
+             || t2.getClass().getClassLoader() == thisLoader 
+             || t2.getClass().getClassLoader() == outerLoader )
+         } }).foreach( { case( t1: Thread, t2: Thread ) => {
+            info(s" Removing Thread ${t1.getName} Shutdown Hook with context Loader")
+            hooks.remove( t1)
+         } })
+         
+         
+         ///// ReflectAsm AccessClassLoader
+         val accessClassLoaderClass = Class.forName("org.apache.hive.com.esotericsoftware.reflectasm.AccessClassLoader")
+         val accessClassLoadersField = accessClassLoaderClass.getDeclaredField("accessClassLoaders")
+         accessClassLoadersField.setAccessible(true)
+         
+         val accessClassLoaders : java.util.List[ClassLoader] = accessClassLoadersField.get(null).asInstanceOf[java.util.List[ClassLoader]]
+         accessClassLoaders.filter( { accessCl => {
+             info(s"  AccessClassLoader = ${accessCl} Parent = ${accessCl.getParent()} ")
+             accessCl.getParent() == thisLoader || accessCl.getParent() == outerLoader
+         }}).foreach( { accessCl => {
+             info(s" Removing AccessClassLaoder $accessCl ")
+             accessClassLoaders.remove(accessCl)
+         }})
+         
+         //// ObjectInspectorFactor
+         val objInspectorFactoryClass = Class.forName("org.apache.hadoop.hive.serde2.objectinspector.ObjectInspectorFactory")
+         val cachedInspectorField = objInspectorFactoryClass.getDeclaredField("cachedUnionStructObjectInspector")
+         cachedInspectorField.setAccessible(true)
+         
+         val cachedInspectors : java.util.Map[java.util.List[_],_] = cachedInspectorField.get(null).asInstanceOf[java.util.Map[java.util.List[_],_]]
+         cachedInspectors.filter( { case(klist,v) => {
+            info(s" ObjecInspectorFactory KeyList = $klist Value= $v")
+            val keyHasLoader = klist.filter( { k =>{ 
+              k.getClass().getClassLoader() == thisLoader || k.getClass().getClassLoader() == outerLoader 
+             }}).size > 0
+            ( keyHasLoader
+              || v.getClass().getClassLoader() == thisLoader 
+              || v.getClass().getClassLoader() == outerLoader )
+         }}).foreach( { case(k,v) => {
+             info(s" Removing ObjectInspector $k ") 
+             cachedInspectors.remove( k)
+         }})
+
+         ///// Use 
+         ////org.apache.hadoop.hdfs.PeerCache.getInstance(0,0).close()
+        
        } catch {
          case unexpected : Throwable => {
           error(" Unexpected error trying to close Hive and SessionState " , unexpected)
@@ -102,8 +210,8 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config, cl
         val thisClassLoader = this.getClass().getClassLoader
         thisClassLoader match {
           case closable : java.io.Closeable => {
-             info(s" HiveLocalDriver :: Closing Closable ClassLoader $thisClassLoader ")      
-             closable.close
+             info(s" HiveLocalDriver :: Closing Closable ClassLoader $thisClassLoader $closable ")      
+             closable.close()
           }
           case _ => {
              info(" HiveLocalDriver :: Our classloader was not closable") 
@@ -164,7 +272,6 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config, cl
        /// Not sure this works with multiple Hive Goals ...
        /// Hive Driver is somewhat opaque
        info("HIVE_DRIVER Aborting all jobs for Hive Query ")
-       HadoopJobExecHelper.killRunningJobs()
        close
     }
     

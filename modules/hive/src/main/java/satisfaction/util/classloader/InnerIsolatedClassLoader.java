@@ -1,7 +1,6 @@
 package satisfaction.util.classloader;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -12,12 +11,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.hive.conf.HiveConf;
+import org.apache.hadoop.hive.ql.parse.HiveParser.keyProperty_return;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,7 +30,7 @@ import satisfaction.hadoop.hdfs.CacheJarURLStreamHandlerFactory;
  *  
  *
  */
-class InnerIsolatedClassLoader extends java.net.URLClassLoader implements java.io.Closeable {
+public class InnerIsolatedClassLoader extends java.net.URLClassLoader implements java.io.Closeable {
 	private final static Logger LOG = LoggerFactory.getLogger( InnerIsolatedClassLoader.class);
 	private List<Pattern> frontLoadPatterns;
 	private List<Pattern> backLoadPatterns;
@@ -47,9 +46,11 @@ class InnerIsolatedClassLoader extends java.net.URLClassLoader implements java.i
 			 HiveConf configuration, String cachePath, IsolatedClassLoader outerLoader) {
 		super(urls, parent, new CacheJarURLStreamHandlerFactory( configuration, cachePath));
 		LOG.info(" Creating InnerIsolatedClassLoader with URLS " + urls);
+		System.out.println(" Creating InnerIsolatedClassLoader with URLS " + urls);
 		frontLoadPatterns = new ArrayList<Pattern>();
 	    for( String expr : frontLoadedClassExprs ) {
            LOG.info(" Adding Pattern " + expr + " to frontloaded patterns");
+           System.out.println(" Adding Pattern " + expr + " to frontloaded patterns");
 	       frontLoadPatterns.add( Pattern.compile( expr));
 	    }
 		
@@ -66,6 +67,11 @@ class InnerIsolatedClassLoader extends java.net.URLClassLoader implements java.i
 		registeredClasses.put( clazz.getName(), clazz);
 	}
 	
+	
+	public IsolatedClassLoader getOuterLoader() {
+		return outerLoader;
+	}
+
 	/**
 	 * Return the maximum number of times that findClass is retried
 	 *   before throwing a ClassNotFoundException, to avoid errors
@@ -117,91 +123,158 @@ class InnerIsolatedClassLoader extends java.net.URLClassLoader implements java.i
 	
 	@Override
 	public void close() throws IOException {
-		if(_isClosing) {
+		if(_isClosing == true ) {
 			LOG.info(" Sorry, we're already closed ");
+			System.out.println(" Sorry, we're already closed ");
+			if(this.outerLoader != null) {
+			  this.outerLoader = null;	
+			}
 			return;
 		} else {
+		     LOG.info(" Closing InnerIsolatedClassLoader " + this);
+		     System.out.println(" Closing InnerIsolatedClassLoader " + this);
 			_isClosing = true;
 		}
+      try {
 		LOG.info(" Closing InnerIsolatedClassLoader " + this);
 		registeredClasses.clear();
-		super.close();
 		
 		  
-		try {
-		  //// Need to call clearCache on ReflectionUtils 
-		  ////   to avoid classloader leak
-		  //// But unfortunately that method is not accessible :(
-		  Class reflectUtilClass = Class.forName("org.apache.hadoop.util.ReflectionUtils");
-		  Method clearMethod = reflectUtilClass.getDeclaredMethod( "clearCache");
-		  clearMethod.setAccessible(true);
-		  
-		  clearMethod.invoke( null);
-		} catch(Exception exc ) {
-			LOG.error(" Unexpected Error while attempting to Clear ReflectionUtils", exc);
-		}
-		
+		LOG.info(" Ready to remove any Static Cache References");
+		System.out.println(" Ready to remove any Static Cache References");
 		
 		removeStaticCacheReference("org.apache.hadoop.io.WritableComparator");
 		removeStaticCacheReference("org.apache.hadoop.hive.serde2.objectinspector.ObjectInspectorFactory");
 		removeStaticCacheReference("org.apache.thrift.meta_data.FieldMetaData");
-		removeStaticCacheReference("org.apache.hadoop.io.compress.CompressionCodecFactory");
 		removeStaticCacheReference("com.tagged.hadoop.hive.serde2.avro.SchemaFactory");
+		removeStaticCacheReference("org.apache.hadoop.io.compress.CompressionCodecFactory");
+		removeStaticCacheReference("org.apache.hadoop.mapreduce.Cluster");
 		
 		removeReflectAsmReferences();
 		
 		removeShutdownReferences();
+		
+		clearCacheOnReflectionUtils();
+		
+		LOG.info(" Static cache References should be removed ");
+		System.out.println(" Static cache References should be removed ");
 		  
 		if(outerLoader != null) {
+	      LOG.info(" Releasing OuterLoader " + outerLoader);
+	      System.out.println(" Releasing OuterLoader " + outerLoader);
 		  outerLoader.release();
 		  outerLoader = null;
 		} else {
-			LOG.warn(" Close called multiple times on InnerIsolatedClassLoader " + this);
+		  LOG.warn(" Close called multiple times on InnerIsolatedClassLoader " + this);
+		  System.out.println(" Close called multiple times on InnerIsolatedClassLoader " + this);
 		}
+		
+		
+      } finally {
+        System.out.println(" Calling super.close");
+		super.close();
+		////System.out.println(" Clearing out loaded classes ");
+		///removeLoadedClasses();
+      }
 	}
 
 	private HashSet<Object> _seenObjs = new HashSet();
-	
 	protected void removeStaticCacheReference(String className ) {
+		removeStaticCacheReference(this,className);
+		removeStaticCacheReference(getParent(),className);
+		removeStaticCacheReference(this.getClass().getClassLoader(),className);
+		removeStaticCacheReference(outerLoader.getClass().getClassLoader(),className);
+	}
+		
+		
+	protected void removeStaticCacheReference(ClassLoader loader, String className ) {
 		try {
 			_seenObjs.clear();
-			Class staticCacheClass = Class.forName(className);
-			LOG.info(" Removing static cached references for class " + className + " :: " + staticCacheClass);
+			Class staticCacheClass = loader.loadClass(className);
+			////Class staticCacheClass = getParent().loadClass(className);
+			LOG.info(" Removing static cached references for class " + className + " :: " + staticCacheClass + " :: LOADER " + staticCacheClass.getClassLoader());
+			System.out.println(" Removing static cached references for class " + className + " :: " + staticCacheClass + " :: LOADER " + staticCacheClass.getClassLoader());
+
 			Field[] fields = staticCacheClass.getDeclaredFields();
 			for(Field field : fields) {
+				//// For top level, only check static fields
 				if( Modifier.isStatic( field.getModifiers())) {
-			      field.setAccessible(true);
-			      Object fieldObj = field.get( null);
-			      if(fieldObj != null) {
-				    if(java.util.Map.class.isAssignableFrom(field.getType()) )  {
-					  recursiveRemoveCachedMapReference( (Map) fieldObj);
-				    } else if( java.util.List.class.isAssignableFrom(field.getType())) {
-					  recursiveRemoveCachedListReference( (List) fieldObj);
-				    } else {
-					  ///// Forcibly set to null if there for some reason 
-					  if(fieldObj.getClass().getClassLoader() == this
-							  || fieldObj.getClass().getClassLoader() == outerLoader) {
-						  LOG.info(" Forcibly setting to null field " + field.getName() + " on class " + className);
-						  field.set(fieldObj, null);
-					  }
-				    }
-			      }
-				}
+					System.out.println(" Checking field " + className + "." + field.getName());
+					recursiveRemoveCachedFieldReference( null,field);
+			     }
 			}
 		} catch(Exception exc ) {
 			LOG.error(" Unexpected error trying to remove Cached static reference from class " + className+ " :: " +exc.getMessage() , exc );
+			System.out.println(" Unexpected error trying to remove Cached static reference from class " + className+ " :: " +exc.getMessage() );
+			exc.printStackTrace();
 		} finally {
 		    _seenObjs.clear();	
 		}
 	}
 	
-	
+	private void recursiveRemoveCachedFieldReference(Object parentObj, Field field) {
+		try {
+			field.setAccessible(true);
+			Object fieldObj = field.get( parentObj);
+			System.out.println(" Object " + fieldObj + " of " + field + " of " + parentObj  );
+			if( fieldObj != null) {
+              System.out.println("  Classloader of FieldObj is " + fieldObj.getClass().getClassLoader() );
+			  if( _seenObjs.contains(fieldObj)) {
+			    System.out.println(" Already saw Reference " + fieldObj + " on field " + field + " ; skipping ");
+			    return;
+			  } else {
+			    _seenObjs.add( fieldObj);
+			  }
+              if(java.util.Map.class.isAssignableFrom(field.getType()) )  {
+			    recursiveRemoveCachedMapReference( (Map) fieldObj);
+		      } else if( java.util.List.class.isAssignableFrom(field.getType())) {
+			    recursiveRemoveCachedListReference( (List) fieldObj);
+		      } else {
+			    ///// Forcibly set to null if there for some reason 
+			    if(fieldObj != null) {
+		          if(fieldObj.getClass().getClassLoader() == this
+			        || fieldObj.getClass().getClassLoader() == outerLoader
+		    	    || fieldObj == this
+		    	    || fieldObj == outerLoader
+		    	    || ((fieldObj instanceof Class) && ((Class)fieldObj).getClassLoader() == this)
+		    	    || ((fieldObj instanceof Class) && ((Class)fieldObj).getClassLoader() == outerLoader)) {
+			          LOG.info(" Forcibly setting to null field " + field.getName() + " on class " + field.getDeclaringClass().getName());
+				      System.out.println(" Forcibly setting to null field " + field.getName() + " on class " + field.getDeclaringClass().getName());
+			          field.set(fieldObj, null);
+		         } else {
+			      //// Otherwise 
+		    	  LOG.info(" Recursively checking object " + fieldObj + " for references to inner classLoader" );
+		    	  System.out.println(" Recursively checking object " + fieldObj + " for references to inner classLoader" );
+		    	  Field[] childFields =fieldObj.getClass().getDeclaredFields();
+		    	  for(Field childField : childFields) {
+		    		//// For other fields, only check non static fields
+		    		if( !Modifier.isStatic( childField.getModifiers())) {
+		    	     System.out.println(" Checking Field " + childField.getName());
+		    	     recursiveRemoveCachedFieldReference( fieldObj, childField);
+		    		}
+		    	  }
+			   }
+			 }
+		  }
+		}
+      }  catch(Exception unexpected) {
+    	  LOG.error(" Problem while recursively looking for referenced fields " + unexpected.getMessage(), unexpected);
+    	  System.out.println(" Problem while recursively looking for referenced fields " + unexpected.getMessage() );
+    	  unexpected.printStackTrace();
+      } 
+	}
+		
 	private void recursiveRemoveCachedMapReference(Map valMap) {
+		if( _seenObjs.contains( valMap)) {
+			System.out.println(" Already saw Map  ; skipping ");
+			return;
+		} else {
+			_seenObjs.add(valMap);
+		}
 		LOG.info(" Recursively checking value Map " + valMap
 				+ " for references");
+		System.out.println(" Recursively checking value Map  for references");
 		List removeList = new ArrayList();
-		Set<Map> recursiveMapSet = new HashSet<Map>();
-		Set<List> recursiveListSet = new HashSet<List>();
 		for (Object valKey : valMap.keySet()) {
 			Object val = valMap.get(valKey);
 			if (val != null) {
@@ -209,62 +282,41 @@ class InnerIsolatedClassLoader extends java.net.URLClassLoader implements java.i
 						|| valKey.getClass().getClassLoader() == this
 						|| val.getClass().getClassLoader() == outerLoader
 						|| valKey.getClass().getClassLoader() == outerLoader
+						|| val == this
+						|| valKey == this
+		    	        || ((val instanceof Class) && ((Class)val).getClassLoader() == this)
+		    	        || ((val instanceof Class) && ((Class)val).getClassLoader() == outerLoader)
+		    	        || ((valKey instanceof Class) && ((Class)valKey).getClassLoader() == this)
+		    	        || ((valKey instanceof Class) && ((Class)valKey).getClassLoader() == outerLoader)
 						) {
 					removeList.add(valKey);
 				} else {
+					//// Thread check ???
 					if (val instanceof Thread) {
 						Thread thr = (Thread) val;
 						if (thr.getContextClassLoader() == this
 								|| thr.getContextClassLoader() == outerLoader) {
 							LOG.info(" Removing thread with access class loader ");
+							System.out.println(" Removing thread with access class loader ");
 							removeList.add(valKey);
 						}
 					} else if (List.class.isAssignableFrom(val.getClass())) {
-						///recursiveRemoveCachedListReference((List) val);
-						recursiveListSet.add( (List) val);
+						recursiveRemoveCachedListReference((List) val);
 					} else if (Map.class.isAssignableFrom(val.getClass())) {
-						///recursiveRemoveCachedMapReference((Map) val);
-						recursiveMapSet.add( (Map) val);
+						recursiveRemoveCachedMapReference((Map) val);
 					} else {
 						Field[] checkFields = val.getClass()
 								.getDeclaredFields();
 						for (Field checkField : checkFields) {
-							try {
-								checkField.setAccessible(true);
-								Object checkObj = checkField.get(val);
-								if (checkObj != null) {
-									if (checkObj.getClass().getClassLoader() == this) {
-										LOG.info(" Adding to remove list field "
-												+ checkField.getName()
-												+ " value " + checkObj);
-										if(!removeList.contains( valKey)) {
-										  removeList.add(valKey);
-										} else {
-											LOG.warn(" RemoveList already contains key " + valKey + " with object " + checkObj);
-										}
-									} else {
-										if (List.class
-												.isAssignableFrom(checkField
-														.getType())) {
-											List checkListObj = (List) checkObj;
-											////recursiveRemoveCachedListReference(checkListObj);
-											recursiveListSet.add( (List) val);
-										} else if (Map.class
-												.isAssignableFrom(checkField
-														.getType())) {
-											checkField.setAccessible(true);
-											Map checkMapObj = (Map) checkObj;
-											////recursiveRemoveCachedMapReference(checkMapObj);
-											recursiveMapSet.add( (Map) val);
-										}
-									}
-								}
-							} catch (IllegalAccessException ill) {
-								LOG.error(" IllegalAccessException while trying to access field "
-										+ checkField.getName()
-										+ " on object "
-										+ val);
-							}
+		    		       if( !Modifier.isStatic( checkField.getModifiers())) {
+							recursiveRemoveCachedFieldReference( val, checkField);
+		    		       }
+						}
+						Field[] keyFields = valKey.getClass().getDeclaredFields();
+						for(Field keyField : keyFields) {
+		    		       if( !Modifier.isStatic( keyField.getModifiers())) {
+							recursiveRemoveCachedFieldReference( valKey, keyField);
+		    		       }
 						}
 					}
 				}
@@ -273,35 +325,31 @@ class InnerIsolatedClassLoader extends java.net.URLClassLoader implements java.i
 		for (Object removeObj : removeList) {
 			LOG.info(" Removing cached reference " + removeObj + " from map "
 					+ valMap);
+			System.out.println(" Removing cached reference " + removeObj + " from map "
+					+ valMap);
 			valMap.remove(removeObj);
-		}
-		//// Now recursively go through and check the map and list fields
-		for( Map recurseMap : recursiveMapSet) {
-			if(!_seenObjs.contains(recurseMap )) {
-			   _seenObjs.add( recurseMap);
-			   recursiveRemoveCachedMapReference((Map) recurseMap);
-			} else {
-			   LOG.info(" Skipping Map " + recurseMap + " which we've already seen");	
-			}
-		}
-		for( List recurseList : recursiveListSet) {
-			if(!_seenObjs.contains(recurseList )) {
-			   _seenObjs.add( recurseList);
-			   recursiveRemoveCachedListReference((List) recurseList);
-			} else {
-			   LOG.info(" Skipping List " + recurseList + " which we've already seen");	
-			}
 		}
 	}
 	
 	
 	private void recursiveRemoveCachedListReference( List valList ) {
+		if( _seenObjs.contains( valList)) {
+			System.out.println(" Already saw List ; skipping ");
+			return;
+		} else {
+			_seenObjs.add( valList);
+		}
 		LOG.info(" Recursively checking value List " + valList + " for references");
+		System.out.println(" Recursively checking value List " + valList + " for references");
 		List removeList = new ArrayList();
 		for( Object val : valList) {
 			if(val != null) {
-				if( val.getClass().getClassLoader() == this 
-						|| val.getClass().getClassLoader() == outerLoader) {
+				if( val == this 
+						|| val == outerLoader
+						|| val.getClass().getClassLoader() == this 
+						|| val.getClass().getClassLoader() == outerLoader
+		    	        || ((val instanceof Class) && ((Class)val).getClassLoader() == this)
+		    	        || ((val instanceof Class) && ((Class)val).getClassLoader() == outerLoader) ) {
 					removeList.add( val );
 				} else {
 					if( val instanceof Thread ) {
@@ -309,6 +357,7 @@ class InnerIsolatedClassLoader extends java.net.URLClassLoader implements java.i
 						if(thr.getContextClassLoader() == this
 								|| thr.getContextClassLoader() == outerLoader) {
 							LOG.info(" Removing thread with access class loader ");
+							System.out.println(" Removing thread with access class loader ");
 							removeList.add(val);
 						}
 					} else if( List.class.isAssignableFrom( val.getClass() )) {
@@ -318,26 +367,7 @@ class InnerIsolatedClassLoader extends java.net.URLClassLoader implements java.i
 					} else {	
 						Field[] checkFields = val.getClass().getDeclaredFields();
 						for( Field checkField : checkFields) {
-							try {
-								checkField.setAccessible(true);
-								Object checkObj = checkField.get( val);
-								if(checkObj != null) {
-									if(checkObj.getClass().getClassLoader() == this) {
-										LOG.info(" Adding to remove list field " + checkField.getName() + " value " + checkObj);
-										removeList.add( val);
-									} else {
-										if( List.class.isAssignableFrom( checkField.getType() ) ) {
-											List checkListObj = (List) checkObj;
-											recursiveRemoveCachedListReference( checkListObj );
-										} else if( Map.class.isAssignableFrom( checkField.getType())) {
-											Map checkMapObj = (Map) checkObj;
-											recursiveRemoveCachedMapReference( checkMapObj );
-										}
-									}
-								}
-							} catch(IllegalAccessException ill) {
-								LOG.error(" IllegalAccessException while trying to access field " + checkField.getName() + " on object " + val); 
-							}
+						   recursiveRemoveCachedFieldReference(val, checkField);
 						}
 					}
 				}
@@ -345,18 +375,77 @@ class InnerIsolatedClassLoader extends java.net.URLClassLoader implements java.i
 		}
 		for(Object removeObj : removeList) {
 			LOG.info(" Removing cached reference " + removeObj + " from list " + valList );
+			System.out.println(" Removing cached reference " + removeObj + " from list " + valList );
 			valList.remove( removeObj );
 		}
 	}
+	
+	protected void removeLoadedClasses() {
+	  try { 
+		Class parentClass = this.getClass().getSuperclass();
+		Field[] parentFields = parentClass.getDeclaredFields();
+		System.out.println(" Parent Class is " + parentClass.getName());
+		for(Field parentField : parentFields) {
+			System.out.println("   PArent field =  " + parentField.getName());
+		}
+		Class grandParentClass = parentClass.getSuperclass();
+		System.out.println(" GrandParent Class is " + grandParentClass.getName());
+		Field[] grandParentFields = grandParentClass.getDeclaredFields();
+		for(Field grandParentField : grandParentFields) {
+			System.out.println("  Grand  PArent field =  " + grandParentField.getName());
+		}
+		Class grGrandParentClass = grandParentClass.getSuperclass();
+		System.out.println(" Great GrandParent Class is " + grGrandParentClass.getName());
+		Field[] grGrandParentFields = grGrandParentClass.getDeclaredFields();
+		for(Field grGrandParentField : grGrandParentFields) {
+			System.out.println("  Great Grand  PArent field =  " + grGrandParentField.getName());
+		}
+
+	    Field classesField = grGrandParentClass.getDeclaredField("classes");
+		 classesField.setAccessible(true);
+			  
+			  Vector parentClasses = (Vector)classesField.get( this);
+			  System.out.println( "Number of loaded classes  " + parentClasses.size());
+			  parentClasses.clear();
+
+			} catch(Throwable unexpected) {
+			  System.out.println("Unexpected error while trying to clear out parent classes field");
+			  unexpected.printStackTrace();
+			}
+		
+	}
+	
+	protected void clearCacheOnReflectionUtils() {
+	  //// Need to call clearCache on ReflectionUtils 
+	  ////   to avoid classloader leak
+	  //// But unfortunately that method is not accessible :(
+	  LOG.info(" Calling method clearCache on ReflectionUtils ");
+	  System.out.println(" Calling method clearCache on ReflectionUtils ");
+	  try {
+	    Class reflectUtilClass = Class.forName("org.apache.hadoop.util.ReflectionUtils");
+	    ////Class reflectUtilClass = getParent().loadClass("org.apache.hadoop.util.ReflectionUtils");
+	    Method clearMethod = reflectUtilClass.getDeclaredMethod( "clearCache");
+	    clearMethod.setAccessible(true);
+	  
+	    clearMethod.invoke( null);
+	  } catch (Exception e) {
+		LOG.error("Unexpected error while trying to call ClearCache on ReflectionUtils  ; " + e.getMessage(), e);
+		System.out.println("Unexpected error while trying to call ClearCache on ReflectionUtils  ; " + e.getMessage());
+		e.printStackTrace();
+	  }
+    }
 
 	
 	protected void removeShutdownReferences() {
 		try {
 			removeStaticCacheReference("java.lang.ApplicationShutdownHooks");
+			
+		  ////Class shutdownHooksClass = this.getClass().getClassLoader().loadClass( "java.lang.ApplicationShutdownHooks");
 		} catch (Exception e) {
 			LOG.error("Unexpected error while trying to remove references to shutdown hooks ; " + e.getMessage(), e);
+			System.out.println("Unexpected error while trying to remove references to shutdown hooks ; " + e.getMessage());
+			e.printStackTrace();
 		}
-		
 	}
 	
 	/**
@@ -366,24 +455,30 @@ class InnerIsolatedClassLoader extends java.net.URLClassLoader implements java.i
 	 */
 	protected void removeReflectAsmReferences() {
 		try {
+	      LOG.info(" Removing any reference to ReflectAsm AccessClassLoader ");
+	      System.out.println(" Removing any reference to ReflectAsm AccessClassLoader ");
 		  Class reflectAsmClass = this.getClass().getClassLoader().loadClass( "org.apache.hive.com.esotericsoftware.reflectasm.AccessClassLoader");
 		  Field accessClassLoadersField = reflectAsmClass.getDeclaredField("accessClassLoaders");
 		  accessClassLoadersField.setAccessible(true);
 		  
-		  Field parentField = reflectAsmClass.getDeclaredField("parent");
-		  parentField.setAccessible(true);
+		  Method getParentMethod = reflectAsmClass.getSuperclass().getDeclaredMethod("getParent");
+		  getParentMethod.setAccessible(true);
 		  
 		  List accessClassLoaders  =  (List) accessClassLoadersField.get( null);
 		  for(Object accessClassLoader : accessClassLoaders ) {
-			 Object parent = parentField.get( accessClassLoader);
+			 Object parent = getParentMethod.invoke( accessClassLoader);
+			 System.out.println( " AccessClassLoader = " + accessClassLoader + " Parent is " + parent);
 			 if( parent == this || parent == this.outerLoader) {
 				 LOG.info(" Removing AccessClassLoader " + accessClassLoader +  " from static list accessClassLoaders ");
+				 System.out.println(" Removing AccessClassLoader " + accessClassLoader +  " from static list accessClassLoaders ");
 				 accessClassLoaders.remove( accessClassLoader);
 			 }
 		  }
 
 		} catch( Exception unexpected ) {
-		  LOG.error(" Unexpected error while trying to remove reference to AccessCloassLoaders ");	
+		  LOG.error(" Unexpected error while trying to remove reference to AccessClassLoaders ", unexpected);	
+		  System.out.println(" Unexpected error while trying to remove reference to AccessClassLoaders " + unexpected.getMessage());	
+		  unexpected.printStackTrace();
 		}
 	}
 	

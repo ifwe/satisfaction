@@ -4,19 +4,11 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.apache.hadoop.hive.conf.HiveConf;
-import org.apache.hadoop.util.ReflectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import satisfaction.hadoop.hdfs.CacheJarURLStreamHandlerFactory;
  
 
 /***
@@ -25,14 +17,13 @@ import satisfaction.hadoop.hdfs.CacheJarURLStreamHandlerFactory;
  *   ( which is opposite of the standard approach )
  *  
  *   Actually delegate to a hidden inner classloader,
- *    to try to avoid classloader leaks, 
- *     so that 
+ *    to try to avoid classloader leaks.
  *
  */
 public class IsolatedClassLoader extends ClassLoader implements java.io.Closeable {
 	private final static Logger LOG = LoggerFactory.getLogger( IsolatedClassLoader.class);
 	private InnerIsolatedClassLoader _delegLoader = null;
-
+	private static boolean _isClosing = false;
 	 
 	public IsolatedClassLoader(URL[] urls, ClassLoader parent, List<String> frontLoadedClassExprs, List<String> backLoadedClassExprs, 
 			 HiveConf configuration, String cachePath) {
@@ -105,7 +96,6 @@ public class IsolatedClassLoader extends ClassLoader implements java.io.Closeabl
 		  close();
 	}
 	
-	private static boolean _isClosing = false;
 	
 	@Override
 	public void close() throws IOException {
@@ -129,6 +119,7 @@ public class IsolatedClassLoader extends ClassLoader implements java.io.Closeabl
 		  ////   to avoid classloader leak
 		  //// But unfortunately that method is not accessible :(
 		  Class reflectUtilClass = Class.forName("org.apache.hadoop.util.ReflectionUtils");
+		  LOG.info(" ReflectiounUtils Class is " + reflectUtilClass + " ; classLoader = " + reflectUtilClass.getClassLoader() );
 		  Method clearMethod = reflectUtilClass.getDeclaredMethod( "clearCache");
 		  clearMethod.setAccessible(true);
 		  
@@ -151,6 +142,8 @@ public class IsolatedClassLoader extends ClassLoader implements java.io.Closeabl
 		} catch (InvocationTargetException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+		} finally {
+		  _delegLoader = null;
 		}
 	}
 	

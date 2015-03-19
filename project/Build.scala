@@ -23,7 +23,7 @@ import com.typesafe.sbt.web.Import.WebKeys._
 
 object ApplicationBuild extends Build {
 
-  val appVersion = "2.5.8"
+  val appVersion = "2.5.9"
 
   val hiveVersion = "0.13.1"
 
@@ -142,7 +142,7 @@ object ApplicationBuild extends Build {
     version in Rpm := resolveRpmVersion(),
 
     ////rpmRelease in Rpm:= resolveRpmVersion(),
-    rpmRelease in Rpm := "1",
+    rpmRelease in Rpm := "3",
     rpmBrpJavaRepackJars := true,
     packageSummary in Rpm := "wyman",
     packageSummary in Linux := "wyman",

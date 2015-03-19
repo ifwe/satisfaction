@@ -16,21 +16,19 @@ case class HiveSatisfier(val queryResource: String, val conf : HiveConf)( implic
    override def name = s"Hive( $queryResource )" 
   
    private val  driver = new Releaseable[HiveDriver]( {
-        info(s"Creating  HiveLocalDriver ${Thread.currentThread().getName()} ")
+        info(s"Creating  HiveLocalDriver ${Thread.currentThread().getName()} YYYYY")
 	    HiveDriver(conf)
-   } )
+   } , { dr => {
+        info(s" Closing HiveLocalDriver YYYY  ${Thread.currentThread().getName()} ")
+        dr.close(); 
+   } })
    
    /** 
     *   For closeable 
     */
    override def close() = {
-       info(s" Closing Hive Satisfier")
-       if( driver.isBuilt) {
-         driver.get.close 
-         driver.release
-       } else  {
-         warn(" Attempting to close already closed Driver ")
-       }
+       info(s" Closing Hive Satisfier XXX XXX  XXXX ")
+       driver.release
    }
    
 
@@ -158,17 +156,21 @@ case class HiveSatisfier(val queryResource: String, val conf : HiveConf)( implic
 
     @Override
     override def satisfy(params: Witness): ExecutionResult = {
-      info(s"HiveSatisfier satisfying $params ") 
-      val allProps = track.getTrackProperties(params)
-      driver.get
-      info(s" Track Properties is $allProps ; Witness is $params ")
-      if( track.hasResource("setup.hql")) {
+      try { 
+        info(s"HiveSatisfier satisfying $params ") 
+        val allProps = track.getTrackProperties(params)
+        driver.get
+        info(s" Track Properties is $allProps ; Witness is $params ")
+        if( track.hasResource("setup.hql")) {
            val setupResult = loadSetup(allProps)
            if( ! setupResult.isSuccess) {
               return setupResult
            }
-       }
-       substituteAndExecQueries(queryTemplate, allProps)
+        }
+        substituteAndExecQueries(queryTemplate, allProps)
+      } finally { 
+        close()
+      }
     }
 
     
