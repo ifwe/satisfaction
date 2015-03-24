@@ -93,18 +93,24 @@ class PoisonPill(val thresholdPct : Double, val memPoolName : String) extends Lo
      }
      
      val install = {
+        val memxBean = ManagementFactory.getMemoryMXBean
+        info( s"  MemBean is ${memxBean.getObjectName()}")
+        memxBean match {
+           case emitter : NotificationEmitter => {
+              val maxPermGen : Long = memPoolBean.getUsage().getMax
+              val threshold : Long = (thresholdPct*maxPermGen).toLong
+              info(s" Adding PoisonPill if ${memPoolBean.getName()} pool usage exceeds $threshold or $thresholdPct % of $maxPermGen ")
+              emitter.addNotificationListener(notificationListener, null, (this)) 
+           }
+           case _ => { error(s" MemBean $memxBean does not support notifications.") }
+        } 
          
-         val memxBean = ManagementFactory.getMemoryMXBean
-          info( s"  MemBean is ${memxBean.getObjectName()}")
-           memxBean match {
-             case emitter : NotificationEmitter => {
-                val maxPermGen : Long = memPoolBean.getUsage().getMax
-                val threshold : Long = (thresholdPct*maxPermGen).toLong
-                info(s" Adding PoisonPill if ${memPoolBean.getName()} pool usage exceeds $threshold or $thresholdPct % of $maxPermGen ")
-                emitter.addNotificationListener(notificationListener, null, (this)) 
-             }
-             case _ => { error(s" MemBean $memxBean does not support notifications.") }
-         }
+        //// Add notification for garbage collection as well ... 
+        val gcBeans = ManagementFactory.getGarbageCollectorMXBeans()
+        gcBeans.foreach({ gcBean =>{
+          info(s" GC Bean is ${gcBean.getName()} ObjectName = ${gcBean.getObjectName()} ")
+          
+        }})
      }
 
      // get the hotspot diagnostic MBean from the

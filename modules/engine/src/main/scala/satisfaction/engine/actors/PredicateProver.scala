@@ -302,8 +302,19 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
           if( status.state  == GoalState.CheckingEvidence) {
              log.info(s" Checking Evidence ${e} for ${goal.name} for witness $witness" )
              evidenceCheckerActor ! CheckEvidence(id, witness)
-             val delayDuration : FiniteDuration =  Duration.create( 60, TimeUnit.SECONDS)
-             context.system.scheduler.scheduleOnce(delayDuration, this)
+             try {
+               /// Re-send check evidence, in case message gets lost or forgotten
+               val delayDuration : FiniteDuration =  Duration.create( 60, TimeUnit.SECONDS)
+               if(context != null) {
+                 context.system.scheduler.scheduleOnce(delayDuration, this)
+               } else {
+                 log.warn(s" Context is null when attempting to reschedule check evidence ")
+               }
+             } catch {
+               case unexpected : Throwable => {
+                 log.error(s" Unexpected exception attempting to reschedule CheckEvidence ${unexpected.getMessage()} ", unexpected)
+               }
+             }
          }
         }
       }

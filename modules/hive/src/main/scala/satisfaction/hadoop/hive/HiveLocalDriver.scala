@@ -106,7 +106,7 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config, cl
              info(s" Class is ${klass.getName} Class Loader = ${klass.getClassLoader}" )
              if( klass.getClassLoader() == thisLoader
                  || klass.getClassLoader() == outerLoader) {
-                info(s" Removing class ${klass.getName} ")      
+                ///info(s" Removing class ${klass.getName} ")      
                 comparators.remove(klass)
              }
          } })
@@ -119,10 +119,10 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config, cl
          val structMap : java.util.Map[Class[_],_] = structMapField.get(null).asInstanceOf[java.util.Map[Class[_],_]]
          info(s" thrift FieldMetaData structmap is  $structMap :: ${structMap.size} values ; This ClassLoader = ${this.getClass.getClassLoader} ")
          structMap.filter({ case(klass : Class[_], other) => {
-             info(s" StructMap Class is ${klass.getName} Class Loader = ${klass.getClassLoader}" )
+             ///info(s" StructMap Class is ${klass.getName} Class Loader = ${klass.getClassLoader}" )
              klass.getClassLoader() == thisLoader  || klass.getClassLoader() == outerLoader
          } }).foreach( { case(klass : Class[_], other) => {
-            info(s" Removing class ${klass.getName} ")      
+            ///info(s" Removing class ${klass.getName} ")      
             structMap.remove(klass)
          } })
         
@@ -132,19 +132,21 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config, cl
          hooksField.setAccessible(true)
          val hooks : java.util.Map[Thread,Thread] = hooksField.get(null).asInstanceOf[java.util.Map[Thread,Thread]]
          
-         hooks.filter( { case( t1 : Thread, t2 : Thread) => {
-            val contextLoader = t1.getContextClassLoader()
-            info(s" Thread ContextLoader = $contextLoader ; ThisLoader = ${this.getClass.getClassLoader} ")
+         if(hooks != null) {
+           hooks.filter( { case( t1 : Thread, t2 : Thread) => {
+              val contextLoader = t1.getContextClassLoader()
+              info(s" Thread ContextLoader = $contextLoader ; ThisLoader = ${this.getClass.getClassLoader} ")
             (contextLoader == thisLoader 
              || contextLoader == outerLoader 
              || t1.getClass().getClassLoader() == thisLoader 
              || t1.getClass().getClassLoader() == outerLoader 
              || t2.getClass().getClassLoader() == thisLoader 
              || t2.getClass().getClassLoader() == outerLoader )
-         } }).foreach( { case( t1: Thread, t2: Thread ) => {
-            info(s" Removing Thread ${t1.getName} Shutdown Hook with context Loader")
-            hooks.remove( t1)
-         } })
+            } }).foreach( { case( t1: Thread, t2: Thread ) => {
+              ///info(s" Removing Thread ${t1.getName} Shutdown Hook with context Loader")
+              hooks.remove( t1)
+            } })
+         }
          
          
          ///// ReflectAsm AccessClassLoader
@@ -154,10 +156,10 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config, cl
          
          val accessClassLoaders : java.util.List[ClassLoader] = accessClassLoadersField.get(null).asInstanceOf[java.util.List[ClassLoader]]
          accessClassLoaders.filter( { accessCl => {
-             info(s"  AccessClassLoader = ${accessCl} Parent = ${accessCl.getParent()} ")
+             ///info(s"  AccessClassLoader = ${accessCl} Parent = ${accessCl.getParent()} ")
              accessCl.getParent() == thisLoader || accessCl.getParent() == outerLoader
          }}).foreach( { accessCl => {
-             info(s" Removing AccessClassLaoder $accessCl ")
+             ///info(s" Removing AccessClassLaoder $accessCl ")
              accessClassLoaders.remove(accessCl)
          }})
          
@@ -168,7 +170,7 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config, cl
          
          val cachedInspectors : java.util.Map[java.util.List[_],_] = cachedInspectorField.get(null).asInstanceOf[java.util.Map[java.util.List[_],_]]
          cachedInspectors.filter( { case(klist,v) => {
-            info(s" ObjecInspectorFactory KeyList = $klist Value= $v")
+            ////info(s" ObjecInspectorFactory KeyList = $klist Value= $v")
             val keyHasLoader = klist.filter( { k =>{ 
               k.getClass().getClassLoader() == thisLoader || k.getClass().getClassLoader() == outerLoader 
              }}).size > 0
@@ -176,7 +178,7 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config, cl
               || v.getClass().getClassLoader() == thisLoader 
               || v.getClass().getClassLoader() == outerLoader )
          }}).foreach( { case(k,v) => {
-             info(s" Removing ObjectInspector $k ") 
+             ////info(s" Removing ObjectInspector $k ") 
              cachedInspectors.remove( k)
          }})
 

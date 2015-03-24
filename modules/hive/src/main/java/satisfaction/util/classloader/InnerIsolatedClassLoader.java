@@ -193,13 +193,13 @@ public class InnerIsolatedClassLoader extends java.net.URLClassLoader implements
 			Class staticCacheClass = loader.loadClass(className);
 			////Class staticCacheClass = getParent().loadClass(className);
 			LOG.info(" Removing static cached references for class " + className + " :: " + staticCacheClass + " :: LOADER " + staticCacheClass.getClassLoader());
-			System.out.println(" Removing static cached references for class " + className + " :: " + staticCacheClass + " :: LOADER " + staticCacheClass.getClassLoader());
+			////System.out.println(" Removing static cached references for class " + className + " :: " + staticCacheClass + " :: LOADER " + staticCacheClass.getClassLoader());
 
 			Field[] fields = staticCacheClass.getDeclaredFields();
 			for(Field field : fields) {
 				//// For top level, only check static fields
 				if( Modifier.isStatic( field.getModifiers())) {
-					System.out.println(" Checking field " + className + "." + field.getName());
+					///System.out.println(" Checking field " + className + "." + field.getName());
 					recursiveRemoveCachedFieldReference( null,field);
 			     }
 			}
@@ -218,9 +218,9 @@ public class InnerIsolatedClassLoader extends java.net.URLClassLoader implements
 			Object fieldObj = field.get( parentObj);
 			System.out.println(" Object " + fieldObj + " of " + field + " of " + parentObj  );
 			if( fieldObj != null) {
-              System.out.println("  Classloader of FieldObj is " + fieldObj.getClass().getClassLoader() );
+              ///System.out.println("  Classloader of FieldObj is " + fieldObj.getClass().getClassLoader() );
 			  if( _seenObjs.contains(fieldObj)) {
-			    System.out.println(" Already saw Reference " + fieldObj + " on field " + field + " ; skipping ");
+			    ///System.out.println(" Already saw Reference " + fieldObj + " on field " + field + " ; skipping ");
 			    return;
 			  } else {
 			    _seenObjs.add( fieldObj);
@@ -243,13 +243,13 @@ public class InnerIsolatedClassLoader extends java.net.URLClassLoader implements
 			          field.set(fieldObj, null);
 		         } else {
 			      //// Otherwise 
-		    	  LOG.info(" Recursively checking object " + fieldObj + " for references to inner classLoader" );
-		    	  System.out.println(" Recursively checking object " + fieldObj + " for references to inner classLoader" );
+		    	  ///LOG.info(" Recursively checking object " + fieldObj + " for references to inner classLoader" );
+		    	  ///System.out.println(" Recursively checking object " + fieldObj + " for references to inner classLoader" );
 		    	  Field[] childFields =fieldObj.getClass().getDeclaredFields();
 		    	  for(Field childField : childFields) {
 		    		//// For other fields, only check non static fields
 		    		if( !Modifier.isStatic( childField.getModifiers())) {
-		    	     System.out.println(" Checking Field " + childField.getName());
+		    	     ////System.out.println(" Checking Field " + childField.getName());
 		    	     recursiveRemoveCachedFieldReference( fieldObj, childField);
 		    		}
 		    	  }
@@ -273,7 +273,7 @@ public class InnerIsolatedClassLoader extends java.net.URLClassLoader implements
 		}
 		LOG.info(" Recursively checking value Map " + valMap
 				+ " for references");
-		System.out.println(" Recursively checking value Map  for references");
+		///System.out.println(" Recursively checking value Map  for references");
 		List removeList = new ArrayList();
 		for (Object valKey : valMap.keySet()) {
 			Object val = valMap.get(valKey);
@@ -297,7 +297,7 @@ public class InnerIsolatedClassLoader extends java.net.URLClassLoader implements
 						if (thr.getContextClassLoader() == this
 								|| thr.getContextClassLoader() == outerLoader) {
 							LOG.info(" Removing thread with access class loader ");
-							System.out.println(" Removing thread with access class loader ");
+							///System.out.println(" Removing thread with access class loader ");
 							removeList.add(valKey);
 						}
 					} else if (List.class.isAssignableFrom(val.getClass())) {
@@ -325,8 +325,8 @@ public class InnerIsolatedClassLoader extends java.net.URLClassLoader implements
 		for (Object removeObj : removeList) {
 			LOG.info(" Removing cached reference " + removeObj + " from map "
 					+ valMap);
-			System.out.println(" Removing cached reference " + removeObj + " from map "
-					+ valMap);
+			///System.out.println(" Removing cached reference " + removeObj + " from map "
+					///+ valMap);
 			valMap.remove(removeObj);
 		}
 	}
@@ -334,13 +334,13 @@ public class InnerIsolatedClassLoader extends java.net.URLClassLoader implements
 	
 	private void recursiveRemoveCachedListReference( List valList ) {
 		if( _seenObjs.contains( valList)) {
-			System.out.println(" Already saw List ; skipping ");
+			///System.out.println(" Already saw List ; skipping ");
 			return;
 		} else {
 			_seenObjs.add( valList);
 		}
 		LOG.info(" Recursively checking value List " + valList + " for references");
-		System.out.println(" Recursively checking value List " + valList + " for references");
+		///System.out.println(" Recursively checking value List " + valList + " for references");
 		List removeList = new ArrayList();
 		for( Object val : valList) {
 			if(val != null) {
@@ -357,7 +357,7 @@ public class InnerIsolatedClassLoader extends java.net.URLClassLoader implements
 						if(thr.getContextClassLoader() == this
 								|| thr.getContextClassLoader() == outerLoader) {
 							LOG.info(" Removing thread with access class loader ");
-							System.out.println(" Removing thread with access class loader ");
+							///System.out.println(" Removing thread with access class loader ");
 							removeList.add(val);
 						}
 					} else if( List.class.isAssignableFrom( val.getClass() )) {
@@ -375,7 +375,7 @@ public class InnerIsolatedClassLoader extends java.net.URLClassLoader implements
 		}
 		for(Object removeObj : removeList) {
 			LOG.info(" Removing cached reference " + removeObj + " from list " + valList );
-			System.out.println(" Removing cached reference " + removeObj + " from list " + valList );
+			///System.out.println(" Removing cached reference " + removeObj + " from list " + valList );
 			valList.remove( removeObj );
 		}
 	}
@@ -384,22 +384,13 @@ public class InnerIsolatedClassLoader extends java.net.URLClassLoader implements
 	  try { 
 		Class parentClass = this.getClass().getSuperclass();
 		Field[] parentFields = parentClass.getDeclaredFields();
-		System.out.println(" Parent Class is " + parentClass.getName());
-		for(Field parentField : parentFields) {
-			System.out.println("   PArent field =  " + parentField.getName());
-		}
+		///System.out.println(" Parent Class is " + parentClass.getName());
 		Class grandParentClass = parentClass.getSuperclass();
-		System.out.println(" GrandParent Class is " + grandParentClass.getName());
+		///System.out.println(" GrandParent Class is " + grandParentClass.getName());
 		Field[] grandParentFields = grandParentClass.getDeclaredFields();
-		for(Field grandParentField : grandParentFields) {
-			System.out.println("  Grand  PArent field =  " + grandParentField.getName());
-		}
 		Class grGrandParentClass = grandParentClass.getSuperclass();
-		System.out.println(" Great GrandParent Class is " + grGrandParentClass.getName());
+		///System.out.println(" Great GrandParent Class is " + grGrandParentClass.getName());
 		Field[] grGrandParentFields = grGrandParentClass.getDeclaredFields();
-		for(Field grGrandParentField : grGrandParentFields) {
-			System.out.println("  Great Grand  PArent field =  " + grGrandParentField.getName());
-		}
 
 	    Field classesField = grGrandParentClass.getDeclaredField("classes");
 		 classesField.setAccessible(true);
@@ -456,7 +447,7 @@ public class InnerIsolatedClassLoader extends java.net.URLClassLoader implements
 	protected void removeReflectAsmReferences() {
 		try {
 	      LOG.info(" Removing any reference to ReflectAsm AccessClassLoader ");
-	      System.out.println(" Removing any reference to ReflectAsm AccessClassLoader ");
+	      ///System.out.println(" Removing any reference to ReflectAsm AccessClassLoader ");
 		  Class reflectAsmClass = this.getClass().getClassLoader().loadClass( "org.apache.hive.com.esotericsoftware.reflectasm.AccessClassLoader");
 		  Field accessClassLoadersField = reflectAsmClass.getDeclaredField("accessClassLoaders");
 		  accessClassLoadersField.setAccessible(true);
@@ -467,10 +458,10 @@ public class InnerIsolatedClassLoader extends java.net.URLClassLoader implements
 		  List accessClassLoaders  =  (List) accessClassLoadersField.get( null);
 		  for(Object accessClassLoader : accessClassLoaders ) {
 			 Object parent = getParentMethod.invoke( accessClassLoader);
-			 System.out.println( " AccessClassLoader = " + accessClassLoader + " Parent is " + parent);
+			 ///System.out.println( " AccessClassLoader = " + accessClassLoader + " Parent is " + parent);
 			 if( parent == this || parent == this.outerLoader) {
 				 LOG.info(" Removing AccessClassLoader " + accessClassLoader +  " from static list accessClassLoaders ");
-				 System.out.println(" Removing AccessClassLoader " + accessClassLoader +  " from static list accessClassLoaders ");
+				 ///System.out.println(" Removing AccessClassLoader " + accessClassLoader +  " from static list accessClassLoaders ");
 				 accessClassLoaders.remove( accessClassLoader);
 			 }
 		  }
