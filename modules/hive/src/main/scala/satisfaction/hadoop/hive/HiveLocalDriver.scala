@@ -32,6 +32,7 @@ import java.lang.reflect.Field
 import _root_.org.apache.hadoop.io.WritableComparator
 import _root_.org.apache.thrift.meta_data.FieldMetaData
 import _root_.org.apache.hive.com.esotericsoftware.reflectasm.AccessClassLoader
+import org.apache.hadoop.mapreduce.protocol.ClientProtocolProvider
 
 
 /**
@@ -44,20 +45,19 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config, cl
       extends satisfaction.hadoop.hive.HiveDriver with MetricsProducing  with Logging {
   
   
-     val driver = new Releaseable[Wrapper]({
+     val driver = new Releaseable[Wrapper]( factory = {
         val cl = this.getClass.getClassLoader() 
         try {
           val dr = Wrapper.withConstructor( "org.apache.hadoop.hive.ql.Driver", cl, Array[Class[_]]( classOf[HiveConf] ) , Array(  hiveConf ) )
           dr.->("init")
            dr
-        
         }  catch {
           case unexpected : Throwable => {
             error(s"Unexpected error while creating HiveDriver ${unexpected.getMessage()} ", unexpected )
             throw unexpected
           } 
-        }
-    }, { wrapper : Wrapper => {
+         } 
+    } , finalizerFunc = { wrapper : Wrapper => {
       try {
          info(s" Calling close on our ApacheDriver Wrapper $wrapper ")
          wrapper.->("close")
@@ -101,7 +101,7 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config, cl
          
          val comparators : java.util.Map[Class[_],WritableComparator] = comparatorsField.get(null).asInstanceOf[java.util.Map[Class[_],WritableComparator]]
 
-         info(s" WritableComparators are $comparators :: ${comparators.size} values ; This ClassLoader = ${this.getClass.getClassLoader} ")
+         ////info(s" WritableComparators are $comparators :: ${comparators.size} values ; This ClassLoader = ${this.getClass.getClassLoader} ")
          comparators.foreach({ case(klass : Class[_],comp : WritableComparator) => {
              info(s" Class is ${klass.getName} Class Loader = ${klass.getClassLoader}" )
              if( klass.getClassLoader() == thisLoader
@@ -117,7 +117,7 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config, cl
          
          //// Avoid ConcurrentModificationException
          val structMap : java.util.Map[Class[_],_] = structMapField.get(null).asInstanceOf[java.util.Map[Class[_],_]]
-         info(s" thrift FieldMetaData structmap is  $structMap :: ${structMap.size} values ; This ClassLoader = ${this.getClass.getClassLoader} ")
+         ////info(s" thrift FieldMetaData structmap is  $structMap :: ${structMap.size} values ; This ClassLoader = ${this.getClass.getClassLoader} ")
          structMap.filter({ case(klass : Class[_], other) => {
              ///info(s" StructMap Class is ${klass.getName} Class Loader = ${klass.getClassLoader}" )
              klass.getClassLoader() == thisLoader  || klass.getClassLoader() == outerLoader
@@ -277,14 +277,11 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config, cl
        close
     }
     
-    
     override def executeQuery(query: String): Boolean = {
         try {
 
             val response : CommandProcessorResponse = HiveLocalDriver.retry (5) {
                 sessionState.execStatic("setCurrentSessionState", sessionState.wrapped)
-
-                val dbName = Wrapper.execStatic("org.apache.hadoop.hive.ql.exec.Utilities", this.getClass.getClassLoader(), "getDbTableName", "user_session" ).asInstanceOf[Array[String]]
 
                 val resp = driver.get.->("run",query).asInstanceOf[CommandProcessorResponse]
                 resp
@@ -435,6 +432,14 @@ object HiveLocalDriver {
                 throw retry
            }
         } 
+        case clusterException if clusterException.getMessage().contains("Cannot initialize Cluster. Please check your configuration") => {
+           checkCluster() 
+           println(s" Number of retries = $cnt")
+           cnt += 1
+           if( cnt == numRetries) {
+              throw clusterException
+           }
+        }
         case unexpected : Throwable => {
           throw unexpected
         }
@@ -442,4 +447,21 @@ object HiveLocalDriver {
     }
     null.asInstanceOf[T]
   }
+  
+  
+  def checkCluster() = {
+     println(" Checking Cluster ClientProtocol Providers ")
+     val clusterClass = Class.forName( "org.apache.hadoop.mapreduce.Cluster")
+     val frameworkLoaderField = clusterClass.getDeclaredField("frameworkLoader")
+     frameworkLoaderField.setAccessible(true)
+     val frameworkLoader = frameworkLoaderField.get(null)
+     if( frameworkLoader == null) {
+        println(" FrameworkLoader is null for some reason ... try to set it   ")
+        val clientProvider = java.util.ServiceLoader.load(classOf[ClientProtocolProvider])
+        frameworkLoaderField.set( null, clientProvider)
+     } else {
+       println( s" FrameworkLooader is $frameworkLoader ; Now What do we do ????")
+     }
+  }
+
 }

@@ -138,6 +138,7 @@ class JobRunner(
                    messageSender ! new JobRunSuccess(execResult)
                 } else {
                    //// There was an error while trying to mark the DataInstances ...
+                   log.error(s" Error while trying to mark evidence ${markRes.errorMessage} ", markRes.stackTrace)
                    messageSender ! new JobRunFailed(markRes)
                 }
             } else {
@@ -207,8 +208,9 @@ object JobRunner {
        val res = functor
        val thClAfter = Thread.currentThread.getContextClassLoader
        if( thClBefore != thClAfter)  {
-         Thread.currentThread.setContextClassLoader(thClBefore)
+         println(s" Setting ${Thread.currentThread} ContextClassLoader back to ${thClBefore} from ${thClAfter} ")
        }
+       Thread.currentThread.setContextClassLoader(thClBefore)
        res
     }
   

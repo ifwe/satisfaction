@@ -41,7 +41,6 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
 
     ///private val dependencies: mutable.Map[String, ActorRef] = scala.collection.mutable.Map[String, ActorRef]()
     private  lazy val  _dependencies: Map[(Goal,Witness), ActorRef] =  initDependencies
-    
 
     private var jobRunner: ActorRef = null
 
@@ -74,26 +73,35 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
 
     def receive = {
 
-        case Satisfy(runID,parentRunID,forceSatisfy) =>
+     case Satisfy(runID,parentRunID,forceSatisfy) =>
           failureCheck { 
-            this.runID = runID
-            this.parentRunID = parentRunID
-            this.forceSatisfy = forceSatisfy
             info(s" PredicateProver ${track.descriptor.trackName}::${goal.name} $witness received Satisfy message witness is $witness with runID =${runID} parentRunID=${parentRunID} forceSatisfy=${forceSatisfy} ")
-            info(s" Adding $sender to listener list")
-            addListener( sender )
-            if (goal.hasEvidence &&
-                forceSatisfy == false ) {
+            if( status.state == GoalState.Unstarted ) {
+               this.runID = runID
+               this.parentRunID = parentRunID
+               this.forceSatisfy = forceSatisfy
+               info(s" Adding $sender to listener list")
+               addListener( sender )
+               if (goal.hasEvidence &&
+                  forceSatisfy == false ) {
                  //// Create evidence In  
               
-                goal.evidenceForWitness(witness).foreach(e => {
-                    sendCheckEvidence(e)   
-                } )
-            } else {
-              if(forceSatisfy) {
-                 warn(s" Forcing Satisfy for  ${goal.name} ${witness} ; forcing Satisfy ")
+                   goal.evidenceForWitness(witness).foreach(e => {
+                      sendCheckEvidence(e)   
+                   } )
+               } else {
+                 if(forceSatisfy) {
+                   warn(s" Forcing Satisfy for  ${goal.name} ${witness} ; forcing Satisfy ")
+                 }
+                 satisfy(runID,parentRunID,forceSatisfy)
               }
-              satisfy(runID,parentRunID,forceSatisfy)
+            } else {
+              //// XXX
+              error( s"Invalid Request ; Job in state ${status.state} can not receive multiple Satisfy messages." )
+              ////sender ! InvalidRequest(status,"Job in state ${status.state} can not receive multiple Satisfy messages ")
+              //// XXX FIXME XXX
+              ///  Do we want to send message not to send multiple 
+              addListener( sender )
             }
           }
     case EvidenceCheckResult(id: String, w: Witness, isAlreadySatisfied: Boolean) =>
@@ -131,12 +139,7 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
       }
         case WhatsYourStatus =>
           try  {
-            //// Do a blocking call to just return  
-
-            ///val currentStatus = new GoalStatus(goal, witness)
-            ///currentStatus.state = status.state
-
-            /// Go through and ask all our 
+            /// Go through and ask all our dependencies
             val futureSet = dependencies.map {
                 case (pred, actorRef) =>
                     (actorRef ask WhatsYourStatus).mapTo[StatusResponse]
@@ -156,8 +159,7 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
         case RestartJob =>
           info(s" Received RestartJob Message ; Current state is ${status.state} " )
           status.state match {
-            case GoalState.Failed |
-                 GoalState.Aborted =>
+            case GoalState.Failed =>
               /// Restart our job Runner
                runLocalJob()
             case GoalState.DependencyFailed =>
@@ -173,9 +175,6 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
                                   actor ! RestartJob
                                 case GoalState.DependencyFailed =>
                                   info(s"Actor $pred has dependency job failed; sending restart...")
-                                  actor ! RestartJob
-                                case GoalState.Aborted =>
-                                  info(s"Actor $pred has been aborted; sending restart...")
                                   actor ! RestartJob
                                 case _ =>
                                   /// don't restart if job hasn't failed 
@@ -373,6 +372,8 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
                   if( jobRunner == null) {
                     try {
                        val jobRunActor = Props(new JobRunner(satisfier, track ,goal, witness, witness))
+                       //// XXX InvalidActorNameException
+                       //// Problem with multiple actors with same name
                        this.jobRunner = context.system.actorOf((jobRunActor), "Satisfier_" + ProofEngine.getActorName(goal, witness))
                        log.info(s"Actor ${this.self.path} created Actor ${jobRunner.path} ")
                     } catch {
