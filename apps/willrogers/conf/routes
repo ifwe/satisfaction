@@ -1,0 +1,40 @@
+# Routes
+# This file defines all application routes (Higher priority routes first)
+# ~~~~
+
+# Home page
+GET     /                           willrogers.controllers.Application.index
+
+GET     /projtabs                      willrogers.controllers.ProjectPage.allProjects
+GET		/schedules				willrogers.controllers.ScheduleTrackPage.showSchedulesAction()
+GET     /current                   willrogers.controllers.SatisfyGoalPage.currentStatusAction()
+GET		/trackhistoy				willrogers.controllers.TrackHistoryPage.loadHistoryPageAction()
+
+#Track Page
+GET     /showproject/:projName         willrogers.controllers.ProjectPage.showProject(projName: String)
+GET		/showprojectGoalRuns/:projName/:goalName willrogers.controllers.ProjectPage.showProjectRuns(projName : String, goalName : String)
+GET		/showprojectFiles/:projName	willrogers.controllers.ProjectPage.showProjectFiles(projName : String)
+
+GET     /satisfygoal/:projName/:goalName                   willrogers.controllers.SatisfyGoalPage.showSatisfyForm(projName: String, goalName: String)
+POST     /satisfygoal/:projName/:goalName                   willrogers.controllers.SatisfyGoalPage.satisfyGoalAction(projName: String, goalName: String)
+GET     /goalstatus/:projName/:goalName                   willrogers.controllers.SatisfyGoalPage.goalStatus(projName: String, goalName: String)
+GET     /goalprogress/:projName/:goalName                   willrogers.controllers.SatisfyGoalPage.goalProgress(projName: String, goalName: String)
+GET     /schedules/                   willrogers.controllers.ScheduleTrackPage.showSchedulesAction()
+GET     /listfiles/:trackName                  willrogers.controllers.EditPage.listFiles(trackName: String)
+GET     /editfile/:trackName/:fileName          willrogers.controllers.EditPage.editFile(trackName: String, fileName: String)
+GET     /loghistory/:trackName                   willrogers.controllers.SatisfyGoalPage.logHistory(trackName: String)
+GET     /logwindow/:trackName/:goalName/:varString                   willrogers.controllers.SatisfyGoalPage.logWindow(trackName: String, goalName: String, varString : String)
+GET     /rawlog/:trackName/:goalName/:varString                   willrogers.controllers.SatisfyGoalPage.rawLog(trackName: String, goalName: String, varString : String)
+GET     /restart/:trackName/:goalName/:varString                   willrogers.controllers.SatisfyGoalPage.restartJob(trackName: String, goalName: String, varString : String)
+GET     /abort/:trackName/:goalName/:varString                   willrogers.controllers.SatisfyGoalPage.abortJob(trackName: String, goalName: String, varString : String)
+
+POST	/scheduletrack/:trackName/:forUser/:version										willrogers.controllers.ScheduleTrackPage.scheduleTrack(trackName: String, forUser: String, version: String)
+GET		/unscheduleonejob/:trackName/:forUser/:version						willrogers.controllers.ScheduleTrackPage.unscheduleOneTrack(trackName: String, forUser:String, version:String)
+
+GET		/filterJobHistory	willrogers.controllers.TrackHistoryPage.filterJobHistory
+GET		/lookupJobHistoryGoal willrogers.controllers.TrackHistoryPage.lookupJobHistoryGoal
+GET		/lookupGoalHistoryID	willrogers.controllers.TrackHistoryPage.lookupGoalHistoryID
+
+# Map static resources from the /public folder to the /assets URL path
+GET     /assets/*file               controllers.Assets.at(path="/public/main", file)
+

@@ -1,0 +1,33 @@
+@(projName : String,  goalName : String, witness : satisfaction.Witness , goalStatus : satisfaction.GoalStatus,  pg : Option[PlumbGraph]  )
+
+@import helper._
+@import scala.collection.JavaConversions._
+@import satisfaction._
+@import satisfaction.engine._
+@import satisfaction.engine.actors._
+
+<meta http-equiv="refresh" content="500">
+
+@main( s"Goal Status Project @projName Goal @goalName " ) {
+    
+     <h1>Satisfaction !!!</h1>
+    <h1>Track @projName Goal @goalName </h1>
+    <h2> Status of goal is <blink>@goalStatus.state</blink
+    
+  <table>
+  <tr>
+  <td>
+   </td>
+   <td>
+   
+    @pg match { case Some(graph) =>
+  		  @jsplumbgraph(graph) 
+  }
+  	 
+   </td>
+   
+   </tr>
+   </table>
+   	  
+    
+}

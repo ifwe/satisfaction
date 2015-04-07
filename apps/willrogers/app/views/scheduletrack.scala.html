@@ -1,0 +1,67 @@
+@( tdList : Seq[satisfaction.TrackDescriptor], scList : Seq[Tuple2[satisfaction.TrackDescriptor,satisfaction.track.ScheduleStatus]] , messageOpt : Option[String] = None)
+
+
+@import helper._
+@import scala.collection.JavaConversions._
+@import satisfaction._
+@import satisfaction.Schedulable
+@import satisfaction.engine._
+@import satisfaction.engine.actors._
+
+@main( s"Satisfaction Scheduler Status" ) {
+	<script>
+	$(function() {
+	    $( document ).tooltip();
+	    $('.scheduleRule').prop('selectedIndex', -1);
+	  });
+	</script>
+	
+	@messageOpt match {
+	  case Some(message) => {
+	    <div id="messageBox">
+	    <table>
+	     <tr><td>@message</td></tr>
+	    </table>
+	    </div>
+	  }
+	  case None => {
+	  }
+    }
+		<table>
+		<table>
+		<h2> Scheduled Tracks</h2>
+		<table>
+			<thead>
+				<td> Track </td>
+				<td> Track User </td>
+				<td> Track Variant </td>
+				<td> Track Version </td>
+				<td> Status(Is Running?) </td>
+				<td> Type (cron vs rec) </td>
+				<td> schedule </td>
+				<td> first Run </td>
+				<td> recent run </td>
+				<td> next run </td>
+				<td> unschedule <td>
+			</thead>
+			@scList.map { td =>
+				<tr>
+			<td>@td._1.trackName</td>
+  	                <td>@td._1.forUser</td>
+  	                <td>@td._1.variant</td>
+  	                <td>@td._1.version</td>
+			<td>@td._2.schedStatus </td>
+			<td>@td._2.schedType </td>
+			<td>@td._2.description </td>
+			<td>@HtmlUtil.formatDate(td._2.startOccurrence)</td>
+			<td>@HtmlUtil.formatDate(td._2.prevOccurrence)</td>
+			<td>@HtmlUtil.formatDate(td._2.nextOccurrence)</td>
+			<td><button id ="unscheduleButton" onClick="window.location.href='/unscheduleonejob/@{urlEncode(td._1.trackName)}/@{urlEncode(td._1.forUser)}/@{urlEncode(td._1.version)}'">Unschedule</button></td>
+				</tr>
+				}
+
+		</table>
+
+  
+
+	}

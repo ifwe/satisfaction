@@ -1,0 +1,140 @@
+@(trackDesc : satisfaction.TrackDescriptor,  goalList : List[String], dependList : List[String], goalLogMap : List[String] )
+
+@import helper._
+@import scala.collection.JavaConversions._
+@import satisfaction._
+
+@import models.HtmlUtil._
+@import models.HtmlUtil
+@import play.api.libs.json.Json
+
+
+
+@main( s"Track ${trackDesc.trackName} ") {
+	
+<h1>Track @trackDesc.trackName  </h1>
+  
+<h2>Version @trackDesc.version </h2>
+  <table>  
+   <tr><td><h3>Goals for @trackDesc.version</h3></td>
+    <td>
+    <h3>External Dependencies</h3>
+    </td>
+   <tr>
+   <td>
+    <ul>
+      @goalList.map { goal =>
+       <li><a href="satisfygoal/@{urlEncode(trackDesc.trackName)}/@{urlEncode(goal)}" target="_blank">@goal</a> </li>     
+      }
+    </ul>
+    </td>
+    <td>
+    <ul>
+      @dependList.map { dep =>
+         <li>@dep</li>
+      } 
+    </ul>
+    </td> 
+     
+    
+    
+    </tr>
+ </table>    
+ 
+<div id ="trackInfo@trackDesc.trackName">
+
+  <h2>Files for @trackDesc.trackName </h2>  
+  <div id = "trackFiles@trackDesc.trackName">
+  </div>
+   
+  <h2>History for @trackDesc.trackName</h2>
+  <div class="inLineDivContainer" id="logHistoryContainer">
+  
+    <div class="inLineDiv" id="logHistoryMenu">
+      <h3> Goals</h3>
+      <ul id="logHistoryMenuList@trackDesc.trackName">
+        @goalLogMap.map{goal =>
+          <li  title='@goal'><a onclick="changeGoal('@goal')">@goal</a></li>
+        }
+      </ul>
+     
+    </div>
+    
+    <div class="inLineDiv wordwrap" id ="logHistoryTitle@trackDesc.trackName">
+    </div>
+    <div class="inLineDiv wordwrap" id="logHistoryDisplay@trackDesc.trackName" style="height:600px">
+  
+    </div>
+  </div>
+</div>
+ 
+
+
+
+<script type="text/javascript" charset="utf8" src="@routes.Assets.at("javascripts/jquery.event.drag-2.2.js")"></script>
+<script type="text/javascript" charset="utf8" src="@routes.Assets.at("javascripts/slick.core.js")"></script>
+<script type="text/javascript" charset="utf8" src="@routes.Assets.at("javascripts/slick.formatters.js")"></script>
+<script type="text/javascript" charset="utf8" src="@routes.Assets.at("javascripts/slick.grid.js")"></script>
+<script type="text/javascript" charset="utf8" src="@routes.Assets.at("javascripts/slick.dataview.js")"></script>
+  
+<script>
+  
+  var grid;
+  var columns = [
+    {id: "witness", name: "Witness/Log File", field: "witness", sortable:true, formatter: formatter}
+    ];
+  var options = {
+    enableCellNavigation: true,
+    enableColumnReorder :false,
+    forceFitColumns: true
+  };
+  
+  //to display HTML content in cell.      
+   function formatter(row, cell, value, columnDef, dataContext) {
+    return value;
+   }
+
+ 
+  function changeGoal(goal) {
+  	var data = [];
+    $('#logHistoryTitle@trackDesc.trackName').html("<h3>Instances of goal: " + goal + "</h3>");
+    $('#logHistoryDisplay@trackDesc.trackName').html("");
+  
+    var witnessApiCall = "showprojectGoalRuns/@trackDesc.trackName/" + goal
+    
+    $.get(witnessApiCall, function(data){
+      $.each(data, function(index, witness){
+        data[index]={
+        	witness: "<a href='"+witness[1]+"' target='_blank'>"+witness[0]+"</a>"
+        };
+      });
+      
+      data.reverse();
+      grid= new Slick.Grid("#logHistoryDisplay@trackDesc.trackName", data, columns, options);
+    });
+    
+    
+  }
+  
+   $(function (){
+        
+    $("#trackInfo@trackDesc.trackName").accordion({
+        collapsible: true,
+        heightStyle: "content"
+      });
+    
+    $("#logHistoryMenuList@trackDesc.trackName").menu();
+    
+    //load files for Track
+    $.get("showprojectFiles/@trackDesc.trackName", function(data) {
+      $('#trackFiles@trackDesc.trackName').html("");
+      $.each(data, function(index, resource){
+        var fileURL = "/editfile/@trackDesc.trackName/"+resource;
+        $('#trackFiles@trackDesc.trackName').append("<a href='"+fileURL+"' target='_blank'>"+resource+"</a>" + "<br />");
+      });
+    });
+  });
+ </script>
+
+ 
+	}

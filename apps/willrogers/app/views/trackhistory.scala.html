@@ -1,0 +1,272 @@
+@(grList: Seq[willrogers.controllers.TrackHistoryPage.trackHistory.GoalRun])
+
+@import helper._
+@import scala.collection.JavaConversions._
+@import satisfaction._
+@import satisfaction.engine._
+@import satisfaction.engine.actors._
+@import models.HtmlUtil
+
+
+@main("Track History Page") {
+	<div id="filterMenu">
+		<h2> Filtering Menu</h2>
+
+		<form>
+			<label>Track Name contains :</label> <input type=text id="trackNameSearch"> <br />
+			<label>Goal Name contains :</label> <input type=text id="goalNameSearch"> <br />
+			<label>Witness contains :</label> <input type=text id="witnessSearch"> <br />
+			<label>Started* by :</label> <input type=text id="startTimeSearch"> <br />
+			<label>Finished* by :</label> <input type=text id="endTimeSearch"> <br />
+		</form>
+		<p>* = must be in the format of "YYYY-MM-dd HH:mm:ss"</p>
+	</div>
+
+	<div id="trackHistoryContainer">
+		<h2>Track History</h2>
+		<div id="trackHistory" style="height:600px;"></div>
+	</div>
+	
+
+	<script type="text/javascript" charset="utf8" src="@routes.Assets.at("javascripts/jquery.event.drag-2.2.js")"></script>
+	<script type="text/javascript" charset="utf8" src="@routes.Assets.at("javascripts/slick.core.js")"></script>
+	<script type="text/javascript" charset="utf8" src="@routes.Assets.at("javascripts/slick.formatters.js")"></script>
+   	<script type="text/javascript" charset="utf8" src="@routes.Assets.at("javascripts/slick.grid.js")"></script>
+ 	 <script type="text/javascript" charset="utf8" src="@routes.Assets.at("javascripts/slick.dataview.js")"></script>
+ 	
+ 	<script>
+ 	  
+    
+    	var dataView;
+ 		var grid;
+ 		var data = [];
+ 		var columns = [
+ 	                   {id: "trackName", name: "Track Name", field: "trackName", sortable: true, width: 50},
+ 	                   {id: "goalName", name: "GoalName", field: "goalName", sortable: true, width: 50},
+ 	                   {id: "witness", name: "Witness", field: "witness", formatter: formatter, sortable: true},
+ 	                   {id: "startTime", name: "Start Time", field: "startTime", sortable: true},
+ 	                   {id: "endTime", name: "End Time", field: "endTime", sogrtable: true},
+ 	                   {id: "status", name: "Status", field: "status", sortable: true, width: 15},
+ 	                   {id: "id", name: "ID", field: "id", sortable: true, width:15},
+ 	                   {id: "parentId", name: "Parent ID", field: "parentId", sortable: true, width: 15},
+ 	                   {id: "log", name: "Log File", field: "log", formatter: formatter, sortable: true, width: 10}
+ 	              ];
+
+ 	    var options = {
+ 	    	    enableCellNavigation: true,
+ 	            enableColumnReorder :false,
+ 	            forceFitColumns: true
+ 	            };
+ 	            
+		//sorting variables
+		var sortcol = "startTime"
+		var sortdir =1;
+		
+		//filtering variables
+		trackNameSearchString="";
+		goalNameSearchString="";
+		witnessSearchString="";
+		startTimeSearchString="";
+		endTimeSearchString="";
+		
+		
+		//to display HTML content in cell.      
+ 	   function formatter(row, cell, value, columnDef, dataContext) {
+        	return value;
+        }
+        
+       //put all filtering conds in this function
+       function myFilter(item, args) {
+       	if(args.trackNameSearchString != "" && item["trackName"].indexOf(args.trackNameSearchString) == -1) {
+       		return false;
+       	}
+       	
+ 		if(args.goalNameSearchString != "" && item["goalName"].indexOf(args.goalNameSearchString) == -1) {
+       		return false;
+       	}
+       	
+       	if(args.witnessSearchString != "" && item["witness"].indexOf(args.witnessSearchString) == -1) {
+       		return false;
+       	}
+       	
+  
+       	if(Date.parse(item["startTime"]) < Date.parse(args.startTimeSearchString)) {
+       		return false;
+       	}
+       	
+       	if(item["endTime"].length == 19  && Date.parse(item["endTime"]) > Date.parse(args.endTimeSearchString)) {
+       		return false;
+       	}
+       	
+       	return true;
+       }
+       
+       //validate datetime strings "YYYY-MM-dd HH:mm:ss"
+       function validateDateTime(str) {
+       	if (str=="") {
+       		return true;
+       	}
+       	if(str=="" || str==null || str.length != 19){
+       		return false;
+       	}
+       	var dateRegTest = /^\d{4}-(0[1-9]|1[0-2])-([0-2]\d|3[01]) (0\d|1[01]):[0-5]\d:[0-5]\d$/;
+       	return dateRegTest.test(str);	
+       }
+ 	   
+ 	   
+ 	   //nesting variables/functions
+ 	   
+		var TaskNameFormatter = function (row, cell, value, columnDef, dataContext) {
+		  value = value.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+		  var spacer = "<span style='display:inline-block;height:1px;width:" + (15 * dataContext["indent"]) + "px'></span>";
+		  var idx = dataView.getIdxById(dataContext.id);
+		  if (data[idx + 1] && data[idx + 1].indent > data[idx].indent) {
+		    if (dataContext._collapsed) {
+		      return spacer + " <span class='toggle expand'></span>&nbsp;" + value;
+		    } else {
+		      return spacer + " <span class='toggle collapse'></span>&nbsp;" + value;
+		    }
+		  } else {
+		    return spacer + " <span class='toggle'></span>&nbsp;" + value;
+		  }
+		};
+		
+		
+		
+		
+		
+ 	   $(function () {
+ 	   
+ 	   		//load data
+			var dataCounter = @grList.length;
+			
+			
+			@grList.map { gr => 
+				data[--dataCounter] = {
+					id: @gr.runId,
+					parentId: "@gr.parentRunId",
+					trackName: "@gr.trackDescriptor.trackName",
+	  	          	goalName: "@gr.goalName",
+	  	          	witness: "@Html(HtmlUtil.formatWitness( gr.witness))",
+	  	          	startTime: "@HtmlUtil.formatTrackHistoryDate(Some(gr.startTime))", 
+	  	          	endTime: "@HtmlUtil.formatTrackHistoryDate(gr.endTime)",
+	  	          	status: "@gr.state",
+	  	          	log:"@Html({
+								var logWindowUrl = "/logwindow/"+gr.trackDescriptor.trackName.replace(" ", "_")+"/"+gr.goalName.replace(" ", "_")+"/"+{HtmlUtil.witnessPath(gr.witness)}.replace(" ", "_")
+								s"<a href='$logWindowUrl' target='_blank'>View Log for Goal</a>"
+							})"
+				};
+			}
+			dataView = new Slick.Data.DataView();
+ 	      	grid = new Slick.Grid("#trackHistory", dataView, columns, options);
+ 	      	
+ 	      	//listeners and functions for sorting
+ 	      	function comparer(a,b) {
+ 	      		if (sortcol == "startTime" || sortcol=="endTime") {
+ 	      			var x = Date(a[sortcol]).parse();
+ 	      			var y = Date(b[sortcol]).parse();
+ 	      		} else {
+ 	      			var x = a[sortcol]
+ 	      			var y = b[sortcol];
+ 	      		}
+                return (x == y ? 0 : (x > y ? 1 : -1));
+ 	      	}
+            
+            grid.onSort.subscribe(function(e, args) {
+                sortdir = args.sortAsc ? 1 : -1;
+                sortcol = args.sortCol.field;
+                dataView.sort(comparer, args.sortAsc);
+            });
+            
+
+			//filtering wires
+            
+			$('#trackNameSearch').keyup(function (e) {
+				Slick.GlobalEditorLock.cancelCurrentEdit();
+				
+				trackNameSearchString=this.value;
+				render();
+				
+			});
+			
+			$('#goalNameSearch').keyup(function (e) {
+				Slick.GlobalEditorLock.cancelCurrentEdit();
+				
+				goalNameSearchString=this.value;
+				render();
+				
+			});
+			
+			$('#witnessSearch').keyup(function (e) {
+				Slick.GlobalEditorLock.cancelCurrentEdit();
+				
+				witnessSearchString=this.value;
+				render();
+				
+			});
+			
+			$('#startTimeSearch').keyup(function (e) {
+				Slick.GlobalEditorLock.cancelCurrentEdit();
+				
+				if(validateDateTime(this.value)) {
+					startTimeSearchString=this.value;
+					render();
+				}
+			});
+			
+			$('#endTimeSearch').keyup(function (e) {
+				Slick.GlobalEditorLock.cancelCurrentEdit();
+				
+				if(validateDateTime(this.value)) {
+					endTimeSearchString=this.value;
+					render();
+				}
+			});
+			
+			
+			//nesting hooks
+			grid.onClick.subscribe(function (e, args) {
+			    if ($(e.target).hasClass("toggle")) {
+			      var item = dataView.getItem(args.row);
+			      if (item) {
+			        if (!item._collapsed) {
+			          item._collapsed = true;
+			        } else {
+			          item._collapsed = false;
+			        }
+			
+			        dataView.updateItem(item.id, item);
+			      }
+			      e.stopImmediatePropagation();
+			    }
+			  });
+			
+			
+			//it's rendering time
+            function render() {
+            	dataView.beginUpdate();
+	            dataView.setItems(data);
+	            dataView.setFilterArgs({
+	            	trackNameSearchString: trackNameSearchString,
+	            	goalNameSearchString: goalNameSearchString,
+	            	witnessSearchString: witnessSearchString,
+	            	startTimeSearchString: startTimeSearchString,
+	            	endTimeSearchString: endTimeSearchString
+	            });
+	            dataView.setFilter(myFilter);
+	            dataView.endUpdate();
+	            
+	            dataView.refresh();
+	            
+				grid.invalidate();
+				
+				$("#myGrid").show();
+	            $('.slick-header-columns').children().eq(4).trigger('dblclick');
+	            console.log(dataView.getLength() +" tracks to display")
+            }
+            
+            render(); // initial call
+ 	        })
+        
+ 	</script>
+  	}

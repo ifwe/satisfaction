@@ -1,0 +1,40 @@
+@(trackName : String , resourceName : String , resourceContents: String)
+
+@import helper._
+
+@main("Edit Hive View") {
+    
+<html lang="en">
+<head>
+<title> Action</title>
+<style type="text/css" media="screen">
+    #editor { 
+        position: absolute;
+        top: 50;
+        right: 20;
+        bottom: 20;
+        left: 0;
+    }
+</style>
+</head>
+<body>
+
+<div>
+<h1>Edit the script @resourceName for Track @trackName </h1>
+</div>
+<div>
+<div id="editor">
+@resourceContents
+</div>
+</div>
+    
+<script src='@routes.Assets.at("javascripts/ace-builds/src-noconflict/ace.js")' type="text/javascript" charset="utf-8"></script>
+<script>
+    var editor = ace.edit("editor");
+    editor.setTheme("ace/theme/monokai");
+    editor.getSession().setMode("ace/mode/sql");
+    editor.setKeyboardHandler("vim");
+</script>
+</body>
+</html>
+}

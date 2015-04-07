@@ -1,0 +1,29 @@
+@(projName : String,  goalName : String,  logList : List[String]  )
+
+@import helper._
+@import scala.collection.JavaConversions._
+@import satisfaction._
+@import satisfaction.engine.actors.LogWrapper
+
+<meta http-equiv="refresh" content="5">
+
+@main( s"Goal History for Track $projName Goal $goalName " ) {
+    
+     <h1>Satisfaction !!!</h1>
+    <h1>Logs for Track  @projName Goal @goalName </h1>
+    
+  <table>
+ 
+   @logList.map {  witStr =>
+  <tr>
+  <td>
+   
+   <a href="logs/@LogWrapper.pathString(goalName)/@LogWrapper.pathString(witStr)">@witStr</a>
+   	
+</td>   
+   </tr>
+   	}
+   </table>
+   	  
+    
+}

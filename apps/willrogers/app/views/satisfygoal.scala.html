@@ -1,0 +1,65 @@
+@(projName : String,  goalName : String, errorList : List[String] , varList : List[satisfaction.Variable[_]] , pg : Option[PlumbGraph]  )
+
+@import helper._
+@import scala.collection.JavaConversions._
+@import satisfaction._
+
+@import models.HtmlUtil._
+@import models.HtmlUtil
+
+
+
+@main( "Satisfy Goal " + goalName + " for Project " + projName ) {
+	
+    <h1>Satisfy Goal @goalName for Project @projName  </h1>
+    
+   <ul>
+   @errorList.map { error =>
+       <li><div	style="color:red;font-weight=bold">@error</div></li>
+   	} 
+   </ul>
+    
+<form method="POST" action="/satisfygoal/@{urlEncode(projName)}/@{urlEncode(goalName)}">
+  <table>  
+   <tr><td><h3>Variables</h3></td>
+    <td>
+    </td>
+    <td></td></tr>
+   <tr>
+   <td>
+    <ul>
+      @varList.map { varObj =>
+     	 <li>@varObj.name </li> 	  
+      }
+    </ul>
+    </td>
+    <td>
+    <ul>
+      @varList.map { varObj =>
+      	 <li>
+      	  <input type="text" name="@varObj.name" />
+      	 </li>
+      } 
+    </ul>
+    </td> 
+    <td>
+    </td> 
+    <ul>
+      @varList.map { varObj =>
+      	 <li>@varObj.description</li>
+      } 
+    </ul>
+    </td>
+    
+    </td>
+  @pg match { case Some(graph) =>
+  		  @jsplumbgraph(graph) 
+  }
+  	 
+    <td>
+    </tr>
+ </table>    
+  <input type="submit"><bold><blink>Satisfy !!!</blink></bold></input>
+ </form>
+    
+}

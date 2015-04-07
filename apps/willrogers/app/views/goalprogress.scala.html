@@ -1,0 +1,49 @@
+@(projName : String,  goalName : String, witness : satisfaction.Witness , progress: satisfaction.ProgressCounter  )
+
+@import helper._
+@import scala.collection.JavaConversions._
+@import satisfaction._
+@import satisfaction.engine._
+@import satisfaction.engine.actors._
+
+<meta http-equiv="refresh" content="5">
+
+@main( s"Goal Progress @projName Goal @goalName $witness " ) {
+    
+     <h1>Satisfaction !!!</h1>
+    <h1>Track @projName Goal @goalName $witness </h1>
+    <h2> Current Progress is @progress.progressPercent*100 % </h2>
+     <h3> Task @progress.taskName <h3> 
+
+  <table>
+  <thead>SubTasks</thead>
+  @progress.subtasks.map { tup => 
+  <tr>
+  <td>
+      @tup._1 
+   </td>
+   <td>
+     @tup._2
+   </td>
+   </tr>
+  }
+   </table>
+   <table>
+    <thead>Running Now </thead>
+    @progress.runningSubTasks.map { subTask =>
+  <tr>
+  <td> @subTask.taskName</td>
+  <td> @subTask.progressPercent*100 %</td>
+   <td><button id ="progressButton" onClick="window.location.href=''">Progress</button></td>
+  
+  </tr>
+    }
+   </table>
+   	  
+   	<table>
+   	  <thead>Progress Metrics</thead>
+    @progress.
+  
+   	</table>
+    
+}

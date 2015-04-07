@@ -1,0 +1,95 @@
+@(gsList : Set[satisfaction.GoalStatus]  )
+
+@import helper._
+@import scala.collection.JavaConversions._
+@import satisfaction._
+@import satisfaction.engine._
+@import satisfaction.engine.actors._
+@import models.HtmlUtil
+
+
+@main( s"Satisfaction Current Status " ) {
+    
+     <h2>Overview of all running jobs</h2>
+    
+  <table>
+  <theads>
+   <td>Track</td>
+   <td>Goal Name</td>
+   <td>Status</td>
+   <td>Witness</td>
+   <td>Started</td>
+   </theads>
+  @gsList.filter( _.state == GoalState.Running ).map { gs => 
+     <tr>
+     <td>@gs.track.trackName</td>
+     <td>@gs.goalName</td>
+     <td>@gs.state</td>
+     <td>@HtmlUtil.formatWitness( gs.witness )</td>
+     <td>@HtmlUtil.formatDate( gs.timeStarted )</td>
+     <td> <button id="logWindowButton" onClick="window.open('/logwindow/@helper.urlEncode(gs.track.trackName)/@helper.urlEncode(gs.goalName)/@helper.urlEncode(HtmlUtil.witnessPath(gs.witness))')">Show Log</button></td>
+     <td> <button id="abortButton" onClick="window.location.href='/abort/@helper.urlEncode(gs.track.trackName)/@helper.urlEncode(gs.goalName)/@helper.urlEncode(HtmlUtil.witnessPath(gs.witness))'">Abort</button></td>
+     </tr>
+  }
+   </table>
+   
+     <h2>Overview of all Pending jobs</h2>
+    
+  <table>
+  <theads>
+   <td>Track</td>
+   <td>Goal Name</td>
+   <td>Status</td>
+   <td>Witness</td>
+   <td>Started</td>
+   </theads>
+  @gsList.filter(gst => { gst.state == GoalState.WaitingOnDependencies || gst.state == GoalState.DependencyFailed || gst.state == GoalState.CheckingEvidence } ).map { gs => 
+     <tr>
+     <td>@gs.track.trackName</td>
+     <td>@gs.goalName</td>
+     <td>@gs.state</td>
+     <td>@HtmlUtil.formatWitness( gs.witness )</td>
+     <td>@HtmlUtil.formatDate( gs.timeStarted )</td>
+     </tr>
+  }
+   </table>
+   	  
+   	  
+     <h2>Recently completed Goals</h2>
+    
+  <table>
+  <theads>
+   <td>Track</td>
+   <td>Goal Name</td>
+   <td>Status</td>
+   <td>Witness</td>
+   <td>Started Waiting</td>
+   <td>Started Running</td>
+   <td>Completed</td>
+   </theads>
+  @gsList.filter(  gs => { gs.state == GoalState.Success || gs.state == GoalState.Failed || gs.state == GoalState.Aborted }  ).map { gs => 
+     <tr>
+     <td>@gs.track.trackName</td>
+     <td>@gs.goalName</td>
+     <td>@gs.state</td>
+     <td>@HtmlUtil.formatWitness( gs.witness )</td>
+     <td>@HtmlUtil.formatDate( gs.timeStarted )</td>
+     @if( gs.execResult != null ) {
+      <td>@HtmlUtil.formatDate( gs.execResult.timeStarted ) </td>
+     } else {
+      <td>N/A</td>
+    }
+      </td>
+     <td>@HtmlUtil.formatDate( gs.timeFinished )</td>
+     <td> <button id="logWindowButton" onClick="window.open('/logwindow/@helper.urlEncode(gs.track.trackName)/@helper.urlEncode(gs.goalName)/@helper.urlEncode(HtmlUtil.witnessPath(gs.witness))')">Show Log</button></td>
+      @if( gs.state == GoalState.Failed || gs.state == GoalState.Aborted) {
+          <td> <button id="restartButton" onClick="window.location.href='/restart/@helper.urlEncode(gs.track.trackName)/@helper.urlEncode(gs.goalName)/@helper.urlEncode(HtmlUtil.witnessPath(gs.witness))'">Restart</button></td>
+          <td> <button id="abortButton" onClick="window.location.href='/abort/@helper.urlEncode(gs.track.trackName)/@helper.urlEncode(gs.goalName)/@helper.urlEncode(HtmlUtil.witnessPath(gs.witness))'">Abort</button></td>
+       }
+     </tr>
+  }
+   
+   </table>
+   	  
+    
+}
