@@ -4,7 +4,6 @@ Thank you for your interest in contributing to a if(we), Inc. ("if(we)") open
 source project! We welcome and are grateful for all contributions, but do ask
 that you follow a few steps before submitting your contribution:
 
-* Please review the [Coding Conventions](doc/coding.md) for this project.
 * Please review the [if(we) Pull Request Process](doc/pull_requests.md).
 * Read and complete the [if(we) Contributor License Agreement](./CLA.md). Learn more about the agreement in its [Appendix](./CLA-appendix.md).
 * When complete, email a PDF of the signed agreement to [legal@ifwe.co](mailto:legal@ifwe.co).
