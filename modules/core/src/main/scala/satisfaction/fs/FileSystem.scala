@@ -3,6 +3,7 @@ package satisfaction.fs
 import java.io.ByteArrayOutputStream
 import org.joda.time.DateTime
 
+import Path._
 
 /**
  *  Want to mock out FileSystem and MetaStore into traits
@@ -19,8 +20,17 @@ trait FileSystem {
    def listFiles( p : Path ) : Seq[FileStatus]
    def listFilesRecursively( p : Path ) : Seq[FileStatus]
    
-   def globFiles( p: Path,  filterFunc : (FileStatus=>Boolean)) : Seq[FileStatus] = {
+   def listFiles( p : Path, filterFunc : PathFilter ) : Seq[FileStatus] = {
+      listFiles(p).filter( filterFunc)
+   }
+
+   def listFilesRecursively( p : Path, filterFunc : PathFilter  ) : Seq[FileStatus] = {
       listFilesRecursively( p).filter( filterFunc)
+   }
+
+   def globFiles( p: Path) : Seq[FileStatus]
+   def globFiles( p: Path,  filterFunc : PathFilter ) : Seq[FileStatus] = {
+     globFiles(p).filter(filterFunc)
    }
    
    def mkdirs( p : Path ) : Boolean

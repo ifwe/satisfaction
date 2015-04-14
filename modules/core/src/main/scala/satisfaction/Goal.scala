@@ -79,6 +79,14 @@ case class Goal(
       copy( dependencies =  dependencies +  Tuple2(rule, goal) )
     }
     
+    def addVariable( vr : Variable[_]) : Goal = {
+      copy( variables = variables.+:( vr) )
+    }
+    
+    def withVariables( varList : List[Variable[_]]) : Goal = {
+      copy( variables = varList )
+    }
+    
     /**
      *  Depend upon yesterday's output of the specified Goal
      */
@@ -147,11 +155,9 @@ case class Goal(
      */
     def chainWitnessRules[T]( prevRule : ( Witness=>Witness) ,subGoal :Goal, foldVar : Variable[T], valIter : Traversable[T]) : Goal = {
       val first = valIter.head
-      println(s" HEAD is $first ")
 
       val chained : Goal = valIter.drop(1).foldLeft( subGoal )( (g: Goal, vv : T) => {
            val witnessMapping : ( Witness=>Witness)  = Goal.qualifyWitness( foldVar, vv )
-           println(s" ${g.name} CHAIN WITNESS RULE $vv  ")
            Goal(subGoal).addWitnessRule( witnessMapping,g)
       } )
       //// apply the composed rule onto the first value, and then 

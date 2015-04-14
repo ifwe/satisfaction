@@ -11,8 +11,6 @@ import satisfaction.engine.actors.JobRunner
 
 /**
  *  Class for Executor to access deployed Tracks (i.e Projects)
-  class TracksUnavailableException( exc : Throwable ) extends RuntimeException
-  class TracksUnavailableException( exc : Throwable ) extends RuntimeException
  *  
  *  Tracks are deployed in a well-defined directory on HDFS,
  *  where the Track Name is defined as a path relative to a 
@@ -87,6 +85,11 @@ case class TrackFactory(val trackFS : FileSystem,
        }
      }
    } 
+   
+   def release() = {
+      _cached = None 
+      _lastAccessed = System.currentTimeMillis()
+   }
 }
    
    /** 
@@ -115,6 +118,37 @@ case class TrackFactory(val trackFS : FileSystem,
          throw new TrackFactory.TracksUnavailableException( exc);
        }
      }
+   }
+   
+   /**
+    *  For now just
+    */
+   def refreshAllTracks() = {
+      _cachedAllTracks.release()
+      _trackMap.clear()
+   }
+   
+   def refreshTrack( trackDesc : TrackDescriptor ) : Track = {
+     //// Remove the Track from the mutable Map 
+      val findCurrentTrack : Option[TrackDescriptor] = _trackMap.seq.collectFirst({ case(td : TrackDescriptor, tr : Track) if
+           td.trackName == trackDesc.trackName && td.variant == trackDesc.variant &&
+             td.forUser == trackDesc.forUser => {  td  } } )
+      findCurrentTrack match {
+        case Some(td) => {
+           info(s" Removing Previous Track ${td.trackName} with Version ${td.version} ")
+           _trackMap.remove(td)   
+        }
+        case None => {
+          info(s" No Previous track ${trackDesc.trackName} found ")
+        }
+        
+      }
+
+      _cachedAllTracks.release()
+       val latestTD = getAllTracks.filter( _.equalsWoVersion(trackDesc)  ).
+           toList.sortWith( versionSort )(0)
+     
+      getTrack( latestTD ).get
    }
   
    def getLatestTracks : Seq[TrackDescriptor] = {
@@ -150,6 +184,7 @@ case class TrackFactory(val trackFS : FileSystem,
    def notifyTrackUnavailable( exc : Throwable) {
      
    }
+   
    
    /**
     *  Parse the path of a deployed Track on HDFS

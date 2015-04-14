@@ -96,12 +96,36 @@ class PredicateProver(val track : Track, val goal: Goal, val witness: Witness, v
                  satisfy(runID,parentRunID,forceSatisfy)
               }
             } else {
-              //// XXX
-              error( s"Invalid Request ; Job in state ${status.state} can not receive multiple Satisfy messages." )
-              ////sender ! InvalidRequest(status,"Job in state ${status.state} can not receive multiple Satisfy messages ")
-              //// XXX FIXME XXX
-              ///  Do we want to send message not to send multiple 
+              //// We've already started ...
+              //// So we're already satisfied, or failed, or running
+              ////  Add the sender to the listener list,
+              ////   And send back a message, if we're terminal
               addListener( sender )
+              status.state match {
+                 case GoalState.Success => {
+                   info(s" ${goal.name} ${witness} is Success ; Sending GoalSuccess ")
+                   sender ! GoalSuccess(status)
+                 }
+                 case GoalState.AlreadySatisfied => {
+                   info(s" ${goal.name} ${witness} is Already Satisfied ; Sending GoalSuccess ")
+                   sender ! GoalSuccess(status)
+                 }
+                 case GoalState.Failed => {
+                   info(s" ${goal.name} ${witness} is Already Failed ; Sending GoalFailure ")
+                   sender ! GoalFailure(status)
+                 }
+                 case GoalState.DependencyFailed => {
+                   info(s" ${goal.name} ${witness} is Dependency Failed ; Sending GoalFailure ")
+                   sender ! GoalFailure(status)
+                 }
+                 case GoalState.Aborted => {
+                   info(s" ${goal.name} ${witness} is Aborted ; Sending GoalFailure ")
+                   sender ! GoalFailure(status)
+                 }
+                 case _ => {
+                   info(s" ${goal.name} ${witness} State is ${status.state} ; Not sending message to sender ")
+                 }
+              }
             }
           }
     case EvidenceCheckResult(id: String, w: Witness, isAlreadySatisfied: Boolean) =>

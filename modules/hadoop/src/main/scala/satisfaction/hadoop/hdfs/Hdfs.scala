@@ -148,7 +148,7 @@ case class Hdfs(val fsURI: String)
     
     def globFilesRecursively( rootPath : Path ) : Seq[FileStatus] = {
       var fullList : collection.mutable.Buffer[FileStatus] = new ArrayBuffer[FileStatus]
-      listFiles( rootPath).foreach( { fs : FileStatus =>
+      globFiles( rootPath).foreach( { fs : FileStatus =>
          if( fs.isFile ) {
            fullList += fs
          } else {

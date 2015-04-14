@@ -184,7 +184,8 @@ object TrackScheduler {
            log.info(" Starting Goal for Track " + mess.trackDesc.trackName + " Version " + mess.trackDesc.version)
            
            
-           val trckOpt =  if( trackFactory != null ) { trackFactory.getTrack( mess.trackDesc ) } else { None }
+           ////val trckOpt =  if( trackFactory != null ) { trackFactory.getTrack( mess.trackDesc ) } else { None }
+           val trckOpt =  if( trackFactory != null ) { trackFactory.getLatestTrack( mess.trackDesc ) } else { None }
 
            trckOpt match {
 	             case Some(trck) if (trackScheduler.isRunning(trck) && mess.continuous  ) => { // define "already running"

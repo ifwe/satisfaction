@@ -100,6 +100,11 @@ class PathSequence( val bottomPath : Path ) extends Seq[Path] {
   }
 
 }
+
 object Path {
+    type PathFilter = (FileStatus) => Boolean
   
 }
+
+
+

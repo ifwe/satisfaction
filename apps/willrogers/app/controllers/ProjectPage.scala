@@ -43,18 +43,33 @@ object ProjectPage extends Controller {
         val trackOpt : Option[Track] = trackFactory.getTrack( trackDesc)
         trackOpt match {
           case Some(track) =>
-          val internalGoals = track.topLevelGoals.toList
-          val externalGoals = track.externalGoals.toList
+             ////showTrack(track)
+             val internalGoals = track.topLevelGoals.toList
+             val externalGoals = track.externalGoals.toList
 
-          val goalLogMap = LogWrapper.getGoalLogName(projName)
-          .filterNot(line => line == ".DS_Store")
-          
-          Ok(views.html.showproject(track.descriptor, internalGoals map (_.name), externalGoals map (_.name), goalLogMap))
+             val goalLogMap = LogWrapper.getGoalLogName(track.descriptor.trackName)
+                .filterNot(line => line == ".DS_Store")
+      
+             Ok(views.html.showproject(track.descriptor, internalGoals map (_.name), externalGoals map (_.name), goalLogMap))
         case None =>
           Ok( views.html.brokenproject( projName))
         }
 
     }
+     
+      
+    def refreshTrack( trackName : String ) = Action {
+       val td = TrackDescriptor(trackName)
+       val track = trackFactory.refreshTrack(td)
+       val internalGoals = track.topLevelGoals.toList
+       val externalGoals = track.externalGoals.toList
+
+       val goalLogMap = LogWrapper.getGoalLogName(track.descriptor.trackName)
+          .filterNot(line => line == ".DS_Store")
+      
+        Ok(views.html.showproject(track.descriptor, internalGoals map (_.name), externalGoals map (_.name), goalLogMap))
+    }
+
     
     def showProjectRuns (projName :String, goalName : String) = Action { // don't forget to add paging here later!
       //for logHistory ( on track page)

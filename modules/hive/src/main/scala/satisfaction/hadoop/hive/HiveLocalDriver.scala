@@ -432,7 +432,8 @@ object HiveLocalDriver {
                 throw retry
            }
         } 
-        case clusterException if clusterException.getMessage().contains("Cannot initialize Cluster. Please check your configuration") => {
+        case clusterException if clusterException.getMessage() != null
+        		&& clusterException.getMessage().contains("Cannot initialize Cluster. Please check your configuration") => {
            checkCluster() 
            println(s" Number of retries = $cnt")
            cnt += 1
