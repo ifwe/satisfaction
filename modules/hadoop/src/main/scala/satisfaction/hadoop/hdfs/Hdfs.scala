@@ -119,33 +119,51 @@ case class Hdfs(val fsURI: String)
    }
    
     override def listFiles( rootPath : Path ) : Iterable[FileStatus] = {
-        ////fs.listStatus(  rootPath ).toSeq.map( afs => { afs : FileStatus } )
-      val remoteIter = fs.listFiles( rootPath, false)
-      new ApacheFileSequence( remoteIter)
+      new ApacheFileSequence( rootPath, false )
     }
     
     
-    class ApacheFileIterator( remoteIterator : ApacheRemoteIterator[LocatedFileStatus] )  extends Iterator[FileStatus] {
+    class ApacheFileIterator( rootPath : Path, recursive : Boolean)  extends Iterator[FileStatus] {
+       private var _lastDir : String = null
+       private var _nextFile : LocatedFileStatus = null
+       
+       private lazy val remoteIterator =  fs.listFiles( rootPath, recursive)
       
-      override def hasNext : Boolean = {
-         remoteIterator.hasNext
-      }
+       override def hasNext : Boolean = {
+         _nextFile != null || remoteIterator.hasNext
+       }
       
-      override def next : FileStatus = {
-        remoteIterator.next
+       override def next : FileStatus = {
+        //// Need to do funky logic to include directories 
+        if( _nextFile == null ) {
+           val nextLFS = remoteIterator.next
+           val nextLFSDir = nextLFS.getPath().getParent().toUri.toString
+           if( ( nextLFSDir.equals( _lastDir ))
+               || (nextLFSDir.equals(rootPath.toUri.toString))) {
+              nextLFS
+           } else {
+              _nextFile = nextLFS
+              _lastDir = nextLFSDir
+              
+              fs.getFileStatus( nextLFS.getPath().getParent() )
+          }
+        } else {
+           val nf = _nextFile
+           _nextFile = null
+           nf
+        }
       }
     }
     
     //// Should have made FileSystem Iterable, not Sequence 
-    class ApacheFileSequence( remoteIterator : ApacheRemoteIterator[LocatedFileStatus]) extends Iterable[FileStatus] {
+    class ApacheFileSequence( rootPath : Path, recursive : Boolean) extends Iterable[FileStatus] {
       
-       override def iterator : Iterator[FileStatus] = { new ApacheFileIterator(remoteIterator) } 
+       override def iterator : Iterator[FileStatus] = { new ApacheFileIterator(rootPath,recursive) } 
     }
     
     @Override
     override def listFilesRecursively( rootPath : Path ) : Iterable[FileStatus] = {
-      val remoteIter = fs.listFiles( rootPath, true)
-      new ApacheFileSequence( remoteIter)
+        new ApacheFileSequence( rootPath, true)
     }
     
     
