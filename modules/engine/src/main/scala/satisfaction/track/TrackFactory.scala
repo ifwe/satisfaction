@@ -96,13 +96,13 @@ case class TrackFactory(val trackFS : FileSystem,
     *  Get all the tracks which have been deployed to HDFS under the
     *   Satisfaction base track path.
     */
-   def getAllTracks : Seq[TrackDescriptor] = {
+   def getAllTracks : Iterable[TrackDescriptor] = {
       _cachedAllTracks.get
    }
    
    private val _cachedAllTracks = new Cacheable( 60*1000*30, _getAllTracks )
    
-   private def _getAllTracks() : Seq[TrackDescriptor] = {
+   private def _getAllTracks() : Iterable[TrackDescriptor] = {
      try {
       val trackRoot : Path =  baseTrackPath / "track" 
       

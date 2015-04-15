@@ -238,7 +238,7 @@ object LogWrapper {
    }
 
     
-   def getLogPathsForGoal( trackName : String, goalName : String )  : Seq[FileStatus] = {
+   def getLogPathsForGoal( trackName : String, goalName : String )  : Iterable[FileStatus] = {
      val goalPath : Path =  rootDirectory / pathString( trackName) / pathString( goalName) 
      
      localFS.listFiles( goalPath)

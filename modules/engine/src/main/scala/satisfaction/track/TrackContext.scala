@@ -25,12 +25,10 @@ case class TrackContext( val track : Track,
   
   
     def getResource(   resourceFile : String ) : String  = {
-      println(" GET HDFS is " + hdfs)
       hdfs.readFile( resourcePath / resourceFile ).mkString
    }
    
-   def listResources : Seq[String]  = {
-      println(" LIST  HDFS is " + hdfs)
+   def listResources : Iterable[String]  = {
       hdfs.listFiles(  resourcePath ).map( _.path.name )
    }
    

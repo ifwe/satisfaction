@@ -42,7 +42,7 @@ object ScheduleTrackPage extends Controller {
     	 val tdList = trackFactory.getAllTracks
     	 //val tdList = Seq()
     
-     	Ok(views.html.scheduletrack(tdList, scList.toSeq))
+     	Ok(views.html.scheduletrack(tdList.toSeq, scList.toSeq))
    }
      
 
@@ -119,7 +119,7 @@ object ScheduleTrackPage extends Controller {
       println(" willrogers scheduler - I should be unscheduled!")
 
      val scList = scheduler.getScheduledTracks.map(_._1).toSeq
-     val tdList = trackFactory.getAllTracks.diff(scList)
+     val tdList = trackFactory.getAllTracks.toSeq.diff(scList)
      //Ok(views.html.scheduletrack(tdList, scList)) 
      Ok(s"track "+trackName+" unscheduled")
    }

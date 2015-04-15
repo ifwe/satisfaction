@@ -233,21 +233,21 @@ case class Track(
    }
    
    
-   def listResources : Seq[Path]  = {
+   def listResources : Iterable[Path]  = {
       ///hdfs.listFiles(  resourcePath ).map( _.path.name )
      _cachedListResources.get()
    }
-   private val _cachedListResources = new CachedOne[Seq[Path]]( {
+   private val _cachedListResources = new CachedOne[Iterable[Path]]( {
      hdfs.synchronized { 
         hdfs.listFiles(  resourcePath ).map( _.path )
      }
    } )
 
-   def listLibraries : Seq[Path]  = {
+   def listLibraries : Iterable[Path]  = {
       ///hdfs.listFiles(  resourcePath ).map( _.path.name )
      _cachedListLibraries.get()
    }
-   private val _cachedListLibraries = new CachedOne[Seq[Path]]( {
+   private val _cachedListLibraries = new CachedOne[Iterable[Path]]( {
      hdfs.synchronized { 
         hdfs.listFiles(  libPath ).map( _.path )
      }

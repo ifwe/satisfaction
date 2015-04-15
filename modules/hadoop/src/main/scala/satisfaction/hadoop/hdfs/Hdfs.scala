@@ -17,6 +17,8 @@ import satisfaction.hadoop.Config._
 import org.apache.hadoop.fs.FSDataOutputStream
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.PathFilter
+import org.apache.hadoop.fs.{RemoteIterator => ApacheRemoteIterator}
+import org.apache.hadoop.fs.LocatedFileStatus
 
 /**
  *   Implement our FileSystem abstraction with 
@@ -116,23 +118,34 @@ case class Hdfs(val fsURI: String)
     	fs.getUri()
    }
    
-    override def listFiles( rootPath : Path ) : Seq[FileStatus] = {
-        fs.listStatus(  rootPath ).toSeq.map( afs => { afs : FileStatus } )
+    override def listFiles( rootPath : Path ) : Iterable[FileStatus] = {
+        ////fs.listStatus(  rootPath ).toSeq.map( afs => { afs : FileStatus } )
+      val remoteIter = fs.listFiles( rootPath, false)
+      new ApacheFileSequence( remoteIter)
     }
     
     
+    class ApacheFileIterator( remoteIterator : ApacheRemoteIterator[LocatedFileStatus] )  extends Iterator[FileStatus] {
+      
+      override def hasNext : Boolean = {
+         remoteIterator.hasNext
+      }
+      
+      override def next : FileStatus = {
+        remoteIterator.next
+      }
+    }
+    
+    //// Should have made FileSystem Iterable, not Sequence 
+    class ApacheFileSequence( remoteIterator : ApacheRemoteIterator[LocatedFileStatus]) extends Iterable[FileStatus] {
+      
+       override def iterator : Iterator[FileStatus] = { new ApacheFileIterator(remoteIterator) } 
+    }
+    
     @Override
-    override def listFilesRecursively( rootPath : Path ) : Seq[FileStatus] = {
-      val fullList : collection.mutable.Buffer[FileStatus] = new ArrayBuffer[FileStatus]
-      listFiles( rootPath).foreach( { fs : FileStatus =>
-         if( !fs.isDirectory ) {
-           fullList += fs
-         } else {
-           fullList += fs
-           fullList ++= listFilesRecursively( fs.path)
-         }
-      })
-      fullList
+    override def listFilesRecursively( rootPath : Path ) : Iterable[FileStatus] = {
+      val remoteIter = fs.listFiles( rootPath, true)
+      new ApacheFileSequence( remoteIter)
     }
     
     
@@ -142,11 +155,11 @@ case class Hdfs(val fsURI: String)
     }
     
     
-    def globFiles( rootPath : Path ) : Seq[FileStatus] = {
+    def globFiles( rootPath : Path ) : Iterable[FileStatus] = {
        fs.globStatus(rootPath).toSeq.map( afs => { afs : FileStatus })
     }
     
-    def globFilesRecursively( rootPath : Path ) : Seq[FileStatus] = {
+    def globFilesRecursively( rootPath : Path ) : Iterable[FileStatus] = {
       var fullList : collection.mutable.Buffer[FileStatus] = new ArrayBuffer[FileStatus]
       globFiles( rootPath).foreach( { fs : FileStatus =>
          if( fs.isFile ) {

@@ -17,19 +17,19 @@ import Path._
 trait FileSystem {
 
    def uri : java.net.URI
-   def listFiles( p : Path ) : Seq[FileStatus]
-   def listFilesRecursively( p : Path ) : Seq[FileStatus]
+   def listFiles( p : Path ) : Iterable[FileStatus]
+   def listFilesRecursively( p : Path ) : Iterable[FileStatus]
    
-   def listFiles( p : Path, filterFunc : PathFilter ) : Seq[FileStatus] = {
+   def listFiles( p : Path, filterFunc : PathFilter ) : Iterable[FileStatus] = {
       listFiles(p).filter( filterFunc)
    }
 
-   def listFilesRecursively( p : Path, filterFunc : PathFilter  ) : Seq[FileStatus] = {
+   def listFilesRecursively( p : Path, filterFunc : PathFilter  ) : Iterable[FileStatus] = {
       listFilesRecursively( p).filter( filterFunc)
    }
 
-   def globFiles( p: Path) : Seq[FileStatus]
-   def globFiles( p: Path,  filterFunc : PathFilter ) : Seq[FileStatus] = {
+   def globFiles( p: Path) : Iterable[FileStatus]
+   def globFiles( p: Path,  filterFunc : PathFilter ) : Iterable[FileStatus] = {
      globFiles(p).filter(filterFunc)
    }
    
