@@ -119,7 +119,11 @@ case class Hdfs(val fsURI: String)
    }
    
     override def listFiles( rootPath : Path ) : Iterable[FileStatus] = {
-      new ApacheFileSequence( rootPath, false )
+      ///new ApacheFileSequence( rootPath, false )
+        ///new Iterable[FileStatus]  {
+             ///override val iterator = { fs.listFiles( rootPath, false) }
+        ///}
+        fs.listStatus( Path2ApachePath(rootPath) ).toIterable.map(afs => { val fs : FileStatus = afs ; fs } )
     }
     
     
