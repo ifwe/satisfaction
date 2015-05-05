@@ -23,7 +23,7 @@ import com.typesafe.sbt.web.Import.WebKeys._
 
 object ApplicationBuild extends Build {
 
-  val appVersion = "2.5.11"
+  val appVersion = "2.5.12"
 
   val hiveVersion = "0.13.1"
 

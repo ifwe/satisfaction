@@ -42,7 +42,8 @@ class ProofEngine( val trackHistoryOpt : Option[TrackHistory] = None) extends  s
     /**
      *  Blocking call to satisfy Goal
      */
-    def satisfyGoalBlocking( goal: Goal, witness: Witness, duration: Duration): GoalStatus = {
+    def satisfyGoalBlocking( goal: Goal, witness: Witness, duration: FiniteDuration): GoalStatus = {
+        implicit val timeout = new Timeout(duration)
         val f = getProver(goal, witness) ? Satisfy(true)
         val response = Await.result(f, duration)
         response match {
@@ -57,9 +58,10 @@ class ProofEngine( val trackHistoryOpt : Option[TrackHistory] = None) extends  s
     }
     
     def satisfyGoal( goal: Goal, witness: Witness): Future[GoalStatus] = {
-        future {
+      implicit val timeout = new Timeout( Duration( 24, HOURS))
+      future {
             val f = getProver(goal, witness) ? Satisfy(true)
-            val response = Await.result(f, Duration(6, HOURS)) /// XXX Allow for really long jobs ... put in config somehow ..
+            val response = Await.result(f, Duration(24, HOURS)) /// XXX Allow for really long jobs ... put in config somehow ..
             response match {
                 case s: GoalSuccess =>
                     info(s" Goal ${goal.name} Was Satisfied")
@@ -69,8 +71,9 @@ class ProofEngine( val trackHistoryOpt : Option[TrackHistory] = None) extends  s
                     info(s" Goal ${goal.name} received GoalFailure ")
                     f.goalStatus
             }
-       }
+      }
     }
+
     
     def restartGoal( goal : Goal, witness: Witness ) : Future[GoalStatus] = {
        future {

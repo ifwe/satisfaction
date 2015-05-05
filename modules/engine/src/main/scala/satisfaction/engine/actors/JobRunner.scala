@@ -19,6 +19,7 @@ import org.joda.time.DateTime
 import scala.util.Success
 import scala.util.Failure
 import satisfaction.RobustRun
+import java.util.concurrent.ForkJoinPool
 
 /**
  *  JobRunner actually satisfies a goal,
@@ -32,7 +33,12 @@ class JobRunner(
     params: Witness ) extends Actor with ActorLogging {
 
   
-    implicit val executionContext : ExecutionContext = ExecutionContext.global
+    //// Create our own Thread pool for running our own jobs...
+    ////  rather then mess with the Akka or play threads
+    lazy implicit val executionContext : ExecutionContext = {
+       val pool =  new ForkJoinPool() /// Configure the ForkJoinPool
+       ExecutionContext.fromExecutor( pool)
+    }
     
     private var _messageSender: ActorRef = null
     def messageSender = _messageSender

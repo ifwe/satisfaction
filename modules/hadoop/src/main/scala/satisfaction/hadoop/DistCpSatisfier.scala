@@ -11,54 +11,37 @@ import hdfs.HdfsPath
 import hdfs.VariablePath
 import fs.FileSystem
 import fs.Path
+import Goal._
 import org.apache.hadoop.mapred.JobClient
 import org.apache.hadoop.mapred.JobStatus
 import org.apache.hadoop.mapred.RunningJob
 import org.apache.hadoop.tools.DistCpOptions
 import org.apache.hadoop.fs.{Path => ApachePath}
+import org.apache.hadoop.mapreduce.Job
 
 /**
  *  For now deprecate DistCP Satisfier, 
  *   until we get a chance to better test it ..
  */
-/***
-class DistCpSatisfier(val src: VariablePath, val dest: VariablePath)( implicit val hdfs : FileSystem , implicit val track: Track) extends Satisfier  {
+class DistCpSatisfier(val src: VariablePath, val dest: VariablePath)(implicit val track: Track) extends Satisfier with Logging  {
 
     override def name = s"DistCp $src to $dest "
 
-    var execResult : ExecutionResult = null
     var _distCp : DistCp = null
+    var _runningJob : Job = null
 
-    @Override
-    override def satisfy(projParams: Witness): ExecutionResult =  robustly {
-      true
-    }
 
-    def XXXsatisfy(projParams: Witness) :ExecutionResult =  robustly {
-          
+    def satisfy(projParams: Witness) :  ExecutionResult =  robustly {
             val srcPath: HdfsPath = src.getDataInstance(projParams).get.asInstanceOf[HdfsPath]
             val destPath: HdfsPath = dest.getDataInstance(projParams).get.asInstanceOf[HdfsPath]
            
-
-                if (srcPath.path.equals(destPath)) {
-                    true
-                } else {
-                    //// Otherwise, it seems like someone wanted the path to be overwritten
-                    //// Delete it first
-                    println(s" Deleting existing Path ${destPath.path.toUri.toString}")
-                    hdfs.delete(destPath.path)
-                    println(s"Distcp'ing ${srcPath} to ${destPath.path.toUri} ")
-
-            		val result = distcp(srcPath.path, destPath.path);
-                   	//// Does DistCp have return codes ??
-                    println(s" Result of DistCp is $result")
-                    result == 0
-                }
-
-            val result = distcp(srcPath.path, destPath.path);
-            //// Does DistCp have return codes ??
-            println(s" Result of DistCp is $result")
-            result == 0
+            if (srcPath.path.equals(destPath)) {
+                 true
+            } else {
+               val result = distcp(srcPath.path, destPath.path);
+               //// Does DistCp have return codes ??
+               info(s" Result of DistCp is $result")
+               result
             }
     } 
 
@@ -67,56 +50,43 @@ class DistCpSatisfier(val src: VariablePath, val dest: VariablePath)( implicit v
      * Determine if the job is our DistCp job
      */
     def isDistCpJob( js: JobStatus , jc: JobClient) : Boolean = {
-      /// XXX 
        val checkJob: RunningJob =  jc.getJob( js.getJobID)
        //// Figure out proper Job name
        checkJob.getJobName.toLowerCase.contains("distcp")
     }
     
     @Override 
-    override def abort() : ExecutionResult = {
-      if(_distCp != null) {
-         val jobClient = new JobClient(_distCp.getConf() )
-         val allJobs = jobClient.getAllJobs
-        allJobs.filter( isDistCpJob( _, jobClient )) foreach( js => {
-            if( js.getRunState() == JobStatus.RUNNING) {
-               println(s"Killing job ${js.getJobId}  ")
-               val checkJob: RunningJob =  jobClient.getJob( js.getJobID)
-               checkJob.killJob
-               return execResult.markFailure 
-            }
-        } )
-        ///TODO XXX Fix DistCp abort
-      
+    override def abort() : ExecutionResult = robustly {
+      if(_runningJob != null) {
+         _runningJob.killJob()
+     	 true
+      } else {
+        false
       }
-      
-       execResult.markFailure
     }
     
     
 
-    def distcp(src : Path, dest : Path): Int = {
-        val job = new JobConf();
+    def distcp(src : Path, dest : Path): Boolean = {
+        val jobConf = new JobConf( Config( track) );
 
-
-        /// Why won't my implicits get invoked ???
         val apacheSrc : ApachePath = HdfsImplicits.Path2ApachePath(src);
         val apacheDest : ApachePath = HdfsImplicits.Path2ApachePath(dest);
         ///val apacheDest : ApachePath = dest;
 
         val opts = new DistCpOptions(apacheSrc,apacheDest)
         
-        _distCp = new DistCp(job, opts);
-        val args = new Array[String](0)
-
-        ToolRunner.run(_distCp, args);
+        val distCp = new DistCp(jobConf, opts);
+        _runningJob = distCp.execute();
+        
+        
+        _runningJob.monitorAndPrintJob()
+        _runningJob.isSuccessful
     }
 
 }
 
 object DistCpGoal {
-    /// XXX Is this the correct implicit scope???
-    implicit val hdfs : FileSystem  = Hdfs.default
    
     def apply(goalName: String, src: VariablePath, dest: VariablePath )
         (implicit  track: Track): Goal = {
@@ -128,7 +98,7 @@ object DistCpGoal {
         }
         new Goal(
             name = goalName,
-            satisfier = Some(new DistCpSatisfier(src, dest)),
+            satisfierFactory = SatisfierFactory( { new DistCpSatisfier(src, dest)  } ),
             variables = srcVars,
             dependencies = Set.empty,
             evidence = Set(dest)
@@ -136,4 +106,3 @@ object DistCpGoal {
     }
 
 }
- ***/
