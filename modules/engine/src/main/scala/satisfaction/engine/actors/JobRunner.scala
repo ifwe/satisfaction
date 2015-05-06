@@ -20,6 +20,10 @@ import scala.util.Success
 import scala.util.Failure
 import satisfaction.RobustRun
 import java.util.concurrent.ForkJoinPool
+import com.typesafe.config.ConfigFactory
+import java.util.concurrent.ThreadPoolExecutor
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.ArrayBlockingQueue
 
 /**
  *  JobRunner actually satisfies a goal,
@@ -32,11 +36,21 @@ class JobRunner(
     val witness : Witness,
     params: Witness ) extends Actor with ActorLogging {
 
+    implicit val config : com.typesafe.config.Config = ConfigFactory.load()
   
     //// Create our own Thread pool for running our own jobs...
     ////  rather then mess with the Akka or play threads
     lazy implicit val executionContext : ExecutionContext = {
-       val pool =  new ForkJoinPool() /// Configure the ForkJoinPool
+       ////val pool =  new ForkJoinPool() /// Configure the ForkJoinPool
+      val numCores = Runtime.getRuntime().availableProcessors();
+      val corePoolSize = track.trackProperties.getProperty("satisfaction.jobrunner.corePoolSize", numCores.toString).toInt
+      val maxPoolSize = track.trackProperties.getProperty("satisfaction.jobrunner.maxPoolSize", (4*numCores).toString).toInt
+      val keepAliveTime = track.trackProperties.getProperty("satisfaction.jobrunner.keepAlive", "400").toLong
+      val queueSize = track.trackProperties.getProperty("satisfaction.jobrunner.queueSize", (maxPoolSize + 1).toString ).toInt
+
+      val workQueue = new ArrayBlockingQueue[Runnable](queueSize)
+        
+      val pool = new ThreadPoolExecutor(corePoolSize, maxPoolSize, keepAliveTime, TimeUnit.SECONDS , workQueue )
        ExecutionContext.fromExecutor( pool)
     }
     

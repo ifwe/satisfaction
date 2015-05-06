@@ -27,8 +27,13 @@ import com.typesafe.config.ConfigFactory
 
 class ProofEngine( val trackHistoryOpt : Option[TrackHistory] = None) extends  satisfaction.Logging{
 
-    implicit val config : com.typesafe.config.Config = ConfigFactory.load
-    implicit val akkaSystem = ActorSystem("satisfaction", config ,this.getClass.getClassLoader)
+    implicit val config : com.typesafe.config.Config = ConfigFactory.load()
+    implicit val akkaSystem : ActorSystem = {
+       val as = ActorSystem("satisfaction", config ,this.getClass.getClassLoader)
+       info(s"  Actor System = $as ; Dispatcher is ${as.dispatcher} ")
+       as
+    }
+
     val proverFactory = {
        val actorRef = akkaSystem.actorOf(Props( classOf[ProverFactory], trackHistoryOpt), "ProverFactory")
        akkaSystem.eventStream.subscribe(actorRef, classOf[DeadLetter])
