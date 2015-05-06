@@ -49,7 +49,6 @@ class HadoopJobProgress( val hadoopJob : RunningJob ) extends ProgressCounter {
      *    that we don't say 0% before mappers have started,
      *    and we don't say 100% right after reducers have completed.
      */
-    @Override
     override def progressPercent = {
         hadoopJob.mapProgress*0.45 + hadoopJob.reduceProgress*0.45 + 
         hadoopJob.setupProgress*0.05 + hadoopJob.cleanupProgress*0.05
@@ -59,7 +58,6 @@ class HadoopJobProgress( val hadoopJob : RunningJob ) extends ProgressCounter {
     /**
      *  Include a bunch of counters, so that more accurate progress may be measured ..
      */
-    @Override
     override def progressUnits : MetricsCollection= {
       /// XXX TODO.. filter out only the counters we care about 
       /// XXX Make scala wrapper around hadoop counters ...

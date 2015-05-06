@@ -55,7 +55,6 @@ class DistCpSatisfier(val src: VariablePath, val dest: VariablePath)(implicit va
        checkJob.getJobName.toLowerCase.contains("distcp")
     }
     
-    @Override 
     override def abort() : ExecutionResult = robustly {
       if(_runningJob != null) {
          _runningJob.killJob()
@@ -64,7 +63,6 @@ class DistCpSatisfier(val src: VariablePath, val dest: VariablePath)(implicit va
         false
       }
     }
-    
     
 
     def distcp(src : Path, dest : Path): Boolean = {
