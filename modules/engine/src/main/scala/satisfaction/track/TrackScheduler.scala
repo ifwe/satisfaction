@@ -72,6 +72,8 @@ class TrackScheduler( val proofEngine : ProofEngine ) extends Logging  {
               case GoalState.Aborted => {
                 return false
               }
+              case _ => { //// Do nothing 
+              }
             }
          })
          true
