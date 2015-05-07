@@ -86,7 +86,10 @@ object HiveDriver extends Logging {
       val auxJarFiles : Iterable[Path] =  track.trackProperties.get( Variable("satisfaction.track.hive.aux.jars.path") ) match {
         case Some("none") => { Iterable[Path]() } 
         case Some( auxJarsString)  => {
-            auxJarsString.split(",").map( track.libPath / _ )
+            val prefixes = auxJarsString.split(",").toSet
+            track.listLibraries.filter( lb => {
+               prefixes.exists(  pre => { lb.name.startsWith( if(pre.endsWith(".jar")) { pre } else { pre + "-" } ) } )
+            })
         }
         case None =>  { track.listLibraries }
       }
@@ -239,7 +242,6 @@ object HiveDriver extends Logging {
           throw new RuntimeException(s" LocalDriver $hiveLocalDriver really isn't a Hive Driver !!!!")
         }
       }
-
     } catch {
       case e: Exception =>
         e.printStackTrace(System.out)
