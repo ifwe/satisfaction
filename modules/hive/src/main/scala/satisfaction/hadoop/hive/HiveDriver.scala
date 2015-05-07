@@ -81,9 +81,31 @@ object HiveDriver extends Logging {
      
       info( s" Track libPath is ${track.libPath}")
       info( s" Track resourcePath is ${track.resourcePath}")
-      val urls =  track.listLibraries 
-      val resources =  track.listResources
-      val exportFiles = ( urls ++ resources)
+      //// Allow tracks to specify which classes to export to distributed cache 
+      ///   so that whole dependency tree doe
+      val auxJarFiles : Iterable[Path] =  track.trackProperties.get( Variable("satisfaction.track.hive.aux.jars.path") ) match {
+        case Some("none") => { Iterable[Path]() } 
+        case Some( auxJarsString)  => {
+            auxJarsString.split(",").map( track.libPath / _ )
+        }
+        case None =>  { track.listLibraries }
+      }
+      val resources : Iterable[Path] =  track.trackProperties.get( Variable("satisfaction.track.hive.resources") ) match {
+        case Some("none") => { Iterable[Path]() } 
+        case Some( resourcesString)  => {
+          info(s" Found property satisfaction.track.hive.resources $resourcesString ")
+          resourcesString.split(",").map( track.resourcePath / _ )
+        }
+        case None => { track.listResources  } //// Explicitly set auxJars in track 
+      }
+      
+      ///// Which jars do we need for Hive ?
+      val hivePrefixes = List[String]("hive-shim" , "hive-common", "hive-exec" )
+      val hiveDependencies : Iterable[Path] = track.listLibraries.filter( { lib => { { hivePrefixes.exists( pre => {  lib.name.startsWith(pre)  } ) } } }  )
+      info(s" Using Hive Jars ${hiveDependencies.mkString(" ")} ")
+      
+      val distribCacheFiles = ( auxJarFiles ++ resources ++ hiveDependencies )
+      val exportFiles = ( track.listLibraries ++ track.listResources )
       
       val isolateFlag = track.trackProperties.getProperty("satisfaction.classloader.isolate","true").toBoolean
       val urlClassLoader = if( isolateFlag) {
@@ -181,13 +203,13 @@ object HiveDriver extends Logging {
       }
       
 
-      val auxJarPath = exportFiles.map( _.toUri.toString ).mkString(",")
+      val auxJarPath = distribCacheFiles.map( _.toUri.toString ).mkString(",")
       
       info(" Using AuxJarPath " + auxJarPath)
       hiveConf.setAuxJars( auxJarPath)
       hiveConf.set("hive.aux.jars.path", auxJarPath)
       hiveConf.setClassLoader(urlClassLoader)
-
+      
       //// XXX Move to Scala reflection ...
       info( "Instantiating HiveLocalDriver")
       //// XXX Specify as track property ..

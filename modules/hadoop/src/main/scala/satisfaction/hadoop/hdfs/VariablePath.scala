@@ -8,7 +8,7 @@ case class VariablePath(pathTemplate: String, checkMarked : Boolean , minSize : 
       extends DataOutput with Logging {
 
     def variables = {
-        Substituter.findVariablesInString(pathTemplate).map (Variable(_))
+        Substituter.findVariablesInString(pathTemplate).map (Variable(_)).distinct
     }
 
     def exists(witness: Witness): Boolean = {
