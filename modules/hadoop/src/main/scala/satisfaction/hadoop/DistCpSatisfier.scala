@@ -18,6 +18,7 @@ import org.apache.hadoop.mapred.RunningJob
 import org.apache.hadoop.tools.DistCpOptions
 import org.apache.hadoop.fs.{Path => ApachePath}
 import org.apache.hadoop.mapreduce.Job
+import collection.JavaConversions._
 
 /**
  *  For now deprecate DistCP Satisfier, 
@@ -72,7 +73,7 @@ class DistCpSatisfier(val src: VariablePath, val dest: VariablePath)(implicit va
         val apacheDest : ApachePath = HdfsImplicits.Path2ApachePath(dest);
         ///val apacheDest : ApachePath = dest;
 
-        val opts = new DistCpOptions(apacheSrc,apacheDest)
+        val opts = new DistCpOptions(List[ApachePath]( apacheSrc),apacheDest)
         
         val distCp = new DistCp(jobConf, opts);
         _runningJob = distCp.execute();

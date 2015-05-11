@@ -251,9 +251,9 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config, cl
         }
       }
       
-      val hdfsURI = "hdfs://.*".r
-      val fileURI = "file://.*".r
-      val absoluteFile = "/.*".r
+      val hdfsURI = """^hdfs://(.+)""".r
+      val fileURI = """"^file://(.+)""".r
+      val absoluteFile = "^/(.*)".r
       val filename : String = {
         resource match {
           case hdfsURI(uri) => {
