@@ -91,10 +91,7 @@ object DistCpGoal {
         (implicit  track: Track): Goal = {
         val srcVars = src.variables
         val destVars = dest.variables
-        ////  Add check  that  vars are the same 
-        if (srcVars.size != destVars.size) {
-            throw new IllegalArgumentException("Paths must have same variables")
-        }
+
         new Goal(
             name = goalName,
             satisfierFactory = SatisfierFactory( { new DistCpSatisfier(src, dest)  } ),
