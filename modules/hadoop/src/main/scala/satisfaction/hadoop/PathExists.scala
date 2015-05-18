@@ -6,12 +6,15 @@ import satisfaction.hadoop.hdfs.VariablePath
 import satisfaction.ExecutionResult
 import satisfaction.fs.FileSystem
 import satisfaction.Witness
+import satisfaction.fs.Path
+import satisfaction.Goal
+import satisfaction.Track
 
 /**
  *  Asssert that a Path actually exists on a filesystem
  *  
  */
-class PathExists( varPath :  VariablePath )  extends Satisfier {
+class PathExistsSatisfier( varPath :  VariablePath )  extends Satisfier {
 
     def name : String = s"PathExists(${varPath.pathTemplate})"
 
@@ -34,4 +37,16 @@ class PathExists( varPath :  VariablePath )  extends Satisfier {
     def abort() : ExecutionResult = robustly { true }
     
 
+}
+
+object PathExists {
+   
+   def apply( pth : VariablePath )(implicit track : Track)  : Goal = {
+       new Goal(
+           name=s"PathExists(${pth.pathTemplate})",
+           satisfierFactory= Goal.SatisfierFactory( { new PathExistsSatisfier( pth) } ),
+           variables = pth.variables
+       )
+   }
+  
 }

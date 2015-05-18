@@ -207,6 +207,19 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config, cl
           error(" Unexpected error trying to clean threadLocal cloningQueryPlanKryo " , unexpected)
         } 
       }
+      
+      try {
+         info(" Calling HConnectionManager.deleteAllConnections() ")
+         val thisClassLoader = this.getClass().getClassLoader
+         val hconnectionClass =   thisClassLoader.loadClass("org.apache.hadoop.hbase.client.HConnectionManager")
+         
+         val shutdownMeth = hconnectionClass.getDeclaredMethod("deleteAllConnections")
+         shutdownMeth.invoke( null)
+      } catch {
+        case unexpected : Throwable => {
+          error(" Unexpected error trying to shutdown HBase Connections " , unexpected)
+        }
+      }
 
 
       try {

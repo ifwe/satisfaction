@@ -173,7 +173,7 @@ class TrackScheduler( val proofEngine : ProofEngine ) extends Logging  {
    		          w + VariableAssignment( v.name , varVal)
      	        }
      	        case None => {
-     	          throw new IllegalStateException("Unable to get value for variable ${v.name} ")
+     	          throw new IllegalStateException(s"Unable to get value for variable ${v.name} ")
      	       }
      	     }
           }
