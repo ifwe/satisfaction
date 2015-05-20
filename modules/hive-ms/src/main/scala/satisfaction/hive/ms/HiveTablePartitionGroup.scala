@@ -21,6 +21,20 @@ case class HiveTablePartitionGroup(
     ( implicit val ms : MetaStore,
       implicit val hdfs : FileSystem ) extends HiveDataOutput {
 
+    override def toString() = {
+      val tblPart = s"HiveTable(${dbName}.${tblName})"
+      val groupingPart = grouping.map( _.name).mkString("_")
+      val varPart = s"Vars(${groupingPart})"
+      val partitionPart = requiredPartitions match {
+        case Some(parts) =>{
+          val mkVa = parts.map( va =>  s"${va.variable.name}=${va.value}" ).mkString("_")
+          s"Partitions(${mkVa})"
+        }
+        case None => ""
+      }
+      
+      s"${tblPart}_${varPart}_${partitionPart}"
+    }
 
     override def variables : List[Variable[_]] = {
         grouping

@@ -60,5 +60,9 @@ case class HivePartitionSet(
        partitionSet.forall( _.isMarkedCompleted ) 
     }
   
+    override def toString() = {
+       val partitionStr  = partitionSet.mkString("_")
+       s"HivePartitionSet!_${partitionStr}_!" 
+    }
 
 }

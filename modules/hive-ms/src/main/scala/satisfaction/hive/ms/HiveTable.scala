@@ -28,7 +28,10 @@ case class HiveTable (
 
     
     val checkMarkedComplete = true
-    
+   
+    override def toString() = {
+      s"HiveTable(${dbName}.${tblName})"
+    }
     
     private lazy val _hiveTable : ApacheTable =   ms.getTableByName(dbName, tblName) 
 
