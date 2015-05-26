@@ -23,7 +23,7 @@ import com.typesafe.sbt.web.Import.WebKeys._
 
 object ApplicationBuild extends Build {
 
-  val appVersion = "2.5.15"
+  val appVersion = "2.6.0"
 
   val hiveVersion = "0.13.1"
 
@@ -188,13 +188,13 @@ export HADOOP_HOME=/usr/lib/hadoop
 
 
   def hadoopDependencies = Seq(
-	  ("org.apache.hadoop" % "hadoop-common" % "2.3.0"),
-	  ("org.apache.hadoop" % "hadoop-hdfs" % "2.3.0"),
-	  ("org.apache.hadoop" % "hadoop-mapreduce-client-app" % "2.3.0"),
-	  ("org.apache.hadoop" % "hadoop-mapreduce-client-common" % "2.3.0"),
-	  ("org.apache.hadoop" % "hadoop-mapreduce-client-core" % "2.3.0"),
-	  ("org.apache.hadoop" % "hadoop-mapreduce-client-jobclient" % "2.3.0"),
-	  ("org.apache.hadoop" % "hadoop-distcp" % "2.3.0"),
+	  ("org.apache.hadoop" % "hadoop-common" % "2.6.0"),
+	  ("org.apache.hadoop" % "hadoop-hdfs" % "2.6.0"),
+	  ("org.apache.hadoop" % "hadoop-mapreduce-client-app" % "2.6.0"),
+	  ("org.apache.hadoop" % "hadoop-mapreduce-client-common" % "2.6.0"),
+	  ("org.apache.hadoop" % "hadoop-mapreduce-client-core" % "2.6.0"),
+	  ("org.apache.hadoop" % "hadoop-mapreduce-client-jobclient" % "2.6.0"),
+	  ("org.apache.hadoop" % "hadoop-distcp" % "2.6.0"),
 	  ("org.hamcrest" % "hamcrest-core" % "1.3"  ) ,
           ("ch.qos.logback" % "logback-classic" % "1.0.13" ),
           ("org.slf4j" % "log4j-over-slf4j" % "1.7.7" )
