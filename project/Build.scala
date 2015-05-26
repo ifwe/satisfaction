@@ -160,8 +160,8 @@ fi"""),
 
     rpmPost := Option("""
 export JAVA_HOME=/usr/java/default
-export HADOOP_CONF_DIR=/etc/hadoop/conf
-export HADOOP_HOME=/usr/lib/hadoop
+export HADOOP_CONF_DIR=/usr/hdp/current/hadoop-client/etc/hadoop
+export HADOOP_HOME=/usr/hdp/current/hadoop-client 
 
 """)
 
