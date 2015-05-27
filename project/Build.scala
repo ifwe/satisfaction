@@ -205,8 +205,9 @@ export HIVE_CONF_DIR=/usr/hdp/current/hive-client/conf
 	.excluding("junit","junit")
 	.excluding("log4j", "log4j")
         .excluding("org.slf4j","slf4j-log4j12")
-        .excludingGroup("org.mortbay.jetty")
-        .excludingGroup("org.jboss.netty" ) ++ testDependencies 
+        .excluding("org.mortbay.jetty","jetty")
+        .excluding("org.mortbay.jetty","jetty-util")
+        .excluding("org.jboss.netty", "netty" ) ++ testDependencies 
 
   def coreDependencies = Seq(
     ("org.slf4j" % "slf4j-api" % "1.7.7"),
@@ -229,6 +230,8 @@ export HIVE_CONF_DIR=/usr/hdp/current/hive-client/conf
 	  ("org.apache.calcite" % "calcite-avatica" % "0.9.1-incubating"),
 	  ("org.apache.thrift" % "libfb303" % "0.7.0")
   ).excluding( "log4j", "log4j" ).excluding("org.slf4j", "slf4j-log4j12")
+   .excluding("org.mortbay.jetty", "jetty")
+   .excluding("org.mortbay.jetty", "jetty-util")
    .excluding("org.jboss.netty", "netty")
    .excluding("org.pentaho", "pentaho-aggdesigner-algorithm")
 
@@ -248,7 +251,9 @@ export HIVE_CONF_DIR=/usr/hdp/current/hive-client/conf
 	  ("org.antlr" % "antlr-runtime" % "3.4" )
   ).excluding("org.slf4j", "slf4j-log4j12")
    .excluding("org.jboss.netty", "netty") 
-   .excludingGroup("org.jboss.netty")  ++ metastoreDependencies ++ testDependencies
+   .excluding("org.mortbay.jetty", "jetty")
+   .excluding("org.mortbay.jetty", "jetty-util")
+    ++ metastoreDependencies ++ testDependencies
 
 
   def engineDependencies = Seq(
