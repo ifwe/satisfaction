@@ -23,9 +23,9 @@ import com.typesafe.sbt.web.Import.WebKeys._
 
 object ApplicationBuild extends Build {
 
-  val appVersion = "2.6.0"
+  val appVersion = "2.6.1"
 
-  val hiveVersion = "0.13.1"
+  val hiveVersion = "0.14.0"
 
   val core = Project(
       "satisfaction-core",
@@ -162,6 +162,7 @@ fi"""),
 export JAVA_HOME=/usr/java/default
 export HADOOP_CONF_DIR=/usr/hdp/current/hadoop-client/etc/hadoop
 export HADOOP_HOME=/usr/hdp/current/hadoop-client 
+export HIVE_CONF_DIR=/usr/hdp/current/hive-client/conf
 
 """)
 
@@ -221,9 +222,12 @@ export HADOOP_HOME=/usr/hdp/current/hadoop-client
 	  ("org.apache.hive" % "hive-metastore" % hiveVersion),
 	  ("org.apache.hive" % "hive-serde" % hiveVersion),
 	  ("org.apache.hive" % "hive-exec" % hiveVersion),
+	  ("org.apache.calcite" % "calcite-core" % "1.2.0-incubating"),
+	  ("org.apache.calcite" % "calcite-avatica" % "1.2.0-incubating"),
 	  ("org.apache.thrift" % "libfb303" % "0.7.0")
   ).excluding( "log4j", "log4j" ).excluding("org.slf4j", "slf4j-log4j12")
    .excluding("org.jboss.netty", "netty")
+   .excluding("org.pentaho", "pentaho-aggdesigner-algorithm")
 
   def hiveDependencies = Seq(
 	  ("org.apache.hive" % "hive-common" % hiveVersion),
@@ -235,6 +239,8 @@ export HADOOP_HOME=/usr/hdp/current/hadoop-client
 	  ("org.apache.hive" % "hive-hbase-handler" % hiveVersion),
 	  ("org.apache.hive" % "hive-jdbc" % hiveVersion),
 	  ("org.apache.hive" % "hive-service" % hiveVersion ),
+	  ("org.apache.calcite" % "calcite-core" % "0.9.2"),
+	  ("org.apache.calcite" % "calcite-avatica" % "0.9.2"),
 	  ("org.apache.thrift" % "libfb303" % "0.7.0" ),
 	  ("org.antlr" % "antlr-runtime" % "3.4" )
   ).excluding("org.slf4j", "slf4j-log4j12")
