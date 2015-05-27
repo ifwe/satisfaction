@@ -252,8 +252,7 @@ export HIVE_CONF_DIR=/usr/hdp/current/hive-client/conf
   ).excluding("org.slf4j", "slf4j-log4j12")
    .excluding("org.jboss.netty", "netty") 
    .excluding("org.mortbay.jetty", "jetty")
-   .excluding("org.mortbay.jetty", "jetty-util")
-    ++ metastoreDependencies ++ testDependencies
+   .excluding("org.mortbay.jetty", "jetty-util") ++ metastoreDependencies ++ testDependencies
 
 
   def engineDependencies = Seq(
