@@ -23,9 +23,11 @@ import com.typesafe.sbt.web.Import.WebKeys._
 
 object ApplicationBuild extends Build {
 
-  val appVersion = "2.5.10"
+  val appVersion = "2.6.2"
 
-  val hiveVersion = "0.13.1"
+  val hiveVersion = "0.14.0.2.2.4.2-2"
+
+  val hadoopVersion = "2.6.0.2.2.4.2-2"
 
   val core = Project(
       "satisfaction-core",
@@ -160,8 +162,9 @@ fi"""),
 
     rpmPost := Option("""
 export JAVA_HOME=/usr/java/default
-export HADOOP_CONF_DIR=/etc/hadoop/conf
-export HADOOP_HOME=/usr/lib/hadoop
+export HADOOP_CONF_DIR=/usr/hdp/current/hadoop-client/etc/hadoop
+export HADOOP_HOME=/usr/hdp/current/hadoop-client 
+export HIVE_CONF_DIR=/usr/hdp/current/hive-client/conf
 
 """)
 
@@ -188,13 +191,13 @@ export HADOOP_HOME=/usr/lib/hadoop
 
 
   def hadoopDependencies = Seq(
-	  ("org.apache.hadoop" % "hadoop-common" % "2.3.0"),
-	  ("org.apache.hadoop" % "hadoop-hdfs" % "2.3.0"),
-	  ("org.apache.hadoop" % "hadoop-mapreduce-client-app" % "2.3.0"),
-	  ("org.apache.hadoop" % "hadoop-mapreduce-client-common" % "2.3.0"),
-	  ("org.apache.hadoop" % "hadoop-mapreduce-client-core" % "2.3.0"),
-	  ("org.apache.hadoop" % "hadoop-mapreduce-client-jobclient" % "2.3.0"),
-	  ("org.apache.hadoop" % "hadoop-distcp" % "2.3.0"),
+	  ("org.apache.hadoop" % "hadoop-common" % hadoopVersion),
+	  ("org.apache.hadoop" % "hadoop-hdfs" % hadoopVersion),
+	  ("org.apache.hadoop" % "hadoop-mapreduce-client-app" % hadoopVersion),
+	  ("org.apache.hadoop" % "hadoop-mapreduce-client-common" % hadoopVersion),
+	  ("org.apache.hadoop" % "hadoop-mapreduce-client-core" % hadoopVersion),
+	  ("org.apache.hadoop" % "hadoop-mapreduce-client-jobclient" % hadoopVersion),
+	  ("org.apache.hadoop" % "hadoop-distcp" % hadoopVersion),
 	  ("org.hamcrest" % "hamcrest-core" % "1.3"  ) ,
           ("ch.qos.logback" % "logback-classic" % "1.0.13" ),
           ("org.slf4j" % "log4j-over-slf4j" % "1.7.7" )
@@ -202,7 +205,9 @@ export HADOOP_HOME=/usr/lib/hadoop
 	.excluding("junit","junit")
 	.excluding("log4j", "log4j")
         .excluding("org.slf4j","slf4j-log4j12")
-        .excludingGroup("org.jboss.netty" ) ++ testDependencies 
+        .excluding("org.mortbay.jetty","jetty")
+        .excluding("org.mortbay.jetty","jetty-util")
+        .excluding("org.jboss.netty", "netty" ) ++ testDependencies 
 
   def coreDependencies = Seq(
     ("org.slf4j" % "slf4j-api" % "1.7.7"),
@@ -212,8 +217,8 @@ export HADOOP_HOME=/usr/lib/hadoop
   ) ++ testDependencies 
 
   def jsonDependencies = Seq(
-   ("org.json4s" %% "json4s-jackson" % "3.2.9" )
- )
+    ("org.json4s" %% "json4s-jackson" % "3.2.9" )
+  )
 
   def metastoreDependencies = Seq(
 	  ("org.apache.hive" % "hive-common" % hiveVersion),
@@ -221,9 +226,14 @@ export HADOOP_HOME=/usr/lib/hadoop
 	  ("org.apache.hive" % "hive-metastore" % hiveVersion),
 	  ("org.apache.hive" % "hive-serde" % hiveVersion),
 	  ("org.apache.hive" % "hive-exec" % hiveVersion),
+	  ("org.apache.calcite" % "calcite-core" % "0.9.1-incubating"),
+	  ("org.apache.calcite" % "calcite-avatica" % "0.9.1-incubating"),
 	  ("org.apache.thrift" % "libfb303" % "0.7.0")
   ).excluding( "log4j", "log4j" ).excluding("org.slf4j", "slf4j-log4j12")
+   .excluding("org.mortbay.jetty", "jetty")
+   .excluding("org.mortbay.jetty", "jetty-util")
    .excluding("org.jboss.netty", "netty")
+   .excluding("org.pentaho", "pentaho-aggdesigner-algorithm")
 
   def hiveDependencies = Seq(
 	  ("org.apache.hive" % "hive-common" % hiveVersion),
@@ -235,11 +245,14 @@ export HADOOP_HOME=/usr/lib/hadoop
 	  ("org.apache.hive" % "hive-hbase-handler" % hiveVersion),
 	  ("org.apache.hive" % "hive-jdbc" % hiveVersion),
 	  ("org.apache.hive" % "hive-service" % hiveVersion ),
+	  ////("org.apache.calcite" % "calcite-core" % "0.9.1-incubating"),
+	  /////("org.apache.calcite" % "calcite-avatica" % "0.9.1-incubating"),
 	  ("org.apache.thrift" % "libfb303" % "0.7.0" ),
 	  ("org.antlr" % "antlr-runtime" % "3.4" )
   ).excluding("org.slf4j", "slf4j-log4j12")
    .excluding("org.jboss.netty", "netty") 
-   .excludingGroup("org.jboss.netty")  ++ metastoreDependencies ++ testDependencies
+   .excluding("org.mortbay.jetty", "jetty")
+   .excluding("org.mortbay.jetty", "jetty-util") ++ metastoreDependencies ++ testDependencies
 
 
   def engineDependencies = Seq(
@@ -257,6 +270,8 @@ export HADOOP_HOME=/usr/lib/hadoop
 
   def Resolvers = resolvers ++= Seq(
       "artifactory.tagged.com" at "https://artifactory.tagged.com/artifactory/repo",
+      "HortonWorks Releases" at "http://repo.hortonworks.com/content/repositories/releases/",
+      "ConJars.org" at "http://conjars.org/repo",
       "snapshots" at "http://oss.sonatype.org/content/repositories/snapshots",
       "releases"  at "http://oss.sonatype.org/content/repositories/releases",
       "Typesafe repository" at "http://repo.typesafe.com/typesafe/releases/",

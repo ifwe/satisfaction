@@ -19,6 +19,11 @@ import org.joda.time.DateTime
 import scala.util.Success
 import scala.util.Failure
 import satisfaction.RobustRun
+import java.util.concurrent.ForkJoinPool
+import com.typesafe.config.ConfigFactory
+import java.util.concurrent.ThreadPoolExecutor
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.ArrayBlockingQueue
 
 /**
  *  JobRunner actually satisfies a goal,
@@ -32,7 +37,11 @@ class JobRunner(
     params: Witness ) extends Actor with ActorLogging {
 
   
-    implicit val executionContext : ExecutionContext = ExecutionContext.global
+    //// Create our own Thread pool for running our own jobs...
+    ////  rather then mess with the Akka or play threads
+    lazy implicit val executionContext : ExecutionContext = {
+       JobRunner.executorPool( track.trackProperties)
+    }
     
     private var _messageSender: ActorRef = null
     def messageSender = _messageSender
@@ -212,6 +221,24 @@ object JobRunner {
        }
        Thread.currentThread.setContextClassLoader(thClBefore)
        res
+    }
+    
+    
+   private var _globalPool : ExecutionContext = null
+   def  executorPool( properties : java.util.Properties) : ExecutionContext = {
+      if( _globalPool == null) {
+          val numCores = Runtime.getRuntime().availableProcessors();
+          val corePoolSize = properties.getProperty("satisfaction.jobrunner.corePoolSize", numCores.toString).toInt
+          val maxPoolSize = properties.getProperty("satisfaction.jobrunner.maxPoolSize", (4*numCores).toString).toInt
+          val keepAliveTime = properties.getProperty("satisfaction.jobrunner.keepAlive", "400").toLong
+          val queueSize = properties.getProperty("satisfaction.jobrunner.queueSize", (maxPoolSize + 1).toString ).toInt
+
+          val workQueue = new ArrayBlockingQueue[Runnable](queueSize)
+        
+          val pool = new ThreadPoolExecutor(corePoolSize, maxPoolSize, keepAliveTime, TimeUnit.SECONDS , workQueue )
+          _globalPool = ExecutionContext.fromExecutor( pool)
+      }
+      _globalPool
     }
   
 }

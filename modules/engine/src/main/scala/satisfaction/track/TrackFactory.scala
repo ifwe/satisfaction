@@ -11,8 +11,11 @@ import satisfaction.engine.actors.JobRunner
 
 /**
  *  Class for Executor to access deployed Tracks (i.e Projects)
+<<<<<<< HEAD
+=======
   class TracksUnavailableException( exc : Throwable ) extends RuntimeException
   class TracksUnavailableException( exc : Throwable ) extends RuntimeException
+>>>>>>> 133b57614f6c29c04c8e4fce1bc88320ef1adfbe
  *  
  *  Tracks are deployed in a well-defined directory on HDFS,
  *  where the Track Name is defined as a path relative to a 
@@ -44,14 +47,6 @@ case class TrackFactory(val trackFS : FileSystem,
      } 
  }
   
- /**
-  *  Monitor the memory usage, and die 
-  *  when we have exhausted all of the PermGen space
-  */
- val initPoisonPill = {
-   PoisonPill()
- } 
-   
  private val _trackMap : collection.mutable.Map[TrackDescriptor,Track] = collection.mutable.HashMap[TrackDescriptor,Track]()
  def trackMap : collection.immutable.Map[TrackDescriptor,Track] =  _trackMap.toMap
   
@@ -87,19 +82,24 @@ case class TrackFactory(val trackFS : FileSystem,
        }
      }
    } 
+   
+   def release() = {
+      _cached = None 
+      _lastAccessed = System.currentTimeMillis()
+   }
 }
    
    /** 
     *  Get all the tracks which have been deployed to HDFS under the
     *   Satisfaction base track path.
     */
-   def getAllTracks : Seq[TrackDescriptor] = {
+   def getAllTracks : Iterable[TrackDescriptor] = {
       _cachedAllTracks.get
    }
    
    private val _cachedAllTracks = new Cacheable( 60*1000*30, _getAllTracks )
    
-   private def _getAllTracks() : Seq[TrackDescriptor] = {
+   private def _getAllTracks() : Iterable[TrackDescriptor] = {
      try {
       val trackRoot : Path =  baseTrackPath / "track" 
       
@@ -115,6 +115,37 @@ case class TrackFactory(val trackFS : FileSystem,
          throw new TrackFactory.TracksUnavailableException( exc);
        }
      }
+   }
+   
+   /**
+    *  For now just
+    */
+   def refreshAllTracks() = {
+      _cachedAllTracks.release()
+      _trackMap.clear()
+   }
+   
+   def refreshTrack( trackDesc : TrackDescriptor ) : Track = {
+     //// Remove the Track from the mutable Map 
+      val findCurrentTrack : Option[TrackDescriptor] = _trackMap.seq.collectFirst({ case(td : TrackDescriptor, tr : Track) if
+           td.trackName == trackDesc.trackName && td.variant == trackDesc.variant &&
+             td.forUser == trackDesc.forUser => {  td  } } )
+      findCurrentTrack match {
+        case Some(td) => {
+           info(s" Removing Previous Track ${td.trackName} with Version ${td.version} ")
+           _trackMap.remove(td)   
+        }
+        case None => {
+          info(s" No Previous track ${trackDesc.trackName} found ")
+        }
+        
+      }
+
+      _cachedAllTracks.release()
+       val latestTD = getAllTracks.filter( _.equalsWoVersion(trackDesc)  ).
+           toList.sortWith( versionSort )(0)
+     
+      getTrack( latestTD ).get
    }
   
    def getLatestTracks : Seq[TrackDescriptor] = {

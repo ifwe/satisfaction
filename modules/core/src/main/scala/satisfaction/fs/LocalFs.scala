@@ -9,8 +9,12 @@ import org.joda.time.DateTime
  *  
  *  XXX Add unit tests for local file operations 
  */
-case class LocalFileSystem() extends FileSystem {
+case class LocalFileSystem( val nfs : java.nio.file.FileSystem  = java.nio.file.FileSystems.getDefault) extends FileSystem {
   
+  def this()  = {
+     this( java.nio.file.FileSystems.getDefault) 
+  }
+
   case class LocalFStatus( file : java.io.File ) extends FileStatus {
       
     override def size : Long = {
@@ -81,6 +85,11 @@ case class LocalFileSystem() extends FileSystem {
        } ).flatten
    }
    
+   override def globFiles( p: Path) : Seq[FileStatus] = {
+      val pathMatcher =  nfs.getPathMatcher( p.toString ) 
+       null
+   }
+   
    override def mkdirs( p : Path ) : Boolean = {
      (p).mkdirs
    }
@@ -124,7 +133,7 @@ case class LocalFileSystem() extends FileSystem {
 
 }
 
-object LocalFileSystem extends LocalFileSystem  {
+object LocalFileSystem extends LocalFileSystem( java.nio.file.FileSystems.getDefault)  {
    def currentDirectory : Path = {
       new Path( System.getProperty("user.dir"))
    } 

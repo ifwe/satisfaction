@@ -29,17 +29,21 @@ trait TemporalVariable { self : Variable[String] =>
     
     lazy val formatter : DateTimeFormatter = DateTimeFormat.forPattern( formatString)
     
-    {
-       TemporalVariable.register( this)
-    }
-    
-    	
 }
     
  object TemporalVariable {
     import Temporal._
     
     private val _tvMap : scala.collection.mutable.Map[String,TemporalVariable]  =  scala.collection.mutable.HashMap.empty
+    
+    
+    val registered = {
+        register( Dt) 
+        register( Hour) 
+        register( Date) 
+        register( Minute) 
+        register( StartTime) 
+    }
 
     def register( tv :TemporalVariable ) = {
       _tvMap.put(tv.asInstanceOf[Variable[_]].name, tv)
@@ -48,7 +52,7 @@ trait TemporalVariable { self : Variable[String] =>
     def isTemporalVariable( v : Variable[_] ) : Option[TemporalVariable] = {
       v match {
         case tv : TemporalVariable => Some(tv) 
-        case vStr : Variable[String] => _tvMap.get( vStr.name)
+        case vStr : Variable[_] => _tvMap.get( vStr.name)
         case _ => None
       }
     }
@@ -57,10 +61,11 @@ trait TemporalVariable { self : Variable[String] =>
     object Dt extends Variable[String]("dt", classOf[String], Some("Daily Frequency")) with TemporalVariable {
        override val formatString =  dailyFormat
        override val frequency =   dailyPeriod
+        
     }
 
     /// Alternative Daily Frequency VAr
-    object Date extends Variable[String]("date", classOf[String], Some("Alternative Daily Frequency Varr")) with TemporalVariable {
+    object Date extends Variable[String]("date", classOf[String], Some("Alternative Daily Frequency Var")) with TemporalVariable {
        override val formatString =  dailyFormat
        override val frequency = dailyPeriod
     }

@@ -27,6 +27,7 @@ GET     /logwindow/:trackName/:goalName/:varString                   willrogers.
 GET     /rawlog/:trackName/:goalName/:varString                   willrogers.controllers.SatisfyGoalPage.rawLog(trackName: String, goalName: String, varString : String)
 GET     /restart/:trackName/:goalName/:varString                   willrogers.controllers.SatisfyGoalPage.restartJob(trackName: String, goalName: String, varString : String)
 GET     /abort/:trackName/:goalName/:varString                   willrogers.controllers.SatisfyGoalPage.abortJob(trackName: String, goalName: String, varString : String)
+GET		/refreshTrack/:trackName										willrogers.controllers.ProjectPage.refreshTrack(trackName: String)
 
 POST	/scheduletrack/:trackName/:forUser/:version										willrogers.controllers.ScheduleTrackPage.scheduleTrack(trackName: String, forUser: String, version: String)
 GET		/unscheduleonejob/:trackName/:forUser/:version						willrogers.controllers.ScheduleTrackPage.unscheduleOneTrack(trackName: String, forUser:String, version:String)

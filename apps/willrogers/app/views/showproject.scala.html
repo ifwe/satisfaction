@@ -10,7 +10,7 @@
 
 
 
-@main( s"Track ${trackDesc.trackName} ") {
+@main(s"Track ${trackDesc.trackName} ") {
 	
 <h1>Track @trackDesc.trackName  </h1>
   
@@ -39,6 +39,8 @@
     
     
     </tr>
+    <tr><td>Refresh Track</td>
+    <td> <button id="refreshTrackButton" onClick="window.location.href='/refreshTrack/@helper.urlEncode(trackDesc.trackName)'">Refresh</button></td></tr>
  </table>    
  
 <div id ="trackInfo@trackDesc.trackName">
@@ -137,4 +139,4 @@
  </script>
 
  
-	}
+}

@@ -50,7 +50,34 @@ class TrackScheduler( val proofEngine : ProofEngine ) extends Logging  {
      val runningForTrack = track.topLevelGoals.filter(goal => proofEngine.getStatus(goal, witness).canChange)
      !runningForTrack.isEmpty
       */
-     
+      val goalsInProgress = proofEngine.getGoalsInProgress.filter(running => track.topLevelGoals.map(_.name).contains(running.goalName))
+      if( goalsInProgress.isEmpty) {
+         false  
+      } else {
+         goalsInProgress.foreach( goal => {
+            //// If the job died, it may still have actors
+            goal.state match {
+              case GoalState.Failed => {
+                return false
+              }
+              case GoalState.DependencyFailed => {
+                return false
+              }
+              case GoalState.AlreadySatisfied => {
+                return false
+              }
+              case GoalState.Success => {
+                return false
+              }
+              case GoalState.Aborted => {
+                return false
+              }
+              case _ => { //// Do nothing 
+              }
+            }
+         })
+         true
+      }
    }
    
    
@@ -129,41 +156,37 @@ class TrackScheduler( val proofEngine : ProofEngine ) extends Logging  {
    }
    
    def generateWitness( track : Track, nowDt : DateTime ) : Witness = {
-     var subst = Witness()
-     track.getWitnessVariables.foreach( { v : Variable[_] =>
-     	if(isTemporalVariable(v)) {
-     		val temporal = getValueForTemporal( v, nowDt)
-     		subst = subst + VariableAssignment( v.name , temporal)
-     		info(s" Adding Temporal value $temporal for temporal variable $v.name ")
-     	} else {
-     	  /// XXX Fixme  ???? Allow the substitution to be partially specified
-     	  info(s" Getting non temporal variable $v.name from track properties ")
-     	  val varValMatch = track.trackProperties.raw.get( v.name)
+     track.getWitnessVariables.foldLeft(  Witness() ) {  (w: Witness,  v : Variable[_]) =>
+     	isTemporalVariable(v) match {
+     	  case Some(temporalVar) => {
+     		val temporalVal = getValueForTemporal( temporalVar, nowDt)
+     		
+     		info(s" Adding Temporal value $temporalVal for temporal variable $v.name ")
+     		w + VariableAssignment( v.name  , temporalVal)
+     	  } 
+     	  case None => {
+     	      info(s" Getting non temporal variable $v.name from track properties ")
+     	      val varValMatch = track.trackProperties.raw.get( v.name)
      	  
-     	  varValMatch match {
-     	    case Some(varVal) =>
-   		      subst = subst + VariableAssignment( v.name , varVal)
-     	    case None =>
-     	      info(" No variable found with " + v.name)
-     	  }
-     	}
-     })
-     info(" Temporal witness is " + subst)
-     subst
+     	      varValMatch match {
+     	        case Some(varVal) => {
+   		          w + VariableAssignment( v.name , varVal)
+     	        }
+     	        case None => {
+     	          throw new IllegalStateException(s"Unable to get value for variable ${v.name} ")
+     	       }
+     	     }
+          }
+     	} 
+     } 
    }
 
-   def isTemporalVariable( variable : Variable[_] ) : Boolean = {
-      variable match {
-        case temporal : TemporalVariable => true
-        case _ => false
-      }
+   def isTemporalVariable( variable : Variable[_] ) : Option[TemporalVariable] = {
+      TemporalVariable.isTemporalVariable(variable)
    }
    
-   def getValueForTemporal( variable : Variable[_], dt : DateTime ) : String = {
-       variable match  {
-         case temporal : TemporalVariable => temporal.formatted( dt)
-         case _ => ""
-       }
+   def getValueForTemporal( temporal : TemporalVariable, dt : DateTime ) : String = {
+      temporal.formatted( dt)
    }
    
   
@@ -184,7 +207,8 @@ object TrackScheduler {
            log.info(" Starting Goal for Track " + mess.trackDesc.trackName + " Version " + mess.trackDesc.version)
            
            
-           val trckOpt =  if( trackFactory != null ) { trackFactory.getTrack( mess.trackDesc ) } else { None }
+           ////val trckOpt =  if( trackFactory != null ) { trackFactory.getTrack( mess.trackDesc ) } else { None }
+           val trckOpt =  if( trackFactory != null ) { trackFactory.getLatestTrack( mess.trackDesc ) } else { None }
 
            trckOpt match {
 	             case Some(trck) if (trackScheduler.isRunning(trck) && mess.continuous  ) => { // define "already running"

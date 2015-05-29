@@ -8,22 +8,26 @@ case class VariablePath(pathTemplate: String, checkMarked : Boolean , minSize : 
       extends DataOutput with Logging {
 
     def variables = {
-        Substituter.findVariablesInString(pathTemplate).map (Variable(_))
+        Substituter.findVariablesInString(pathTemplate).map (Variable(_)).distinct
     }
 
     def exists(witness: Witness): Boolean = {
         getPathForWitness(witness) match {
             case None       => false
             case Some(path) => {
+               info(s" Checking if path ${path} exists ")
                if(hdfs.exists(path) ) {
+                   info(s" Path ${path} does exist ")
                   val hdfsPath = new HdfsPath( path)
                   if( checkMarked) {
                     if ( ! hdfsPath.isMarkedCompleted ) {
+                      info(s" Path ${path} does exist, but is not marked complete.")
                       return false
                     }
                   }
                   if( minSize > 0 ) {
                     if ( hdfsPath.size < minSize) {
+                      info(s" Path ${path} does exist, but the size ${hdfsPath.size} is less than minimum ${minSize} .")
                       return false
                     }
                   }
@@ -44,7 +48,7 @@ case class VariablePath(pathTemplate: String, checkMarked : Boolean , minSize : 
 
     def getPathForWitness(witness: Witness): Option[Path] = {
         val fullSubstituter = track.getTrackProperties(witness)
-        var substPath = Substituter.substitute(pathTemplate, fullSubstituter)
+        val substPath = Substituter.substitute(pathTemplate, fullSubstituter)
         substPath match {
             case Left(missingVars) =>
                 warn(" Missing vars " + missingVars.mkString(",") + " ; no Path for witness")

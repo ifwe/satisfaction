@@ -18,10 +18,6 @@ class HdfsSpec extends Specification {
   
     
     "Hdfs" should {
-        "create URLS starting with hdfs" in {
-          //// XXX use MiniFS for unit testing ...
-          /// Externalize configuration 
-          val hdfsUrl = new java.net.URL("hdfs://dhdp2/user/satisfaction/track/Sample/version_2.1/satisfaction.properties")
          
           val stream = hdfsUrl.openStream
           val props  = Substituter.readProperties( stream)
@@ -33,14 +29,14 @@ class HdfsSpec extends Specification {
         "List files" in {
           val hdfs = Hdfs.fromConfig(HdfsSpec.clientConfig)
           
-          val path = new Path("hdfs:///data/ramblas/event_log")
+          val path = new Path("hdfs://dahdp2nn01/data/ramblas/event_log")
           
           
           hdfs.listFiles( path ).foreach( fs => {
             System.out.println(s" Path is ${fs.path} ${fs.size} ${fs.lastAccessed}  ")
           } )
           
-          val pathToday =  path / "20140429"
+          val pathToday =  path / "20150414"
           hdfs.listFilesRecursively( pathToday ).foreach( fs => {
             System.out.println(s" Recursive Path is ${fs.path} ${fs.size} ${fs.lastAccessed}  ")
           } )
@@ -59,7 +55,7 @@ class HdfsSpec extends Specification {
           testConf.writeXml(System.out)
           val haHdfs = Hdfs.fromConfig( testConf)
           
-          val nsPath = new Path("hdfs://dhdp2/user/ramblas/lib")
+          val nsPath = new Path("hdfs://dahdp2nn01/user/ramblas/lib")
           haHdfs.listFiles( nsPath ).foreach( fs => {
             System.out.println(s" Path is ${fs.path} ${fs.size} ${fs.lastAccessed}  ")
           } )
@@ -70,7 +66,7 @@ class HdfsSpec extends Specification {
         "read and write file" in {
            val hdfs = Hdfs.fromConfig( HdfsSpec.clientConfig)
            
-           val brPath = Path("hdfs://dhdp2/user/satisfaction/track/DauBackfill/version_0.2/auxJar/brickhouse-0.7.0-jdb-SNAPSHOT.jar")
+           val brPath = Path("hdfs://dahdp2nn01/user/satisfaction/track/DauBackfill/version_0.2/auxJar/brickhouse-0.7.0-jdb-SNAPSHOT.jar")
 
              val readFile = hdfs.readFile( brPath)
           
@@ -79,7 +75,7 @@ class HdfsSpec extends Specification {
         "read and write text file" in {
            val hdfs = Hdfs.fromConfig( HdfsSpec.clientConfig)
            
-           val brPath = Path("hdfs://dhdp2/user/satisfaction/track/DauBackfill/version_0.2/satisfaction.properties")
+           val brPath = Path("hdfs://dahdp2nn01/user/satisfaction/track/DauBackfill/version_0.2/satisfaction.properties")
 
              val readFile = hdfs.readFile( brPath)
              

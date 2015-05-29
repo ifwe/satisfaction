@@ -33,6 +33,7 @@ import _root_.org.apache.hadoop.io.WritableComparator
 import _root_.org.apache.thrift.meta_data.FieldMetaData
 import _root_.org.apache.hive.com.esotericsoftware.reflectasm.AccessClassLoader
 import org.apache.hadoop.mapreduce.protocol.ClientProtocolProvider
+import org.apache.hadoop.filecache.DistributedCache
 
 
 /**
@@ -206,6 +207,19 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config, cl
           error(" Unexpected error trying to clean threadLocal cloningQueryPlanKryo " , unexpected)
         } 
       }
+      
+      try {
+         info(" Calling HConnectionManager.deleteAllConnections() ")
+         val thisClassLoader = this.getClass().getClassLoader
+         val hconnectionClass =   thisClassLoader.loadClass("org.apache.hadoop.hbase.client.HConnectionManager")
+         
+         val shutdownMeth = hconnectionClass.getDeclaredMethod("deleteAllConnections")
+         shutdownMeth.invoke( null)
+      } catch {
+        case unexpected : Throwable => {
+          warn(" Unexpected error trying to shutdown HBase Connections ")
+        }
+      }
 
 
       try {
@@ -230,6 +244,78 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config, cl
     override def setProperty( prop : String , propValue : String) = {
       this.hiveConf.set( prop, propValue)
     }
+    
+    /**
+     *  Implement the Hive 'add file <resource>' command
+     */
+    def addResource( resourceType : String, resource : String ) : Boolean = {
+      val hiveConfVar = {
+        resourceType.trim.toLowerCase match {
+          case "file" =>  HiveConf.ConfVars.HIVEADDEDFILES 
+          case "files" =>  HiveConf.ConfVars.HIVEADDEDFILES 
+          case "jar" =>  HiveConf.ConfVars.HIVEADDEDJARS
+          case "jars" =>  HiveConf.ConfVars.HIVEADDEDJARS
+          case "archive" =>  HiveConf.ConfVars.HIVEADDEDARCHIVES
+          case "archives" =>  HiveConf.ConfVars.HIVEADDEDARCHIVES
+          case _ => {
+            error(s"Unknown resource type $resourceType ")
+            return false
+          }
+        }
+      }
+      
+      val hdfsURI = """^hdfs://(.+)""".r
+      val fileURI = """"^file://(.+)""".r
+      val absoluteFile = "^/(.*)".r
+      val filename : String = {
+        resource match {
+          case hdfsURI(uri) => {
+             resource
+          }    
+          case fileURI(f) => {
+             resource
+          }    
+          case absoluteFile(f) => {
+            s"file://$resource" 
+          }
+          case _ => {
+            s"file://${System.getProperty("user.dir")}/$resource" 
+          }
+        }
+      }
+      
+      info(s" Adding resource $filename  TO $hiveConfVar ")
+      val checkPath = hiveConf.getVar( hiveConfVar )
+      if( checkPath == null || checkPath.trim.length == 0) {
+        hiveConf.setVar( hiveConfVar, filename)
+      } else {
+        hiveConf.setVar( hiveConfVar, s"${checkPath},${filename}")
+      }
+      
+      true 
+    }
+    /**
+    public CommandProcessorResponse run(String command) {
+    SessionState ss = SessionState.get();
+    command = new VariableSubstitution().substitute(ss.getConf(),command);
+    String[] tokens = command.split("\\s+");
+    SessionState.ResourceType t;
+    if (tokens.length < 2
+        || (t = SessionState.find_resource_type(tokens[0])) == null) {
+      console.printError("Usage: add ["
+          + StringUtils.join(SessionState.ResourceType.values(), "|")
+          + "] <value> [<value>]*");
+      return new CommandProcessorResponse(1);
+    }
+    for (int i = 1; i < tokens.length; i++) {
+      String resourceFile = ss.add_resource(t, tokens[i]);
+      if(resourceFile == null){
+        String errMsg = tokens[i]+" does not exist.";
+        return new CommandProcessorResponse(1,errMsg,null);
+      }
+    }
+    * 
+    */
     
     /**
     override lazy val progressCounter : ProgressCounter  = {
@@ -280,6 +366,17 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config, cl
     override def executeQuery(query: String): Boolean = {
         try {
 
+            //// Hack to support Hive 'ADD FILE ' command
+            ////  not quite fully compliant, but will move to 
+            ////  new HiveServer next release
+            if( query.toLowerCase().trim().startsWith("add")) {
+               val cmdArr = query.split(" ") 
+               if(cmdArr.length != 3) {
+                  error(" Add File command takes resource type and file name ") 
+                  return false
+               }
+               return addResource(cmdArr(1), cmdArr(2) )
+            }
             val response : CommandProcessorResponse = HiveLocalDriver.retry (5) {
                 sessionState.execStatic("setCurrentSessionState", sessionState.wrapped)
 
@@ -333,14 +430,21 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config, cl
             ///case sqlExc: HiveSQLException =>
             case sqlExc: Exception  =>
                 error(s"Dammit !!! Caught Hive SQLException ${sqlExc.getLocalizedMessage} ", sqlExc)
-                return false
-            case unexpected : Throwable => 
-                error(s"Dammit !!! Unexpected SQLException ${unexpected.getLocalizedMessage} ", unexpected)
-                throw unexpected
-        } finally {
            driver.get.->("close")
            driver.get.->("destroy")
            driver.release
+                return false
+            case unexpected : Throwable => 
+                error(s"Dammit !!! Unexpected SQLException ${unexpected.getLocalizedMessage} ", unexpected)
+           driver.get.->("close")
+           driver.get.->("destroy")
+           driver.release
+                throw unexpected
+        } finally {
+          info(" What happens if we don't close the driver each time ??? ")
+           ///driver.get.->("close")
+           ///driver.get.->("destroy")
+           ///driver.release
         }
     }
     
@@ -432,7 +536,8 @@ object HiveLocalDriver {
                 throw retry
            }
         } 
-        case clusterException if clusterException.getMessage().contains("Cannot initialize Cluster. Please check your configuration") => {
+        case clusterException if clusterException.getMessage() != null
+        		&& clusterException.getMessage().contains("Cannot initialize Cluster. Please check your configuration") => {
            checkCluster() 
            println(s" Number of retries = $cnt")
            cnt += 1
