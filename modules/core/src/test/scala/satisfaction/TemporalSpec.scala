@@ -11,6 +11,10 @@ class TemporalSpec extends Specification {
 
   
   "TemporalVariables" should {
+<<<<<<< HEAD
+=======
+  
+>>>>>>> 133b57614f6c29c04c8e4fce1bc88320ef1adfbe
     
      "Produce hourly ranges" in {
        Temporal.hours foreach println

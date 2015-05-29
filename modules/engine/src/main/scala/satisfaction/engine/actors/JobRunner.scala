@@ -36,7 +36,6 @@ class JobRunner(
     val witness : Witness,
     params: Witness ) extends Actor with ActorLogging {
 
-    implicit val config : com.typesafe.config.Config = ConfigFactory.load()
   
     //// Create our own Thread pool for running our own jobs...
     ////  rather then mess with the Akka or play threads

@@ -217,8 +217,8 @@ export HIVE_CONF_DIR=/usr/hdp/current/hive-client/conf
   ) ++ testDependencies 
 
   def jsonDependencies = Seq(
-   ("org.json4s" %% "json4s-jackson" % "3.2.9" )
- )
+    ("org.json4s" %% "json4s-jackson" % "3.2.9" )
+  )
 
   def metastoreDependencies = Seq(
 	  ("org.apache.hive" % "hive-common" % hiveVersion),

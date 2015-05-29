@@ -217,7 +217,7 @@ class HiveLocalDriver( val hiveConf : HiveConf = new HiveConf( Config.config, cl
          shutdownMeth.invoke( null)
       } catch {
         case unexpected : Throwable => {
-          error(" Unexpected error trying to shutdown HBase Connections " , unexpected)
+          warn(" Unexpected error trying to shutdown HBase Connections ")
         }
       }
 

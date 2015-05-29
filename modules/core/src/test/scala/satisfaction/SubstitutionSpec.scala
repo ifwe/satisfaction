@@ -9,9 +9,12 @@ import org.junit.runner.RunWith
 class WitnessSpec extends Specification {
 
     "WitnessUtils" should {
+<<<<<<< HEAD
         "checkPath" should {
           
         }
+=======
+>>>>>>> 133b57614f6c29c04c8e4fce1bc88320ef1adfbe
         "find variables in string " in {
             val str = " select * from my_view_${networkAbbr} where dt= ${dateString}  "
 

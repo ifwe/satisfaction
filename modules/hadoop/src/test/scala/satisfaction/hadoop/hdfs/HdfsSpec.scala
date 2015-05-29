@@ -18,19 +18,12 @@ class HdfsSpec extends Specification {
   
     
     "Hdfs" should {
-      /**
-        "create URLS starting with hdfs" in {
-          //// XXX use MiniFS for unit testing ...
-          /// Externalize configuration 
-          val hdfsUrl = new java.net.URL("hdfs://dahdp2nn01/user/satisfaction/track/Sample/version_2.1/satisfaction.properties")
          
           val stream = hdfsUrl.openStream
           val props  = Substituter.readProperties( stream)
           
           true
         }
-        * 
-        */
         
         
         "List files" in {
@@ -55,7 +48,6 @@ class HdfsSpec extends Specification {
           true
         }
         
-        /**
         
         "access nameservice1" in {
           
@@ -114,8 +106,6 @@ class HdfsSpec extends Specification {
           println( " JAr Size is " + lstat.size)
           lstat.size must_!= 0
         }
-        * 
-        */
 
     }
 

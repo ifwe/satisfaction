@@ -357,6 +357,4 @@ object SatisfyGoalPage extends Controller with Logging {
         val trackOpt : Option[Track] = ProjectPage.trackFactory.getTrack( trackDesc)
         trackOpt.get
     } 
-    
-  
 }

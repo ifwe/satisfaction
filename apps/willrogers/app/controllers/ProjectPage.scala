@@ -43,7 +43,6 @@ object ProjectPage extends Controller {
         val trackOpt : Option[Track] = trackFactory.getTrack( trackDesc)
         trackOpt match {
           case Some(track) =>
-             ////showTrack(track)
              val internalGoals = track.topLevelGoals.toList
              val externalGoals = track.externalGoals.toList
 

@@ -78,7 +78,6 @@ class ProofEngine( val trackHistoryOpt : Option[TrackHistory] = None) extends  s
             }
       }
     }
-
     
     def restartGoal( goal : Goal, witness: Witness ) : Future[GoalStatus] = {
        future {

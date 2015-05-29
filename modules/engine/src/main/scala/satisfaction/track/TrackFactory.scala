@@ -11,6 +11,11 @@ import satisfaction.engine.actors.JobRunner
 
 /**
  *  Class for Executor to access deployed Tracks (i.e Projects)
+<<<<<<< HEAD
+=======
+  class TracksUnavailableException( exc : Throwable ) extends RuntimeException
+  class TracksUnavailableException( exc : Throwable ) extends RuntimeException
+>>>>>>> 133b57614f6c29c04c8e4fce1bc88320ef1adfbe
  *  
  *  Tracks are deployed in a well-defined directory on HDFS,
  *  where the Track Name is defined as a path relative to a 
@@ -42,7 +47,6 @@ case class TrackFactory(val trackFS : FileSystem,
      } 
  }
   
-   
  private val _trackMap : collection.mutable.Map[TrackDescriptor,Track] = collection.mutable.HashMap[TrackDescriptor,Track]()
  def trackMap : collection.immutable.Map[TrackDescriptor,Track] =  _trackMap.toMap
   
@@ -177,7 +181,6 @@ case class TrackFactory(val trackFS : FileSystem,
    def notifyTrackUnavailable( exc : Throwable) {
      
    }
-   
    
    /**
     *  Parse the path of a deployed Track on HDFS
